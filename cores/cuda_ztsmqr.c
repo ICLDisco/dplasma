@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <core_blas.h>
+#include <cublas.h>
 #if defined(PRECISION_z) || defined(PRECISION_c)
 #include <cuComplex.h>
 #endif
@@ -19,61 +20,68 @@
 #include "data_dist/matrix/matrix.h"
 #include "dague/data_internal.h"
 #include "dague/utils/output.h"
-#include "cuda_zgemm.h"
-#include <cublas.h>
+#include "cuda_ztsmqr.h"
+#include "dplasma_zcores.h"
 
-#define flow_A  1
-#define flow_B  2
-#define flow_C  0
+#define flow_A1  0
+#define flow_A2  1
+#define flow_V   2
+#define flow_T   3
 
-#define KERNEL_NAME zgemm
+#define KERNEL_NAME ztsmqr
 #if CUDA_VERSION < 4000 || 1
-typedef void (*cublas_zgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
-                                 dague_complex64_t alpha, dague_complex64_t *d_A, int lda,
-                                 dague_complex64_t *d_B, int ldb,
-                                 dague_complex64_t beta,  dague_complex64_t *d_C, int ldc
-                                 );
+typedef void (*cublas_ztsmqr_t) ( PLASMA_enum side, PLASMA_enum trans,
+                                  int M1, int N1, int M2, int N2, int K, int IB,
+                                  dague_complex64_t *A1, int LDA1,
+                                  dague_complex64_t *A2, int LDA2,
+                                  dague_complex64_t *V, int LDV,
+                                  dague_complex64_t *T, int LDT,
+                                  dague_complex64_t *WORK,  int LDWORK,
+                                  dague_complex64_t *WORKC, int LDWORKC,
+                                  CUstream stream );
 #else
-typedef cublas_status_t (*cublas_zgemm_t) ( cublas_handle_t h,
-                                            char TRANSA, char TRANSB, int m, int n, int k,
-                                            dague_complex64_t alpha, dague_complex64_t *d_A, int lda,
-                                            dague_complex64_t *d_B, int ldb,
-                                            dague_complex64_t beta,  dague_complex64_t *d_C, int ldc
-                                            );
+typedef cublas_status_t (*cublas_ztsmqr_t) ( PLASMA_enum side, PLASMA_enum trans,
+                                             int M1, int N1, int M2, int N2, int K, int IB,
+                                             dague_complex64_t *A1, int LDA1,
+                                             dague_complex64_t *A2, int LDA2,
+                                             dague_complex64_t *V, int LDV,
+                                             dague_complex64_t *T, int LDT,
+                                             dague_complex64_t *WORK,  int LDWORK,
+                                             dague_complex64_t *WORKC, int LDWORKC,
+                                             cublas_handle_t h );
 #endif
 
 extern int dague_cuda_output_stream;
 
 #define FORCE_LINK_STATIC_SYMBOL(x) void* __ ## x ## _fp =(void*)&x;
-FORCE_LINK_STATIC_SYMBOL(cublasZgemm)
+FORCE_LINK_STATIC_SYMBOL(dplasma_cuda_ztsmqr)
 
 static inline
-int gpu_kernel_push_zgemm( gpu_device_t* gpu_device,
+int gpu_kernel_push_ztsmqr( gpu_device_t* gpu_device,
+                            dague_gpu_context_t* this_task,
+                            dague_gpu_exec_stream_t* gpu_stream);
+
+static inline
+int gpu_kernel_submit_ztsmqr( gpu_device_t* gpu_device,
+                              dague_gpu_context_t* this_task,
+                              dague_gpu_exec_stream_t* gpu_stream);
+
+static inline
+int gpu_kernel_pop_ztsmqr( gpu_device_t* gpu_device,
                            dague_gpu_context_t* this_task,
                            dague_gpu_exec_stream_t* gpu_stream);
 
 static inline
-int gpu_kernel_submit_zgemm( gpu_device_t* gpu_device,
-                             dague_gpu_context_t* this_task,
-                             dague_gpu_exec_stream_t* gpu_stream);
+int  gpu_kernel_epilog_ztsmqr( gpu_device_t* gpu_device,
+                               dague_gpu_context_t* this_task );
 
-static inline
-int gpu_kernel_pop_zgemm( gpu_device_t* gpu_device,
-                          dague_gpu_context_t* this_task,
-                          dague_gpu_exec_stream_t* gpu_stream);
-
-static inline
-int  gpu_kernel_epilog_zgemm( gpu_device_t* gpu_device,
-                              dague_gpu_context_t* this_task );
-
-typedef struct dague_zgemm_args_s {
+typedef struct dague_ztsmqr_args_s {
     dague_gpu_context_t super;
-    int pushout;
-    dague_complex64_t alpha, beta;
-    PLASMA_enum transA, transB;
-    int M, N, K;
-    int lda, ldb, ldc;
-} dague_zgemm_args_t;
+    int pushout_A1, pushout_A2;
+    PLASMA_enum side, trans;
+    int M1, N1, M2, N2, K, IB;
+    int lda1, lda2, ldv, ldt;
+} dague_ztsmqr_args_t;
 
 #include <dague/devices/cuda/cuda_scheduling.h>
 
@@ -87,9 +95,9 @@ typedef struct dague_zgemm_args_s {
  *     -2: No more room on the GPU to move this data.
  */
 static inline int
-gpu_kernel_push_zgemm( gpu_device_t            *gpu_device,
-                       dague_gpu_context_t     *gpu_task,
-                       dague_gpu_exec_stream_t *gpu_stream)
+gpu_kernel_push_ztsmqr( gpu_device_t            *gpu_device,
+                        dague_gpu_context_t     *gpu_task,
+                        dague_gpu_exec_stream_t *gpu_stream)
 {
     int i, ret = 0;
     int space_needed = 0;
@@ -172,28 +180,42 @@ gpu_kernel_push_zgemm( gpu_device_t            *gpu_device,
 
 
 static inline int
-gpu_kernel_submit_zgemm( gpu_device_t        *gpu_device,
-                         dague_gpu_context_t *gpu_task,
-                         dague_gpu_exec_stream_t* gpu_stream )
+gpu_kernel_submit_ztsmqr( gpu_device_t            *gpu_device,
+                          dague_gpu_context_t     *gpu_task,
+                          dague_gpu_exec_stream_t *gpu_stream )
 {
     dague_execution_context_t *this_task = gpu_task->ec;
-    dague_zgemm_args_t        *args = (dague_zgemm_args_t*)gpu_task;
-    CUdeviceptr d_A, d_B, d_C;
+    dague_ztsmqr_args_t        *args = (dague_ztsmqr_args_t*)gpu_task;
+    CUdeviceptr d_A1, d_A2, d_V, d_T, WORK, WORKC;
     cudaError_t status;
 #if DAGUE_DEBUG_VERBOSE != 0
     char tmp[MAX_TASK_STRLEN];
 #endif
+    int Wn, Wld;
 
-    cublas_zgemm_t cublas_fnzgemm = (cublas_zgemm_t) this_task->function->incarnations[gpu_device->cuda_index].dyld_fn;
-    assert( NULL != cublas_fnzgemm );
+    cublas_ztsmqr_t cuda_fnztsmqr = (cublas_ztsmqr_t) this_task->function->incarnations[gpu_device->cuda_index].dyld_fn;
+    assert( NULL != cuda_fnztsmqr );
 
-    assert(this_task->data[flow_A].data_out->device_index == gpu_device->super.device_index);
-    d_A = (CUdeviceptr)this_task->data[flow_A].data_out->device_private;
-    assert(this_task->data[flow_B].data_out->device_index == gpu_device->super.device_index);
-    d_B = (CUdeviceptr)this_task->data[flow_B].data_out->device_private;
-    assert(this_task->data[flow_C].data_out->device_index == gpu_device->super.device_index);
-    /*assert( DATA_COHERENCY_OWNED == this_task->data[flow_C].data_out->coherency_state );*/
-    d_C = (CUdeviceptr)this_task->data[flow_C].data_out->device_private;
+    assert(this_task->data[flow_A1].data_out->device_index == gpu_device->super.device_index);
+    d_A1 = (CUdeviceptr)this_task->data[flow_A1].data_out->device_private;
+    assert(this_task->data[flow_A2].data_out->device_index == gpu_device->super.device_index);
+    d_A2 = (CUdeviceptr)this_task->data[flow_A2].data_out->device_private;
+    assert(this_task->data[flow_V].data_out->device_index == gpu_device->super.device_index);
+    d_V  = (CUdeviceptr)this_task->data[flow_V].data_out->device_private;
+    assert(this_task->data[flow_T].data_out->device_index == gpu_device->super.device_index);
+    d_T  = (CUdeviceptr)this_task->data[flow_T].data_out->device_private;
+
+    if ( args->side == PlasmaLeft ) {
+        Wn = args->N1;
+        Wld = args->IB;
+    }
+    else {
+        Wn = args->IB;
+        Wld = args->M1;
+    }
+
+    WORK  = (CUdeviceptr)dague_gpu_pop_workspace(gpu_device, gpu_stream, Wn * Wld * sizeof(dague_complex64_t));
+    WORKC = (CUdeviceptr)dague_gpu_pop_workspace(gpu_device, gpu_stream, args->M2 * args->IB * sizeof(dague_complex64_t));
 
     DEBUG2(( "GPU[%1d]:\tEnqueue on device %s priority %d\n", gpu_device->cuda_index,
              dague_snprintf_execution_context(tmp, MAX_TASK_STRLEN, this_task),
@@ -210,30 +232,41 @@ gpu_kernel_submit_zgemm( gpu_device_t        *gpu_device,
     status = cudaSuccess;
 #if (CUDA_VERSION < 4000) || 1 /* todo: always use legacy cublas until we understand how to get the cublas_handle in API v5 */
     cublasSetKernelStream( gpu_stream->cuda_stream );
-    cublas_fnzgemm( lapack_const(args->transA), lapack_const(args->transB),
-                    args->M, args->N, args->K,
-                    args->alpha, (dague_complex64_t*)d_A, args->lda,
-                    (dague_complex64_t*)d_B, args->ldb,
-                    args->beta,  (dague_complex64_t*)d_C, args->ldc );
+    cuda_fnztsmqr( args->side, args->trans,
+                   args->M1, args->N1, args->M2, args->N2, args->K, args->IB,
+                   (dague_complex64_t*)d_A1, args->lda1,
+                   (dague_complex64_t*)d_A2, args->lda2,
+                   (dague_complex64_t*)d_V,  args->ldv,
+                   (dague_complex64_t*)d_T,  args->ldt,
+                   (dague_complex64_t*)WORK,  Wld,
+                   (dague_complex64_t*)WORKC, args->M2,
+                   gpu_stream->cuda_stream );
     status = cublasGetError();
 #else
     {
         cudaStream_t current_stream;
         cublasHandle_t handle = cublasGetCurrentCtx(); /* todo: available in cuda API 4 only */
         cublasGetStream_v2 ( handle, &current_stream );
-        cublasSetStream_v2 ( handle, &gpu_stream->cuda_srtream );
+        cublasSetStream_v2 ( handle, &gpu_stream->cuda_stream );
         status =
-            cublas_fnzgemm( handle,
-                            lapack_const(args->transA), lapack_const(args->transB),
-                            args->M, args->N, args->K,
-                            args->alpha, (dague_complex64_t*)d_A, args->lda,
-                            (dague_complex64_t*)d_B, args->ldb,
-                            args->beta,  (dague_complex64_t*)d_C, args->ldc );
+            cuda_fnztsmqr( args->side, args->trans,
+                           args->M1, args->N1, args->M2, args->N2, args->K, args->IB,
+                           (dague_complex64_t*)d_A1, args->lda1,
+                           (dague_complex64_t*)d_A2, args->lda2,
+                           (dague_complex64_t*)d_V,  args->ldv,
+                           (dague_complex64_t*)d_T,  args->ldt,
+                           (dague_complex64_t*)WORK,  Wld,
+                           (dague_complex64_t*)WORKC, args->M2,
+                           handle );
         cublasSetStream_v2 ( handle, &current_stream );
     }
 #endif /* CUDA_VERSION < 4000 */
-    DAGUE_CUDA_CHECK_ERROR( "cublasZgemm ", status,
+    DAGUE_CUDA_CHECK_ERROR( "dplasma_cuda_ztsmqr", status,
                             {return -1;} );
+
+    dague_gpu_push_workspace(gpu_device, gpu_stream);
+    dague_gpu_push_workspace(gpu_device, gpu_stream);
+
     return 0;
 }
 
@@ -245,12 +278,12 @@ gpu_kernel_submit_zgemm( gpu_device_t        *gpu_device,
  *           positive: the number of data to be moved.
  */
 static inline int
-gpu_kernel_pop_zgemm( gpu_device_t        *gpu_device,
-                      dague_gpu_context_t *gpu_task,
-                      dague_gpu_exec_stream_t* gpu_stream)
+gpu_kernel_pop_ztsmqr( gpu_device_t        *gpu_device,
+                       dague_gpu_context_t *gpu_task,
+                       dague_gpu_exec_stream_t* gpu_stream)
 {
     dague_execution_context_t *this_task = gpu_task->ec;
-    dague_zgemm_args_t        *args = (dague_zgemm_args_t*)gpu_task;
+    dague_ztsmqr_args_t       *args = (dague_ztsmqr_args_t*)gpu_task;
     dague_gpu_data_copy_t     *gpu_copy;
     dague_data_t              *original;
     const dague_flow_t        *flow;
@@ -303,7 +336,7 @@ gpu_kernel_pop_zgemm( gpu_device_t        *gpu_device,
 
             DAGUE_OUTPUT_VERBOSE((3, dague_cuda_output_stream,
                                   "GPU[%1d]:\tOUT Data of %s\n", gpu_device->cuda_index, flow->name));
-            if( args->pushout ) {  /* n == (k + 1) */
+            if( (args->pushout_A1 && (i == flow_A1)) || (args->pushout_A2 && (i == flow_A2)) ) {
                 original = gpu_copy->original;
                 DAGUE_OUTPUT_VERBOSE((2, dague_cuda_output_stream,
                                       "GPU:\tMove D2H data <%s:%x> from GPU %d %p -> %p requested\n",
@@ -339,11 +372,11 @@ gpu_kernel_pop_zgemm( gpu_device_t        *gpu_device,
  * Make sure all data on the device is correctly put back into the queues.
  */
 static inline int
-gpu_kernel_epilog_zgemm( gpu_device_t        *gpu_device,
-                         dague_gpu_context_t *gpu_task )
+gpu_kernel_epilog_ztsmqr( gpu_device_t        *gpu_device,
+                          dague_gpu_context_t *gpu_task )
 {
     dague_execution_context_t *this_task = gpu_task->ec;
-    dague_zgemm_args_t        *args = (dague_zgemm_args_t*)gpu_task;
+    dague_ztsmqr_args_t       *args = (dague_ztsmqr_args_t*)gpu_task;
     dague_gpu_data_copy_t     *gpu_copy, *cpu_copy;
     dague_data_t              *original;
     int i;
@@ -376,7 +409,7 @@ gpu_kernel_epilog_zgemm( gpu_device_t        *gpu_device,
          */
         this_task->data[this_task->function->out[i]->flow_index].data_out = cpu_copy;
 
-        if( args->pushout ) {  /* n == (k  + 1) */
+        if( (args->pushout_A1 && (i == flow_A1)) || (args->pushout_A2 && (i == flow_A2)) ) {
             dague_ulist_fifo_push(&gpu_device->gpu_mem_lru, (dague_list_item_t*)gpu_copy);
             DAGUE_OUTPUT_VERBOSE((3, dague_cuda_output_stream,
                                   "CUDA copy %p [ref_count %d] moved to the read LRU in %s\n",
@@ -405,68 +438,91 @@ gpu_kernel_epilog_zgemm( gpu_device_t        *gpu_device,
  * been completed. Each type of stream (in, exec and out) has a pending FIFO,
  * where tasks ready to jump to the respective step are waiting.
  */
-int gpu_zgemm( dague_execution_unit_t* eu_context,
-               dague_execution_context_t* this_task,
-               int pushout, int nb,
-               PLASMA_enum transA, PLASMA_enum transB,
-               int M, int N, int K,
-               dague_complex64_t alpha, int lda,
-               int ldb,
-               dague_complex64_t beta,  int ldc )
+int gpu_ztsmqr( dague_execution_unit_t* eu_context,
+                dague_execution_context_t* this_task,
+                int pushout_A1, int pushout_A2, int m, int n, int k,
+                PLASMA_enum side, PLASMA_enum trans,
+                int M1, int N1, int M2, int N2, int K, int IB,
+                int LDA1, int LDA2, int LDV, int LDT )
 {
-    int i, dev_index, data_index = 0;
-    dague_zgemm_args_t *gpu_task;
-    dague_handle_t* handle = this_task->dague_handle;
+    int dev_index;
+    dague_ztsmqr_args_t *gpu_task;
+    (void)m; (void)n; (void)k;
 
-    /* Step one: Find the first data in WRITE mode */
-    for( i = 0; i < this_task->function->nb_flows; i++ ) {
-        if( (NULL == this_task->function->out[i]) ||
-            (this_task->function->out[i]->flow_flags & FLOW_ACCESS_WRITE) ) {
-            data_index = this_task->function->out[i]->flow_index;
-            break;
-        }
+    dev_index = this_task->data[flow_A1].data_in->original->owner_device;
+
+#if defined(HAVE_MPI) || 1 /* defined(GPU_STATIC) */
+    /**
+     * Columns are distributed in a round-robin fashion
+     */
+    if ( dev_index <= 0 ) {
+        dev_index = n % (dague_devices_enabled()-2)+2;
     }
+#else
+    /**
+     * Only the tsmqr task located in (k, k+1, n) can choose the device;
+     * If the task goes to GPU, then the whole column will stay in this GPU for ever.
+     * If the task goes to CPU, then the whole column will stay in CPU in k iteration,
+     *    then it has the opportunity to choose again a device at iteration k+1.
+     * This way we choose to place the computation where A1 is.
+     */
+    if (m == (k+1)) {
+        int A1_dev_index = this_task->data[flow_A1].data_in->original->owner_device;
+        int A2_dev_index = this_task->data[flow_A2].data_in->original->owner_device;
 
-    /* Which device is the owner of the data */
-    dev_index = this_task->data[data_index].data_in->original->owner_device;
+        if ( A1_dev_index > 0) {
+            dev_index = A1_dev_index;
+            assert(dev_index != 0);
+        }
+        else if ( A2_dev_index > 0 ) {
+            dev_index = A2_dev_index;
+            assert(dev_index != 0);
+        }
+        else {
+            int best_index = 0;  /* default value: first CPU device */
+            float weight, best_weight = dague_device_load[0] + dague_device_sweight[0];
+            dague_handle_t* handle = this_task->dague_handle;
 
-    /* 0 is CPU, and 1 is recursive device */
-    if( dev_index <= 1 ) {  /* this is the first time we see this tile.
-                             * Let's decide which GPU will work on it. */
-        int best_index = 0;  /* default value: first CPU device */
-        float weight, best_weight = dague_device_load[0] + nb * dague_device_sweight[0];
-        for( dev_index = 2; dev_index < dague_devices_enabled(); dev_index++ ) {
-            /* Skip the device if it is not configured */
-            if(!(handle->devices_mask & (1 << dev_index))) continue;
-            weight = dague_device_load[dev_index] + nb * dague_device_sweight[dev_index];
-            if( best_weight > weight ) {
-                best_index = dev_index;
-                best_weight = weight;
+            assert( (A1_dev_index <= 0) && (A2_dev_index <= 0) );
+
+            for( dev_index = 2; dev_index < dague_devices_enabled(); dev_index++ ) {
+                /* Skip the device if it is not configured */
+                if(!(handle->devices_mask & (1 << dev_index))) continue;
+                weight = dague_device_load[dev_index] + dague_device_sweight[dev_index];
+                if( best_weight > weight ) {
+                    best_index = dev_index;
+                    best_weight = weight;
+                }
             }
+            dague_device_load[best_index] += dague_device_sweight[best_index];
+            dev_index = best_index;
         }
-        dague_device_load[best_index] += nb * dague_device_sweight[best_index];
-        if( best_index == 0 ) {
-            return DAGUE_HOOK_RETURN_NEXT;  /* Fall back */
-        }
-        assert( best_index != 1 );
-        dev_index = best_index;
     }
+#endif
 
-    gpu_task = (dague_zgemm_args_t*)malloc(sizeof(dague_zgemm_args_t));
+    if( dev_index == 0 ) {
+        return DAGUE_HOOK_RETURN_NEXT;  /* Fall back */
+    }
+    assert( dev_index > 1 );
+
+    gpu_task = (dague_ztsmqr_args_t*)malloc(sizeof(dague_ztsmqr_args_t));
     OBJ_CONSTRUCT(gpu_task, dague_list_item_t);
     gpu_task->super.ec = this_task;
     gpu_task->super.task_type = 0;
-    gpu_task->pushout  = pushout;
-    gpu_task->alpha    = alpha;
-    gpu_task->beta     = beta;
-    gpu_task->transA   = transA;
-    gpu_task->transB   = transB;
-    gpu_task->M        = M;
-    gpu_task->N        = N;
-    gpu_task->K        = K;
-    gpu_task->lda      = lda;
-    gpu_task->ldb      = ldb;
-    gpu_task->ldc      = ldc;
+    gpu_task->pushout_A1  = pushout_A1;
+    gpu_task->pushout_A2  = pushout_A2;
+    gpu_task->side  = side;
+    gpu_task->trans = trans;
+    gpu_task->M1    = M1;
+    gpu_task->N1    = N1;
+    gpu_task->M2    = M2;
+    gpu_task->N2    = N2;
+    gpu_task->K     = K;
+    gpu_task->IB    = IB;
+    gpu_task->lda1  = LDA1;
+    gpu_task->lda2  = LDA2;
+    gpu_task->ldv   = LDV;
+    gpu_task->ldt   = LDT;
 
-    return gpu_kernel_scheduler_zgemm( eu_context, (dague_gpu_context_t*)gpu_task, dev_index );
+    return gpu_kernel_scheduler_ztsmqr( eu_context, (dague_gpu_context_t*)gpu_task, dev_index );
 }
