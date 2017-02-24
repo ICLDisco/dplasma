@@ -96,7 +96,6 @@ set(JDF
   zhetrd_b2s.jdf
   ztrdsm.jdf
   ztrmdm.jdf
-  # Under development in this branch
   zgetrf_fusion.jdf
   ztrsmpl_fusion.jdf
 )
