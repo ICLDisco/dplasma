@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -123,7 +123,7 @@ END
 /**************************************************
  *                       GEMM                     *
  **************************************************/
-GEMM(m, n, k)
+GEMM(m, n, k) [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %} ]
 
 // Execution space
 m = 0 .. descC->mt-1

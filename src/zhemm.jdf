@@ -68,7 +68,8 @@ BODY
 }
 END
 
-HEMM(m, n, k)
+HEMM(m, n, k) [flops = inline_c %{ if( k == m ) return FLOPS_ZHEMM(side, CLEAN_MB(descC, m), CLEAN_NB(descC, n));
+        else return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), ( side == PlasmaLeft ? CLEAN_MB(descC, k) : CLEAN_NB(descC, k) )); %} ]
 
 // Execution space
 m = 0 .. descC->mt-1

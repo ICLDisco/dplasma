@@ -4,6 +4,7 @@
 #include "dplasma.h"
 #include <core_blas.h>
 #include "parsec/private_mempool.h"
+#include "floputils.h"
 
 /* Check for LU recursive kernel version */
 #if (PLASMA_VERSION_MAJOR < 2) || ((PLASMA_VERSION_MAJOR == 2) && (PLASMA_VERSION_MINOR < 8))
