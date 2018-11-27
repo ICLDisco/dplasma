@@ -77,11 +77,13 @@ set(JDF
   zgeqrfr_tsmqr.jdf
   # LU
   zgetrf.jdf
+  zgetrf_ptgpanel.jdf
   zgetrf_incpiv.jdf
   zgetrf_incpiv_sd.jdf
   zgetrf_nopiv.jdf
   zgetrf_qrf.jdf
   ztrsmpl.jdf
+  ztrsmpl_ptgpanel.jdf
   ztrsmpl_sd.jdf
   ztrsmpl_qrf.jdf
   # Other
@@ -96,8 +98,6 @@ set(JDF
   zhetrd_b2s.jdf
   ztrdsm.jdf
   ztrmdm.jdf
-  zgetrf_fusion.jdf
-  ztrsmpl_fusion.jdf
 )
 precisions_rules_py(generated_jdf
   "${JDF}"
@@ -174,11 +174,13 @@ set(SOURCES
   zgetrf_incpiv_wrapper.c
   zgetrf_nopiv_wrapper.c
   zgetrf_qrf_wrapper.c
+  zgetrf_ptgpanel_wrapper.c
   zgetrf_wrapper.c
   zgetrs_wrapper.c
   zgetrs_incpiv_wrapper.c
   ztrsmpl_wrapper.c
   ztrsmpl_qrf_wrapper.c
+  ztrsmpl_ptgpanel_wrapper.c
   #
   dplasma_zcheck.c
   #
@@ -191,9 +193,6 @@ set(SOURCES
   zhetrs_wrapper.c
   ztrdsm_wrapper.c
   zheev_wrapper.c
-  #
-  zgetrf_fusion_wrapper.c
-  ztrsmpl_fusion_wrapper.c
 )
 precisions_rules_py(generated_wrappers
                     "${SOURCES}"
