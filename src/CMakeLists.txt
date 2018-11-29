@@ -20,7 +20,6 @@ set(EXTRA_SOURCES
   dplasma_hqr.c
   dplasma_hqr_dbg.c
   dplasma_systolic_qr.c
-  map_wrapper.c
   map2_wrapper.c
   butterfly_map.c
 )
@@ -103,7 +102,6 @@ precisions_rules_py(generated_jdf
   PRECISIONS "${DPLASMA_PRECISIONS}")
 
 list(APPEND generated_jdf
-  ${CMAKE_CURRENT_SOURCE_DIR}/map.jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map2.jdf
 )
 
