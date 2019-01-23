@@ -1,0 +1,3 @@
+[submodule "parsec"]
+	path = parsec
+	url = git@bitbucket.org:dgenet/parsec-split.git

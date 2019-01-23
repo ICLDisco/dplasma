@@ -1,12 +1,42 @@
 cmake_minimum_required (VERSION 3.0)
+project (DPLASMA C)
+
+include(CMakeDependentOption)
+include(CMakePushCheckState)
+
+# The current version number
+set (DPLASMA_VERSION_MAJOR 2)
+set (DPLASMA_VERSION_MINOR 0)
+set (DPLASMA_VERSION_PATCH 0)
 
 SET(DPLASMA_VERSION "${PARSEC_VERSION_MAJOR}.${PARSEC_VERSION_MINOR}")
 
-option(BUILD_DPLASMA
-       "Compile the DPLASMA layer" ON)
-IF( NOT BUILD_DPLASMA )
-  RETURN()
-ENDIF( NOT BUILD_DPLASMA )
+# CMake Policies Tuning
+if(POLICY CMP0074)
+  # CMP0074: Starting with CMake 3.12, all FIND_<something> use <something>_ROOT in the search path
+  #          in addition to the specified paths
+  cmake_policy(SET CMP0074 NEW)
+ENDIF(POLICY CMP0074)
+
+# CTest system
+SET(DART_TESTING_TIMEOUT 120)
+enable_testing()
+include(CTest)
+
+set(CTEST_SHM_LAUNCHER
+      "" CACHE STRING
+      "A command to run shared memory testings")
+string(REPLACE " " ";" SHM_TEST_CMD_LIST "${CTEST_SHM_LAUNCHER}")
+set(CTEST_MPI_LAUNCHER
+      "mpiexec -n" CACHE STRING
+      "A command to run distributed memory testings")
+if( "${CTEST_MPI_LAUNCHER}" STREQUAL "" )
+    MESSAGE(WARNING "MPI tests will most likely not work: 'CTEST_MPI_LAUNCHER' is not set")
+endif()
+string(REPLACE " " ";" MPI_TEST_CMD_LIST "${CTEST_MPI_LAUNCHER}")
+set(CTEST_GPU_LAUNCHER_OPTIONS
+      "" CACHE STRING
+      "Options to pass to the CTEST_MPI_LAUNCHER to select GPU nodes")
 
 # DPLASMA specific option.
 option(DPLASMA_WITH_RECURSIVE
@@ -27,9 +57,24 @@ mark_as_advanced(DPLASMA_DEBUG_QR_PIVGEN)
 option(DPLASMA_DEBUG_QR_PIVGEN
   "Enable the QR pivgen testings" OFF)
 
-if( BUILD_DPLASMA AND NOT BUILD_PARSEC )
-  message(FATAL_ERROR "Building the DPLASMA layer requires the PaRSEC framework")
-endif( BUILD_DPLASMA AND NOT BUILD_PARSEC )
+#
+# Find or Build PaRSEC package
+#
+list(APPEND CMAKE_MODULE_PATH /home/dgenet/pr/split/install/parsec-alone/lib/cmake)
+
+#list(APPEND PKG_CONFIG_PATH /home/dgenet/pr/split/install/parsec-alone/lib/pkgconfig)
+message(STATUS "XXX1/ ${CMAKE_MODULE_PATH}")
+
+find_package(PaRSEC)
+
+if (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
+    # continue and hope for the best
+message(STATUS "I found that ${PARSEC_ptgpp_EXE} and that ${PARSEC_LIBRARIES}")
+else (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
+    message(STATUS "I didnt find PARSEC, I will have to build it")
+    # we have to build whatever is in parsec/
+    include(parsec/CMakeLists.txt)
+endif (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
 
 #
 # Find packages to decide if we compile DPLASMA support or not
@@ -109,3 +154,23 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/dplasma.pc" @ONLY)
 install(FILES "${PROJECT_INCLUDE_DIR}/dplasma.pc"
         DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib/pkgconfig)
+
+# Prepare the contrib/build_with_parsec directory
+configure_file (
+  contrib/build_with_parsec/Makefile.in
+  ${CMAKE_CURRENT_BINARY_DIR}/contrib/build_with_parsec/Makefile @ONLY)
+
+file(GLOB_RECURSE pattern_files RELATIVE
+     "${CMAKE_CURRENT_SOURCE_DIR}/" "contrib/build_with_parsec/*.[c|h]"
+                                    "contrib/build_with_parsec/*.jdf")
+foreach( pattern_file ${pattern_files} )
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
+    COMMAND cmake -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
+            "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
+  )
+  list( APPEND pattern_files_dest "${pattern_file}" )
+endforeach( pattern_file )
+add_custom_target(build_with_parsec ALL DEPENDS ${pattern_files_dest})
