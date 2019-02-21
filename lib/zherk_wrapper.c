@@ -7,9 +7,9 @@
  *
  */
 
-#include <core_blas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
+#include <core_blas.h>
 
 #include "zherk_LN.h"
 #include "zherk_LC.h"

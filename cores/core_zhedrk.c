@@ -14,8 +14,8 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <lapacke.h>
-#include "dplasma_cores.h"
+#include "parsec/parsec_config.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
@@ -29,28 +29,22 @@
 #include <limits.h>
 #endif
 
-#include <cblas.h>
-#include <core_blas.h>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                double alpha, PLASMA_Complex64_t *A, int LDA,
-                double beta,  PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D, int incD);
+                double alpha, parsec_complex64_t *A, int LDA,
+                double beta,  parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D, int incD);
 
 int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, PLASMA_Complex64_t *A, int LDA,
-                double beta,  PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D,    int incD,
-                PLASMA_Complex64_t *WORK, int LWORK);
+                double alpha, parsec_complex64_t *A, int LDA,
+                double beta,  parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D,    int incD,
+                parsec_complex64_t *WORK, int LWORK);
 
 /***************************************************************************//**
  *
- * @ingroup CORE_PLASMA_Complex64_t
+ * @ingroup CORE_parsec_complex64_t
  *
  * CORE_zhedrk performs one of the matrix-matrix operations
  *
@@ -94,7 +88,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  *         Unchanged on exit.
  *
  * @param[in] A
- *         PLASMA_Complex64_t array of DIMENSION ( LDA, ka ), where ka is
+ *         parsec_complex64_t array of DIMENSION ( LDA, ka ), where ka is
  *         k  when  TRANS = PlasmaTrans,  and is  n  otherwise.
  *         Before entry with  TRANS = PlasmaTrans,  the  leading  n by k
  *         part of the array  A  must contain the matrix  A,  otherwise
@@ -116,7 +110,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  *       Unchanged on exit.
  *
  * @param[in] C
- *       PLASMA_Complex64_t array of DIMENSION ( LDC, n ).
+ *       parsec_complex64_t array of DIMENSION ( LDC, n ).
  *
  *       DB_TEMP FOR NOW, BOTH UPPER AND LOWER PARTS OF C MUST BE STORED IN C.
  *
@@ -149,20 +143,15 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
-#pragma weak CORE_zhedr2 = PCORE_zhedr2
-#define CORE_zhedr2 PCORE_zhedr2
-#endif
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                double alpha, PLASMA_Complex64_t *A, int LDA,
-                double beta,  PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D, int incD)
+                double alpha, parsec_complex64_t *A, int LDA,
+                double beta,  parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D, int incD)
 {
     int i, j, k, Am;
-    PLASMA_Complex64_t tmp;
-    PLASMA_Complex64_t *Aik, *Dkk, *Akj, *Cij;
+    parsec_complex64_t tmp;
+    parsec_complex64_t *Aik, *Dkk, *Akj, *Cij;
 
     Am = (trans == PlasmaNoTrans ) ? N : K;
 
@@ -183,11 +172,11 @@ int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
         coreblas_error(4, "Illegal value of K");
         return -4;
     }
-    if ((LDA < max(1,Am)) && (Am > 0)) {
+    if ((LDA < coreblas_imax(1,Am)) && (Am > 0)) {
         coreblas_error(7, "Illegal value of LDA");
         return -7;
     }
-    if ((LDC < max(1,N)) && (N > 0)) {
+    if ((LDC < coreblas_imax(1,N)) && (N > 0)) {
         coreblas_error(10, "Illegal value of LDC");
         return -10;
     }
@@ -295,17 +284,17 @@ int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
 #endif
 int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, PLASMA_Complex64_t *A, int LDA,
-                double beta,  PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D,    int incD,
-                PLASMA_Complex64_t *WORK, int LWORK)
+                double alpha, parsec_complex64_t *A, int LDA,
+                double beta,  parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D,    int incD,
+                parsec_complex64_t *WORK, int LWORK)
 {
     int i, j, ii, sb, Am;
-    PLASMA_Complex64_t *wD, *AD, *wDC;
-    PLASMA_Complex64_t *X, *Y;
-    PLASMA_Complex64_t zzero  = (PLASMA_Complex64_t)0.;
-    PLASMA_Complex64_t zalpha = alpha;
-    PLASMA_Complex64_t zbeta  = beta;
+    parsec_complex64_t *wD, *AD, *wDC;
+    parsec_complex64_t *X, *Y;
+    parsec_complex64_t zzero  = (parsec_complex64_t)0.;
+    parsec_complex64_t zalpha = alpha;
+    parsec_complex64_t zbeta  = beta;
 
     Am = (trans == PlasmaNoTrans ) ? N : K;
 
@@ -330,11 +319,11 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         coreblas_error(5, "Illegal value of ib");
         return -5;
     }
-    if ((LDA < max(1,Am)) && (Am > 0)) {
+    if ((LDA < coreblas_imax(1,Am)) && (Am > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDC < max(1,N)) && (N > 0)) {
+    if ((LDC < coreblas_imax(1,N)) && (N > 0)) {
         coreblas_error(11, "Illegal value of LDC");
         return -11;
     }
@@ -386,7 +375,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = min(N-ii, ib);
+                sb = coreblas_imin(N-ii, ib);
 
                 /* W = alpha * (A * D) * A' */
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasConjTrans,
@@ -422,7 +411,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         else {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = min(N-ii, ib);
+                sb = coreblas_imin(N-ii, ib);
 
                 /* W = alpha * A' * (D * A) */
                 cblas_zgemm(CblasColMajor, CblasConjTrans, CblasTrans,
@@ -462,7 +451,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = min(N-ii, ib);
+                sb = coreblas_imin(N-ii, ib);
 
                 /* W = alpha * (A * D) * A' */
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasConjTrans,
@@ -476,7 +465,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                     X = wDC;
                     Y = C + LDC*ii + ii;
                     for (j=0; j<sb; j++) {
-                        int mm = min( j+1, sb );
+                        int mm = coreblas_imin( j+1, sb );
                         for(i=0; i<mm; i++, Y++, X++) {
                             *Y = zbeta * (*Y) + (*X);
                         }
@@ -499,7 +488,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         else {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = min(N-ii, ib);
+                sb = coreblas_imin(N-ii, ib);
 
                 /* W = alpha * A' * (D * A) */
                 cblas_zgemm(CblasColMajor, CblasConjTrans, CblasTrans,
@@ -513,7 +502,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                     X = wDC;
                     Y = C + LDC*ii + ii;
                     for (j=0; j<sb; j++) {
-                        int mm = min( j+1, sb );
+                        int mm = coreblas_imin( j+1, sb );
                         for(i=0; i<mm; i++, Y++, X++) {
                             *Y = zbeta * (*Y) + (*X);
                         }

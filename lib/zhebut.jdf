@@ -9,11 +9,11 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
 #include "parsec/private_mempool.h"
-#include "dplasma/lib/butterfly_map.h"
+#include "lib/butterfly_map.h"
 
 /*
 #define DEBUG_BUTTERFLY

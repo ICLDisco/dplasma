@@ -1,8 +1,8 @@
 #ifndef _DPLASMAJDF_H_
 #define _DPLASMAJDF_H_
 
-#include <core_blas.h>
 #include "dplasma.h"
+#include <core_blas.h>
 #include "parsec/private_mempool.h"
 
 /* Check for LU recursive kernel version */

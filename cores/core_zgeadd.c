@@ -13,9 +13,9 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <cblas.h>
+#include "parsec/parsec_config.h"
 #include "dplasma.h"
-#include "dplasma_cores.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 /**
@@ -93,13 +93,13 @@ int dplasma_core_zgeadd(PLASMA_enum trans, int M, int N,
         dplasma_error("dplasma_core_zgeadd", "Illegal value of N");
         return -3;
     }
-    if ( ((trans == PlasmaNoTrans) && (LDA < dplasma_imax(1,M)) && (M > 0)) ||
-         ((trans != PlasmaNoTrans) && (LDA < dplasma_imax(1,N)) && (N > 0)) )
+    if ( ((trans == PlasmaNoTrans) && (LDA < coreblas_imax(1,M)) && (M > 0)) ||
+         ((trans != PlasmaNoTrans) && (LDA < coreblas_imax(1,N)) && (N > 0)) )
     {
         dplasma_error("dplasma_core_zgeadd", "Illegal value of LDA");
         return -6;
     }
-    if ( (LDB < dplasma_imax(1,M)) && (M > 0) ) {
+    if ( (LDB < coreblas_imax(1,M)) && (M > 0) ) {
         dplasma_error("dplasma_core_zgeadd", "Illegal value of LDB");
         return -8;
     }

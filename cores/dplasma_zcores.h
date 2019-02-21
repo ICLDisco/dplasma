@@ -13,6 +13,8 @@
 #include "parsec/data_dist/matrix/matrix.h"
 #include <core_blas.h>
 
+typedef struct CORE_zgetrf_data_s CORE_zgetrf_data_t;
+
 int blgchase_ztrdv2(int NT, int N, int NB,
                    parsec_complex64_t *A1, parsec_complex64_t *A2,
                    parsec_complex64_t *V1, parsec_complex64_t *TAU1,
@@ -20,7 +22,7 @@ int blgchase_ztrdv2(int NT, int N, int NB,
                    int sweep, int id, int blktile);
 
 int CORE_zamax(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
-               const PLASMA_Complex64_t *A, int lda, double *work);
+               const parsec_complex64_t *A, int lda, double *work);
 int CORE_zamax_tile( PLASMA_enum storev, PLASMA_enum uplo, const PLASMA_desc descA, double *work);
 
 int dplasma_core_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,

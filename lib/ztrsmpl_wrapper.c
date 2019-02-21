@@ -8,10 +8,10 @@
  */
 
 
-#include <core_blas.h>
 #include "dplasma.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
 #include "dplasmatypes.h"
+#include <core_blas.h>
 
 #include "ztrsmpl.h"
 #include "ztrsmpl_sd.h"

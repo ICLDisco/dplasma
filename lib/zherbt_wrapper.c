@@ -8,10 +8,11 @@
  */
 
 
-#include <core_blas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
+#include <core_blas.h>
+
 #include "parsec/private_mempool.h"
 
 #include "zherbt_L.h"

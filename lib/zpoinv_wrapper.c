@@ -10,7 +10,7 @@
  */
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
 
 #include "zpoinv_U.h"
 #include "zpoinv_L.h"

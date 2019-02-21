@@ -10,8 +10,7 @@
 #define _DPLASMA_CORES_H_
 
 #include <math.h>
-#include <cblas.h>
-#include <lapacke.h>
+#include "parsec/parsec_config.h"
 #include "dplasma_complex.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include <core_blas.h>

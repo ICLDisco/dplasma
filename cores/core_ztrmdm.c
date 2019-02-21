@@ -13,8 +13,8 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <lapacke.h>
-#include "dplasma_cores.h"
+#include "parsec/parsec_config.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
@@ -28,17 +28,11 @@
 #include <limits.h>
 #endif
 
-#include <cblas.h>
-#include <core_blas.h>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
-int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
+int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA);
 
 /***************************************************************************//**
  *
- * @ingroup CORE_PLASMA_Complex64_t
+ * @ingroup CORE_parsec_complex64_t
  *
  * CORE_ztrmdm scales the strictly upper or strictly lower triangular part of a
  * square matrix by the inverse of a diagonal matrix, ie performs either
@@ -65,7 +59,7 @@ int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
  *         The number of rows and columns of A.  N >= 0.
  *
  * @param[in,out] A
- *         PLASMA_Complex64_t array, dimension (LDA,N)
+ *         parsec_complex64_t array, dimension (LDA,N)
  *
  *         On entry, the triangular matrix A. If uplo = 'U', the leading
  *         N-by-N upper triangular part of A contains the upper
@@ -89,15 +83,11 @@ int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
-#pragma weak CORE_ztrmdm = PCORE_ztrmdm
-#define CORE_ztrmdm PCORE_ztrmdm
-#endif
-int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA)
+int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA)
 {
-    static PLASMA_Complex64_t zone = 1.0;
+    static parsec_complex64_t zone = 1.0;
 
-    PLASMA_Complex64_t alpha;
+    parsec_complex64_t alpha;
     int j;
 
     /* Check input arguments */
@@ -109,13 +99,13 @@ int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA)
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if (LDA < max(1, N)) {
+    if (LDA < coreblas_imax(1, N)) {
         coreblas_error(1, "Illegal value of LDA");
         return -4;
     }
 
     /* Quick return */
-    if (max(N, 0) == 0)
+    if (coreblas_imax(N, 0) == 0)
         return PLASMA_SUCCESS;
 
     /**/

@@ -10,7 +10,7 @@
 #include "common.h"
 #include "flops.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#include "dplasma/cores/dplasma_zcores.h"
+#include "cores/dplasma_zcores.h"
 
 static int check_tr_solution( parsec_context_t *parsec, int loud,
                               PLASMA_enum uplo, PLASMA_enum trans,

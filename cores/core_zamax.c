@@ -15,9 +15,9 @@
  * @precisions normal z -> c d s
  */
 #include <math.h>
-#include <lapacke.h>
-#include <cblas.h>
-#include <core_blas.h>
+#include "parsec/parsec_config.h"
+#include "dplasma.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #ifdef BLKLDD
@@ -26,11 +26,11 @@
 #endif
 
 #define BLKADDR(A, type, m, n)  (type *)plasma_getaddr(A, m, n)
-#define A(m) BLKADDR(descA, PLASMA_Complex64_t, m, 0)
+#define A(m) BLKADDR(descA, parsec_complex64_t, m, 0)
 
 /***************************************************************************//**
  *
- * @ingroup CORE_PLASMA_Complex64_t
+ * @ingroup CORE_parsec_complex64_t
  *
  **/
 #if defined(PLASMA_PARSEC_HAVE_WEAK)
@@ -38,9 +38,9 @@
 #define CORE_dzamax PCORE_dzamax
 #endif
 int CORE_zamax(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
-               const PLASMA_Complex64_t *A, int lda, double *work)
+               const parsec_complex64_t *A, int lda, double *work)
 {
-    const PLASMA_Complex64_t *tmpA;
+    const parsec_complex64_t *tmpA;
     double *tmpW, max, abs;
     int i,j;
 
@@ -113,7 +113,7 @@ int CORE_zamax_tile( PLASMA_enum storev,
                      const PLASMA_desc descA,
                      double *work)
 {
-    PLASMA_Complex64_t *A;
+    parsec_complex64_t *A;
     int m, lda, tempmm;
 
     /* Check input arguments */

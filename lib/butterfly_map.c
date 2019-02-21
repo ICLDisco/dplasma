@@ -11,7 +11,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "dplasma/lib/butterfly_map.h"
+#include "lib/butterfly_map.h"
 #include "parsec/data_internal.h"
 
 seg_info_t parsec_rbt_calculate_constants(const parsec_tiled_matrix_dc_t *A, int L, int ib, int jb){

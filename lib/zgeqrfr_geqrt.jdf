@@ -10,7 +10,7 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "dplasmatypes.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
@@ -123,7 +123,7 @@ extern "C" %{
  * volume, but improves load balancing.
  * A good SMB value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
- * descriptor.
+ * cores/descriptor.
  * For tiling, MB=200, and IB=32 usually give good results.
  *
  * This variant is good for square large problems.

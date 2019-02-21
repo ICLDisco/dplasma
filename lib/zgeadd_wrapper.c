@@ -10,7 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/cores/dplasma_zcores.h"
+#include "cores/dplasma_zcores.h"
 
 #include "map2.h"
 

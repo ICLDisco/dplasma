@@ -13,8 +13,8 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <lapacke.h>
-#include "dplasma_cores.h"
+#include "parsec/parsec_config.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
@@ -28,24 +28,23 @@
 #include <limits.h>
 #endif
 
-#include <cblas.h>
 #include <core_blas.h>
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 extern void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         PLASMA_Complex64_t *A, int LDA,
-                         PLASMA_Complex64_t *WORK, int LDWORK,
+                         parsec_complex64_t *A, int LDA,
+                         parsec_complex64_t *WORK, int LDWORK,
                          int *INFO);
 
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        PLASMA_Complex64_t *A, int LDA,
-        PLASMA_Complex64_t *WORK, int LWORK, int *INFO);
+        parsec_complex64_t *A, int LDA,
+        parsec_complex64_t *WORK, int LWORK, int *INFO);
 
 /***************************************************************************//**
  *
- * @ingroup CORE_PLASMA_Complex64_t
+ * @ingroup CORE_parsec_complex64_t
  *
  * CORE_zhetrf2_nopiv: ZHETRF_NOPIV followed by L*D
  *
@@ -61,12 +60,12 @@ void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
 #define CORE_zhetrf2_nopiv PCORE_zhetrf2_nopiv
 #endif
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        PLASMA_Complex64_t *A, int LDA,
-        PLASMA_Complex64_t *WORK, int LWORK, int *INFO)
+        parsec_complex64_t *A, int LDA,
+        parsec_complex64_t *WORK, int LWORK, int *INFO)
 {
 
     int j;
-    PLASMA_Complex64_t alpha;
+    parsec_complex64_t alpha;
 
     /* Factorize A as L*D*L' using the lower/upper triangle of A */
     CORE_zhetrf_nopiv(uplo, N, ib, A, LDA, WORK, LWORK, INFO);

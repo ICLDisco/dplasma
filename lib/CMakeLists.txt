@@ -6,6 +6,14 @@ set (DPLASMA_VERSION_PATCH 0)
 include(PrecisionGenerator)
 include(RulesJDF)
 
+if(NOT TARGET dplasma)
+  if(BUILD_SHARED_LIBS)
+    add_library(dplasma SHARED)
+  else(BUILD_SHARED_LIBS)
+    add_library(dplasma STATIC)
+  endif(BUILD_SHARED_LIBS)
+endif(NOT TARGET dplasma)
+
 # reset variables
 set(generated_files "")
 set(generated_jdf "")
@@ -22,8 +30,6 @@ set(EXTRA_SOURCES
 if( NOT PARSEC_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
-
-
 
 ### Generate .c files from .jdf for all required precisions
 set(JDF
@@ -96,16 +102,23 @@ set(JDF
   ztrmdm.jdf
 )
 precisions_rules_py(generated_jdf
-                    "${JDF}"
-                    PRECISIONS "${DPLASMA_PRECISIONS}")
+  "${JDF}"
+  PRECISIONS "${DPLASMA_PRECISIONS}")
 
-include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}")
-if( NOT ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
-  include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
+target_include_directories(dplasma BEFORE
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  ${CMAKE_BINARY_DIR}/include
+  ${CMAKE_SOURCE_DIR}/include)
+
+#include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}")
+#if( NOT ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
+#  include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
 #  foreach(src_file ${EXTRA_SOURCES})
 #    set_source_files_properties(${src_file} PROPERTIES COMPILE_FLAGS "-I.")
 #  endforeach()
-endif( NOT ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
+#endif( NOT ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list(APPEND generated_jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map.jdf
@@ -203,28 +216,34 @@ precisions_rules_py(generated_wrappers
                     PRECISIONS "${DPLASMA_PRECISIONS}")
 
 ### Generate the lib
-link_directories(${COREBLAS_LIBRARY_DIRS})
-add_library(dplasma
-            ${generated_files}
-            ${generated_wrappers}
-            ${EXTRA_SOURCES})
-add_dependencies(dplasma
-         dplasma_includes
-         dplasma_cores_includes )
-if(BUILD_SHARED_LIBS)
-  set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE True)
-endif(BUILD_SHARED_LIBS)
-if (MPI_C_FOUND)
-  set_target_properties(dplasma PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-endif (MPI_C_FOUND)
-target_link_libraries(dplasma
-                      PRIVATE dplasma_cores
-                      PUBLIC ${COREBLAS_LIBRARIES} parsec ${EXTRA_LIBS}
-                      $<$<BOOL:${CUDA_FOUND}>:${CUDA_cublas_LIBRARY}>)
+target_sources(dplasma PRIVATE
+  ${generated_files}
+  ${generated_wrappers}
+  ${EXTRA_SOURCES})
 
-set_target_properties(dplasma PROPERTIES LINK_FLAGS "${COREBLAS_LDFLAGS}")
+target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DPLASMA_HAVE_RECURSIVE>)
+
+if(NOT BUILD_SHARED_LIBS)
+  set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE False)
+endif(NOT BUILD_SHARED_LIBS)
+
+message(STATUS "CUDA_LIBS=${CUDA_LIBRARIES}")
+message(STATUS "CUDA_CUBLAS_LIBS=${CUDA_CUBLAS_LIBRARIES}")
+target_link_libraries(dplasma
+  PRIVATE
+  dplasma_cores
+  PUBLIC
+  PaRSEC::parsec
+  $<$<BOOL:${CUDA_FOUND}>:${CUDA_CUBLAS_LIBRARIES}>
+  $<$<BOOL:${CUDA_FOUND}>:${CUDA_LIBRARIES}>
+  $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>
+  INTERFACE
+  $<$<BOOL:${DPLASMA_GPU_WITH_MAGMA}>:MAGMA::magma>)
+
+
+
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
-                                         SOVERSION ${PARSEC_VERSION_MAJOR})
+                                         SOVERSION ${DPLASMA_VERSION_MAJOR})
 
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib

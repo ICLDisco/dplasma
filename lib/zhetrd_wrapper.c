@@ -6,16 +6,16 @@
  * @precisions normal z -> s d c
  *
  */
-#include <core_blas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
+#include <core_blas.h>
 
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/private_mempool.h"
 #include "parsec/data_dist/matrix/diag_band_to_rect.h"
-#include "dplasma/lib/zhetrd_h2b_L.h"
-#include "dplasma/lib/zhetrd_b2s.h"
+#include "zhetrd_h2b_L.h"
+#include "zhetrd_b2s.h"
 
 
 /* SUBROUTINE ZHETRD( UPLO, N, A, LDA, D, E, TAU, WORK, LWORK, INFO )

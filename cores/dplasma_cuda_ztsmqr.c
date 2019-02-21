@@ -13,10 +13,9 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <cblas.h>
 #include <cublas.h>
 #include "dplasma.h"
-#include "dplasma_cores.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #define max( _a_, _b_ ) (((_a_) < (_b_)) ? (_b_) : (_a_))

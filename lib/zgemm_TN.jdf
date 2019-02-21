@@ -8,8 +8,8 @@ extern "C" %{
  * $COPYRIGHT
  *
  */
-#include "dplasma/lib/dplasmajdf.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmajdf.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include <math.h>

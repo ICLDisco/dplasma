@@ -9,15 +9,14 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <core_blas.h>
-#include <cblas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
+#include <core_blas.h>
 #include "parsec/private_mempool.h"
 
-#include "dplasma/lib/zhetrf.h"
-#include "dplasma/lib/ztrmdm.h"
+#include "zhetrf.h"
+#include "ztrmdm.h"
 
 /*
  * dplasma_zhetrf_New()

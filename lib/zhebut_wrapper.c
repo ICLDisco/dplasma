@@ -7,11 +7,11 @@
  *
  */
 
-#include <core_blas.h>
 #include "dplasma.h"
-#include "parsec/data_dist/matrix/matrix.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
+#include <core_blas.h>
+#include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/private_mempool.h"
 
 #include <math.h>
@@ -19,10 +19,10 @@
 #include <cblas.h>
 #include <string.h>
 
-#include "dplasma/lib/butterfly_map.h"
-#include "dplasma/lib/zhebut.h"
-#include "dplasma/lib/zgebut.h"
-#include "dplasma/lib/zgebmm.h"
+#include "lib/butterfly_map.h"
+#include "zhebut.h"
+#include "zgebut.h"
+#include "zgebmm.h"
 #include <lapacke.h>
 
 #if (PARSEC_zhebut_ARENA_INDEX_MIN != 0) || (PARSEC_zgebut_ARENA_INDEX_MIN != 0) || (PARSEC_zgebmm_ARENA_INDEX_MIN != 0)

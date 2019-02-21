@@ -8,9 +8,10 @@
  */
 #include <math.h>
 #include <stdlib.h>
-#include <core_blas.h>
-#include <cblas.h>
+#include "parsec/parsec_config.h"
 #include "dplasma.h"
+#include "cores/dplasma_cores.h"
+#include "dplasma_zcores.h"
 
 /*
 #define DEBUG_BUTTERFLY
@@ -18,40 +19,40 @@
 
 /* Forward declaration of kernels for the butterfly transformation */
 void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
 
 void BFT_zQBL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
 void BFT_zQTR_trans( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans );
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans );
 void BFT_zQTR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans);
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans);
 void BFT_zQBR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal );
 
 void RBMM_zTOP( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
-          PLASMA_Complex64_t *top, PLASMA_Complex64_t *btm,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_but_vec);
+          parsec_complex64_t *top, parsec_complex64_t *btm,
+          parsec_complex64_t *C, parsec_complex64_t *U_but_vec);
 void RBMM_zBTM( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
-          PLASMA_Complex64_t *top, PLASMA_Complex64_t *btm,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_but_vec);
+          parsec_complex64_t *top, parsec_complex64_t *btm,
+          parsec_complex64_t *C, parsec_complex64_t *U_but_vec);
 
 /* Bodies of kernels for the butterfly transformation */
 
 void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
 {
     int i, j;
 
@@ -67,8 +68,8 @@ void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
         for (j=0; j<nb; j++) {
             int start = is_diagonal ? j : 0;
             for (i=start; i<mb; i++) {
-                PLASMA_Complex64_t ri = U_before[i_seg+i];
-                PLASMA_Complex64_t rj = U_after[j_seg+j];
+                parsec_complex64_t ri = U_before[i_seg+i];
+                parsec_complex64_t rj = U_after[j_seg+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("HE A[%d][%d] = U_before[%d]*((tl[%d]+bl[%d]) + (tr[%d]+br[%d])) * U_after[%d]\n", i_seg+i, j_seg+j, i_seg+i, j*lda+i, j*lda+i, i*lda+j, j*lda+i, j_seg+j);
 #endif
@@ -82,8 +83,8 @@ void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
         for (j=0; j<nb; j++) {
             int start = is_diagonal ? j : 0;
             for (i=start; i<mb; i++) {
-                PLASMA_Complex64_t ri = U_before[i_seg+i];
-                PLASMA_Complex64_t rj = U_after[j_seg+j];
+                parsec_complex64_t ri = U_before[i_seg+i];
+                parsec_complex64_t rj = U_after[j_seg+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("GE A[%d][%d] = U_before[%d]*((tl[%d]+bl[%d]) + (tr[%d]+br[%d])) * U_after[%d]\n", i_seg+i, j_seg+j, i_seg+i, j*lda+i, j*lda+i, j*lda+i, j*lda+i, j_seg+j);
 #endif
@@ -98,9 +99,9 @@ void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
 }
 
 void BFT_zQBL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
 {
     int i, j;
     int r_to_s = N/(1<<(lvl+1));
@@ -115,8 +116,8 @@ void BFT_zQBL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
     if( bl_is_tr_trans ){
         for (j=0; j<nb; j++) {
             for (i=0; i<mb; i++) {
-                PLASMA_Complex64_t si = U_before[i_seg+r_to_s+i];
-                PLASMA_Complex64_t rj = U_after[j_seg+j];
+                parsec_complex64_t si = U_before[i_seg+r_to_s+i];
+                parsec_complex64_t rj = U_after[j_seg+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("HE A[%d][%d] = U_before[%d]*((tl[%d]-bl[%d]) + (tr[%d]-br[%d])) * U_after[%d]\n", i_seg+i+r_to_s, j_seg+j, i_seg+r_to_s+i, j*lda+i, j*lda+i, i*lda+j, j*lda+i, j_seg+j);
 #endif
@@ -133,8 +134,8 @@ void BFT_zQBL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
     }else{
         for (j=0; j<nb; j++) {
             for (i=0; i<mb; i++) {
-                PLASMA_Complex64_t si = U_before[i_seg+r_to_s+i];
-                PLASMA_Complex64_t rj = U_after[j_seg+j];
+                parsec_complex64_t si = U_before[i_seg+r_to_s+i];
+                parsec_complex64_t rj = U_after[j_seg+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("GE A[%d][%d] = U_before[%d]*((tl[%d]-bl[%d]) + (tr[%d]-br[%d])) * U_after[%d]\n", i_seg+i+r_to_s, j_seg+j, i_seg+r_to_s+i, j*lda+i, j*lda+i, j*lda+i, j*lda+i, j_seg+j);
 #endif
@@ -150,9 +151,9 @@ void BFT_zQBL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
 
 /* This function writes into a transposed tile, so C is always transposed. */
 void BFT_zQTR_trans( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans )
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans )
 {
     int i,j;
     int r_to_s = N/(1<<(lvl+1));
@@ -162,8 +163,8 @@ void BFT_zQTR_trans( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int
     if( bl_is_tr_trans ){
         for (j=0; j<nb; j++) {
             for (i=0; i<mb; i++) {
-                PLASMA_Complex64_t ri = U_before[i_seg+i];
-                PLASMA_Complex64_t sj = U_after[j_seg+r_to_s+j];
+                parsec_complex64_t ri = U_before[i_seg+i];
+                parsec_complex64_t sj = U_after[j_seg+r_to_s+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("HE A[%d][%d] = U_before[%d]*((tl[%d]+bl[%d]) - (tr[%d]+br[%d])) * U_after[%d]\n", i_seg+j, j_seg+i+r_to_s, i_seg+i, j*lda+i, j*lda+i, i*lda+j, j*lda+i, j_seg+r_to_s+j);
 #endif
@@ -180,9 +181,9 @@ void BFT_zQTR_trans( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int
 }
 
 void BFT_zQTR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans )
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans )
 {
     int i, j;
     int r_to_s = N/(1<<(lvl+1));
@@ -192,8 +193,8 @@ void BFT_zQTR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
     if( bl_is_tr_trans ){
         for (j=0; j<nb; j++) {
             for (i=0; i<mb; i++) {
-                PLASMA_Complex64_t ri = U_before[i_seg+i];
-                PLASMA_Complex64_t sj = U_after[j_seg+r_to_s+j];
+                parsec_complex64_t ri = U_before[i_seg+i];
+                parsec_complex64_t sj = U_after[j_seg+r_to_s+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("HE A[%d][%d] = U_before[%d]*((tl[%d]+bl[%d]) - (tr[%d]+br[%d])) * U_after[%d]\n", i_seg+i, j_seg+j+r_to_s, i_seg+i, j*lda+i, j*lda+i, i*lda+j, j*lda+i, j_seg+r_to_s+j);
 #endif
@@ -206,8 +207,8 @@ void BFT_zQTR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
     }else{
         for (j=0; j<nb; j++) {
             for (i=0; i<mb; i++) {
-                PLASMA_Complex64_t ri = U_before[i_seg+i];
-                PLASMA_Complex64_t sj = U_after[j_seg+r_to_s+j];
+                parsec_complex64_t ri = U_before[i_seg+i];
+                parsec_complex64_t sj = U_after[j_seg+r_to_s+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("GE A[%d][%d] = U_before[%d]*((tl[%d]+bl[%d]) - (tr[%d]+br[%d])) * U_after[%d]\n", i_seg+i, j_seg+j+r_to_s, i_seg+i, j*lda+i, j*lda+i, j*lda+i, j*lda+i, j_seg+r_to_s+j);
 #endif
@@ -222,9 +223,9 @@ void BFT_zQTR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
 }
 
 void BFT_zQBR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_before, PLASMA_Complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
+          parsec_complex64_t *tl, parsec_complex64_t *bl,
+          parsec_complex64_t *tr, parsec_complex64_t *br,
+          parsec_complex64_t *C, parsec_complex64_t *U_before, parsec_complex64_t *U_after, int bl_is_tr_trans, int is_diagonal )
 {
     int i, j;
     int r_to_s = N/(1<<(lvl+1));
@@ -240,8 +241,8 @@ void BFT_zQBR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
         for (j=0; j<nb; j++) {
             int start = is_diagonal ? j : 0;
             for (i=start; i<mb; i++) {
-                PLASMA_Complex64_t si = U_before[i_seg+r_to_s+i];
-                PLASMA_Complex64_t sj = U_after[j_seg+r_to_s+j];
+                parsec_complex64_t si = U_before[i_seg+r_to_s+i];
+                parsec_complex64_t sj = U_after[j_seg+r_to_s+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("HE A[%d][%d] = U_before[%d]*((tl[%d]-bl[%d]) - (tr[%d]-br[%d])) * U_after[%d]\n", i_seg+i+r_to_s, j_seg+j+r_to_s, i_seg+r_to_s+i, j*lda+i, j*lda+i, i*lda+j, j*lda+i, j_seg+r_to_s+j);
 #endif
@@ -255,8 +256,8 @@ void BFT_zQBR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
         for (j=0; j<nb; j++) {
             int start = is_diagonal ? j : 0;
             for (i=start; i<mb; i++) {
-                PLASMA_Complex64_t si = U_before[i_seg+r_to_s+i];
-                PLASMA_Complex64_t sj = U_after[j_seg+r_to_s+j];
+                parsec_complex64_t si = U_before[i_seg+r_to_s+i];
+                parsec_complex64_t sj = U_after[j_seg+r_to_s+j];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("GE A[%d][%d] = U_before[%d]*((tl[%d]-bl[%d]) - (tr[%d]-br[%d])) * U_after[%d]\n", i_seg+i+r_to_s, j_seg+j+r_to_s, i_seg+r_to_s+i, j*lda+i, j*lda+i, j*lda+i, j*lda+i, j_seg+r_to_s+j);
 #endif
@@ -273,8 +274,8 @@ void BFT_zQBR( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,
 
 
 void RBMM_zTOP( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
-          PLASMA_Complex64_t *top, PLASMA_Complex64_t *btm,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_but_vec)
+          parsec_complex64_t *top, parsec_complex64_t *btm,
+          parsec_complex64_t *C, parsec_complex64_t *U_but_vec)
 {
     int i, j;
     int r_to_s = N/(1<<(lvl+1));
@@ -283,7 +284,7 @@ void RBMM_zTOP( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
 #endif
     for (j=0; j<nb; j++) {
         for (i=0; i<mb; i++) {
-            PLASMA_Complex64_t r = U_but_vec[i_seg+i];
+            parsec_complex64_t r = U_but_vec[i_seg+i];
             if( PlasmaConjTrans == trans ){
 #if defined(DEBUG_BUTTERFLY)
                 printf ("C[%d] = U_but_vec[%d]*(top[%d]+btm[%d])\n", j*lda+i, i_seg+i, j*lda+i, j*lda+i);
@@ -293,7 +294,7 @@ void RBMM_zTOP( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
                 printf ("%lf %lf %lf %lf\n",creal(C[j*lda+i]), creal(r), creal(top[j*lda+i]), creal(btm[j*lda+i]));
 #endif
             }else{
-                PLASMA_Complex64_t s = U_but_vec[i_seg+r_to_s+i];
+                parsec_complex64_t s = U_but_vec[i_seg+r_to_s+i];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("C[%d] = U_but_vec[%d]*top[%d] + U_but_vec[%d]*btm[%d]\n", j*lda+i, i_seg+i, j*lda+i, i_seg+r_to_s+i, j*lda+i);
 #endif
@@ -308,8 +309,8 @@ void RBMM_zTOP( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
 }
 
 void RBMM_zBTM( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
-          PLASMA_Complex64_t *top, PLASMA_Complex64_t *btm,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *U_but_vec)
+          parsec_complex64_t *top, parsec_complex64_t *btm,
+          parsec_complex64_t *C, parsec_complex64_t *U_but_vec)
 {
     int i, j;
     int r_to_s = N/(1<<(lvl+1));
@@ -318,7 +319,7 @@ void RBMM_zBTM( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
 #endif
     for (j=0; j<nb; j++) {
         for (i=0; i<mb; i++) {
-            PLASMA_Complex64_t s = U_but_vec[i_seg+r_to_s+i];
+            parsec_complex64_t s = U_but_vec[i_seg+r_to_s+i];
             if( PlasmaConjTrans == trans ){
 #if defined(DEBUG_BUTTERFLY)
                 printf ("C[%d] = U_but_vec[%d]*(top[%d]-btm[%d])\n", j*lda+i, i_seg+r_to_s+i, j*lda+i, j*lda+i);
@@ -328,7 +329,7 @@ void RBMM_zBTM( int mb, int nb, int lda, int i_seg, int lvl, int N, int trans,
                 printf ("%lf %lf %lf %lf\n",creal(C[j*lda+i]), creal(s), creal(top[j*lda+i]), creal(btm[j*lda+i]));
 #endif
             }else{
-                PLASMA_Complex64_t r = U_but_vec[i_seg+i];
+                parsec_complex64_t r = U_but_vec[i_seg+i];
 #if defined(DEBUG_BUTTERFLY)
                 printf ("C[%d] = U_but_vec[%d]*top[%d] - U_but_vec[%d]*btm[%d]\n", j*lda+i, i_seg+i, j*lda+i, i_seg+r_to_s+i, j*lda+i);
 #endif

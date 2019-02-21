@@ -11,7 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"

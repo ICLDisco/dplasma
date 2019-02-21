@@ -10,7 +10,7 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
 #define GETPRIO_PANEL( __m, __n )      0

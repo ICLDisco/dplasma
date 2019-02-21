@@ -11,7 +11,7 @@
 
 #include "dplasma.h"
 #include "parsec/vpmap.h"
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "dplasmatypes.h"
 
 #include "zgetrf.h"

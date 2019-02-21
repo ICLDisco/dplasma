@@ -12,11 +12,11 @@ extern "C" %{
 #include <pthread.h>
 #include <math.h>
 #include <lapacke.h>
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/private_mempool.h"
-#include "dplasma/cores/dplasma_zcores.h"
+#include "cores/dplasma_zcores.h"
 #include "parsec/vpmap.h"
 
 static pthread_mutex_t mumps_mutex = PTHREAD_MUTEX_INITIALIZER;

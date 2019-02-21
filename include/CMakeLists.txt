@@ -17,12 +17,18 @@ foreach(generated_header ${generated_headers})
 endforeach()
 
 configure_file (
-   "${CMAKE_CURRENT_SOURCE_DIR}/dplasma.h.in"
-   "${CMAKE_CURRENT_BINARY_DIR}/dplasma.h" @ONLY)
+  "${CMAKE_CURRENT_SOURCE_DIR}/dplasma.h.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/dplasma.h" @ONLY)
 
-add_custom_target(dplasma_includes ALL
-                  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h
-                  SOURCES ${generated_headers} )
+if(NOT TARGET dplasma_includes)
+   add_library(dplasma_includes INTERFACE)
+endif(NOT TARGET dplasma_includes)
+ 
+target_include_directories(dplasma_includes INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+
+#add_custom_target(dplasma_includes ALL
+#                  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h
+#                  SOURCES ${generated_headers} )
 
 ### install the dplasma headers
 install(FILES

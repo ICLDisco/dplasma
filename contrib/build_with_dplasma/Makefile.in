@@ -1,0 +1,37 @@
+DPLASMADIR=@CMAKE_INSTALL_PREFIX@
+DPLASMA_PKGCONFIG=@CMAKE_INSTALL_PREFIX@/lib/pkgconfig
+PARSECDIR=@PARSEC_DIR@
+PARSEC_PKGCONFIGDIR=@PARSEC_DIR@/lib/pkgconfig
+
+export PKG_CONFIG_PATH+="${DPLASMA_PKGCONFIG}:${PARSEC_PKGCONFIG}"
+
+CC = gcc
+
+CFLAGS  = $(shell pkg-config --cflags dplasma)
+LDFLAGS = $(shell pkg-config --libs dplasma)
+
+PTGPP = ${PARSECDIR}/bin/parsec_ptgpp
+PTGPPFLAGS =
+
+TESTS = testing_dpotrf_dtd_untied
+
+all:${TESTS}
+
+%.c %.h: %.jdf
+	${PTGPP} -i $< -o `basename $@ .c` ${PTGPPFLAGS}
+
+%.o: %.c
+	${CC} -o $@ -c $< ${CFLAGS}
+
+common.o: common.c
+	${CC} -o $@ -c $< ${CFLAGS}
+
+testing_dpotrf_dtd_untied.o: testing_dpotrf_dtd_untied.c
+	${CC} -o $@ -c $< ${CFLAGS}
+
+testing_dpotrf_dtd_untied: testing_dpotrf_dtd_untied.o common.o
+	${CC} -o $@ $^ ${LDFLAGS}
+
+clean:
+	rm -f *.o ${TESTS} write_check.h
+

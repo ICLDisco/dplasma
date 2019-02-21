@@ -10,7 +10,7 @@
 #include "dplasma.h"
 #include "dplasmatypes.h"
 
-#include "map.h"
+#include "lib/map.h"
 
 /**
  *******************************************************************************

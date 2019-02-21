@@ -6,10 +6,9 @@
  * @precisions normal z -> z c d s
  *
  */
-
-#include <core_blas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
+#include <core_blas.h>
 
 #include "zsyrk_LN.h"
 #include "zsyrk_LT.h"

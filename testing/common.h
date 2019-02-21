@@ -18,12 +18,14 @@
 #include <math.h>
 #include <cblas.h>
 #include <lapacke.h>
-#include <core_blas.h>
 
 #include "parsec/profiling.h"
 #include "parsec/parsec_internal.h"
 #include "parsec/utils/debug.h"
 #include "dplasma.h"
+#include "dplasmatypes.h"
+
+#include <core_blas.h>
 /* timings */
 #include "common_timing.h"
 

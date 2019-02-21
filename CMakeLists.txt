@@ -11,6 +11,8 @@ set (DPLASMA_VERSION_PATCH 0)
 
 SET(DPLASMA_VERSION "${PARSEC_VERSION_MAJOR}.${PARSEC_VERSION_MINOR}")
 
+set(CMAKE_NO_SYSTEM_FROM_IMPORTED True)
+
 # CMake Policies Tuning
 if(POLICY CMP0074)
   # CMP0074: Starting with CMake 3.12, all FIND_<something> use <something>_ROOT in the search path
@@ -39,12 +41,14 @@ set(CTEST_GPU_LAUNCHER_OPTIONS
       "Options to pass to the CTEST_MPI_LAUNCHER to select GPU nodes")
 
 # DPLASMA specific option.
+option(SUPPORT_FORTRAN
+       "Enable support for Fortran bindings (default ON)" ON)
+if( SUPPORT_FORTRAN )
+  enable_language(Fortran OPTIONAL)
+endif( SUPPORT_FORTRAN )
+
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" OFF)
-if(DPLASMA_WITH_RECURSIVE)
-  # TODO: This will need to be added to the futur dplasma_config.h.in
-  add_definitions(-DPARSEC_HAVE_RECURSIVE)
-endif()
 
 mark_as_advanced( PARSEC_GPU_WITH_MAGMA )
 option(DPLASMA_GPU_WITH_MAGMA
@@ -60,21 +64,55 @@ option(DPLASMA_DEBUG_QR_PIVGEN
 #
 # Find or Build PaRSEC package
 #
-list(APPEND CMAKE_MODULE_PATH /home/dgenet/pr/split/install/parsec-alone/lib/cmake)
-
-#list(APPEND PKG_CONFIG_PATH /home/dgenet/pr/split/install/parsec-alone/lib/pkgconfig)
-message(STATUS "XXX1/ ${CMAKE_MODULE_PATH}")
+set(CMAKE_PREFIX_PATH /home/dgenet/project/install/parsec/split/lib/cmake)
 
 find_package(PaRSEC)
 
-if (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
-    # continue and hope for the best
-message(STATUS "I found that ${PARSEC_ptgpp_EXE} and that ${PARSEC_LIBRARIES}")
-else (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
-    message(STATUS "I didnt find PARSEC, I will have to build it")
-    # we have to build whatever is in parsec/
-    include(parsec/CMakeLists.txt)
-endif (PARSEC_ptgpp_EXE AND PARSEC_LIBRARIES)
+if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
+  # we have to build it
+  find_package(Git QUIET)
+#  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+#    # Update submodules as needed
+#    option(GIT_SUBMODULE "Check submodules during build" ON)
+#    if(GIT_SUBMODULE)
+#      message(STATUS "Submodule update")
+#      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#	RESULT_VARIABLE GIT_SUBMOD_RESULT)
+#      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+#	message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+#      endif()
+#    endif()
+#  endif()
+
+# TODO: submodule stuff from dplasma
+#if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/parsec/CMakeLists.txt")
+#  message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+#endif()
+
+#ExternalProject_Add(project_parsec
+#  URL ""
+#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/parsec
+#  CONFIGURE_COMMAND ""
+#  BUILD_COMMAND make
+#  INSTALL_COMMAND make install
+#  PREFIX=${CMAKE_INSTALL_PREFIX}/parsec
+#  )
+#ExternalProject_Get_Property(project_parsec parsec_install_dir)
+#add_library(parsec SHARED IMPORTED)
+#set_property(TARGET parsec PROPERTY IMPORTED_LOCATION ${parsec_install_dir}/lib/libparsec.so)
+#add_dependencies(parsec project_parsec)
+#include_directories(${parsec_install_dir}/include)
+#target_link_libraries(dplasma PUBLIC parsec)
+  
+endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
+
+include(cmake_modules/GetTargetProperties.cmake)
+#get_target_properties(dplasma_cores_obj)
+#get_target_properties(dplasma_cores)
+get_target_properties(PaRSEC::parsec)
+
+
 
 #
 # Find packages to decide if we compile DPLASMA support or not
@@ -83,10 +121,31 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 include(FortranCInterface)
 
-find_package(COREBLAS)
-if( PLASMA_SRC )
-   list(APPEND COREBLAS_INCLUDE_DIRS ${PLASMA_SRC})
-endif( PLASMA_SRC )
+set(BLA_STATIC OFF)
+
+set(BLA_VENDOR CACHE STRING "Possible valid values are: Intel10_64lp_seq, IBMESSL, Apple, or All, which will default to something like Goto or ATLAS")
+# Goto, ATLAS, PhiPACK, CXML, DXML, SunPerf, SCSL, SGIMATH, IBMESSL, Intel10_64lp_seq, ACML, ACML_MP, ACML_GPU, Apple, NAS, Generic
+set_property(CACHE BLA_VENDOR PROPERTY STRINGS Intel10_64lp_seq IBMESSL Apple Goto ATLAS)
+
+set(LAPACKE_FOUND FALSE)
+set(LAPACK_FOUND  FALSE)
+
+find_package(BLAS)
+if(NOT BLAS_FOUND)
+  message("-! DPLASMA requires a BLAS library")
+else()
+  message("-- BLAS libraries found: ${BLAS_LIBRARIES}")
+endif(NOT BLAS_FOUND)
+
+if (${BLA_VENDOR} STREQUAL "IBMESSL")
+  find_package(LAPACKE)
+  if(NOT LAPACKE_FOUND)
+    message("-! DPLASMA requires a LAPACK library")
+  else()
+    message("-- LAPACKE libraries found: ${LAPACKE_LIBRARIES}")
+    list(APPEND BLAS_LIBRARIES  ${LAPACKE_LIBRARIES})
+  endif(NOT LAPACKE_FOUND)
+endif (${BLA_VENDOR} STREQUAL "IBMESSL")
 
 if( DPLASMA_GPU_WITH_MAGMA )
   find_package(MAGMA)
@@ -94,15 +153,6 @@ if( DPLASMA_GPU_WITH_MAGMA )
   else( MAGMA_FOUND )
   endif( MAGMA_FOUND )
 endif( DPLASMA_GPU_WITH_MAGMA )
-
-include_directories(${COREBLAS_INCLUDE_DIRS})
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-if( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
-else( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
-  include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
-  include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/include)
-endif( ${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR} )
 
 if(NOT DPLASMA_PRECISIONS)
   set(DPLASMA_PRECISIONS "s;d;c;z" CACHE STRING "The precisions to compile in dplasma (accepts a colon separated list of s;d;c;z)" FORCE)
@@ -139,7 +189,7 @@ endif( PARSEC_OSX )
 set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
                            CACHE STRING "DPLASMA Installation Prefix")
 
-if(COREBLAS_FOUND)
+if(BLAS_FOUND)
   Add_Subdirectory(include)
   Add_Subdirectory(cores)
   Add_Subdirectory(lib)
@@ -147,22 +197,27 @@ if(COREBLAS_FOUND)
     Add_Subdirectory(testing)
   ENDIF( BUILD_TESTING )
   Add_Subdirectory(examples)
-endif(COREBLAS_FOUND)
+endif(BLAS_FOUND)
+
+if(PARSEC_HAVE_CUDA AND CUDA_FOUND)
+  # CUDA is pulled by PaRSEC
+  set(DPLASMA_HAVE_CUDA 1)
+endif(PARSEC_HAVE_CUDA AND CUDA_FOUND)
 
 configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/include/dplasma.pc.in"
-  "${PROJECT_INCLUDE_DIR}/dplasma.pc" @ONLY)
-install(FILES "${PROJECT_INCLUDE_DIR}/dplasma.pc"
+  "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc"
         DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib/pkgconfig)
 
-# Prepare the contrib/build_with_parsec directory
+# Prepare the contrib/build_with_dplasma directory
 configure_file (
-  contrib/build_with_parsec/Makefile.in
-  ${CMAKE_CURRENT_BINARY_DIR}/contrib/build_with_parsec/Makefile @ONLY)
+  contrib/build_with_dplasma/Makefile.in
+  ${CMAKE_CURRENT_BINARY_DIR}/contrib/build_with_dplasma/Makefile @ONLY)
 
 file(GLOB_RECURSE pattern_files RELATIVE
-     "${CMAKE_CURRENT_SOURCE_DIR}/" "contrib/build_with_parsec/*.[c|h]"
-                                    "contrib/build_with_parsec/*.jdf")
+     "${CMAKE_CURRENT_SOURCE_DIR}/" "contrib/build_with_dplasma/*.[c|h]"
+                                    "contrib/build_with_dplasma/*.jdf")
 foreach( pattern_file ${pattern_files} )
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
@@ -173,4 +228,4 @@ foreach( pattern_file ${pattern_files} )
   )
   list( APPEND pattern_files_dest "${pattern_file}" )
 endforeach( pattern_file )
-add_custom_target(build_with_parsec ALL DEPENDS ${pattern_files_dest})
+add_custom_target(build_with_dplasma ALL DEPENDS ${pattern_files_dest})

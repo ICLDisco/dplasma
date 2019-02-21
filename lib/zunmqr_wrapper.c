@@ -11,7 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
 #include "parsec/private_mempool.h"
 
 #include "zunmqr_LN.h"

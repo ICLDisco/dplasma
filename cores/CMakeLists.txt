@@ -2,8 +2,9 @@ include(PrecisionGenerator)
 # reset variables
 set(generated_files "")
 set(generated_headers "")
-
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+set(generated_wrappers "")
+set(cplx_files "")
+set(all_precisions_files "")
 
 set(CORE_CUDA_HEADERS "")
 if( CUDA_FOUND )
@@ -27,36 +28,147 @@ foreach(generated_header ${generated_headers})
           DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
 endforeach()
 
-
 ### Generate the dplasma wrappers for all required precisions
 set(SOURCES
-  core_ztrdv.c
-  core_zhetrf2_nopiv.c
-  core_zgemdm.c
-  core_zhedrk.c
-  core_ztrmdm.c
-  core_zhetrf_nopiv.c
-  core_zhebut.c
+  core_dzasum.c
   core_zamax.c
   core_zgeadd.c
+  core_zgelqt.c
+  core_zgemdm.c
+  core_zgemm.c
+  core_zgemv.c
+  core_zgeqrt.c
+  core_zgessm.c
+  core_zgessq.c
+  core_zgetf2_nopiv.c
+  core_zgetrf_incpiv.c
+  core_zgetrf_nopiv.c
+  core_zgetrf_reclap.c
+  core_zgetrf_rectil.c
+  core_zhebut.c
+  core_zhedrk.c
+  core_zhemm.c
+  core_zher2k.c
+  core_zherfb.c
+  core_zherk.c
+  core_zhessq.c
+  core_zhetrf2_nopiv.c
+  core_zhetrf_nopiv.c
+  core_zlacpy.c
+  core_zlange.c
+  core_zlanhe.c
+  core_zlansy.c
+  core_zlantr.c
+  core_zlaset.c
+  core_zlaswp.c
+  core_zlauum.c
+  core_zpamm.c
+  core_zparfb.c
+  core_zpemv.c
+  core_zplghe.c
+  core_zplgsy.c
+  core_zplrnt.c
+  core_zpltmg.c
+  core_zpltmg_chebvand.c
+  core_zpltmg_circul.c
+  core_zpltmg_condex.c
+  core_zpltmg_fiedler.c
+  core_zpltmg_hankel.c
+  core_zpltmg_toeppd.c
+  core_zpotrf.c
+  core_zshift.c
+  core_zssssm.c
+  core_zsymm.c
+  core_zsyr2k.c
+  core_zsyrk.c
+  core_zsyssq.c
   core_ztradd.c
+  core_ztrasm.c
+  core_ztrdv.c
+  core_ztrmdm.c
+  core_ztrmm.c
+  core_ztrsm.c
+  core_ztrssq.c
+  core_ztrtri.c
+  core_ztslqt.c
+  core_ztsmlq.c
+  core_ztsmlq_hetra1.c
+  core_ztsmqr.c
+  core_ztsmqr_corner.c
+  core_ztsmqr_hetra1.c
+  core_ztsqrt.c
+  core_ztstrf.c
+  core_zttlqt.c
+  core_zttmlq.c
+  core_zttmqr.c
+  core_zttqrt.c
+  core_zunmlq.c
+  core_zunmqr.c
 )
+set(ALL_PREC_SRCS core_zgessq.c )
+
+set(CPLX_ONLY core_dlag2z.c )
+
 precisions_rules_py(generated_files
-                 "${SOURCES}"
-                 PRECISIONS "${DPLASMA_PRECISIONS}")
+    "${SOURCES}" PRECISIONS "${DPLASMA_PRECISIONS}")
+
+precisions_rules_py(all_precisions_files
+    "${ALL_PREC_SRCS}" PRECISIONS "s;d;c;z")
+
+precisions_rules_py(cplx_files
+    "${CPLX_ONLY}" PRECISIONS "c;z")
+
+set(common_srcs
+    gkkleader.c
+    primes.c
+    descriptor.c
+    global.c)
 
 ### Generate the dplasma_cores archive
-link_directories(${COREBLAS_LIBRARY_DIRS})
-add_library(dplasma_cores_obj OBJECT ${generated_files})
-if(BUILD_SHARED_LIBS)
-  set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE True)
-endif(BUILD_SHARED_LIBS)
-add_dependencies(dplasma_cores_obj
-                 dplasma_includes
-                 dplasma_cores_includes)
+if(NOT TARGET dplasma_cores_obj)
+  add_library(dplasma_cores_obj OBJECT ${generated_files} ${all_precisions_files} ${cplx_files} ${common_srcs})
+endif(NOT TARGET dplasma_cores_obj)
 
-add_library(dplasma_cores INTERFACE)
+target_include_directories(dplasma_cores_obj
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_BINARY_DIR}/include)
+
+target_link_libraries(dplasma_cores_obj PUBLIC PaRSEC::parsec)
+
+if(NOT BUILD_SHARED_LIBS)
+  set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE False)
+endif(NOT BUILD_SHARED_LIBS)
+
+add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
+
+if(NOT TARGET dplasa_cores)
+  add_library(dplasma_cores INTERFACE)
+endif(NOT TARGET dplasa_cores)
+
+target_include_directories(dplasma_cores
+  INTERFACE
+  ${CMAKE_SOURCE_DIR}
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_BINARY_DIR}/include)
+
 target_sources(dplasma_cores INTERFACE $<TARGET_OBJECTS:dplasma_cores_obj>)
+
+set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
+target_link_libraries(dplasma_cores INTERFACE
+  m
+  PaRSEC::parsec
+  $<$<BOOL:${LAPACKE_FOUND}>:${LAPACKE_LIBRARIES}>
+  $<$<BOOL:${LAPACK_FOUND}>:${LAPACK_LIBRARIES}>
+  $<$<BOOL:${BLAS_FOUND}>:${BLAS_LIBRARIES}>)
+
+#include(../cmake_modules/GetTargetProperties.cmake)
+#get_target_properties(dplasma_cores_obj)
+#get_target_properties(dplasma_cores)
+#get_target_properties(PaRSEC::parsec)
 
 if( CUDA_FOUND )
   # generate the cores_cuda library (hooks to cublas)
@@ -65,14 +177,25 @@ if( CUDA_FOUND )
                       PRECISIONS "${DPLASMA_PRECISIONS}")
 
   target_sources(dplasma_cores_obj PUBLIC ${generated_cuda_files})
-#  add_library(dplasma_cores_cuda OBJECT ${generated_cuda_files})
-#  add_dependencies(dplasma_cores_cuda
-#                   dplasma_includes
-#                   dplasma_cores_includes)
-#  target_link_libraries(dplasma_cores_cuda
-#                        ${COREBLAS_LIBRARIES}
-#                        ${EXTRA_LIBS})
-#  cuda_add_cublas_to_target( dplasma_cores_cuda )
+  add_library(dplasma_cores_cuda OBJECT ${generated_cuda_files})
+  add_dependencies(dplasma_cores_cuda
+    dplasma_includes
+    dplasma_cores_includes)
+
+  target_include_directories(dplasma_cores_cuda
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}/include)
+
+  target_link_libraries(dplasma_cores_cuda
+    PaRSEC::parsec
+    $<$<BOOL:${LAPACKE_FOUND}>:${LAPACKE_LIBRARIES}>
+    $<$<BOOL:${LAPACK_FOUND}>:${LAPACK_LIBRARIES}>
+    $<$<BOOL:${BLAS_FOUND}>:${BLAS_LIBRARIES}>)
+
+  cuda_add_cublas_to_target( dplasma_cores_cuda )
 
   ### Generate the CUDA .cu kernels if necessary
   # By default drop support for older devices (add 11 and 13 for support

@@ -7,12 +7,12 @@
  *
  */
 
-
-#include <core_blas.h>
 #include "dplasma.h"
-#include "parsec/data_dist/matrix/matrix.h"
 #include "dplasmatypes.h"
-#include "dplasma/lib/dplasmaaux.h"
+#include "dplasmaaux.h"
+#include <core_blas.h>
+
+#include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/private_mempool.h"
 
 #include "zhbrdt.h"

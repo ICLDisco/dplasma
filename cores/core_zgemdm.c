@@ -14,8 +14,9 @@
 /*
  * @precisions normal z -> c d s
  */
-#include <lapacke.h>
-#include "dplasma_cores.h"
+#include "parsec/parsec_config.h"
+#include "dplasma.h"
+#include "cores/dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
@@ -29,23 +30,20 @@
 #include <limits.h>
 #endif
 
-#include <cblas.h>
-#include <core_blas.h>
-
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 int CORE_zgemdm(int transA, int transB,
                 int M, int N, int K,
-                PLASMA_Complex64_t alpha, PLASMA_Complex64_t *A, int LDA,
-                PLASMA_Complex64_t *B, int LDB,
-                PLASMA_Complex64_t beta, PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D, int incD,
-                PLASMA_Complex64_t *WORK, int LWORK);
+                parsec_complex64_t alpha, parsec_complex64_t *A, int LDA,
+                parsec_complex64_t *B, int LDB,
+                parsec_complex64_t beta, parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D, int incD,
+                parsec_complex64_t *WORK, int LWORK);
 
 /***************************************************************************//**
  *
- * @ingroup CORE_PLASMA_Complex64_t
+ * @ingroup CORE_parsec_complex64_t
  *
  * CORE_zgemdm performs one of the matrix-matrix operations
  *
@@ -91,12 +89,12 @@ int CORE_zgemdm(int transA, int transB,
  *         of matrix D. K must be at least  zero.
  *
  * @param[in] alpha
- *         PLASMA_Complex64_t.
+ *         parsec_complex64_t.
  *         On entry, ALPHA specifies the scalar alpha.
  *         Unchanged on exit.
  *
  * @param[in] A
- *         PLASMA_Complex64_t array of DIMENSION ( LDA, ka ), where ka is
+ *         parsec_complex64_t array of DIMENSION ( LDA, ka ), where ka is
  *         k  when  TRANSA = PlasmaTrans, and is  m  otherwise.
  *         Before entry with  TRANSA = PlasmaTrans,  the leading  m by k
  *         part of the array  A  must contain the matrix  A,  otherwise
@@ -113,7 +111,7 @@ int CORE_zgemdm(int transA, int transB,
  *        Unchanged on exit.
  *
  * @param[in] B
- *        PLASMA_Complex64_t array of DIMENSION ( LDB, kb ), where kb is
+ *        parsec_complex64_t array of DIMENSION ( LDB, kb ), where kb is
  *        n  when TRANSB = PlasmaTrans, and is k otherwise.
  *        Before entry with TRANSB = PlasmaTrans, the leading  k by n
  *        part of the array  B  must contain the matrix B, otherwise
@@ -130,13 +128,13 @@ int CORE_zgemdm(int transA, int transB,
  *       Unchanged on exit.
  *
  * @param[in] beta
- *       PLASMA_Complex64_t.
+ *       parsec_complex64_t.
  *       On entry,  BETA  specifies the scalar  beta.  When  BETA  is
  *       supplied as zero then C need not be set on input.
  *       Unchanged on exit.
  *
  * @param[in] C
- *       PLASMA_Complex64_t array of DIMENSION ( LDC, n ).
+ *       parsec_complex64_t array of DIMENSION ( LDC, n ).
  *       Before entry, the leading  m by n  part of the array  C must
  *       contain the matrix  C,  except when  beta  is zero, in which
  *       case C need not be set on entry.
@@ -151,7 +149,7 @@ int CORE_zgemdm(int transA, int transB,
  *       Unchanged on exit.
  *
  * @param[in] D
- *        PLASMA_Complex64_t array of DIMENSION ( LDD, k ).
+ *        parsec_complex64_t array of DIMENSION ( LDD, k ).
  *        Before entry, the leading  k by k part of the array  D
  *        must contain the matrix D.
  *        Unchanged on exit.
@@ -164,7 +162,7 @@ int CORE_zgemdm(int transA, int transB,
  *       Unchanged on exit.
  *
  * @param[inout] WORK
- *       PLASMA_Complex64_t array, dimension (MAX(1,LWORK))
+ *       parsec_complex64_t array, dimension (MAX(1,LWORK))
  *
  * @param[in] LWORK
  *       INTEGER
@@ -185,15 +183,15 @@ int CORE_zgemdm(int transA, int transB,
 #endif
 int CORE_zgemdm(int transA, int transB,
                 int M, int N, int K,
-                PLASMA_Complex64_t alpha, PLASMA_Complex64_t *A, int LDA,
-                PLASMA_Complex64_t *B, int LDB,
-                PLASMA_Complex64_t beta, PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D, int incD,
-                PLASMA_Complex64_t *WORK, int LWORK)
+                parsec_complex64_t alpha, parsec_complex64_t *A, int LDA,
+                parsec_complex64_t *B, int LDB,
+                parsec_complex64_t beta, parsec_complex64_t *C, int LDC,
+                parsec_complex64_t *D, int incD,
+                parsec_complex64_t *WORK, int LWORK)
 {
     int j, Am, Bm;
-    PLASMA_Complex64_t delta;
-    PLASMA_Complex64_t *wD, *w;
+    parsec_complex64_t delta;
+    parsec_complex64_t *wD, *w;
     
     Am = (transA == PlasmaNoTrans ) ? M : K;
     Bm = (transB == PlasmaNoTrans ) ? K : N;
