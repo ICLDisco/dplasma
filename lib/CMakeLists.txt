@@ -125,6 +125,8 @@ list(APPEND generated_jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map2.jdf
 )
 
+message("YYYY ptgpp = ${parsec_ptgpp_EXE}")
+
 jdf_rules(generated_files "${generated_jdf}")
 
 ### Generate the dplasma wrappers for all required precisions
@@ -227,20 +229,25 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE False)
 endif(NOT BUILD_SHARED_LIBS)
 
-message(STATUS "CUDA_LIBS=${CUDA_LIBRARIES}")
-message(STATUS "CUDA_CUBLAS_LIBS=${CUDA_CUBLAS_LIBRARIES}")
+message("XXXX BLAS_FOUND=${BLAS_FOUND}, BLAS_LIBS=${BLAS_LIBRARIES}")
+
 target_link_libraries(dplasma
   PRIVATE
   dplasma_cores
   PUBLIC
   PaRSEC::parsec
+  ${LAPACKE_LIBRARIES}
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES}
   $<$<BOOL:${CUDA_FOUND}>:${CUDA_CUBLAS_LIBRARIES}>
   $<$<BOOL:${CUDA_FOUND}>:${CUDA_LIBRARIES}>
   $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>
   INTERFACE
   $<$<BOOL:${DPLASMA_GPU_WITH_MAGMA}>:MAGMA::magma>)
 
-
+#  $<$<BOOL:${LAPACKE_FOUND}>:${LAPACKE_LIBRARIES}>
+#  $<$<BOOL:${LAPACK_FOUND}>:${LAPACK_LIBRARIES}>
+#  $<$<BOOL:${BLAS_FOUND}>:${BLAS_LIBRARIES}>
 
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})

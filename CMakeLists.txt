@@ -50,7 +50,7 @@ endif( SUPPORT_FORTRAN )
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" OFF)
 
-mark_as_advanced( PARSEC_GPU_WITH_MAGMA )
+mark_as_advanced( DPLASMA_GPU_WITH_MAGMA )
 option(DPLASMA_GPU_WITH_MAGMA
   "Enable GPU support using MAGMA kernels" OFF)
 if(DPLASMA_GPU_WITH_MAGMA)
@@ -63,48 +63,43 @@ option(DPLASMA_DEBUG_QR_PIVGEN
 
 #
 # Find or Build PaRSEC package
-#
-set(CMAKE_PREFIX_PATH /home/dgenet/project/install/parsec/split/lib/cmake)
-
-find_package(PaRSEC)
+# set(CMAKE_PREFIX_PATH /home/dgenet/project/install/parsec/alone/lib/cmake)
+find_package(PaRSEC QUIET)
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
   # we have to build it
-  find_package(Git QUIET)
-#  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-#    # Update submodules as needed
-#    option(GIT_SUBMODULE "Check submodules during build" ON)
-#    if(GIT_SUBMODULE)
-#      message(STATUS "Submodule update")
-#      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#	RESULT_VARIABLE GIT_SUBMOD_RESULT)
-#      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-#	message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-#      endif()
-#    endif()
-#  endif()
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+      # Update submodules as needed
+      option(GIT_SUBMODULE "Check submodules during build" ON)
+      if(GIT_SUBMODULE)
+	message(STATUS "Submodule update")
+	execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+ 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+ 	  RESULT_VARIABLE GIT_SUBMOD_RESULT)
+	if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+ 	  message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+	endif()
+      endif()
+    endif()
+  endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 
-# TODO: submodule stuff from dplasma
-#if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/parsec/CMakeLists.txt")
-#  message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-#endif()
+  # TODO: submodule stuff from dplasma
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+    message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+  else(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+    # options for PaRSEC?
+    message(STATUS "Building PaRSEC project!")
+    set(PARSEC_WITH_DEVEL_HEADERS ON)
+    add_subdirectory(parsec)
+    # that's the limit of mixing namespace, export, and building a project, you're stuck with mismatching targets
+    add_library(PaRSEC::parsec ALIAS parsec)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
 
-#ExternalProject_Add(project_parsec
-#  URL ""
-#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/parsec
-#  CONFIGURE_COMMAND ""
-#  BUILD_COMMAND make
-#  INSTALL_COMMAND make install
-#  PREFIX=${CMAKE_INSTALL_PREFIX}/parsec
-#  )
-#ExternalProject_Get_Property(project_parsec parsec_install_dir)
-#add_library(parsec SHARED IMPORTED)
-#set_property(TARGET parsec PROPERTY IMPORTED_LOCATION ${parsec_install_dir}/lib/libparsec.so)
-#add_dependencies(parsec project_parsec)
-#include_directories(${parsec_install_dir}/include)
-#target_link_libraries(dplasma PUBLIC parsec)
-  
+
+  endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 include(cmake_modules/GetTargetProperties.cmake)
@@ -131,12 +126,6 @@ set(LAPACKE_FOUND FALSE)
 set(LAPACK_FOUND  FALSE)
 
 find_package(BLAS)
-if(NOT BLAS_FOUND)
-  message("-! DPLASMA requires a BLAS library")
-else()
-  message("-- BLAS libraries found: ${BLAS_LIBRARIES}")
-endif(NOT BLAS_FOUND)
-
 if (${BLA_VENDOR} STREQUAL "IBMESSL")
   find_package(LAPACKE)
   if(NOT LAPACKE_FOUND)
@@ -146,6 +135,13 @@ if (${BLA_VENDOR} STREQUAL "IBMESSL")
     list(APPEND BLAS_LIBRARIES  ${LAPACKE_LIBRARIES})
   endif(NOT LAPACKE_FOUND)
 endif (${BLA_VENDOR} STREQUAL "IBMESSL")
+
+if(NOT BLAS_FOUND)
+  message("-! DPLASMA requires a BLAS library")
+
+else()
+  message("-- BLAS libraries found: ${BLAS_LIBRARIES}")
+endif(NOT BLAS_FOUND)
 
 if( DPLASMA_GPU_WITH_MAGMA )
   find_package(MAGMA)

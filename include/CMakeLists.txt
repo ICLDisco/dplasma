@@ -5,8 +5,10 @@ set(generated_headers "")
 
 ### generate the dplasma headers for all required precisions
 precisions_rules_py(generated_headers
-                    "dplasma_z.h"
-                    PRECISIONS "${DPLASMA_PRECISIONS}")
+  "dplasma_z.h"
+  PRECISIONS "${DPLASMA_PRECISIONS}")
+
+message(STATUS "${generated_headers}")
 
 set(DPLASMA_INCLUDE_STRING "")
 foreach(generated_header ${generated_headers})
@@ -26,10 +28,12 @@ endif(NOT TARGET dplasma_includes)
  
 target_include_directories(dplasma_includes INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 
-#add_custom_target(dplasma_includes ALL
-#                  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h
-#                  SOURCES ${generated_headers} )
+add_custom_target(dplasma_includes_gen ALL
+                 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h
+                 SOURCES ${generated_headers} )
 
+add_dependencies(dplasma_includes dplasma_includes_gen)
+	       
 ### install the dplasma headers
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h
