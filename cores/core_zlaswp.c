@@ -22,7 +22,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zlaswp performs a series of row interchanges on the matrix A.
  *  One row interchange is initiated for each of rows I1 through I2 of A.
@@ -65,7 +65,7 @@ void CORE_zlaswp(int N, parsec_complex64_t *A, int LDA, int I1, int I2, const in
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zlaswp_ontile apply the zlaswp function on a matrix stored in
  *  tile layout
@@ -169,7 +169,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zswptr_ontile apply the zlaswp function on a matrix stored in
  *  tile layout, followed by a ztrsm on the first tile of the panel.
@@ -246,7 +246,7 @@ int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zlaswpc_ontile apply the zlaswp function on a matrix stored in
  *  tile layout

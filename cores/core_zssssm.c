@@ -21,7 +21,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zssssm applies the LU factorization update from a complex
  *  matrix formed by a lower triangular IB-by-K tile L1 on top of a

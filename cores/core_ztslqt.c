@@ -24,7 +24,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztslqt computes a LQ factorization of a rectangular matrix
  *  formed by coupling side-by-side a complex M-by-M

@@ -20,7 +20,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_dlag2z - Copy a real matrix R into the real part of a complex matrix Z
  *

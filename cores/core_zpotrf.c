@@ -22,7 +22,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zpotrf - Computes the Cholesky factorization of a symmetric positive definite
  *  (or Hermitian positive definite in the complex case) matrix A.

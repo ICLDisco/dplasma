@@ -50,7 +50,7 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  **/
 void CORE_zhetrf_nopiv(int uplo, int N, int ib,

@@ -19,7 +19,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zpltmg_hankel is a kernel used in Hankel matrix generation
  *
@@ -31,13 +31,13 @@
  *  Hermann Hankel, is a square matrix with constant skew-diagonals (positive
  *  sloping diagonals), e.g.:
  *
- *  \f[ \begin{bmatrix}
+ *  \f[ \left\|\begin{array}{lllll}
  *  a & b & c & d & e \\
  *  b & c & d & e & f \\
  *  c & d & e & f & g \\
  *  d & e & f & g & h \\
  *  e & f & g & h & i \\
- *  \end{bmatrix}
+ *  \end{array}\right\|
  *  \f].
  *
  *  A(i,j) = A(i-1,j+1)

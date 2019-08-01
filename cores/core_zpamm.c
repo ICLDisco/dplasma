@@ -36,7 +36,7 @@ static inline int CORE_zpamm_w(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum 
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  ZPAMM  performs one of the matrix-matrix operations
  *

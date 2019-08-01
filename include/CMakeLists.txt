@@ -40,4 +40,5 @@ install(FILES
   dplasmatypes.h
   DESTINATION ${DPLASMA_INSTALL_PREFIX}/include)
 
-
+add_documented_files(PROJECT "DPLASMA" DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_headers} "dplasma.h")
+add_documented_files(PROJECT "DPLASMA" FILES "dplasma_complex.h" "dplasma_qr_param.h" "dplasmatypes.h")

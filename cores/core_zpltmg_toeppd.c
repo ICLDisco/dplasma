@@ -27,7 +27,7 @@
 /***************************************************************************/
 /**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zpltmg_toeppd1 is the first kernel used in toeppd matrix generation.
  *
@@ -93,7 +93,7 @@ void CORE_zpltmg_toeppd1( int gM, int m0, int M, parsec_complex64_t *W,
 /***************************************************************************/
 /**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zpltmg_toeppd2 is the first kernel used in toeppd matrix generation.
  *

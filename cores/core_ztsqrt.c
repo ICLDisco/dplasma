@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  * CORE_ztsqrt computes a QR factorization of a rectangular matrix
  * formed by coupling a complex N-by-N upper triangular tile A1

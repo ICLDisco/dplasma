@@ -20,7 +20,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztrasm - Computes the sums of the absolute values of elements in a same
  *  row or column in a triangular matrix.

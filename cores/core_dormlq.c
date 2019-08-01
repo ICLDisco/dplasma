@@ -20,7 +20,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_double
+ * @ingroup CORE_parsec_double
  *
  *  CORE_dormlq overwrites the general complex M-by-N tile C with
  *

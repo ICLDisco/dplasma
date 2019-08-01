@@ -4,7 +4,7 @@ set (DPLASMA_VERSION_MINOR 0)
 set (DPLASMA_VERSION_PATCH 0)
 
 include(PrecisionGenerator)
-include(RulesJDF)
+include(ParsecCompilePTG)
 
 # reset variables
 set(generated_files "")
@@ -226,4 +226,5 @@ set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLA
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
         LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib)
-
+      
+add_documented_files(PROJECT "DPLASMA" DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_wrappers} ${generated_jdf})

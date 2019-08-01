@@ -25,7 +25,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztsmqr_corner: see CORE_ztsmqr
  *

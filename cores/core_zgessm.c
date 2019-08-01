@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zgessm applies the factors L computed by CORE_zgetrf_incpiv to
  *  a complex M-by-N tile A.

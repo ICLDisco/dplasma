@@ -22,7 +22,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztrtri - Computes the inverse of a complex upper or lower
  *  triangular matrix A.

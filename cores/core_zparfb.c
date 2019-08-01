@@ -19,7 +19,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zparfb applies a complex upper triangular block reflector H
  *  or its transpose H' to a complex rectangular matrix formed by

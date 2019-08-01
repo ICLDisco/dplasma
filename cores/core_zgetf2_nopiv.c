@@ -21,7 +21,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zgetf2_nopiv computes an LU factorization of a general diagonal
  *  dominant M-by-N matrix A witout no pivoting and no blocking. It is the

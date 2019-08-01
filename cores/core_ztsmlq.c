@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztsmlq overwrites the general complex M1-by-N1 tile A1 and
  *  M2-by-N2 tile A2 with

@@ -21,7 +21,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zpltmg_condexq generates the Q used in condex matrix generation
  *

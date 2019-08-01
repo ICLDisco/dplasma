@@ -20,7 +20,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zlaset - Sets the elements of the matrix A on the diagonal
  *  to beta and on the off-diagonals to alpha

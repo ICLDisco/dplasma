@@ -69,6 +69,8 @@ subs = {
     ('#undef DOUBLE',       '#undef SINGLE',       '#undef DOUBLE',       '#undef SINGLE'       ),
     ('float',               'double',              'parsec_complex32_t',  'parsec_complex64_t'  ),
     ('matrix_RealFloat',    'matrix_RealDouble',   'matrix_ComplexFloat', 'matrix_ComplexDouble'),
+    ('dplasma_float',       'dplasma_double',      'dplasma_complex32',   'dplasma_complex64'   ),
+    ('dplasma_cores_float', 'dplasma_cores_double','dplasma_cores_complex32', 'dplasma_cores_complex64'),
     ('float_t'  ,           'double_t',            'complex_t',           'double_complex_t'    ),
     ('float',               'double',              'float',               'double'              ),
     ('matrix_RealFloat',    'matrix_RealDouble',   'matrix_RealFloat',    'matrix_RealDouble'   ),

@@ -139,6 +139,9 @@ set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE ${B
 
 add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
 
+add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
+add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
+
 if( CUDA_FOUND )
   # generate the cores_cuda library (hooks to cublas)
   precisions_rules_py(generated_cuda_files

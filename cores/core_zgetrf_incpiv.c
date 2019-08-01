@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zgetrf_incpiv computes an LU factorization of a general M-by-N tile A
  *  using partial pivoting with row interchanges.

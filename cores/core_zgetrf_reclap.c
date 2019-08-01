@@ -41,7 +41,7 @@ CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data,
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zgetrf_reclap computes a LU factorization of a general M-by-N
  *  matrix A stored in CCRB layout using partial pivoting with row

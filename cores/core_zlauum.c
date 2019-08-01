@@ -22,7 +22,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zlauum - Computes the product U * U' or L' * L, where the triangular
  *  factor U or L is stored in the upper or lower triangular part of

@@ -21,7 +21,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztrmm - Computes B = alpha*op( A )*B or B = alpha*B*op( A ).
  *

@@ -24,7 +24,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zherfb overwrites the symmetric complex N-by-N tile C with
  *

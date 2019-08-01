@@ -44,7 +44,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  * CORE_zhedrk performs one of the matrix-matrix operations
  *

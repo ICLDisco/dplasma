@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_double
+ * @ingroup CORE_parsec_double
  *
  *  CORE_dsyrfb overwrites the symmetric complex N-by-N tile C with
  *

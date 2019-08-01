@@ -19,7 +19,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_double
+ * @ingroup CORE_parsec_double
  *
  *  CORE_dlansy returns the value
  *

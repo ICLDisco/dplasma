@@ -22,7 +22,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zgeqrt computes a QR factorization of a complex M-by-N tile A:
  *  A = Q * R.

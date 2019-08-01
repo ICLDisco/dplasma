@@ -23,7 +23,7 @@
 
 /***************************************************************************//**
  *
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_ztstrf computes an LU factorization of a complex matrix formed
  *  by an upper triangular NB-by-N tile U on top of a M-by-N tile A

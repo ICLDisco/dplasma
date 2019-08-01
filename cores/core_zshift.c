@@ -28,7 +28,7 @@
 /** ****************************************************************************
  *
  * @ingroup InPlaceTransformation
- * @ingroup CORE_parsec_complex64_t
+ * @ingroup dplasma_cores_complex64
  *
  *  CORE_zshiftw Shift a linear chain of block using a supplied workspace
  *      by following the cycle defined by:  k_(i+1) = (k_i * m) % q;
