@@ -8,8 +8,6 @@ precisions_rules_py(generated_headers
   "dplasma_z.h"
   PRECISIONS "${DPLASMA_PRECISIONS}")
 
-message(STATUS "${generated_headers}")
-
 set(DPLASMA_INCLUDE_STRING "")
 foreach(generated_header ${generated_headers})
   set(DPLASMA_INCLUDE_STRING "${DPLASMA_INCLUDE_STRING}\n

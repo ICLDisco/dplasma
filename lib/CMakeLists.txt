@@ -125,9 +125,7 @@ list(APPEND generated_jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map2.jdf
 )
 
-message("YYYY ptgpp = ${parsec_ptgpp_EXE}")
-
-jdf_rules(generated_files "${generated_jdf}")
+parsec_compile_ptg(generated_files "${generated_jdf}")
 
 ### Generate the dplasma wrappers for all required precisions
 set(SOURCES
@@ -219,8 +217,7 @@ precisions_rules_py(generated_wrappers
 
 ### Generate the lib
 target_sources(dplasma PRIVATE
-  ${generated_files}
-  ${generated_wrappers}
+  ${generated_files} ${generated_wrappers}
   ${EXTRA_SOURCES})
 
 target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DPLASMA_HAVE_RECURSIVE>)
@@ -228,8 +225,6 @@ target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DP
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE False)
 endif(NOT BUILD_SHARED_LIBS)
-
-message("XXXX BLAS_FOUND=${BLAS_FOUND}, BLAS_LIBS=${BLAS_LIBRARIES}")
 
 target_link_libraries(dplasma
   PRIVATE

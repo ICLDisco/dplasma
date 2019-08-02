@@ -159,8 +159,6 @@ target_sources(dplasma_cores INTERFACE $<TARGET_OBJECTS:dplasma_cores_obj>)
 
 set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
 
-message("!!!!!!! BLAS_LIBS=${BLAS_LIBRARIES}")
-
 target_link_libraries(dplasma_cores INTERFACE
   m
   PaRSEC::parsec
