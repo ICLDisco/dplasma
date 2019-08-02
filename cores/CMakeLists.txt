@@ -19,7 +19,7 @@ set(HEADERS
     ${CORE_CUDA_HEADERS})
 precisions_rules_py(generated_headers
                     ${HEADERS}
-                    PRECISIONS "${DPLASMA_PRECISIONS}")
+                    PRECISIONS "s;d;c;z")
 add_custom_target(dplasma_cores_includes ALL SOURCES
                   ${generated_headers} )
 
@@ -167,11 +167,6 @@ target_link_libraries(dplasma_cores INTERFACE
   ${LAPACKE_LIBRARIES}
   ${LAPACK_LIBRARIES}
   ${BLAS_LIBRARIES} )
-
-include(../cmake_modules/GetTargetProperties.cmake)
-#get_target_properties(dplasma_cores_obj)
-#get_target_properties(dplasma_cores)
-get_target_properties(dplasma_cores)
 
 if( CUDA_FOUND )
   # generate the cores_cuda library (hooks to cublas)
