@@ -92,10 +92,14 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
   else(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
     # options for PaRSEC?
     message(STATUS "Building internal PaRSEC runtime!")
-    set(PARSEC_WITH_DEVEL_HEADERS ON)
+    # Thanks to CMake policy CMP0077 we cannot set a variable before it is used with option(). Thus,
+    # we need to make it an option here, so that cmake accept it and does the right thing (use the value
+    # we need and not the default value provided to the first OPTION call.
+    option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
     # that's the limit of mixing namespace, export, and building a project, you're stuck with mismatching targets
     add_library(PaRSEC::parsec ALIAS parsec)
+    add_executable(PaRSEC::parsec_ptgpp ALIAS parsec_ptgpp)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parsec
                         ${CMAKE_CURRENT_SOURCE_DIR}/parsec/parsec/include)
@@ -103,7 +107,6 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
       include_directories(${CMAKE_CURRENT_BINARY_DIR}/parsec
                           ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include)
     endif( NOT DPLASMA_BUILD_INPLACE)
-    set(PaRSEC::parsec_ptgpp ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/interfaces/ptg/ptg-compiler/parsec_ptgpp)
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
