@@ -61,9 +61,10 @@ mark_as_advanced(DPLASMA_DEBUG_QR_PIVGEN)
 option(DPLASMA_DEBUG_QR_PIVGEN
   "Enable the QR pivgen testings" OFF)
 
+STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPLASMA_BUILD_INPLACE)
+
 #
 # Find or Build PaRSEC package
-# set(CMAKE_PREFIX_PATH /home/dgenet/project/install/parsec/alone/lib/cmake)
 find_package(PaRSEC QUIET)
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
@@ -74,13 +75,13 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
       # Update submodules as needed
       option(GIT_SUBMODULE "Check submodules during build" ON)
       if(GIT_SUBMODULE)
-	message(STATUS "Submodule update")
-	execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
- 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
- 	  RESULT_VARIABLE GIT_SUBMOD_RESULT)
-	if(NOT GIT_SUBMOD_RESULT EQUAL "0")
- 	  message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-	endif()
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --force --init --recursive --remote
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+          message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
       endif()
     endif()
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
@@ -90,24 +91,22 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
   else(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
     # options for PaRSEC?
-    message(STATUS "Building PaRSEC project!")
+    message(STATUS "Building internal PaRSEC runtime!")
     set(PARSEC_WITH_DEVEL_HEADERS ON)
     add_subdirectory(parsec)
     # that's the limit of mixing namespace, export, and building a project, you're stuck with mismatching targets
     add_library(PaRSEC::parsec ALIAS parsec)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
-
-
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parsec
+                        ${CMAKE_CURRENT_SOURCE_DIR}/parsec/parsec/include)
+    if( NOT DPLASMA_BUILD_INPLACE)
+      include_directories(${CMAKE_CURRENT_BINARY_DIR}/parsec
+                          ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include)
+    endif( NOT DPLASMA_BUILD_INPLACE)
+    set(PaRSEC::parsec_ptgpp ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/interfaces/ptg/ptg-compiler/parsec_ptgpp)
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
-
-include(cmake_modules/GetTargetProperties.cmake)
-#get_target_properties(dplasma_cores_obj)
-#get_target_properties(dplasma_cores)
-get_target_properties(PaRSEC::parsec)
-
-
 
 #
 # Find packages to decide if we compile DPLASMA support or not
