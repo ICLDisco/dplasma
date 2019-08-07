@@ -103,10 +103,11 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parsec
                         ${CMAKE_CURRENT_SOURCE_DIR}/parsec/parsec/include)
-    if( NOT DPLASMA_BUILD_INPLACE)
-      include_directories(${CMAKE_CURRENT_BINARY_DIR}/parsec
-                          ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include)
-    endif( NOT DPLASMA_BUILD_INPLACE)
+    include_directories($<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_BINARY_DIR}/parsec
+                                                          ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include>)
+    # I don't understand why CMake does not propagate the parsec target include requirements
+    # but it does not. So we need to forcefully add the MPI C header path.
+    include_directories(${MPI_C_HEADER_DIR})
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
@@ -186,6 +187,13 @@ endif( PARSEC_OSX )
 
 set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
                            CACHE STRING "DPLASMA Installation Prefix")
+
+if(PARSEC_HAVE_CUDA)
+  # CUDA is pulled by PaRSEC
+  find_package(CUDA REQUIRED)
+  set(DPLASMA_HAVE_CUDA ${CUDA_FOUND} CACHE BOOL "DPLASMA compiled with CUDA support")
+  message(STATUS "CUDA support for DPLASMA enabled")
+endif(PARSEC_HAVE_CUDA)
 
 if(BLAS_FOUND)
   Add_Subdirectory(include)

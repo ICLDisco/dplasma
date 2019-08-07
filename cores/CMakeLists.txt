@@ -131,40 +131,13 @@ endif(NOT TARGET dplasma_cores_obj)
 
 target_include_directories(dplasma_cores_obj
   PRIVATE
-  ${CMAKE_SOURCE_DIR}
-  ${CMAKE_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_BINARY_DIR}/include)
-
-target_link_libraries(dplasma_cores_obj PRIVATE PaRSEC::parsec)
-
-if(BUILD_SHARED_LIBS) # OBJECT default is False, indeed
-  set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE True)
-endif(BUILD_SHARED_LIBS)
-
-add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
-
-if(NOT TARGET dplasa_cores)
-  add_library(dplasma_cores INTERFACE)
-endif(NOT TARGET dplasa_cores)
-
-target_include_directories(dplasma_cores
-  INTERFACE
-  ${CMAKE_SOURCE_DIR}
-  ${CMAKE_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_BINARY_DIR}/include)
-
-target_sources(dplasma_cores INTERFACE $<TARGET_OBJECTS:dplasma_cores_obj>)
+  ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
+  $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
 
 set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
+set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
-target_link_libraries(dplasma_cores INTERFACE
-  m
-  PaRSEC::parsec
-  ${LAPACKE_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BLAS_LIBRARIES} )
+add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
 
 if( CUDA_FOUND )
   # generate the cores_cuda library (hooks to cublas)
@@ -172,23 +145,13 @@ if( CUDA_FOUND )
                       ${CORE_CUDA_SOURCES}
                       PRECISIONS "${DPLASMA_PRECISIONS}")
 
-  target_sources(dplasma_cores_obj PUBLIC ${generated_cuda_files})
   add_library(dplasma_cores_cuda OBJECT ${generated_cuda_files})
-  add_dependencies(dplasma_cores_cuda
-    dplasma_includes
-    dplasma_cores_includes)
-
+  add_dependencies(dplasma_cores_cuda dplasma_includes
+                                      dplasma_cores_includes)
   target_include_directories(dplasma_cores_cuda
-    PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/include)
-
-  target_link_libraries(dplasma_cores_cuda PUBLIC
-    PaRSEC::parsec)
-
-  cuda_add_cublas_to_target( dplasma_cores_cuda )
+    PUBLIC
+    ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
+    $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
 
   ### Generate the CUDA .cu kernels if necessary
   # By default drop support for older devices (add 11 and 13 for support
@@ -271,6 +234,32 @@ elseif( ${CUDA_VERSION_STRING} VERSION_LESS "8.0" )
     endif()
   endforeach()
 
+  set_target_properties(dplasma_cores_cuda PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
   cuda_build_clean_target()
 endif()
+
+if(NOT TARGET dplasa_cores)
+  add_library(dplasma_cores INTERFACE)
+endif(NOT TARGET dplasa_cores)
+
+target_include_directories(dplasma_cores
+  INTERFACE
+  ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
+  $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
+
+target_sources(dplasma_cores INTERFACE
+               $<TARGET_OBJECTS:dplasma_cores_obj>
+               $<$<BOOL:${DPLASMA_HAVE_CUDA}>:$<TARGET_OBJECTS:dplasma_cores_cuda>>)
+
+
+target_link_libraries(dplasma_cores INTERFACE
+  m
+  PaRSEC::parsec
+  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_CUBLAS_LIBRARIES}>
+  ${LAPACKE_LIBRARIES}
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES})
+
+add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
+add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
