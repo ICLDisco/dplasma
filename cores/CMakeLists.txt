@@ -258,11 +258,13 @@ target_sources(dplasma_cores INTERFACE
 target_link_libraries(dplasma_cores INTERFACE
   m
   PaRSEC::parsec
-  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_CUBLAS_LIBRARIES}>
   ${LAPACKE_LIBRARIES}
   ${LAPACK_LIBRARIES}
   ${BLAS_LIBRARIES})
-
+if( ${DPLASMA_HAVE_CUDA} )
+  target_link_libraries(dplasma_cores
+      INTERFACE ${CUDA_CUBLAS_LIBRARIES})
+endif( ${DPLASMA_HAVE_CUDA} )
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
