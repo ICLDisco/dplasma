@@ -65,9 +65,16 @@ STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPL
 
 #
 # Find or Build PaRSEC package
-find_package(PaRSEC QUIET)
+STRING(COMPARE EQUAL "-internal-" "${PaRSEC_ROOT}" DPLASMA_FORCE_INTERNAL)
+STRING(COMPARE NOTEQUAL "" "${PaRSEC_ROOT}" PARSEC_EXTERNAL_REQUIRED)
+if(NOT DPLASMA_FORCE_INTERNAL)
+  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" PATH_SUFFIXES lib cmake_modules QUIET)
+endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
+  if(PARSEC_EXTERNAL_REQUIRED)
+    message(FATAL_ERROR "User requested PaRSEC not found with PaRSEC_ROOT=${PaRSEC_ROOT}")
+  endif()
   # we have to build it
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
     find_package(Git QUIET)
