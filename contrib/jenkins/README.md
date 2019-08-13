@@ -2,11 +2,11 @@
 
 1. Set up the Jenkins server as suggested on the Jenkins webpage
 
-2. Create a DPLASMA configuration file on the Jenkins server. This file should be located in $JENKINS_HOME and named dplasma.jenkins.conf. At the minimum it contains a
+2. Create a DPLASMA configuration file on the Jenkins server (this step requires privileged access to the Jenkins server). This file should be located in $JENKINS_HOME and named dplasma.jenkins.conf. At the minimum it contains a
 <pre>
 userName = The bitbucket login to access the DPLASMA repo
 userPassword = The corresponding password.
-useHipChat = true
+useSlack = true
 </pre>
 
 3. To run the DPLASMA groovy script the following set of permission must be added to Jenkins scriptApproval.xml.
@@ -41,4 +41,6 @@ useHipChat = true
 </approvedSignatures>
 </pre>
 
-4. For a streamlined integration with HipChat you might want to install the [Jenkins HipChat plugin](https://plugins.jenkins.io/hipchat)
+4. For a streamlined integration with Slack you need to install the [Jenkins Slack plugin](https://github.com/jenkinsci/slack-plugin)
+
+5. Add a Jenkinsfile at the root of the project. Voila !
