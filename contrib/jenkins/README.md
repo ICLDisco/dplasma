@@ -1,4 +1,4 @@
-## Setting up a Jenkins server for testing PaRSEC
+## Setting up a Jenkins server for testing DPLASMA
 
 1. Set up the Jenkins server as suggested on the Jenkins webpage
 
