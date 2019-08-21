@@ -1,4 +1,4 @@
 [submodule "parsec"]
 	path = parsec
-	url = git@bitbucket.org:dgenet/parsec.git
+	url = git@bitbucket.org:icldistcomp/parsec.git
 	branch = master
