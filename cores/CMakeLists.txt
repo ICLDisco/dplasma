@@ -157,6 +157,8 @@ if( CUDA_FOUND )
     PUBLIC
     ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
+  target_link_libraries(dplasma_cores_cuda
+    PUBLIC PaRSEC::parsec)
 
   ### Generate the CUDA .cu kernels if necessary
   # By default drop support for older devices (add 11 and 13 for support
