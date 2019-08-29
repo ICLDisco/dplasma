@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.12)
 project (DPLASMA C)
 
 include(CMakeDependentOption)
@@ -39,6 +39,9 @@ string(REPLACE " " ";" MPI_TEST_CMD_LIST "${CTEST_MPI_LAUNCHER}")
 set(CTEST_GPU_LAUNCHER_OPTIONS
       "" CACHE STRING
       "Options to pass to the CTEST_MPI_LAUNCHER to select GPU nodes")
+
+option(BUILD_SHARED_LIBS
+       "Build shared libraries" ON)
 
 # DPLASMA specific option.
 option(SUPPORT_FORTRAN
@@ -209,7 +212,7 @@ if(BLAS_FOUND)
   Add_Subdirectory(cores)
   Add_Subdirectory(lib)
   IF( BUILD_TESTING )
-    Add_Subdirectory(testing)
+    Add_Subdirectory(tests)
   ENDIF( BUILD_TESTING )
   Add_Subdirectory(examples)
 endif(BLAS_FOUND)

@@ -4,7 +4,7 @@ if(NOT TARGET common)
 
   target_include_directories(common
     PUBLIC
-    ${CMAKE_SOURCE_DIR}/testing)
+    ${CMAKE_CURRENT_SOURCE_DIR})
 #  common_timing.h flops.h)
   target_link_libraries(common
     PUBLIC

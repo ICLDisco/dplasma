@@ -1,8 +1,3 @@
-# The current version number
-set (DPLASMA_VERSION_MAJOR 2)
-set (DPLASMA_VERSION_MINOR 0)
-set (DPLASMA_VERSION_PATCH 0)
-
 include(PrecisionGenerator)
 include(ParsecCompilePTG)
 
@@ -218,15 +213,11 @@ target_link_libraries(dplasma
   ${LAPACKE_LIBRARIES}
   ${LAPACK_LIBRARIES}
   ${BLAS_LIBRARIES})
-if( ${DPLASMA_HAVE_CUDA} )
-  target_link_libraries(dplasma
-    PUBLIC ${CUDA_CUBLAS_LIBRARIES})
-endif( ${DPLASMA_HAVE_CUDA} )
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})
 
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
         LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib)
-      
+
 add_documented_files(PROJECT "DPLASMA" DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_wrappers} ${generated_jdf})

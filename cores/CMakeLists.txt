@@ -133,6 +133,8 @@ target_include_directories(dplasma_cores_obj
   PRIVATE
   ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
   $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
+target_link_libraries(dplasma_cores_obj
+  PUBLIC PaRSEC::parsec)
 
 set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
 set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
