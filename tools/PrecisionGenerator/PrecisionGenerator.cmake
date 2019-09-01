@@ -99,13 +99,14 @@ macro(precisions_rules_py)
             OUTPUT ${_dependency_OUTPUT}
             COMMAND ${CMAKE_COMMAND} -E remove -f ${_dependency_OUTPUT} && ${pythoncmd} && chmod a-w ${_dependency_OUTPUT}
             DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${_dependency_INPUT} ${PRECISIONPP} ${PRECISIONPP_subs})
-
-          set_source_files_properties(${_dependency_OUTPUT} PROPERTIES COMPILE_FLAGS "-DPRECISION_${_dependency_PREC}")
-
-        else( generate_out )
-          set_source_files_properties(${_dependency_OUTPUT} PROPERTIES COMPILE_FLAGS "-DPRECISION_${_dependency_PREC}")
+          foreach(_property COMPILE_DEFINITIONS INCLUDE_DIRECTORIES COMPILE_OPTIONS)
+            get_property(_prop_copy SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${_dependency_INPUT} PROPERTY ${_property})
+            set_source_files_properties(${_dependency_OUTPUT} APPEND PROPERTIES ${_property} "${_prop_copy}")
+          endforeach()
         endif( generate_out )
-
+        set_source_files_properties(${_dependency_OUTPUT} APPEND PROPERTIES
+            COMPILE_DEFINITIONS "PRECISION_${_dependency_PREC}"
+            INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR})
         list(APPEND ${OUTPUTLIST} ${_dependency_OUTPUT})
       endif( got_file )
     endif()
