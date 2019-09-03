@@ -241,7 +241,7 @@ file(GLOB_RECURSE pattern_files RELATIVE
 foreach( pattern_file ${pattern_files} )
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
-    COMMAND cmake -E copy
+    COMMAND ${CMAKE_COMMAND} -E copy
             "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
             "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
