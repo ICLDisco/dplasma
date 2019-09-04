@@ -43,6 +43,24 @@ cat <<EOF
                 build static libraries and executables
 --enable-shared
                 build dynamic libraries and executables
+
+--with-parsec[=DIR]
+                use external PaRSEC package [installed in DIR] (default, compile submodule)
+
+--with-blas[=vendor]
+                use the specific BLAS Vendor (e.g., one of IBMESSL, Intel10_64lp_seq, OpenBLAS, Apple, etc. See FindBLAS BLA_VENDOR for the full list)
+
+--with-precisions[=s;d;c;z]
+                semicolon separated list of precisions to enable (disable)
+                s: float, d: double, c: single complex, z: double complex
+                (default, enable all)
+
+############################################################################
+  The following options control the PaRSEC submodule and have no effect
+  when using an external PaRSEC package (e.g., --with-parsec=DIR) and using
+  --with-x=y in this case may result in unused -DX=Y CMake warnings.
+############################################################################
+
 --enable-c11
                 Enable C11 standard capabilities (may conflict with OpenMP)
 --enable-cxx
@@ -130,7 +148,7 @@ Some influential environment variables:
 Use these variables to override the choices made by 'configure' or to help
 it to find libraries and programs with nonstandard names/locations.
 
-Please report bugs to <https://bitbucket.org/icldistcomp/parsec/issues>
+Please report bugs to <https://bitbucket.org/icldistcomp/dplasma/issues>
 
 EOF
 [ -z $1 ] || cat >&2 <<EOF
@@ -142,7 +160,7 @@ exit 1
 }
 
 function show_version_and_exit {
-echo "PaRSEC version $(git show --pretty='%h (%cd)')"
+echo "DPLASMA version $(git show --pretty='%h (%cd)')"
 exit 2
 }
 
@@ -166,6 +184,33 @@ done
 function parse_arguments {
 while [ "x$1" != x ]; do
     case "$1" in
+##########################################################
+# DPLASMA specific options
+#
+# BLAS selection
+        --with-blas=*) with_blas="${1#*=}"; shift;;
+        --with-blas) with_blas=yes; shift;;
+        --without-blas) with_blas=no; shift;;
+
+# Numerical Precisions
+        --enable-precisions=*) enable_precisions="${1#*=}"; shift;;
+        --enable-precisions) enable_precisions=yes; shift;;
+        --disable-precisions=*) disable_precisions="${1#*=}"; shift;;
+        --disable-precisions) disable_precisions=yes; shift;;
+
+# External PaRSEC selection
+        --with-parsec=*) with_parsec="${1#*=}"; shift;;
+        --with-external-parsec=*) with_parsec="${1#*=}"; shift;;
+        --with-external-parsec) with_parsec=yes; shift;;
+        --without-external-parsec) with_parsec=no; shift;;
+        --without-parsec)
+            echo >&2 "DPLASMA requires a version of PaRSEC"
+            echo >&2 "  You can provide an external PaRSEC package using --with-parsec"
+            echo >&2 "  If you do not specify an external, the PaRSEC submodule will be compiled automatically"
+            with_parsec=no; shift;;
+
+##########################################################
+# Options common with submodule PaRSEC
         -h|--help) show_help_and_exit ;;
         -V) show_version_and_exit ;;
         -q|--quiet|--silent) quiet=yes; shift;;
@@ -302,7 +347,7 @@ function configure_native_toolchain {
     # This is the list of named input parameters
     local NATIVE_DIR="${NATIVE_DIR:-$PWD/native}" NATIVE_CC="$NATIVE_CC" NATIVE_CFLAGS="$NATIVE_CFLAGS" NATIVE_CXX="$NATIVE_CXX" NATIVE_CXXFLAGS="$NATIVE_CXXFLAGS" NATIVE_LDFLAGS="$NATIVE_LDFLAGS"
     local NATIVE_PREFIX="${NATIVE_PREFIX:-$(expand_relative_path "${prefix}")}"
-    local srcdir="${NATIVE_SRCDIR:-$(expand_relative_path "${srcdir}")}"
+    local srcdir="${NATIVE_SRCDIR:-$(expand_relative_path "${srcdir}")/parsec}"
     local TOOLCHAIN_FILE=$1
     shift
     cat << _EOF
@@ -310,6 +355,9 @@ function configure_native_toolchain {
 #     $NATIVE_DIR
 #
 _EOF
+    # Dplasma: pull the PaRSEC submodule if not done yet
+    # Note that when using an external PaRSEC, one should not cross-compile dplasma.
+    [ -r $srcdir/CMakeLists.txt ] || git -C $srcdir/.. submodule update --init --recursive
     mkdir -p "$NATIVE_DIR" && pushd "$NATIVE_DIR"
     rm -rf CMakeCache.txt CMakeFiles
 
@@ -385,7 +433,7 @@ chmod +x config.status
 read_platforms "$@"
 parse_arguments "$@"
 
-# Populate cmake_executable, do it after the platform file 
+# Populate cmake_executable, do it after the platform file
 # in the case it's been changed there
 set_cmake_executable
 [ -z "$cmake_executable" ] && echo >&2 "Could not find CMake binary" && exit 3
@@ -394,7 +442,41 @@ set_cmake_executable
 host_adapt
 
 
+##########################################################
+# DPLASMA specific options
+case x$with_blas in
+xyes) ;;
+xno) echo >&2 "DPLASMA requires a BLAS library. Do not use --without-blas." && exit 3;;
+x) ;;
+*) CMAKE_DEFINES+=" -DBLA_VENDOR=$with_blas";;
+esac
 
+case x$disable_precisions in
+xyes) CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS=d";; # shorthand for double precision only
+xno) CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS=s;d;c;z";; # force default (to override a plaform file for example)
+x) ;;
+*) precisions="s;d;c;z;"
+  for prec in ${disable_precisions/;/ }; do
+    precisions=${precisions/$prec;/}
+  done
+  CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS=$(printf %q "${precisions%;}")";;
+esac
+case x$enable_precisions in
+xyes) CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS='s;d;c;z'";; # force default (to override a plaform file for example)
+xno) CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS=d";; # shorthand for double precision only
+x) ;;
+*) CMAKE_DEFINES+=" -DDPLASMA_PRECISIONS=$(printf %q "$enable_precisions")";;
+esac
+
+case x$with_parsec in
+xyes) CMAKE_DEFINES+=" -DPaRSEC_ROOT=NOTFOUND";;
+xno) CMAKE_DEFINES+=" -DPaRSEC_ROOT=-internal-";;
+x) ;;
+*) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
+esac
+
+##########################################################
+# Options common with submodule PaRSEC
 CMAKE_DEFINES+=" ${prefix:+-DCMAKE_INSTALL_PREFIX=$prefix}"
 [ x$enable_static = xyes ] && CMAKE_DEFINES+=" -DBUILD_SHARED_LIBS=OFF"
 [ x$enable_static = xno ] && CMAKE_DEFINES+=" -DBUILD_SHARED_LIBS=ON"
