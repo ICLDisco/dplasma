@@ -40,10 +40,10 @@ set(CTEST_GPU_LAUNCHER_OPTIONS
       "" CACHE STRING
       "Options to pass to the CTEST_MPI_LAUNCHER to select GPU nodes")
 
-option(BUILD_SHARED_LIBS
-       "Build shared libraries" ON)
-
 # DPLASMA specific option.
+option(BUILD_SHARED_LIBS
+       "Enable building shared DPLASMA lib (default ON)" ON)
+
 option(SUPPORT_FORTRAN
        "Enable support for Fortran bindings (default ON)" ON)
 if( SUPPORT_FORTRAN )
@@ -71,7 +71,7 @@ STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPL
 STRING(COMPARE EQUAL "-internal-" "${PaRSEC_ROOT}" DPLASMA_FORCE_INTERNAL)
 STRING(COMPARE NOTEQUAL "" "${PaRSEC_ROOT}" PARSEC_EXTERNAL_REQUIRED)
 if(NOT DPLASMA_FORCE_INTERNAL)
-  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" PATH_SUFFIXES lib cmake_modules QUIET)
+  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" PATH_SUFFIXES share/cmake/parsec cmake_modules QUIET)
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
@@ -239,13 +239,15 @@ file(GLOB_RECURSE pattern_files RELATIVE
      "${CMAKE_CURRENT_SOURCE_DIR}/" "contrib/build_with_dplasma/*.[c|h]"
                                     "contrib/build_with_dplasma/*.jdf")
 foreach( pattern_file ${pattern_files} )
-  add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
-    COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
-            "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
-  )
+  if(NOT DPLASMA_BUILD_INPLACE)
+    add_custom_command(
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
+      COMMAND ${CMAKE_COMMAND} -E copy
+              "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
+              "${CMAKE_CURRENT_BINARY_DIR}/${pattern_file}"
+      DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${pattern_file}"
+    )
+  endif(NOT DPLASMA_BUILD_INPLACE)
   list( APPEND pattern_files_dest "${pattern_file}" )
 endforeach( pattern_file )
 add_custom_target(build_with_dplasma ALL DEPENDS ${pattern_files_dest})

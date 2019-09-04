@@ -97,7 +97,6 @@ list(APPEND generated_jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map2.jdf
 )
 
-parsec_compile_ptg(generated_files "${generated_jdf}")
 
 ### Generate the dplasma wrappers for all required precisions
 set(SOURCES
@@ -190,14 +189,16 @@ precisions_rules_py(generated_wrappers
 ### Generate the lib
 if(NOT TARGET dplasma)
   if(BUILD_SHARED_LIBS)
-    add_library(dplasma SHARED ${generated_files})
+    add_library(dplasma SHARED ${generated_wrappers})
   else(BUILD_SHARED_LIBS)
-    add_library(dplasma STATIC ${generated_files})
+    add_library(dplasma STATIC ${generated_wrappers})
   endif(BUILD_SHARED_LIBS)
 endif(NOT TARGET dplasma)
 
 target_sources(dplasma PRIVATE
-  ${generated_wrappers} ${EXTRA_SOURCES})
+  ${EXTRA_SOURCES})
+target_ptg_sources(dplasma PRIVATE
+  ${generated_jdf})
 
 target_include_directories(dplasma PUBLIC
   ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include

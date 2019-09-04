@@ -217,7 +217,7 @@ elseif( ${CUDA_VERSION_STRING} VERSION_LESS "8.0" )
                           "${CUDA${_smtarget}_SOURCES}"
                           PRECISIONS "${DPLASMA_PRECISIONS}")
       foreach( _cudafile ${cuda_generated_files} )
-          get_source_file_property(_IsInBinaryDir ${_cudafile} IS_IN_BINARY_DIR )
+          get_source_file_property(_IsInBinaryDir ${_cudafile} GENERATED)
           if( _IsInBinaryDir )
               string(REGEX REPLACE
                       ${_cudafile}
