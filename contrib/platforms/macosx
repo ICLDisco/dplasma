@@ -1,5 +1,7 @@
 #!/bin/bash
 
+with_blas=Apple
+
 # if icc is not found, detect the matching gcc/gfortran pair
 # OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
 # Lets try to guess and use the same version for all 3 compilers

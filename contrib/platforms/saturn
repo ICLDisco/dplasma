@@ -3,6 +3,8 @@
 # happend, and will only confuse people.
 #prefix="$PWD"
 
+with_blas=Intel10_64lp_seq
+
 # Do not set the compiler flags (CC, CXX, FC) and the MPI flags (MPI_DIR)
 # CUDA (detected via nvcc), PAPI (detected via papi_avail), HWLOC (detected
 # via hwloc-ls) nor the PYTHON_EXECUTABLE

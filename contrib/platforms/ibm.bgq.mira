@@ -28,6 +28,7 @@ export CC=mpicc CXX=mpicxx FC=mpif90
 ENVVARS+=" CC=$CC CXX=$CXX FC=$FC CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS"
 
 enable_static=yes
+#with_blas=IBMESSL # ESSL provided through wrappers
 with_cuda=no
 with_mpi=yes
 with_hwloc=$HOME/parsec/$with_platform/hwloc # no system provided hwloc: add some guesswork location

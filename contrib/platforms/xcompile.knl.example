@@ -24,6 +24,7 @@ cat <<_EOF
 #
 _EOF
 
+with_blas=Intel10_64lp_seq
 with_cuda=no
 with_hwloc=${HWLOC_ROOT:-$HOME/parsec/$with_platform/hwloc} # add some guesswork location
 ENVVARS+=" CFLAGS+=\ -march=$arch"

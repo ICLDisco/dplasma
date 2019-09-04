@@ -22,6 +22,7 @@ echo "Do not forget to do a 'module unload xalt': this module causes 'ld'to misb
 ENVVARS+=" CC=mpicc CXX=mpicxx FC=mpif90 CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS"
 
 #enable_static=no
+with_blas=IBMESSL
 with_cuda=yes
 with_mpi=yes
 with_hwloc=yes # system default works fine
