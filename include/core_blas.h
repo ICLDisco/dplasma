@@ -16,6 +16,7 @@
 #define _PLASMA_CORE_BLAS_H_
 
 #include <cblas.h>
+#include <lapacke.h>
 #include "plasmatypes.h"
 #include "cores/descriptor.h"
 
