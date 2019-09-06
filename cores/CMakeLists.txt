@@ -24,8 +24,13 @@ add_custom_target(dplasma_cores_includes ALL SOURCES
                   ${generated_headers} )
 
 foreach(generated_header ${generated_headers})
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${generated_header}
-          DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
+  if( generated_header STREQUAL "dplasma_zcores.h" )
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${generated_header}
+            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
+  else( generated_header STREQUAL "dplasma_zcores.h" )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${generated_header}
+            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
+  endif( generated_header STREQUAL "dplasma_zcores.h" )
 endforeach()
 
 ### Generate the dplasma wrappers for all required precisions

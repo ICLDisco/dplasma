@@ -12,8 +12,13 @@ set(DPLASMA_INCLUDE_STRING "")
 foreach(generated_header ${generated_headers})
   set(DPLASMA_INCLUDE_STRING "${DPLASMA_INCLUDE_STRING}\n
   #include \"${generated_header}\"")
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${generated_header}
-          DESTINATION ${DPLASMA_INSTALL_PREFIX}/include)
+  if( generated_header STREQUAL "dplasma_z.h" )
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${generated_header}
+            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include)
+  else( generated_header STREQUAL "dplasma_z.h" )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${generated_header}
+            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include)
+  endif( generated_header STREQUAL "dplasma_z.h" )
 endforeach()
 
 configure_file (
