@@ -2,189 +2,248 @@
 # FindLAPACKE
 # -------------
 #
-# Find the LAPACKE library
+# Find LAPACKE include dirs and libraries
 #
-# Using LAPACKE:
+# Use this module by invoking find_package with the form::
 #
-# ::
+#   find_package(LAPACKE
+#     [REQUIRED]             # Fail with error if LAPACKE is not found
+#     [COMPONENTS <libs>...] # List of libraries to look for
+#     )
 #
-#   find_package(LAPACKE REQUIRED)
-#   include_directories(${LAPACKE_INCLUDE_DIRS})
-#   add_executable(foo foo.cc)
-#   target_link_libraries(foo ${LAPACKE_LIBRARIES})
+# Valid names for COMPONENTS libraries are::
 #
-# This module sets the following variables:
+#   ALL                      - Find all libraries
+#   LAPACKE_H                - Find the lapacke.h header file
+#   LAPACKE                  - Find a LAPACKE library
+#   LAPACK                   - Find a LAPACK library
+#   CBLAS                    - Find a CBLAS library
+#   BLAS                     - Find a BLAS library
 #
-# ::
+#  Not specifying COMPONENTS is identical to choosing ALL
 #
-#   LAPACKE_FOUND - set to true if the library is found
-#   LAPACKE_INCLUDE_DIRS - list of required include directories
-#   LAPACKE_LIBRARIES - list of libraries to be linked
-#   LAPACKE_VERSION_MAJOR - major version number
-#   LAPACKE_VERSION_MINOR - minor version number
-#   LAPACKE_VERSION_PATCH - patch version number
-#   LAPACKE_VERSION_STRING - version number as a string (ex: "0.2.18")
+# This module defines::
+#
+#   LAPACKE_FOUND            - True if headers and requested libraries were found
+#   LAPACKE_INCLUDE_DIRS     - LAPACKE include directories
+#   LAPACKE_LIBRARIES        - LAPACKE component libraries to be linked
+#
+#
+# This module reads hints about search locations from variables
+# (either CMake variables or environment variables)::
+#
+#   LAPACKE_ROOT             - Preferred installation prefix for LAPACKE
+#   LAPACKE_DIR              - Preferred installation prefix for LAPACKE
+#
+#
+# The following :prop_tgt:`IMPORTED` targets are also defined::
+#
+#   LAPACKE::LAPACKE         - Imported target for the LAPACKE library
+#   LAPACKE::LAPACK          - Imported target for the LAPACK library
+#   LAPACKE::CBLAS           - Imported target for the CBLAS library
+#   LAPACKE::BLAS            - Imported target for the BLAS library
+#
 
-#=============================================================================
-# Copyright 2016 Hans J. Johnson <hans-johnson@uiowa.edu>
+# ==============================================================================
+# Copyright 2018 Damien Nguyen <damien.nguyen@alumni.epfl.ch>
 #
 # Distributed under the OSI-approved BSD License (the "License")
 #
 # This software is distributed WITHOUT ANY WARRANTY; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#=============================================================================
-#
+# ==============================================================================
+
 set(LAPACKE_SEARCH_PATHS
+  ${LAPACKE_ROOT}
+  $ENV{LAPACKE_ROOT}
   ${LAPACKE_DIR}
   $ENV{LAPACKE_DIR}
-  $ENV{CMAKE_PREFIX_PATH}
   ${CMAKE_PREFIX_PATH}
+  $ENV{CMAKE_PREFIX_PATH}
   /usr
-  /usr/local
-  /usr/local/opt/lapack  ## Mac Homebrew install path
+  /usr/local/
+  /usr/local/opt # homebrew on mac
+  /opt
+  /opt/local
   /opt/LAPACKE
-)
-message(STATUS "LAPACKE_SEARCH_PATHS: ${LAPACKE_SEARCH_PATHS}")
+  )
 
-set(CMAKE_PREFIX_PATH ${LAPACKE_SEARCH_PATHS})
-list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
-
-## First try to find LAPACKE with NO_MODULE,
-## As of 20160706 version 0.2.18 there is limited cmake support for LAPACKE
-## that is not as complete as this version, if found, use it
-## to identify the LAPACKE_VERSION_STRING and improve searching.
-#find_package(LAPACKE NO_MODULE QUIET)
-#if(LAPACKE_FOUND)
-  #if(EXISTS ${LAPACKE_DIR}/lapacke-config-version.cmake)
-  #  include(${LAPACKE_DIR}/lapacke-config-version.cmake)
-  #  set(LAPACKE_VERSION_STRING ${PACKAGE_VERSION})
-  #  unset(PACKAGE_VERSION) # Use cmake conventional naming
-  #endif()
-#  find_package(LAPACK NO_MODULE QUIET) #Require matching versions here!
-#  find_package(BLAS NO_MODULE QUIET)   #Require matching versions here!
-#endif()
-
-##################################################################################################
-### First search for headers
-find_path(LAPACKE_CBLAS_INCLUDE_DIR 
-             NAMES cblas.h 
-             PATHS ${LAPACKE_SEARCH_PATHS} 
-             PATH_SUFFIXES include include/lapack)
-find_path(LAPACKE_LAPACKE_INCLUDE_DIR 
-             NAMES lapacke.h 
-             PATHS ${LAPACKE_SEARCH_PATHS} 
-             PATH_SUFFIXES include)
-
-##################################################################################################
-### Second, search for libraries
-set(PATH_SUFFIXES_LIST
+set(LIB_PATH_SUFFIXES
   lib64
   lib
-)
-find_library(LAPACKE_LIB 
-                 NAMES lapacke
-                 PATHS ${LAPACKE_SEARCH_PATHS}
-                 PATH_SUFFIXES ${PATH_SUFFIXES_LIST})
-find_library(CBLAS_LIB 
-                 NAMES cblas
-                 PATHS ${LAPACKE_SEARCH_PATHS}
-                 PATH_SUFFIXES ${PATH_SUFFIXES_LIST})
-find_library(LAPACK_LIB 
-                 NAMES lapack
-                 PATHS ${LAPACKE_SEARCH_PATHS}
-                 PATH_SUFFIXES ${PATH_SUFFIXES_LIST})
-find_library(BLAS_LIB 
-                 NAMES blas
-                 PATHS ${LAPACKE_SEARCH_PATHS}
-                 PATH_SUFFIXES ${PATH_SUFFIXES_LIST})
+  lib/x86_64-linux-gnu
+  lib32
+  )
 
-## TODO: Get version components
-# ------------------------------------------------------------------------
-#  Extract version information
-# ------------------------------------------------------------------------
+set(INC_PATH_SUFFIXES
+  include
+  include/lapack
+  include/lapacke/
+  lapack/include
+  lapacke/include
+  )
 
-# WARNING: We may not be able to determine the version of some LAPACKE
-set(LAPACKE_VERSION_MAJOR 0)
-set(LAPACKE_VERSION_MINOR 0)
-set(LAPACKE_VERSION_PATCH 0)
-if(LAPACKE_VERSION_STRING)
-  string(REGEX REPLACE "([0-9]+).([0-9]+).([0-9]+)" "\\1" LAPACKE_VERSION_MAJOR "${LAPACKE_VERSION_STRING}")
-  string(REGEX REPLACE "([0-9]+).([0-9]+).([0-9]+)" "\\2" LAPACKE_VERSION_MINOR "${LAPACKE_VERSION_STRING}")
-  string(REGEX REPLACE "([0-9]+).([0-9]+).([0-9]+)" "\\3" LAPACKE_VERSION_PATCH "${LAPACKE_VERSION_STRING}")
+if(APPLE)
+  list(APPEND LIB_PATH_SUFFIXES lapack/lib openblas/lib)
+elseif(WIN32)
+  list(APPEND LAPACKE_SEARCH_PATHS "C:/Program Files (x86)/LAPACK")
+  list(APPEND LAPACKE_SEARCH_PATHS "C:/Program Files/LAPACK")
 endif()
 
-#======================
-# Checks 'REQUIRED', 'QUIET' and versions.
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LAPACKE FOUND_VAR LAPACKE_FOUND
-  REQUIRED_VARS LAPACKE_CBLAS_INCLUDE_DIR
-                LAPACKE_LAPACKE_INCLUDE_DIR
-                LAPACKE_LIB
-                LAPACK_LIB
-                CBLAS_LIB
-                BLAS_LIB
-  VERSION_VAR LAPACKE_VERSION_STRING
-)
+# ==============================================================================
+# Prepare some helper variables
 
-if (LAPACKE_FOUND)
-  set(LAPACKE_INCLUDE_DIRS ${LAPACKE_CBLAS_INCLUDE_DIR} ${LAPACKE_CBLAS_INCLUDE_DIR})
-  list(REMOVE_DUPLICATES LAPACKE_INCLUDE_DIRS)
-  if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
-     "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
-     "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
-      ) #NOT MSVC
-    set(MATH_LIB m)
+set(LAPACKE_INCLUDE_DIRS)
+set(LAPACKE_LIBRARIES)
+set(LAPACKE_REQUIRED_VARS)
+set(LAPACKE_FIND_ALL_COMPONENTS 0)
+
+# ==============================================================================
+
+macro(_find_library_with_header component incname)
+  find_library(LAPACKE_${component}_LIB
+    NAMES ${ARGN}
+    NAMES_PER_DIR
+    PATHS ${LAPACKE_SEARCH_PATHS}
+    PATH_SUFFIXES ${LIB_PATH_SUFFIXES})
+  if(LAPACKE_${component}_LIB)    
+    set(LAPACKE_${component}_LIB_FOUND 1)
   endif()
-  list(APPEND LAPACKE_LIBRARIES ${LAPACKE_LIB} ${LAPACK_LIB} ${BLAS_LIB} ${CBLAS_LIB})
-  # Check for a common combination, and find required gfortran support libraries
+  list(APPEND LAPACKE_REQUIRED_VARS "LAPACKE_${component}_LIB")
 
-  if(1)
-    if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" AND "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
-          message(STATUS "\n\n WARNING: ${CMAKE_C_COMPILER} identified as ${CMAKE_C_COMPILER_ID}\n"
-                                   "AND: ${CMAKE_Fortran_COMPILER} identified as ${CMAKE_Fortran_COMPILER_ID}\n"
-                               "\n"
-                               "may be require special configurations.  The most common is the need to"
-                               "explicitly link C programs against the gfortran support library.")
-                              
+  # If necessary, look for the header file as well
+  if(NOT "${incname}" STREQUAL "")
+    find_path(LAPACKE_${component}_INCLUDE_DIR
+      NAMES ${incname}
+      PATHS ${LAPACKE_SEARCH_PATHS}
+      PATH_SUFFIXES ${INC_PATH_SUFFIXES})
+    list(APPEND LAPACKE_REQUIRED_VARS "LAPACKE_${component}_INCLUDE_DIR")
+    if(LAPACKE_${component}_LIB)
+      set(LAPACKE_${component}_INC_FOUND 1)
     endif()
   else()
-    ## This code automated code is hard to determine if it is robust in many different environments.
-    # Check for a common combination, and find required gfortran support libraries
-    if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" AND "${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
-       include(FortranCInterface)
-       FortranCInterface_VERIFY() 
-       if(NOT FortranCInterface_VERIFIED_C)
-          message(FATAL_ERROR "C and fortran compilers are not compatible:\n${CMAKE_Fortran_COMPILER}:${CMAKE_C_COMPILER}")
-       endif()
-       
-       execute_process(COMMAND ${CMAKE_Fortran_COMPILER} -print-file-name=libgfortran.a OUTPUT_VARIABLE FORTRANSUPPORTLIB ERROR_QUIET)
-       string(STRIP ${FORTRANSUPPORTLIB} FORTRANSUPPORTLIB)
-       if(EXISTS "${FORTRANSUPPORTLIB}")
-         list(APPEND LAPACKE_LIBRARIES ${FORTRANSUPPORTLIB})
-         message(STATUS "Appending fortran support lib: ${FORTRANSUPPORTLIB}")
-       else()
-         message(FATAL_ERROR "COULD NOT FIND libgfortran.a support library:${FORTRANSUPPORTLIB}:")
-       endif()
-    endif()
+    set(LAPACKE_${component}_INC_FOUND 1)
   endif()
-  list(APPEND LAPACKE_LIBRARIES ${MATH_LIB})
+  
+  if(LAPACKE_${component}_LIB_FOUND AND LAPACKE_${component}_INC_FOUND)
+    set(LAPACKE_${component}_FOUND 1)
+  else()
+    set(LAPACKE_${component}_FOUND 0)
+  endif()
+endmacro()
+
+# ------------------------------------------------------------------------------
+
+if(NOT LAPACKE_FIND_COMPONENTS OR LAPACKE_FIND_COMPONENTS STREQUAL "ALL")
+  set(LAPACKE_FIND_ALL_COMPONENTS 1)
+  set(LAPACKE_FIND_COMPONENTS "LAPACKE;LAPACK;CBLAS;BLAS")
+endif(NOT LAPACKE_FIND_COMPONENTS OR LAPACKE_FIND_COMPONENTS STREQUAL "ALL")
+
+# Make sure that all components are in capitals
+set(_tmp_component_list)
+foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+  string(TOUPPER ${_comp} _comp)
+  list(APPEND _tmp_component_list ${_comp})
+endforeach()
+set(LAPACKE_FIND_COMPONENTS ${_tmp_component_list})
+set(_tmp_component_list)
+
+foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+  if(_comp STREQUAL "LAPACKE")
+    _find_library_with_header(${_comp} lapacke.h lapacke liblapacke)
+  elseif(_comp STREQUAL "LAPACKE_H")
+    find_path(LAPACKE_${_comp}_INCLUDE_DIR
+      NAMES lapacke.h
+      PATHS ${LAPACKE_SEARCH_PATHS}
+      PATH_SUFFIXES include lapack/include)
+    list(APPEND LAPACKE_REQUIRED_VARS "LAPACKE_${_comp}_INCLUDE_DIR")
+    if(LAPACKE_${_comp}_LIB)
+      set(LAPACKE_${_comp}_INC_FOUND 1)
+    endif()
+  elseif(_comp STREQUAL "LAPACK")
+    _find_library_with_header(${_comp} "" lapack liblapack)
+  elseif(_comp STREQUAL "CBLAS")
+    _find_library_with_header(${_comp} cblas.h cblas libcblas)
+  elseif(_comp STREQUAL "BLAS")
+    _find_library_with_header(${_comp} "" blas blas)
+  else()
+    message(FATAL_ERROR "Unknown component: ${_comp}")
+  endif()
+  mark_as_advanced(
+    LAPACKE_${_comp}_LIB
+    LAPACKE_${_comp}_INCLUDE_DIR)
+endforeach()
+
+# ==============================================================================
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(LAPACKE
+  FOUND_VAR LAPACKE_FOUND
+  REQUIRED_VARS ${LAPACKE_REQUIRED_VARS}
+  HANDLE_COMPONENTS)
+
+# ==============================================================================
+
+if(LAPACKE_FOUND)
+  foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+    list(APPEND LAPACKE_INCLUDE_DIRS ${LAPACKE_${_comp}_INCLUDE_DIR})
+    list(APPEND LAPACKE_LIBRARIES ${LAPACKE_${_comp}_LIB})
+  endforeach()
+  
+  if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
+      "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
+      "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
+      ) #NOT MSVC
+    set(MATH_LIB "m")
+    list(APPEND LAPACKE_LIBRARIES m)
+  endif()
+  
+  if(NOT "${LAPACKE_INCLUDE_DIRS}" STREQUAL "")
+    list(REMOVE_DUPLICATES LAPACKE_INCLUDE_DIRS)
+  endif()
+
+  # ----------------------------------------------------------------------------
+
+  # Inspired by FindBoost.cmake
+  foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+    if(NOT TARGET LAPACKE::${_comp} AND LAPACKE_${_comp}_FOUND)
+      get_filename_component(LIB_EXT "${LAPACKE_${_comp}_LIB}" EXT)
+      if(LIB_EXT STREQUAL ".a" OR LIB_EXT STREQUAL ".lib")
+        set(LIB_TYPE STATIC)
+      else()
+        set(LIB_TYPE SHARED)
+      endif()
+      add_library(LAPACKE::${_comp} ${LIB_TYPE} IMPORTED GLOBAL)
+      if(LAPACKE_INCLUDE_DIRS)
+        set_target_properties(LAPACKE::${_comp} PROPERTIES
+          INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
+      endif()
+      if(EXISTS "${LAPACKE_${_comp}_LIB}")
+        set_target_properties(LAPACKE::${_comp} PROPERTIES
+          IMPORTED_LOCATION "${LAPACKE_${_comp}_LIB}")
+      endif()
+      set_target_properties(LAPACKE::${_comp} PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${MATH_LIB}")
+    endif()
+  endforeach()
+
+  # ----------------------------------------------------------------------------
+
+  if(NOT LAPACKE_FIND_QUIETLY)
+    message(STATUS "Found LAPACKE and defined the following imported targets:")
+    foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+      message(STATUS "  - LAPACKE::${_comp}:")
+      message(STATUS "      + include:      ${LAPACKE_INCLUDE_DIRS}")
+      message(STATUS "      + library:      ${LAPACKE_${_comp}_LIB}")
+      message(STATUS "      + dependencies: ${MATH_LIB}")
+    endforeach()
+  endif()
 endif()
+
+# ==============================================================================
 
 mark_as_advanced(
   LAPACKE_FOUND
   LAPACKE_INCLUDE_DIRS
   LAPACKE_LIBRARIES
-  LAPACKE_VERSION_MAJOR
-  LAPACKE_VERSION_MINOR
-  LAPACKE_VERSION_PATCH
-  LAPACKE_VERSION_STRING
-)
-
-## For debugging
-message(STATUS "LAPACKE_FOUND                  :${LAPACKE_FOUND}:  - set to true if the library is found")
-message(STATUS "LAPACKE_INCLUDE_DIRS           :${LAPACKE_INCLUDE_DIRS}: - list of required include directories")
-message(STATUS "LAPACKE_LIBRARIES              :${LAPACKE_LIBRARIES}: - list of libraries to be linked")
-message(STATUS "LAPACKE_VERSION_MAJOR          :${LAPACKE_VERSION_MAJOR}: - major version number")
-message(STATUS "LAPACKE_VERSION_MINOR          :${LAPACKE_VERSION_MINOR}: - minor version number")
-message(STATUS "LAPACKE_VERSION_PATCH          :${LAPACKE_VERSION_PATCH}: - patch version number")
-message(STATUS "LAPACKE_VERSION_STRING         :${LAPACKE_VERSION_STRING}: - version number as a string")
+  )
