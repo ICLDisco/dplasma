@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -12,8 +12,6 @@
 #include "dplasma_complex.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include <core_blas.h>
-
-typedef struct CORE_zgetrf_data_s CORE_zgetrf_data_t;
 
 int blgchase_ztrdv2(int NT, int N, int NB,
                    parsec_complex64_t *A1, parsec_complex64_t *A2,
