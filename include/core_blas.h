@@ -44,14 +44,6 @@ extern "C" {
 extern char *plasma_lapack_constants[];
 #define lapack_const(plasma_const) plasma_lapack_constants[plasma_const][0]
 
-  /*
-   * CBlas enum
-   */
-#define CBLAS_TRANSPOSE enum CBLAS_TRANSPOSE
-#define CBLAS_UPLO      enum CBLAS_UPLO
-#define CBLAS_DIAG      enum CBLAS_DIAG
-#define CBLAS_SIDE      enum CBLAS_SIDE
-
 /* CBLAS requires for scalar arguments to be passed by address rather than by value */
 #ifndef CBLAS_SADDR
 #define CBLAS_SADDR( _val_ ) &(_val_)
