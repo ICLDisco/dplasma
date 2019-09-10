@@ -56,25 +56,6 @@ int  GKK_minloc(int n, int *T);
 void GKK_BalanceLoad(int thrdnbr, int *Tp, int *leaders, int nleaders, int L);
 int  GKK_getLeaderNbr(int me, int ne, int *nleaders, int **leaders);
 
-/** ****************************************************************************
- *  Extra quark wrapper functions that do not rely on precision
- *  (Defined only if quark.h is included prior to this file)
- **/
-#if defined(QUARK_H)
-  /*
-   * Functions which don't depend on precision
-   */
-void CORE_foo_quark(Quark *quark);
-void CORE_foo2_quark(Quark *quark);
-
-void QUARK_CORE_free(Quark *quark, Quark_Task_Flags *task_flags,
-                     void *A, int szeA);
-
-void QUARK_CORE_pivot_update(Quark *quark, Quark_Task_Flags *task_flags,
-                             int m, int n, int *ipiv, int *indices,
-                             int offset, int init);
-#endif /* defined(QUARK_H) */
-
 void CORE_pivot_update(int m, int n, int *ipiv, int *indices,
                        int offset, int init);
 

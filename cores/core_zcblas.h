@@ -31,28 +31,6 @@ void CORE_zlag2c(int m, int n,
                  const parsec_complex64_t *A, int lda,
                  parsec_complex32_t *B, int ldb, int *info);
 
-#if defined(QUARK_H)
-/** ****************************************************************************
- *  Declarations of QUARK wrappers (called by PLASMA) - alphabetical order
- **/
-void QUARK_CORE_clag2z(Quark *quark, Quark_Task_Flags *task_flags,
-                       int m, int n, int nb,
-                       const parsec_complex32_t *A, int lda,
-                       parsec_complex64_t *B, int ldb);
-void QUARK_CORE_zlag2c(Quark *quark, Quark_Task_Flags *task_flags,
-                       int m, int n, int nb,
-                       const parsec_complex64_t *A, int lda,
-                       parsec_complex32_t *B, int ldb,
-                       PLASMA_sequence *sequence, PLASMA_request *request);
-
-/** ****************************************************************************
- *  Declarations of QUARK wrappers (called by QUARK) - alphabetical order
- **/
-void CORE_clag2z_quark(Quark *quark);
-void CORE_zlag2c_quark(Quark *quark);
-
-#endif /* defined(QUARK_H) */
-
 #ifdef __cplusplus
 }
 #endif
