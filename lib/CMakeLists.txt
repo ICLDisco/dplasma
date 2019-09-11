@@ -208,7 +208,8 @@ target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DP
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
 target_link_libraries(dplasma
-  PRIVATE dplasma_cores
+  PRIVATE
+  dplasma_cores
   PUBLIC
   PaRSEC::parsec
   LAPACKE::LAPACKE)
