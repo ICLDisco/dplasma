@@ -1,4 +1,8 @@
 /**
+ * Copyright (c) 2019      The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ * Imported from:
  *
  * @file core_cblas.h
  *
