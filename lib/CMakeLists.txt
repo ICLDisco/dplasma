@@ -211,9 +211,7 @@ target_link_libraries(dplasma
   PRIVATE dplasma_cores
   PUBLIC
   PaRSEC::parsec
-  ${LAPACKE_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BLAS_LIBRARIES})
+  LAPACKE::LAPACKE)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})
 

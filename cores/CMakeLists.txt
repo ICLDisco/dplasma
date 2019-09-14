@@ -139,7 +139,9 @@ target_include_directories(dplasma_cores_obj
   ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
   $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
 target_link_libraries(dplasma_cores_obj
-  PUBLIC PaRSEC::parsec)
+  PUBLIC
+  PaRSEC::parsec
+  LAPACKE::LAPACKE)
 
 set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
 set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
@@ -163,7 +165,9 @@ if( CUDA_FOUND )
     ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
   target_link_libraries(dplasma_cores_cuda
-    PUBLIC PaRSEC::parsec)
+    PUBLIC
+    PaRSEC::parsec
+    LAPACKE::LAPACKE)
 
   ### Generate the CUDA .cu kernels if necessary
   # By default drop support for older devices (add 11 and 13 for support
@@ -267,9 +271,8 @@ target_sources(dplasma_cores INTERFACE
 target_link_libraries(dplasma_cores INTERFACE
   m
   PaRSEC::parsec
-  ${LAPACKE_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BLAS_LIBRARIES})
+  LAPACKE::LAPACKE)
+
 if( ${DPLASMA_HAVE_CUDA} )
   target_link_libraries(dplasma_cores
       INTERFACE ${CUDA_CUBLAS_LIBRARIES})

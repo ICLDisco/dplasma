@@ -45,6 +45,20 @@
 #
 
 # ==============================================================================
+# Copyright (c) 2019      The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
+# $COPYRIGHT$
+#
+# Additional copyrights may follow
+#
+# $HEADER$
+#
+# Author: Aurelien Bouteiller <bouteill@icl.utk.edu>
+# ==============================================================================
+
+# ==============================================================================
 # Copyright 2018 Damien Nguyen <damien.nguyen@alumni.epfl.ch>
 #
 # Distributed under the OSI-approved BSD License (the "License")
@@ -56,6 +70,7 @@
 set(LAPACKE_SEARCH_PATHS
   ${LAPACKE_ROOT}
   $ENV{LAPACKE_ROOT}
+  ${BLAS_LIBRARY}
   ${LAPACKE_DIR}
   $ENV{LAPACKE_DIR}
   ${CMAKE_PREFIX_PATH}
@@ -81,6 +96,8 @@ set(INC_PATH_SUFFIXES
   include/lapacke/
   lapack/include
   lapacke/include
+  CBLAS/include
+  LAPACKE/include
   )
 
 if(APPLE)
@@ -147,10 +164,51 @@ foreach(_comp ${LAPACKE_FIND_COMPONENTS})
 endforeach()
 set(LAPACKE_FIND_COMPONENTS ${_tmp_component_list})
 set(_tmp_component_list)
+list(SORT LAPACKE_FIND_COMPONENTS) # Find BLAS, then CBLAS, then LAPACK, then LAPACKE
 
+# First try the FindBLAS package
+find_package(BLAS)
+if(BLAS_FOUND)
+  if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+    # Look for <essl.h>
+    string(REGEX REPLACE "/lib6?4?/?[^/;]*" "" BLAS_essl_DIRS ${BLAS_LIBRARIES})
+    find_path(BLAS_essl_INCLUDE_DIR
+      NAMES essl.h
+      PATHS ${BLAS_INCLUDE_DIRS} ${BLAS_essl_LIBRARY} ${BLAS_LIBRARY} ${BLAS_essl_DIRS}
+      PATH_SUFFIXES ${INC_PATH_SUFFIXES})
+    if(BLAS_essl_INCLUDE_DIR)
+      list(APPEND BLAS_INCLUDE_DIRS ${BLAS_essl_INCLUDE_DIR})
+      list(REMOVE_DUPLICATES BLAS_INCLUDE_DIRS)
+    endif()
+    cmake_push_check_state()
+    set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+    set(CMAKE_REQUIRED_INCLUDES ${BLAS_INCLUDE_DIRS})
+    check_symbol_exists(zgemm "essl.h" FOUND_ESSL_H)
+    cmake_pop_check_state()
+    if(NOT FOUND_ESSL_H)
+      message(WARNING "BLA_VENDOR=IBMESSL but 'essl.h' could not be found. Set BLAS_INCLUDE_DIRS by hand, or select another vendor in BLA_VENDOR")
+    endif()
+  endif()
+  cmake_push_check_state()
+  set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+  set(CMAKE_REQUIRED_INCLUDES ${BLAS_INCLUDE_DIRS})
+  check_c_source_compiles("int main(void) { cblas_zgemm(); return 0; }" BLAS_HAS_CBLAS)
+  check_c_source_compiles("int main(void) { zgeqrf(); return 0; }" BLAS_HAS_LAPACK)
+  check_c_source_compiles("int main(void) { LAPACKE_zgeqrf(); return 0; }" BLAS_HAS_LAPACKE)
+  cmake_pop_check_state()
+endif()
+
+# Ok, now look for a ref-lapack
 foreach(_comp ${LAPACKE_FIND_COMPONENTS})
   if(_comp STREQUAL "LAPACKE")
-    _find_library_with_header(${_comp} lapacke.h lapacke liblapacke)
+    if("${BLA_VENDOR}" STREQUAL "IBMESSL" OR NOT BLAS_HAS_LAPACKE)
+      # LAPACKE is not in BLAS, or we have IBMESSL
+      # As IBMESSL is incomplete, we complete it with ref lapack
+      _find_library_with_header(${_comp} lapacke.h lapacke liblapacke)
+    else()
+      set(LAPACKE_LAPACKE_FOUND 1)
+      set(LAPACKE_LAPACKE_LIB_FOUND 1)
+    endif()
   elseif(_comp STREQUAL "LAPACKE_H")
     find_path(LAPACKE_${_comp}_INCLUDE_DIR
       NAMES lapacke.h
@@ -161,11 +219,32 @@ foreach(_comp ${LAPACKE_FIND_COMPONENTS})
       set(LAPACKE_${_comp}_INC_FOUND 1)
     endif()
   elseif(_comp STREQUAL "LAPACK")
-    _find_library_with_header(${_comp} "" lapack liblapack)
+    if("${BLA_VENDOR}" STREQUAL "IBMESSL" OR NOT BLAS_HAS_LAPACK)
+      # LAPACK is not in BLAS, or we have IBMESSL
+      # As IBMESSL is incomplete, we complete it with ref lapack
+      _find_library_with_header(${_comp} "" lapack liblapack)
+    else()
+      set(LAPACKE_LAPACK_FOUND 1)
+      set(LAPACKE_LAPACK_LIB_FOUND 1)
+    endif()
   elseif(_comp STREQUAL "CBLAS")
-    _find_library_with_header(${_comp} cblas.h cblas libcblas)
+    if("${BLA_VENDOR}" STREQUAL "IBMESSL" OR NOT BLAS_HAS_CBLAS)
+      # CBLAS is not in BLAS, or we have IBMESSL
+      # As IBMESSL is incomplete, we complete it with ref lapack
+      _find_library_with_header(${_comp} cblas.h cblas libcblas)
+    else()
+      set(LAPACKE_CBLAS_FOUND 1)
+      set(LAPACKE_CBLAS_INC_FOUND 1)
+      set(LAPACKE_CBLAS_LIB_FOUND 1)
+    endif()
   elseif(_comp STREQUAL "BLAS")
-    _find_library_with_header(${_comp} "" blas blas)
+    if(NOT BLAS_FOUND)
+      _find_library_with_header(${_comp} "" blas refblas)
+      set(BLA_VENDOR CACHE "Generic")
+    else()
+      set(LAPACKE_BLAS_FOUND 1)
+      set(LAPACKE_BLAS_LIB_FOUND 1)
+    endif()
   else()
     message(FATAL_ERROR "Unknown component: ${_comp}")
   endif()
@@ -185,19 +264,32 @@ find_package_handle_standard_args(LAPACKE
 # ==============================================================================
 
 if(LAPACKE_FOUND)
+  if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+    # Force using ESSL first, fallback to ref-lapack if function is not found
+    list(APPEND LAPACKE_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS})
+    list(APPEND LAPACKE_LIBRARIES ${BLAS_LIBRARIES})
+  endif()
+
+  list(REVERSE LAPACKE_FIND_COMPONENTS) # For static link, have blas.a come last
   foreach(_comp ${LAPACKE_FIND_COMPONENTS})
     list(APPEND LAPACKE_INCLUDE_DIRS ${LAPACKE_${_comp}_INCLUDE_DIR})
     list(APPEND LAPACKE_LIBRARIES ${LAPACKE_${_comp}_LIB})
   endforeach()
-  
+
+  if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+    # ref-lapack should be compiled to use ESSL BLAS as well; add a duplicate at
+    # the end of the link chain
+    list(APPEND LAPACKE_LIBRARIES ${BLAS_LIBRARIES})
+  endif()
+
   if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
-      "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
-      "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
+     "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
+     "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
       ) #NOT MSVC
     set(MATH_LIB "m")
     list(APPEND LAPACKE_LIBRARIES m)
   endif()
-  
+
   if(NOT "${LAPACKE_INCLUDE_DIRS}" STREQUAL "")
     list(REMOVE_DUPLICATES LAPACKE_INCLUDE_DIRS)
   endif()
@@ -216,16 +308,29 @@ if(LAPACKE_FOUND)
       add_library(LAPACKE::${_comp} ${LIB_TYPE} IMPORTED GLOBAL)
       if(LAPACKE_INCLUDE_DIRS)
         set_target_properties(LAPACKE::${_comp} PROPERTIES
-          INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
+            INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
+      endif()
+      if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+        list(LENGTH BLAS_LIBRARIES _len)
+        if(_len GREATER 1)
+          list(SUBLIST BLAS_LIBRARIES 1 -1 _fallback_${_comp})
+        else()
+          set(_fallback_${_comp})
+        endif()
+        list(APPEND _fallback_${_comp} "${LAPACKE_${_comp}_LIB}")
+        list(GET BLAS_LIBRARIES 0 LAPACKE_${_comp}_LIB)
       endif()
       if(EXISTS "${LAPACKE_${_comp}_LIB}")
         set_target_properties(LAPACKE::${_comp} PROPERTIES
           IMPORTED_LOCATION "${LAPACKE_${_comp}_LIB}")
       endif()
+      list(APPEND _fallback_${_comp} "${MATH_LIB}")
       set_target_properties(LAPACKE::${_comp} PROPERTIES
-        INTERFACE_LINK_LIBRARIES "${MATH_LIB}")
+          INTERFACE_LINK_LIBRARIES "${_fallback_${_comp}}"
+          LINKER_LANGUAGE Fortran)
     endif()
   endforeach()
+  target_link_libraries(LAPACKE::LAPACKE INTERFACE LAPACKE::LAPACK LAPACKE::CBLAS LAPACKE::BLAS)
 
   # ----------------------------------------------------------------------------
 
@@ -235,7 +340,7 @@ if(LAPACKE_FOUND)
       message(STATUS "  - LAPACKE::${_comp}:")
       message(STATUS "      + include:      ${LAPACKE_INCLUDE_DIRS}")
       message(STATUS "      + library:      ${LAPACKE_${_comp}_LIB}")
-      message(STATUS "      + dependencies: ${MATH_LIB}")
+      message(STATUS "      + dependencies: ${_fallback_${_comp}}")
     endforeach()
   endif()
 endif()

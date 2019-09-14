@@ -12,14 +12,21 @@ cat <<_EOF
 _EOF
 
 module load cmake # ATM this is 3.15; use CMAKE_EXECUTABLE to override
-#module load cuda # for now this has to be done externally
-echo "Do not forget to do a 'module load cuda'"
+
 # The following unload has to be done externally as it modifies the internal 
 # behavior of mpicc, which cannot be cached by CMake
 #  module unload xalt
-echo "Do not forget to do a 'module unload xalt': this module causes 'ld'to misbehave"
+[ -z $OLCF_XALT ] || echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."
 
-ENVVARS+=" CC=mpicc CXX=mpicxx FC=mpif90 CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS"
+# for now, module loading cuda has to be done externally
+[ -z $OLCF_CUDA_ROOT ] && echo "Do not forget to do a 'module load cuda'"
+module load cuda
+
+# FindBLAS with ESSL is not working very good. Force detection.
+[ -z $OLCF_ESSL_ROOT ] && module load essl
+#CMAKE_DEFINES+=" -DBLAS_LIBRARY='${OLCF_ESSL_ROOT}/lib64/libessl.so'"
+
+ENVVARS+=" CC=mpicc CXX=mpicxx FC=mpif90 CFLAGS='$CFLAGS' LDFLAGS='$LDFLAGS'"
 
 #enable_static=no
 with_blas=IBMESSL
