@@ -141,7 +141,7 @@ macro(_find_library_with_header component incname)
   else()
     set(LAPACKE_${component}_INC_FOUND 1)
   endif()
-  
+
   if(LAPACKE_${component}_LIB_FOUND AND LAPACKE_${component}_INC_FOUND)
     set(LAPACKE_${component}_FOUND 1)
   else()
@@ -166,6 +166,13 @@ set(LAPACKE_FIND_COMPONENTS ${_tmp_component_list})
 set(_tmp_component_list)
 list(SORT LAPACKE_FIND_COMPONENTS) # Find BLAS, then CBLAS, then LAPACK, then LAPACKE
 
+if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
+   "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
+   "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
+    ) #NOT MSVC
+  set(MATH_LIB "m")
+ endif()
+
 # First try the FindBLAS package
 find_package(BLAS)
 if(BLAS_FOUND)
@@ -181,7 +188,7 @@ if(BLAS_FOUND)
       list(REMOVE_DUPLICATES BLAS_INCLUDE_DIRS)
     endif()
     cmake_push_check_state()
-    set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+    set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES} ${MATH_LIB})
     set(CMAKE_REQUIRED_INCLUDES ${BLAS_INCLUDE_DIRS})
     check_symbol_exists(zgemm "essl.h" FOUND_ESSL_H)
     cmake_pop_check_state()
@@ -190,7 +197,7 @@ if(BLAS_FOUND)
     endif()
   endif()
   cmake_push_check_state()
-  set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+  set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES} ${MATH_LIB})
   set(CMAKE_REQUIRED_INCLUDES ${BLAS_INCLUDE_DIRS})
   check_c_source_compiles("int main(void) { cblas_zgemm(); return 0; }" BLAS_HAS_CBLAS)
   check_c_source_compiles("int main(void) { zgeqrf(); return 0; }" BLAS_HAS_LAPACK)
@@ -244,6 +251,12 @@ foreach(_comp ${LAPACKE_FIND_COMPONENTS})
     else()
       set(LAPACKE_BLAS_FOUND 1)
       set(LAPACKE_BLAS_LIB_FOUND 1)
+      set(LAPACKE_BLAS_LIB "${BLAS_LIBRARIES}")
+      list(APPEND LAPACKE_REQUIRED_VARS "LAPACKE_BLAS_LIB")
+      if(NOT "${BLAS_INCLUDE_DIRS}" STREQUAL "")
+        set(LAPACKE_INCLUDE_DIR "${BLAS_INCLUDE_DIRS}")
+        list(APPEND LAPACKE_REQUIRED_VARS "LAPACKE_INCLUDE_DIR")
+      endif()
     endif()
   else()
     message(FATAL_ERROR "Unknown component: ${_comp}")
@@ -275,20 +288,13 @@ if(LAPACKE_FOUND)
     list(APPEND LAPACKE_INCLUDE_DIRS ${LAPACKE_${_comp}_INCLUDE_DIR})
     list(APPEND LAPACKE_LIBRARIES ${LAPACKE_${_comp}_LIB})
   endforeach()
+  list(APPEND LAPACKE_LIBRARIES ${MATH_LIB})
 
-  if("${BLA_VENDOR}" STREQUAL "IBMESSL")
-    # ref-lapack should be compiled to use ESSL BLAS as well; add a duplicate at
-    # the end of the link chain
-    list(APPEND LAPACKE_LIBRARIES ${BLAS_LIBRARIES})
-  endif()
-
-  if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
-     "${CMAKE_C_COMPILER_ID}" MATCHES ".*GNU.*" OR
-     "${CMAKE_C_COMPILER_ID}" MATCHES ".*Intel.*"
-      ) #NOT MSVC
-    set(MATH_LIB "m")
-    list(APPEND LAPACKE_LIBRARIES m)
-  endif()
+#  if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+#    # ref-lapack should be compiled to use ESSL BLAS as well; add a duplicate at
+#    # the end of the link chain
+#    list(APPEND LAPACKE_LIBRARIES ${BLAS_LIBRARIES})
+#  endif()
 
   if(NOT "${LAPACKE_INCLUDE_DIRS}" STREQUAL "")
     list(REMOVE_DUPLICATES LAPACKE_INCLUDE_DIRS)
@@ -299,6 +305,17 @@ if(LAPACKE_FOUND)
   # Inspired by FindBoost.cmake
   foreach(_comp ${LAPACKE_FIND_COMPONENTS})
     if(NOT TARGET LAPACKE::${_comp} AND LAPACKE_${_comp}_FOUND)
+        #if("${BLA_VENDOR}" STREQUAL "IBMESSL")
+      if(BLAS_HAS_${_comp} OR "${_comp}" STREQUAL "BLAS")
+        list(LENGTH BLAS_LIBRARIES _len)
+        if(_len GREATER 1)
+          list(SUBLIST BLAS_LIBRARIES 1 -1 _fallback_${_comp})
+        else()
+          set(_fallback_${_comp})
+        endif()
+        list(APPEND _fallback_${_comp} "${LAPACKE_${_comp}_LIB}")
+        list(GET BLAS_LIBRARIES 0 LAPACKE_${_comp}_LIB)
+      endif()
       get_filename_component(LIB_EXT "${LAPACKE_${_comp}_LIB}" EXT)
       if(LIB_EXT STREQUAL ".a" OR LIB_EXT STREQUAL ".lib")
         set(LIB_TYPE STATIC)
@@ -309,16 +326,6 @@ if(LAPACKE_FOUND)
       if(LAPACKE_INCLUDE_DIRS)
         set_target_properties(LAPACKE::${_comp} PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
-      endif()
-      if("${BLA_VENDOR}" STREQUAL "IBMESSL")
-        list(LENGTH BLAS_LIBRARIES _len)
-        if(_len GREATER 1)
-          list(SUBLIST BLAS_LIBRARIES 1 -1 _fallback_${_comp})
-        else()
-          set(_fallback_${_comp})
-        endif()
-        list(APPEND _fallback_${_comp} "${LAPACKE_${_comp}_LIB}")
-        list(GET BLAS_LIBRARIES 0 LAPACKE_${_comp}_LIB)
       endif()
       if(EXISTS "${LAPACKE_${_comp}_LIB}")
         set_target_properties(LAPACKE::${_comp} PROPERTIES
