@@ -83,10 +83,12 @@ option(DPLASMA_DEBUG_QR_PIVGEN
   "Enable the QR pivgen testings" OFF)
 
 STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPLASMA_BUILD_INPLACE)
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
+include(CustomizeCompilerFlags)
+
 #
 # Find packages to decide if we compile DPLASMA support or not
 #
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 include(AddDocumentedFiles)
 
