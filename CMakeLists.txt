@@ -75,6 +75,9 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 include(AddDocumentedFiles)
 
 include(FortranCInterface)
+FortranCInterface_HEADER(include/dplasma_f2c.h
+                         MACRO_NAMESPACE "DPLASMA_F2C_"
+                         SYMBOL_NAMESPACE "dplasma_f2c_")
 
 #set(BLA_STATIC OFF)
 
@@ -211,8 +214,7 @@ endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 if(PARSEC_HAVE_CUDA)
   # CUDA is pulled by PaRSEC
-  find_package(CUDA REQUIRED)
-  set(DPLASMA_HAVE_CUDA ${CUDA_FOUND} CACHE BOOL "DPLASMA compiled with CUDA support")
+  set(DPLASMA_HAVE_CUDA ${PARSEC_HAVE_CUDA} CACHE BOOL "DPLASMA compiled with CUDA support")
   message(STATUS "CUDA support for DPLASMA enabled")
 endif(PARSEC_HAVE_CUDA)
 
@@ -231,11 +233,6 @@ if(BLAS_FOUND)
 endif(BLAS_FOUND)
 
 Add_Subdirectory(docs)
-
-if(PARSEC_HAVE_CUDA AND CUDA_FOUND)
-  # CUDA is pulled by PaRSEC
-  set(DPLASMA_HAVE_CUDA 1)
-endif(PARSEC_HAVE_CUDA AND CUDA_FOUND)
 
 configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/include/dplasma.pc.in"
