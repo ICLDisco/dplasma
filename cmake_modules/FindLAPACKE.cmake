@@ -203,7 +203,7 @@ if(BLAS_FOUND)
   check_c_source_compiles("int main(void) { cblas_zgemm(); return 0; }" BLAS_HAS_CBLAS)
   check_c_source_compiles("int main(void) { LAPACKE_zgeqrf(); return 0; }" BLAS_HAS_LAPACKE)
   cmake_pop_check_state()
-endif()
+endif(BLAS_FOUND)
 
 # Ok, now look for a ref-lapack
 foreach(_comp ${LAPACKE_FIND_COMPONENTS})
@@ -235,7 +235,7 @@ foreach(_comp ${LAPACKE_FIND_COMPONENTS})
       set(LAPACKE_LAPACK_LIB_FOUND 1)
     endif()
   elseif(_comp STREQUAL "CBLAS")
-    if("${BLA_VENDOR}" STREQUAL "IBMESSL" OR NOT BLAS_HAS_CBLAS)
+    if(NOT BLAS_HAS_CBLAS)
       # CBLAS is not in BLAS, or we have IBMESSL
       # As IBMESSL is incomplete, we complete it with ref lapack
       _find_library_with_header(${_comp} cblas.h cblas libcblas)
