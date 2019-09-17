@@ -24,7 +24,8 @@ module load cuda
 
 # FindBLAS with ESSL is not working very good. Force detection.
 [ -z $OLCF_ESSL_ROOT ] && module load essl
-#CMAKE_DEFINES+=" -DBLAS_LIBRARY='${OLCF_ESSL_ROOT}/lib64/libessl.so'"
+CMAKE_DEFINES+=" -DBLAS_LIBRARIES='${OLCF_ESSL_ROOT}/lib64/libessl.so'"
+[ -d $HOME/parsec/dplasma/lapack ] && ENVVARS+=" LAPACKE_ROOT=$HOME/parsec/dplasma/lapack" || echo "System installed LAPACKE does not work with ESSL. You need to compile your own"
 
 ENVVARS+=" CC=mpicc CXX=mpicxx FC=mpif90 CFLAGS='$CFLAGS' LDFLAGS='$LDFLAGS'"
 
