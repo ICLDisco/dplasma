@@ -470,7 +470,7 @@ esac
 
 case x$with_parsec in
 xyes) CMAKE_DEFINES+=" -DPaRSEC_ROOT=NOTFOUND";;
-xno) CMAKE_DEFINES+=" -DPaRSEC_ROOT=-internal-";;
+xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON";;
 x) ;;
 *) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
 esac

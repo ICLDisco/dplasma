@@ -155,15 +155,16 @@ set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
                            CACHE STRING "DPLASMA Installation Prefix")
 #
 # Find or Build PaRSEC package
-STRING(COMPARE EQUAL "-internal-" "${PaRSEC_ROOT}" DPLASMA_FORCE_INTERNAL)
-STRING(COMPARE NOTEQUAL "" "${PaRSEC_ROOT}" PARSEC_EXTERNAL_REQUIRED)
-if(NOT DPLASMA_FORCE_INTERNAL)
-  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" PATH_SUFFIXES share/cmake/parsec cmake_modules QUIET)
+option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
+if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
+  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
-  if(PARSEC_EXTERNAL_REQUIRED)
-    message(FATAL_ERROR "User requested PaRSEC not found with PaRSEC_ROOT=${PaRSEC_ROOT}")
+  if(PaRSEC_ROOT AND DPLASMA_FORCE_INTERNAL_PARSEC)
+      message(FATAL_ERROR "User requested PaRSEC with PaRSEC_ROOT=${PaRSEC_ROOT} and DPLASMA_FORCE_INTERNAL_PARSEC is set; this is incoherent")
+  elseif(PaRSEC_ROOT)
+    message(FATAL_ERROR "User requested PaRSEC with PaRSEC_ROOT=${PaRSEC_ROOT} not found")
   endif()
   # we have to build it
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
@@ -195,17 +196,9 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     # we need and not the default value provided to the first OPTION call.
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
-    # that's the limit of mixing namespace, export, and building a project, you're stuck with mismatching targets
-    add_library(PaRSEC::parsec ALIAS parsec)
-    add_executable(PaRSEC::parsec_ptgpp ALIAS parsec_ptgpp)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parsec
-                        ${CMAKE_CURRENT_SOURCE_DIR}/parsec/parsec/include)
-    include_directories($<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_BINARY_DIR}/parsec
-                                                          ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include>)
-    # I don't understand why CMake does not propagate the parsec target include requirements
-    # but it does not. So we need to forcefully add the MPI C header path.
-    include_directories(${MPI_C_HEADER_DIR})
+    # Import targets and load dependent libraries
+    find_package(PaRSEC NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
+    set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
     message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
     message(STATUS "########################################################################")
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
