@@ -7,7 +7,7 @@ set(cplx_files "")
 set(all_precisions_files "")
 
 set(CORE_CUDA_HEADERS "")
-if( CUDA_FOUND )
+if( DPLASMA_HAVE_CUDA )
     set(CORE_CUDA_SOURCES dplasma_cuda_ztsmqr.c)
 else()
     set(CORE_CUDA_SOURCES "")
@@ -151,7 +151,7 @@ add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
-if( CUDA_FOUND )
+if( DPLASMA_HAVE_CUDA )
   # generate the cores_cuda library (hooks to cublas)
   precisions_rules_py(generated_cuda_files
                       ${CORE_CUDA_SOURCES}
@@ -273,10 +273,10 @@ target_link_libraries(dplasma_cores INTERFACE
   PaRSEC::parsec
   LAPACKE::LAPACKE)
 
-if( ${DPLASMA_HAVE_CUDA} )
+if( DPLASMA_HAVE_CUDA )
   target_link_libraries(dplasma_cores
       INTERFACE ${CUDA_CUBLAS_LIBRARIES})
-endif( ${DPLASMA_HAVE_CUDA} )
+endif( DPLASMA_HAVE_CUDA )
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
