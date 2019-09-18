@@ -233,6 +233,9 @@ if(PARSEC_HAVE_CUDA)
   message(STATUS "CUDA support for DPLASMA enabled")
 endif(PARSEC_HAVE_CUDA)
 
+include (CheckIncludeFiles)
+check_include_files(complex.h DPLASMA_HAVE_COMPLEX_H)
+
 if(BLAS_FOUND)
   Add_Subdirectory(include)
   Add_Subdirectory(cores)

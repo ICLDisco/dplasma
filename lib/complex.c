@@ -6,42 +6,52 @@
 
 #include "dplasma_complex.h"
 
-#ifndef PARSEC_HAVE_COMPLEX_H
+#ifndef DPLASMA_HAVE_COMPLEX_H
 
 #include <math.h>
 
 float cabsf(float _Complex z)
 {
-    float *zp, x, y;
-    zp = (float *)&z;
+    float *zp = (float *)&z;
+    float x,y,ans,temp;
 
-    /* first find out the large component */
-    if (zp[0] > zp[1]) {
-        x = zp[0];
-        y = zp[1];
+    /* Numerical Recipes in C, Second Edition, p 949 */
+    x=fabsf(zp[0]);
+    y=fabsf(zp[1]);
+    if (x == 0.0)
+        ans=y;
+    else if (y == 0.0)
+        ans=x;
+    else if (x > y) {
+        temp=y/x;
+        ans=x*sqrtf(1.0f+temp*temp);
     } else {
-        x = zp[1];
-        y = zp[0];
+        temp=x/y;
+        ans=y*sqrtf(1.0f+temp*temp);
     }
-
-    return fabsf(x) * sqrtf(1.0f + y / x);
+    return ans;
 }
 
 double cabs(double _Complex z)
 {
-    double *zp, x, y;
-    zp = (double *)&z;
+    double *zp = (double *)&z;
+    double x,y,ans,temp;
 
-    /* first find out the large component */
-    if (zp[0] > zp[1]) {
-        x = zp[0];
-        y = zp[1];
+    /* Numerical Recipes in C, Second Edition, p 949 */
+    x=fabs(zp[0]);
+    y=fabs(zp[1]);
+    if (x == 0.0)
+        ans=y;
+    else if (y == 0.0)
+        ans=x;
+    else if (x > y) {
+        temp=y/x;
+        ans=x*sqrt(1.0+temp*temp);
     } else {
-        x = zp[1];
-        y = zp[0];
+        temp=x/y;
+        ans=y*sqrt(1.0+temp*temp);
     }
-
-    return fabs(x) * sqrt(1.0f + y / x);
+    return ans;
 }
 
 double cimag(parsec_complex64_t z)
@@ -66,4 +76,4 @@ parsec_complex64_t conj(parsec_complex64_t z)
     return v;
 }
 
-#endif /* PARSEC_HAS_COMPLEX */
+#endif /* DPLASMA_HAS_COMPLEX */

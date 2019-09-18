@@ -21,14 +21,11 @@ typedef float  _Complex parsec_complex32_t;
 typedef double _Complex parsec_complex64_t;
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(PARSEC_INTERNAL_H_HAS_BEEN_INCLUDED)
-
-#if !defined(__cplusplus) && defined(PARSEC_HAVE_COMPLEX_H)
+#if !defined(__cplusplus) && defined(DPLASMA_HAVE_COMPLEX_H)
 #include <complex.h>
 #else
 
@@ -58,9 +55,7 @@ extern parsec_complex32_t cexpf (parsec_complex32_t z);
 extern parsec_complex32_t clogf (parsec_complex32_t z);
 extern parsec_complex32_t cpowf (parsec_complex32_t z, parsec_complex32_t w);
 
-#endif /* PARSEC_HAS_COMPLEX_H */
-
-#endif /* defined(PARSEC_INTERNAL_H_HAS_BEEN_INCLUDED) */
+#endif /* DPLASMA_HAVE_COMPLEX_H */
 
 #ifdef __cplusplus
 }

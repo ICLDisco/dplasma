@@ -14,7 +14,7 @@ set(EXTRA_SOURCES
   map2_wrapper.c
   butterfly_map.c
 )
-if( NOT PARSEC_HAVE_COMPLEX_H )
+if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
 
