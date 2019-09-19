@@ -118,6 +118,27 @@ load environment modules_, etc. Of note are the ``CMAKE_DEFINES`` and
 , and ``A=B`` environment are prepended to the ``cmake`` invocation,
 respectively.
 
+Submodule or External PaRSEC
+----------------------------
+
+By default, DPLASMA will try to detect as system (or speficied in the
+``PaRSEC_ROOT`` environment variable) automatically. If an installed
+PaRSEC is not found, DPLASMA will download an appropriate version of
+PaRSEC from ``bitbucket.org`` and setup a ``git submodule``. This
+Submodule PaRSEC will be configured and built at the same time as
+DPLASMA. Passing ``--without-parsec`` to ``configure``  will force using
+the submodule PaRSEC instead of looking for an installed version.
+
+Conversely, you can prevent loading the Submodule PaRSEC by setting
+``--with-parsec``. You can select a particular externally installed
+PaRSEC by setting the configure option 
+``--with-parsec=$PARSEC_INSTALL_DIRECTORY``.
+
+Note that many of the ``configure`` options apply only to the submodule
+PaRSEC and have no effect when you are using an external PaRSEC. Setting
+these will result in a warning by CMake that some variables have been 
+defined but unused.
+
 Cross Compiling
 ---------------
 
