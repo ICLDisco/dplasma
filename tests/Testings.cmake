@@ -153,12 +153,12 @@ foreach(prec ${DPLASMA_PRECISIONS} )
 
   # The headnode lack GPUs so we need MPI in order to get the test to run on
   # one of the nodes.
-  if (CUDA_FOUND AND MPI_C_FOUND)
+  if (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
     dplasma_add_test(potrf potrf ${PTG2DTD}_1gpu_shm -N 8000 -t 320 ${OPTIONS} -g 1)
     set_tests_properties(dplasma_${prec}potrf_1gpu_shm PROPERTIES LABEL "dplasma;shm;gpu")
     dplasma_add_test(potrf potrf ${PTG2DTD}_2gpu_shm -N 8000 -t 320 ${OPTIONS} -g 2)
     set_tests_properties(dplasma_${prec}potrf_2gpu_shm PROPERTIES LABEL "dplasma;shm;gpu")
-  endif (CUDA_FOUND AND MPI_C_FOUND)
+  endif (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
 
   #   if ( ${prec} STREQUAL "c" OR ${prec} STREQUAL "z" )
   #     dplasma_add_test(heev "" ${PTG2DTD}_shm -N 4000 ${OPTIONS})

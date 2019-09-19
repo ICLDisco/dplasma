@@ -12,6 +12,7 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/diag_band_to_rect.h"
 #include "dplasmatypes.h"
+#include "lapacke.h"
 
 /* Including the bulge chassing */
 #define FADDS_ZHEEV(__n) (((__n) * (-8.0 / 3.0 + (__n) * (1.0 + 2.0 / 3.0 * (__n)))) - 4.0)
@@ -162,7 +163,7 @@ goto fin;
             printf("\n");
 #endif
             /* call eigensolver */
-            dsterf_( &N, D, E, &INFO);
+            LAPACK_dsterf( &N, D, E, &INFO);
             assert( 0 == INFO );
         }
         SYNC_TIME_PRINT( rank, ("Dplasma Stage3: dsterf\n"));

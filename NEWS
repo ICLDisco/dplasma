@@ -6,8 +6,11 @@ This file contains the main features as well as overviews of specific
 bug fixes (and other actions) for each version of DPLASMA since
 inception (basically the split from the PaRSEC project).
 
+ - DPLASMA does not depend anymore on external COREBLAS or PLASMA, but only on BLAS
+   and LAPACKE
+
  - Split DPLASMA and PaRSEC into separate repositories. PaRSEC moves from
-   cmake-2.0 to cmake-3.9, using targets. Targets are exported for
+   cmake-2.0 to cmake-3.12, using targets. Targets are exported for
    third-party integration
 
  - Add support in the runtime for user-defined properties evaluated at

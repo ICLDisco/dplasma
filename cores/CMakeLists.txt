@@ -7,7 +7,7 @@ set(cplx_files "")
 set(all_precisions_files "")
 
 set(CORE_CUDA_HEADERS "")
-if( CUDA_FOUND )
+if( DPLASMA_HAVE_CUDA )
     set(CORE_CUDA_SOURCES dplasma_cuda_ztsmqr.c)
 else()
     set(CORE_CUDA_SOURCES "")
@@ -139,7 +139,9 @@ target_include_directories(dplasma_cores_obj
   ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
   $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
 target_link_libraries(dplasma_cores_obj
-  PUBLIC PaRSEC::parsec)
+  PUBLIC
+  PaRSEC::parsec
+  LAPACKE::LAPACKE)
 
 set_target_properties(dplasma_cores_obj PROPERTIES ENABLE_EXPORTS True)
 set_target_properties(dplasma_cores_obj PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
@@ -149,7 +151,7 @@ add_dependencies(dplasma_cores_obj dplasma_includes dplasma_cores_includes)
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
-if( CUDA_FOUND )
+if( DPLASMA_HAVE_CUDA )
   # generate the cores_cuda library (hooks to cublas)
   precisions_rules_py(generated_cuda_files
                       ${CORE_CUDA_SOURCES}
@@ -163,7 +165,9 @@ if( CUDA_FOUND )
     ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>)
   target_link_libraries(dplasma_cores_cuda
-    PUBLIC PaRSEC::parsec)
+    PUBLIC
+    PaRSEC::parsec
+    LAPACKE::LAPACKE)
 
   ### Generate the CUDA .cu kernels if necessary
   # By default drop support for older devices (add 11 and 13 for support
@@ -267,13 +271,12 @@ target_sources(dplasma_cores INTERFACE
 target_link_libraries(dplasma_cores INTERFACE
   m
   PaRSEC::parsec
-  ${LAPACKE_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BLAS_LIBRARIES})
-if( ${DPLASMA_HAVE_CUDA} )
+  LAPACKE::LAPACKE)
+
+if( DPLASMA_HAVE_CUDA )
   target_link_libraries(dplasma_cores
       INTERFACE ${CUDA_CUBLAS_LIBRARIES})
-endif( ${DPLASMA_HAVE_CUDA} )
+endif( DPLASMA_HAVE_CUDA )
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_files} ${all_precisions_files} ${cplx_files})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${common_srcs})
 
