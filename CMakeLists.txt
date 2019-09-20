@@ -52,6 +52,15 @@ if( SUPPORT_FORTRAN )
   enable_language(Fortran OPTIONAL)
 endif( SUPPORT_FORTRAN )
 
+option(SUPPORT_C11
+       "Enable support for C11 capabilities. Might not work with OpenMP support due to an OpenMP compilers restriction (default ON)." ON)
+if( SUPPORT_C11 )
+  set(CMAKE_C_STANDARD 11)
+else (SUPPORT_C11)
+  set(CMAKE_C_STANDARD 99)
+endif( SUPPORT_C11 )
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" OFF)
 
@@ -130,8 +139,11 @@ Add_Subdirectory(tools/PrecisionGenerator)
 # Veclib on OSX diverges from the standard BLAS interface. As a result, single
 # precision dplasma tests (real and complex) deliver wrong results.
 # Until we have a fix, make sure to disable these 2 presicisions with vecLib.
-if( PARSEC_OSX )
+if( APPLE )
+  CMAKE_PUSH_CHECK_STATE()
+  list(APPEND CMAKE_REQUIRED_LIBRARIES "${BLAS_LIBRARIES}")
   check_function_exists(appleblas_sgeadd PARSEC_OSX_VECLIB)
+  CMAKE_POP_CHECK_STATE()
   if( PARSEC_OSX_VECLIB )
     set(tmp_fixed_prec "")
     foreach(prec ${DPLASMA_PRECISIONS})
@@ -145,11 +157,11 @@ if( PARSEC_OSX )
     STRING(REPLACE " " ";" NEW_PREC "${tmp_fixed_prec}")
     STRING(COMPARE NOTEQUAL "${NEW_PREC}" "${DPLASMA_PRECISIONS}" prec_change)
     if( prec_change )
-        MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes Dplasma to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
+      MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes Dplasma to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
       set(DPLASMA_PRECISIONS ${NEW_PREC})
     endif( prec_change )
   endif( PARSEC_OSX_VECLIB )
-endif( PARSEC_OSX )
+endif( APPLE )
 
 set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
                            CACHE STRING "DPLASMA Installation Prefix")
