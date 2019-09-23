@@ -662,9 +662,47 @@ configurations in ``contrib/spack``. See the Readme there for more details.
 Running with DPLASMA
 ====================
 
+The dplasma library is compiled into ``dplasma/lib``. All testing programs are
+compiled in ``dplasma/tests``. Examples are:
+
+``dplasma/testing/testing_?getrf``
+    LU Factorization (simple or double precision)
+``dplasma/testing/testing_?geqrf``
+    QR Factorization (simple or double precision)
+``dplasma/testing/testing_?potrf``
+    Cholesky Factorization (simple or double precision)
+
+All the binaries should accept as input:
+
+    -c <n>                  the number of threads used for kernel execution on each node.
+                            This should be set to the number of cores. Remember that one
+                            additional thread will be spawned to handle the communications
+                            in the MPI version.
+    -N SIZE                 a mandatory argument to define the size of the matrix
+    -g <number of GPUs>     number of GPUs to use, if the operation is GPU-enabled
+    -t <blocksize>          columns in a tile
+    -T <blocksize>          rows in a tile, (WARNING: most algorithm included in DPLASMA
+                            requires square tiles)
+    -p <number of rows>     to require a 2-D block cyclic distribution of p rows
+    -q <number of columns>  to require a 2D block cyclic distribution of q columns
+
+A typical dplasma run using MPI looks like
+
 .. code:: bash
 
-  mpiexec -n 8 ./some_parsec_app
+  mpiexec -np 8 ./testing_spotrf -c 8 -g 0 -p 4 -q 2 -t 120 -T 120 -N 1000
+
+This invocation run a Cholesky factorization on 8 nodes, 8 computing threads per node, nodes being
+arranged in a ``4x2`` grid, with a distributed generation of the matrix of size ``1000x1000`` floats, with
+tiles of size ``120x120``. Each test can dump the list of options with ``-h``. Some tests have specific options 
+(like ``-I`` to tune the inner block size in QR and LU, and ``-M`` in LU or QR to have non-square matrices).
+
+In addition to the parameters usually accepted by DPLASMA (see ``mpirun -np 1 ./testing_dpotrf --help`` for a full
+list), the PaRSEC runtime engine can be tuned through its MCA. MCA parameters can be passed to the runtime engine
+after the DPLASMA arguments, by separating the DPLASMA arguments from the PaRSEC arguments with -- (e.g. 
+``mpirun -np 8 ./testing_dpotrf -c 8 -N 1000 -- --mca mca_sched ap`` would tell DPLASMA to use 8 cores, and PaRSEC 
+to use the AP (Absolute Priority) scheduling heuristic). A complete list of MCA parameters can be found by passing 
+``--help`` to the PaRSEC runtime engine (e.g. ``mpirun -np 1 ./testing_dpotrf -c 1 -N 100 -- --help``).
 
 TL;DR
 =====
