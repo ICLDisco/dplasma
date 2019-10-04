@@ -10,6 +10,7 @@
 #include "dplasma.h"
 #include "parsec/vpmap.h"
 #include <math.h>
+#include <alloca.h>
 
 #if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>

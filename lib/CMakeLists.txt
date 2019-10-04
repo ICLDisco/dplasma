@@ -14,7 +14,7 @@ set(EXTRA_SOURCES
   map2_wrapper.c
   butterfly_map.c
 )
-if( NOT PARSEC_HAVE_COMPLEX_H )
+if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
 
@@ -211,12 +211,14 @@ target_link_libraries(dplasma
   PRIVATE dplasma_cores
   PUBLIC
   PaRSEC::parsec
-  ${LAPACKE_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BLAS_LIBRARIES})
+  LAPACKE::LAPACKE)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})
 
+if( DPLASMA_HAVE_CUDA )
+  target_link_libraries(dplasma PUBLIC ${CUDA_CUBLAS_LIBRARIES})
+endif( DPLASMA_HAVE_CUDA )
+				       
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
         LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib)

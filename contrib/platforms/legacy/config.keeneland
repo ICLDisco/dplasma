@@ -1,0 +1,22 @@
+#!/bin/bash
+echo "## Defaults for Keeneland machine (NSF Xsede GPU cluster)"
+
+module load cmake/2.8.7
+module load flex
+module swap cuda cuda/5.5 
+module swap intel intel/2013_sp1.1.106 
+module swap openmpi openmpi/1.6.1-intel
+
+CC=${CC:="icc"}
+CXX=${CXX:="icpc"}
+FC=${FC:="ifort"}
+#MPI_DIR=${MPI_DIR:="/opt/ompi"}
+HWLOC_DIR=${HWLOC_DIR:="/nics/c/home/bouteill/KEENELAND/hwloc/1.9"}
+#GTG_DIR=${GTG_DIR:="/opt/gtg"}
+#CUDA_DIR=${CUDA_DIR:="/opt/cuda"}
+#OMEGA_DIR=${OMEGA_DIR:="/opt/omega"}
+
+. $(dirname $0)/config.inc
+# guess_defaults  # No guesses on Keeneland.
+run_cmake $*
+

@@ -3,6 +3,8 @@ project (DPLASMA C)
 
 include(CMakeDependentOption)
 include(CMakePushCheckState)
+include(CheckSymbolExists)
+include(CheckCSourceCompiles)
 
 # The current version number
 set (DPLASMA_VERSION_MAJOR 2)
@@ -50,6 +52,15 @@ if( SUPPORT_FORTRAN )
   enable_language(Fortran OPTIONAL)
 endif( SUPPORT_FORTRAN )
 
+option(SUPPORT_C11
+       "Enable support for C11 capabilities. Might not work with OpenMP support due to an OpenMP compilers restriction (default ON)." ON)
+if( SUPPORT_C11 )
+  set(CMAKE_C_STANDARD 11)
+else (SUPPORT_C11)
+  set(CMAKE_C_STANDARD 99)
+endif( SUPPORT_C11 )
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" OFF)
 
@@ -65,18 +76,107 @@ option(DPLASMA_DEBUG_QR_PIVGEN
   "Enable the QR pivgen testings" OFF)
 
 STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPLASMA_BUILD_INPLACE)
+#
+# Find packages to decide if we compile DPLASMA support or not
+#
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
+include(AddDocumentedFiles)
+
+include(FortranCInterface)
+FortranCInterface_HEADER(include/dplasma_f2c.h
+                         MACRO_NAMESPACE "DPLASMA_F2C_"
+                         SYMBOL_NAMESPACE "dplasma_f2c_")
+
+#set(BLA_STATIC OFF)
+
+set(BLA_VENDOR CACHE STRING "Possible valid values are: Intel10_64lp_seq, IBMESSL, Apple, or All, which will default to something like Goto or ATLAS")
+# Goto, ATLAS, PhiPACK, CXML, DXML, SunPerf, SCSL, SGIMATH, IBMESSL, Intel10_64lp_seq, ACML, ACML_MP, ACML_GPU, Apple, NAS, Generic
+set_property(CACHE BLA_VENDOR PROPERTY STRINGS Intel10_64lp_seq IBMESSL Apple Goto ATLAS)
+find_package(LAPACKE REQUIRED)
+
+check_symbol_exists(timersub "sys/time.h" DPLASMA_TIMERSUB_NEED__GNU_SOURCE)
+if( NOT DPLASMA_TIMERSUB_NEED__GNU_SOURCE )
+  unset(DPLASMA_TIMERSUB_NEED__GNU_SOURCE CACHE)
+  CMAKE_PUSH_CHECK_STATE()
+  list(APPEND CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+  check_symbol_exists(timersub "sys/time.h" DPLASMA_TIMERSUB_NEED__GNU_SOURCE)
+  CMAKE_POP_CHECK_STATE()
+  if( DPLASMA_TIMERSUB_NEED__GNU_SOURCE )
+    add_definitions(-D_GNU_SOURCE)
+  endif( DPLASMA_TIMERSUB_NEED__GNU_SOURCE )
+endif( NOT DPLASMA_TIMERSUB_NEED__GNU_SOURCE )
+set(DPLASMA_NEED__GNU_SOURCE ${DPLASMA_TIMERSUB_NEED__GNU_SOURCE} CACHE BOOL "True if DPLASMA needs _GNU_SOURCE")
+
+check_symbol_exists(asprintf "stdio.h" DPLASMA_ASPRINTF_NEED__GNU_SOURCE)
+if( NOT DPLASMA_ASPRINTF_NEED__GNU_SOURCE )
+  unset(DPLASMA_ASPRINTF_NEED__GNU_SOURCE CACHE)
+  CMAKE_PUSH_CHECK_STATE()
+  list(APPEND CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
+  check_symbol_exists(asprintf "stdio.h" DPLASMA_ASPRINTF_NEED__GNU_SOURCE)
+  CMAKE_POP_CHECK_STATE()
+  if( DPLASMA_ASPRINTF_NEED__GNU_SOURCE )
+    set(DPLASMA_NEED__GNU_SOURCE True CACHE BOOL "True if DPLASMA needs _GNU_SOURCE")
+    add_definitions(-D_GNU_SOURCE)
+  endif( DPLASMA_ASPRINTF_NEED__GNU_SOURCE )
+endif( NOT DPLASMA_ASPRINTF_NEED__GNU_SOURCE )
+
+if( DPLASMA_GPU_WITH_MAGMA )
+  find_package(MAGMA)
+  if( MAGMA_FOUND )
+  else( MAGMA_FOUND )
+  endif( MAGMA_FOUND )
+endif( DPLASMA_GPU_WITH_MAGMA )
+
+if(NOT DPLASMA_PRECISIONS)
+  set(DPLASMA_PRECISIONS "s;d;c;z" CACHE STRING "The precisions to compile in dplasma (accepts a colon separated list of s;d;c;z)" FORCE)
+else()
+  set(DPLASMA_PRECISIONS "${DPLASMA_PRECISIONS}" CACHE STRING "The precisions to compile in dplasma (accepts a colon separated list of s;d;c;z)" FORCE)
+endif()
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/PrecisionGenerator/")
+Add_Subdirectory(tools/PrecisionGenerator)
+
+# Veclib on OSX diverges from the standard BLAS interface. As a result, single
+# precision dplasma tests (real and complex) deliver wrong results.
+# Until we have a fix, make sure to disable these 2 presicisions with vecLib.
+if( APPLE )
+  CMAKE_PUSH_CHECK_STATE()
+  list(APPEND CMAKE_REQUIRED_LIBRARIES "${BLAS_LIBRARIES}")
+  check_function_exists(appleblas_sgeadd PARSEC_OSX_VECLIB)
+  CMAKE_POP_CHECK_STATE()
+  if( PARSEC_OSX_VECLIB )
+    set(tmp_fixed_prec "")
+    foreach(prec ${DPLASMA_PRECISIONS})
+      STRING(COMPARE EQUAL "${prec}" "s" is_sprec)
+      STRING(COMPARE EQUAL "${prec}" "c" is_cprec)
+      if ( NOT (is_sprec OR is_cprec) )
+        set(tmp_fixed_prec "${tmp_fixed_prec} ${prec}")
+      endif ( NOT (is_sprec OR is_cprec) )
+    endforeach()
+    STRING(STRIP "${tmp_fixed_prec}" tmp_fixed_prec)
+    STRING(REPLACE " " ";" NEW_PREC "${tmp_fixed_prec}")
+    STRING(COMPARE NOTEQUAL "${NEW_PREC}" "${DPLASMA_PRECISIONS}" prec_change)
+    if( prec_change )
+      MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes Dplasma to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
+      set(DPLASMA_PRECISIONS ${NEW_PREC})
+    endif( prec_change )
+  endif( PARSEC_OSX_VECLIB )
+endif( APPLE )
+
+set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
+                           CACHE STRING "DPLASMA Installation Prefix")
 #
 # Find or Build PaRSEC package
-STRING(COMPARE EQUAL "-internal-" "${PaRSEC_ROOT}" DPLASMA_FORCE_INTERNAL)
-STRING(COMPARE NOTEQUAL "" "${PaRSEC_ROOT}" PARSEC_EXTERNAL_REQUIRED)
-if(NOT DPLASMA_FORCE_INTERNAL)
-  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" PATH_SUFFIXES share/cmake/parsec cmake_modules QUIET)
+option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
+if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
+  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
-  if(PARSEC_EXTERNAL_REQUIRED)
-    message(FATAL_ERROR "User requested PaRSEC not found with PaRSEC_ROOT=${PaRSEC_ROOT}")
+  if(PaRSEC_ROOT AND DPLASMA_FORCE_INTERNAL_PARSEC)
+      message(FATAL_ERROR "User requested PaRSEC with PaRSEC_ROOT=${PaRSEC_ROOT} and DPLASMA_FORCE_INTERNAL_PARSEC is set; this is incoherent")
+  elseif(PaRSEC_ROOT)
+    message(FATAL_ERROR "User requested PaRSEC with PaRSEC_ROOT=${PaRSEC_ROOT} not found")
   endif()
   # we have to build it
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
@@ -101,113 +201,33 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
   else(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
     # options for PaRSEC?
-    message(STATUS "Building internal PaRSEC runtime!")
+    message(STATUS "########################################################################")
+    message(STATUS "#             Configuring internal submodule PaRSEC runtime!")
     # Thanks to CMake policy CMP0077 we cannot set a variable before it is used with option(). Thus,
     # we need to make it an option here, so that cmake accept it and does the right thing (use the value
     # we need and not the default value provided to the first OPTION call.
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
-    # that's the limit of mixing namespace, export, and building a project, you're stuck with mismatching targets
-    add_library(PaRSEC::parsec ALIAS parsec)
-    add_executable(PaRSEC::parsec_ptgpp ALIAS parsec_ptgpp)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/parsec/cmake_modules)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/parsec
-                        ${CMAKE_CURRENT_SOURCE_DIR}/parsec/parsec/include)
-    include_directories($<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_BINARY_DIR}/parsec
-                                                          ${CMAKE_CURRENT_BINARY_DIR}/parsec/parsec/include>)
-    # I don't understand why CMake does not propagate the parsec target include requirements
-    # but it does not. So we need to forcefully add the MPI C header path.
-    include_directories(${MPI_C_HEADER_DIR})
+    # Import targets and load dependent libraries
+    find_package(PaRSEC NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
+    set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
+    message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
+    message(STATUS "########################################################################")
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
-
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
-#
-# Find packages to decide if we compile DPLASMA support or not
-#
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
-
-include(AddDocumentedFiles)
-
-include(FortranCInterface)
-
-set(BLA_STATIC OFF)
-
-set(BLA_VENDOR CACHE STRING "Possible valid values are: Intel10_64lp_seq, IBMESSL, Apple, or All, which will default to something like Goto or ATLAS")
-# Goto, ATLAS, PhiPACK, CXML, DXML, SunPerf, SCSL, SGIMATH, IBMESSL, Intel10_64lp_seq, ACML, ACML_MP, ACML_GPU, Apple, NAS, Generic
-set_property(CACHE BLA_VENDOR PROPERTY STRINGS Intel10_64lp_seq IBMESSL Apple Goto ATLAS)
-
-set(LAPACKE_FOUND FALSE)
-set(LAPACK_FOUND  FALSE)
-
-find_package(BLAS)
-if (${BLA_VENDOR} STREQUAL "IBMESSL")
-  find_package(LAPACKE)
-  if(NOT LAPACKE_FOUND)
-    message("-! DPLASMA requires a LAPACK library")
-  else()
-    message("-- LAPACKE libraries found: ${LAPACKE_LIBRARIES}")
-    list(APPEND BLAS_LIBRARIES  ${LAPACKE_LIBRARIES})
-  endif(NOT LAPACKE_FOUND)
-endif (${BLA_VENDOR} STREQUAL "IBMESSL")
-
-if(NOT BLAS_FOUND)
-  message("-! DPLASMA requires a BLAS library")
-
-else()
-  message("-- BLAS libraries found: ${BLAS_LIBRARIES}")
-endif(NOT BLAS_FOUND)
-
-if( DPLASMA_GPU_WITH_MAGMA )
-  find_package(MAGMA)
-  if( MAGMA_FOUND )
-  else( MAGMA_FOUND )
-  endif( MAGMA_FOUND )
-endif( DPLASMA_GPU_WITH_MAGMA )
-
-if(NOT DPLASMA_PRECISIONS)
-  set(DPLASMA_PRECISIONS "s;d;c;z" CACHE STRING "The precisions to compile in dplasma (accepts a colon separated list of s;d;c;z)" FORCE)
-else()
-  set(DPLASMA_PRECISIONS "${DPLASMA_PRECISIONS}" CACHE STRING "The precisions to compile in dplasma (accepts a colon separated list of s;d;c;z)" FORCE)
-endif()
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/PrecisionGenerator/")
-Add_Subdirectory(tools/PrecisionGenerator)
-
-# Veclib on OSX diverges from the standard BLAS interface. As a result, single
-# precision dplasma tests (real and complex) deliver wrong results.
-# Until we have a fix, make sure to disable these 2 presicisions with vecLib.
-if( PARSEC_OSX )
-  check_function_exists(appleblas_sgeadd PARSEC_OSX_VECLIB)
-  if( PARSEC_OSX_VECLIB )
-    set(tmp_fixed_prec "")
-    foreach(prec ${DPLASMA_PRECISIONS})
-      STRING(COMPARE EQUAL "${prec}" "s" is_sprec)
-      STRING(COMPARE EQUAL "${prec}" "c" is_cprec)
-      if ( NOT (is_sprec OR is_cprec) )
-        set(tmp_fixed_prec "${tmp_fixed_prec} ${prec}")
-      endif ( NOT (is_sprec OR is_cprec) )
-    endforeach()
-    STRING(STRIP "${tmp_fixed_prec}" tmp_fixed_prec)
-    STRING(REPLACE " " ";" NEW_PREC "${tmp_fixed_prec}")
-    STRING(COMPARE NOTEQUAL "${NEW_PREC}" "${DPLASMA_PRECISIONS}" prec_change)
-    if( prec_change )
-        MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes Dplasma to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
-      set(DPLASMA_PRECISIONS ${NEW_PREC})
-    endif( prec_change )
-  endif( PARSEC_OSX_VECLIB )
-endif( PARSEC_OSX )
-
-set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
-                           CACHE STRING "DPLASMA Installation Prefix")
 
 if(PARSEC_HAVE_CUDA)
   # CUDA is pulled by PaRSEC
-  find_package(CUDA REQUIRED)
-  set(DPLASMA_HAVE_CUDA ${CUDA_FOUND} CACHE BOOL "DPLASMA compiled with CUDA support")
+  set(DPLASMA_HAVE_CUDA ${PARSEC_HAVE_CUDA} CACHE BOOL "DPLASMA compiled with CUDA support")
   message(STATUS "CUDA support for DPLASMA enabled")
 endif(PARSEC_HAVE_CUDA)
 
+include (CheckIncludeFiles)
+check_include_files(complex.h DPLASMA_HAVE_COMPLEX_H)
+
 if(BLAS_FOUND)
+  set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
   Add_Subdirectory(include)
   Add_Subdirectory(cores)
   Add_Subdirectory(lib)
@@ -218,11 +238,6 @@ if(BLAS_FOUND)
 endif(BLAS_FOUND)
 
 Add_Subdirectory(docs)
-
-if(PARSEC_HAVE_CUDA AND CUDA_FOUND)
-  # CUDA is pulled by PaRSEC
-  set(DPLASMA_HAVE_CUDA 1)
-endif(PARSEC_HAVE_CUDA AND CUDA_FOUND)
 
 configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/include/dplasma.pc.in"

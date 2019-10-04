@@ -13,28 +13,19 @@ class Dplasma(CMakePackage):
 
     homepage = "https://bitbucket.org/icldistcomp/dplasma"
     url      = "https://bitbucket.org/icldistcomp/dplasma/get/v2.0.0.tar.bz2"
+    list_url = "https://bitbucket.org/icldistcomp/dplasma/downloads/?tab=tags"
+    git      = "https://bitbucket.org/icldistcomp/dplasma.git"
 
-    version('devel', git='https://bitbucket.org/icldistcomp/dplasma/git', branch='master')
+    version('master', branch='master')
     version('2.0.0', '')
 
-    # We always need MPI for now.
-    #variant('mpi', default=True, description='Use MPI for dependency transport between nodes')
-    variant('cuda', default=True, description='Use CUDA for GPU acceleration')
-    variant('profile', default=False, description='Generate profiling data')
-    variant('debug', default=False, description='Debug version (incurs performance overhead!)')
-    #variant('xcompile', default=False, description='Cross compile')
-
+    depends_on('cmake@3.12.0:', type='build')
     depends_on('parsec')
-    depends_on('cuda', when='+cuda')
+    depends_on('mpi')
 
-    def configure_args(self):
-        spec = self.spec
-        return [
-            '-DCMAKE_BUILD_TYPE=%s' % ('Debug' if '+debug' in spec else 'RelWithDebInfo')
-#            '-DCUDA_TOOLKIT_ROOT_DIR=%s' %
-#            '-DPARSEC_DIST_WITH_MPI=%s' % ('YES' if '-mpi' in spec else 'NO'),
-#            '-DMPI_C_COMPILER=%s'
-#            '-DMPI_CXX_COMPILER=%s'
-#            '-DMPI_Fortran_COMPILER=%s'
-        ]
+    # Inherit all these features from PaRSEC
+    #variant('cuda', default=True, description='Use CUDA for GPU acceleration')
+    #variant('profile', default=False, description='Generate profiling data')
+    #variant('debug', default=False, description='Debug version (incurs performance overhead!)')
+
 
