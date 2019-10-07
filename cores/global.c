@@ -1,4 +1,8 @@
 /**
+ * Copyright (c) 2019      The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ * Imported from:
  *
  * @file global.c
  *
@@ -12,7 +16,6 @@
  * @date 2010-11-15
  *
  **/
-#include "global.h"
 
 /***************************************************************************//**
  *  LAPACK Constants
