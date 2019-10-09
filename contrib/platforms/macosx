@@ -1,6 +1,7 @@
 #!/bin/bash
 
 with_blas=Apple
+enable_fortran=no
 
 # if icc is not found, detect the matching gcc/gfortran pair
 # OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
@@ -14,10 +15,16 @@ if [ ! -x $(command -v "$CC") ]; then
 
     if [ -x "$gcc_exe" -a -x "$gxx_exe" -a -x "$gf_exe" ]; then
       echo "Compilers detected: $gcc_exe $gxx_exe $gf_exe"
-      ENVVARS+="CC=$gcc_exe CXX=$gxx_exe FC=$gf_exe"
+      ENVVARS+=" CC=$gcc_exe CXX=$gxx_exe FC=$gf_exe"
+      enable_fortran=yes
       break
     fi
   done
+fi
+
+# We have Brew OpenBLAS, lets make sure it gets auto-detected if requested
+if [ -d /usr/local/opt/openblas/lib ]; then
+  ENVVARS+=" LDFLAGS+=' -L/usr/local/opt/openblas/lib'"
 fi
 
 # Per-user personalizations
