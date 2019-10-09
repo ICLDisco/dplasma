@@ -177,6 +177,8 @@ while [ "x$1" != x ]; do
         --srcdir=*) srcdir="$(printf %q "$(expand_relative_path "${1#*=}")")"; shift;;
         --prefix=*) prefix="$(printf %q "$(expand_relative_path "${1#*=}")")"; shift;;
         --host=*) host="${1#*=}"; shift;;
+        --enable-fortran) enable_fortran=yes; shift;;
+        --disable-fortran) enable_fortran=no; shift;;
 # Environment variables
         [^-]*=*) eval export $(printf %q "$1"); shift;;
         *) shift;;
