@@ -312,7 +312,7 @@ if(LAPACKE_FOUND)
 
   # Inspired by FindBoost.cmake
   foreach(_comp ${LAPACKE_FIND_COMPONENTS})
-    if(NOT TARGET LAPACKE::${_comp} AND LAPACKE_${_comp}_FOUND)
+    if(LAPACKE_${_comp}_FOUND AND NOT TARGET LAPACKE::${_comp})
         #if("${BLA_VENDOR}" STREQUAL "IBMESSL")
       if(BLAS_HAS_${_comp} OR "${_comp}" STREQUAL "BLAS")
         list(LENGTH BLAS_LIBRARIES _len)
@@ -327,7 +327,7 @@ if(LAPACKE_FOUND)
         endif()
       endif()
       get_filename_component(LIB_EXT "${LAPACKE_${_comp}_LIB}" EXT)
-      if(LIB_EXT STREQUAL "")
+      if(LIB_EXT STREQUAL "" OR LIB_EXT STREQUAL ".framework")
         set(LIB_TYPE INTERFACE)
       elseif(LIB_EXT STREQUAL ".a" OR LIB_EXT STREQUAL ".lib")
         set(LIB_TYPE STATIC)
@@ -339,7 +339,7 @@ if(LAPACKE_FOUND)
         set_target_properties(LAPACKE::${_comp} PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
       endif()
-      if(EXISTS "${LAPACKE_${_comp}_LIB}")
+      if(EXISTS "${LAPACKE_${_comp}_LIB}" AND NOT "${LIB_TYPE}" STREQUAL INTERFACE)
         set_target_properties(LAPACKE::${_comp} PROPERTIES
           IMPORTED_LOCATION "${LAPACKE_${_comp}_LIB}"
           LINKER_LANGUAGE "Fortran")
