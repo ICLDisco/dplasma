@@ -5,7 +5,7 @@ with_blas=Apple
 # if icc is not found, detect the matching gcc/gfortran pair
 # OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
 # Lets try to guess and use the same version for all 3 compilers
-if [ ! -x "$FC" ]; then
+if [ ! -x $(command -v "$CC") ]; then
   for gf_exe in $(command -v $(compgen -c gfortran)); do
     gf_sfx=${gf_exe#*gfortran}
     gf_dir=$(dirname "$gf_exe")
