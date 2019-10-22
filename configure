@@ -208,11 +208,7 @@ while [ "x$1" != x ]; do
         --with-external-parsec=*) with_parsec="${1#*=}"; shift;;
         --with-external-parsec) with_parsec=yes; shift;;
         --without-external-parsec) with_parsec=no; shift;;
-        --without-parsec)
-            echo >&2 "DPLASMA requires a version of PaRSEC"
-            echo >&2 "  You can provide an external PaRSEC package using --with-parsec"
-            echo >&2 "  If you do not specify an external, the PaRSEC submodule will be compiled automatically"
-            with_parsec=no; shift;;
+        --without-parsec) with_parsec=no; shift;;
 
 ##########################################################
 # Options common with submodule PaRSEC
@@ -480,7 +476,7 @@ esac
 
 case x$with_parsec in
 xyes) CMAKE_DEFINES+=" -DPaRSEC_ROOT=NOTFOUND";;
-xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON";;
+xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON"; echo >&2 "Forcing DPLASMA to use the internal submodule PaRSEC.";;
 x) ;;
 *) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
 esac
@@ -598,7 +594,7 @@ case x$with_python in
 xno) echo >&2 "Python is required. Please provide a path to the python executable."; exit 3;;
 xyes) ;;
 x) ;;
-*)  PYTHON_EXECUTABLES=$(PATH=$with_python:$with_python/bin command -v python{,3,2})
+*)  PYTHON_EXECUTABLES=$(PATH=$with_python:$with_python/bin command -v $with_python python{,3,2})
     for PYTHON_EXECUTABLE in $PYTHON_EXECUTABLES; do
         [[ $PYTHON_EXECUTABLE =~ $with_python ]] && CMAKE_DEFINES+=" -DPYTHON_EXECUTABLE=$(printf %q "$PYTHON_EXECUTABLE")" && break
     done
