@@ -83,10 +83,21 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 include(AddDocumentedFiles)
 
+if (CMAKE_Fortran_COMPILER_WORKS)
 include(FortranCInterface)
 FortranCInterface_HEADER(include/dplasma_f2c.h
                          MACRO_NAMESPACE "DPLASMA_F2C_"
                          SYMBOL_NAMESPACE "dplasma_f2c_")
+else()
+# No Fortran compiler to test mangling. So assume trailing_ and hope for the best.
+file(WRITE include/dplasma_f2c.h
+"
+#ifndef DPLASMA_F2C_HEADER_INCLUDED
+#define DPLASMA_F2C_HEADER_INCLUDED
+#define DPLASMA_F2C_GLOBAL(name,NAME) name##_
+#endif
+")
+endif()
 
 #set(BLA_STATIC OFF)
 
