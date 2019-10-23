@@ -24,9 +24,6 @@
 #ifdef PARSEC_HAVE_MPI
 #include <mpi.h>
 #endif
-#if defined(PARSEC_HAVE_CUDA)
-#include "parsec/devices/cuda/dev_cuda.h"
-#endif
 
 char *PARSEC_SCHED_NAME[] = {
     "", /* default */
