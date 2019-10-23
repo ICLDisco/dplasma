@@ -1,7 +1,9 @@
 #!/bin/bash
 
 with_blas=Apple
-enable_fortran=${enable_fortran:-no} # Default CLang has no Fortran on OS
+if [ ! -x "$(command -v "$FC")" ]; then
+  enable_fortran=${enable_fortran:-no} # Default CLang has no Fortran on OS
+fi
 
 # if icc/CLang is not set, detect the matching gcc/gfortran pair
 # OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
@@ -20,8 +22,6 @@ if [ "x$enable_fortran" != xno -a ! -x "$(command -v "$CC")" ]; then
       break
     fi
   done
-elif [ -x "$(command -v "$FC")" ]; then
-  enable_fortran=yes
 fi
 
 # We have Brew OpenBLAS, lets make sure it gets auto-detected if requested
