@@ -2,7 +2,7 @@
 
 with_blas=Apple
 if [ ! -x "$(command -v "$FC")" ]; then
-  enable_fortran=${enable_fortran:-no} # Default CLang has no Fortran on OS
+  enable_fortran=${enable_fortran:-no} # Default CLang has no Fortran on MAC OS
 fi
 
 # if icc/CLang is not set, detect the matching gcc/gfortran pair

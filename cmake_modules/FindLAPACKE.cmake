@@ -340,9 +340,12 @@ if(LAPACKE_FOUND)
             INTERFACE_INCLUDE_DIRECTORIES "${LAPACKE_INCLUDE_DIRS}")
       endif()
       if(EXISTS "${LAPACKE_${_comp}_LIB}" AND NOT "${LIB_TYPE}" STREQUAL INTERFACE)
-        set_target_properties(LAPACKE::${_comp} PROPERTIES
-          IMPORTED_LOCATION "${LAPACKE_${_comp}_LIB}"
-          LINKER_LANGUAGE "Fortran")
+          set_target_properties(LAPACKE::${_comp} PROPERTIES
+            IMPORTED_LOCATION "${LAPACKE_${_comp}_LIB}")
+        if(CMAKE_Fortran_COMPILER_WORKS)
+          set_target_properties(LAPACKE::${_comp} PROPERTIES
+            LINKER_LANGUAGE "Fortran")
+        endif()
       endif()
       list(APPEND _fallback_${_comp} "${MATH_LIB}")
       set_target_properties(LAPACKE::${_comp} PROPERTIES
