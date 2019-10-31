@@ -48,8 +48,15 @@ option(BUILD_SHARED_LIBS
 
 option(SUPPORT_FORTRAN
        "Enable support for Fortran bindings (default ON)" ON)
+# In CMake 3.12, enable_language OPTIONAL has no effect and will still 
+# enable the language for a compiler that does not work/is not present
+# causing all sort of problems downstream. For now use CheckLanguage before.
+include(CheckLanguage)
 if( SUPPORT_FORTRAN )
-  enable_language(Fortran OPTIONAL)
+  check_language(Fortran)
+  if(CMAKE_Fortran_COMPILER)
+    enable_language(Fortran OPTIONAL)
+  endif()
 endif( SUPPORT_FORTRAN )
 
 option(SUPPORT_C11
