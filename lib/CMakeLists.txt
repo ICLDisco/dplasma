@@ -216,10 +216,6 @@ target_link_libraries(dplasma
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})
 
-if( DPLASMA_HAVE_CUDA )
-  target_link_libraries(dplasma PUBLIC ${CUDA_CUBLAS_LIBRARIES})
-endif( DPLASMA_HAVE_CUDA )
-				       
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
         LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib)

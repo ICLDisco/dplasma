@@ -155,6 +155,7 @@ if( DPLASMA_HAVE_CUDA )
 
   add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_cores_cuda})
 
+  # Create a separate object library so that we can set cuda specific flags for these objects.
   add_library(dplasma_cores_cuda OBJECT ${generated_cores_cuda})
   add_dependencies(dplasma_cores_cuda dplasma_includes
                                       dplasma_cores_includes)
@@ -164,10 +165,18 @@ if( DPLASMA_HAVE_CUDA )
     ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/include>
     ${CUDA_INCLUDE_DIRS})
+  target_link_libraries(dplasma_cores_cuda
+    PRIVATE
+    PaRSEC::parsec
+    LAPACKE::LAPACKE
+    m
+    ${CUDA_CUBLAS_LIBRARIES})
 
+  # dplasma_cores is an object library, and linking an object library from an object library is 
+  # currently broken (CMake 3.12). So we pull-in the sources of dplasma_cores_cuda directly.
   target_sources(dplasma_cores PUBLIC $<TARGET_OBJECTS:dplasma_cores_cuda>)
   target_link_libraries(dplasma_cores
-    PUBLIC
+    PUBLIC # this does not get inherited through TARGET_OBJECTS so it needs to be exported explicitly
     ${CUDA_CUBLAS_LIBRARIES})
 
   ### Generate the CUDA .cu kernels if necessary
