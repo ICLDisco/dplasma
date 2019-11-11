@@ -17,8 +17,7 @@ echo "Using $OLCF_CMAKE_ROOT as CMake"
 # The following unload has to be done externally as it modifies the internal 
 # behavior of mpicc, which cannot be cached by CMake
 #  module unload xalt
-[ -n $OLCF_XALT ] || (echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."; exit 1)
-
+[ -n "$XALT_OLCF" ] && (echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."; exit 1)
 [ -n "$OLCF_CUDA_ROOT" ] || module load cuda
 echo "Using $OLCF_CUDA_ROOT as CUDA"
 
@@ -30,7 +29,7 @@ echo "Using $OLCF_ESSL_ROOT as BLAS/CBLAS library"
 CMAKE_DEFINES+=" -DBLAS_LIBRARIES='${OLCF_ESSL_ROOT}/lib64/libessl.so'"
 
 if [ -z "$LAPACKE_ROOT" ]; then
-  F=$(find $HOME/parsec/plasma -name liblapacke.a)
+  F=$(find $LAPACKE_ROOT $PWD $srcdir $prefix -name liblapacke.a -print -quit)
   if [ -z "$F" ]; then
     echo "System installed LAPACKE does not work with ESSL. Please compile your own"
     exit 1
