@@ -53,7 +53,7 @@ cat <<EOF
 --with-blas[=vendor]
                 use the specific BLAS Vendor (e.g., one of IBMESSL, Intel10_64lp_seq, OpenBLAS, Apple, etc. See FindBLAS BLA_VENDOR for the full list)
 
---with-precisions[=s;d;c;z]
+--enable-precisions[=s;d;c;z]
                 semicolon separated list of precisions to enable (disable)
                 s: float, d: double, c: single complex, z: double complex
                 (default, enable all)
@@ -154,7 +154,7 @@ it to find libraries and programs with nonstandard names/locations.
 Please report bugs to <https://bitbucket.org/icldistcomp/dplasma/issues>
 
 EOF
-[ -z $1 ] || cat >&2 <<EOF
+[ -z "$1" ] || cat >&2 <<EOF
 #######################################################################
 CONFIGURATION ERROR: $*
 #######################################################################

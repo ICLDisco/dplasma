@@ -95,12 +95,17 @@ pipeline {
                 checkout scm
             }
         }
+        stage ('Fetch Submodule PaRSEC') {
+            steps {
+                sh "git --work-tree=${env.WORKSPACE} --git-dir=${env.WORKSPACE}/.git submodule update --force --init --recursive --remote"
+            }
+        }
         stage ('Build and Test') {
             environment {
                 BUILDDIR = "build"
             }
             parallel {
-               stage ('Debug all') {
+               stage ('Debug w/mod-parsec') {
                     environment {
                         BUILDTYPE = "Debug"
                         BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
@@ -109,14 +114,14 @@ pipeline {
                         timeout(time:1, unit: 'HOURS')
                     }
                     steps {
-                        sh "echo 'Prepare for a full Debug build'"
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} build'"
                         sh "mkdir -p ${env.BUILDDIR}"
                         dir (env.BUILDDIR) {
                             sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
                         }
                     }
                 }
-                stage ('Release all') {
+                stage ('Release w/mod-parsec') {
                     environment {
                         BUILDTYPE = "Release"
                         BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
@@ -125,7 +130,23 @@ pipeline {
                         timeout(time:1, unit: 'HOURS')
                     }
                     steps {
-                        sh "echo 'Prepare for a full Debug build'"
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} build'"
+                        sh "mkdir -p ${env.BUILDDIR}"
+                        dir (env.BUILDDIR) {
+                            sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
+                        }
+                    }
+                }
+                stage ('Debug w/ext-parsec') {
+                    environment {
+                        BUILDTYPE = "Debug-ext"
+                        BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
+                    }
+                    options {
+                        timeout(time:1, unit: 'HOURS')
+                    }
+                    steps {
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} w/external PaRSEC build'"
                         sh "mkdir -p ${env.BUILDDIR}"
                         dir (env.BUILDDIR) {
                             sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
