@@ -85,10 +85,10 @@ pipeline {
             steps {
                 script {
                     try {
-                        slackSend color: 'YELLOW', channel: "ci", 
-                            text: "Starting: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                        slackSend color: 'YELLOW', channel: "ci",
+                            message: "Starting: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
                                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
-                    } catch (Exception ex) {  //disable Slack notifier plugin
+                    } catch (Exception ex) {  //disable Slack
                         config.useSlack = false
                     }
                 }
@@ -138,8 +138,8 @@ pipeline {
     post { 
         // no always
         regression {
-            slackSend color: 'RED', notify: true, channel: "ci",
-                text: "REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+            slackSend color: 'RED', channel: "ci",
+                message: "REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
                          "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
             //emailext (
             //    subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
@@ -150,15 +150,15 @@ pipeline {
         }
         success {
             slackSend color: 'GREEN', channel: "ci",
-                text: "SUCCESS: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> ready to merge"
+                message: "SUCCESS: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> ready to merge"
             approvePullRequest(config.repository, env.CHANGE_ID)
         }
         failure {
-            slackSend color: 'GREEN', notify: true, channel: "ci",
-                text: "FAILURE: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> consistently fails.<br>" +
-                      "This kind of consistency is N.O.T. good"
+            slackSend color: 'RED', channel: "ci",
+                message: "FAILURE: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> consistently fails.<br>" +
+                         "This kind of consistency is N.O.T. good"
         }
     }
 }
