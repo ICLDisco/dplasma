@@ -208,17 +208,14 @@ target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DP
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
 target_link_libraries(dplasma
-  PRIVATE dplasma_cores
+  PRIVATE
+  dplasma_cores
   PUBLIC
   PaRSEC::parsec
   LAPACKE::LAPACKE)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                          SOVERSION ${DPLASMA_VERSION_MAJOR})
 
-if( DPLASMA_HAVE_CUDA )
-  target_link_libraries(dplasma PUBLIC ${CUDA_CUBLAS_LIBRARIES})
-endif( DPLASMA_HAVE_CUDA )
-				       
 install(TARGETS dplasma
         ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
         LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib)
