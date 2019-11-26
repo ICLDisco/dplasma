@@ -21,16 +21,25 @@ module load \
   intel-mkl/2019.3.199/gcc-7.3.0-2pn4
 
 
-if [ ${BUILDTYPE} = "Debug" ] ; then
-    DEBUG_OPTIONS="--enable-debug=history,noisier,paranoid --enable-prof-trace --enable-prof-grapher"
+if expr >/dev/null "${BUILDTYPE}" : "Debug"; then
+    PARSEC_DEBUG_OPTIONS="--enable-debug=history,paranoid --enable-prof-trace --enable-prof-grapher"
+    DPLASMA_DEBUG_OPTIONS="--enable-debug=history,paranoid --disable-precisions"
 fi
 
-CONFCMD="${WORKSPACE}/configure --with-platform=saturn --prefix=${BUILDDIR}.install ${DEBUG_OPTIONS}"
+if expr >/dev/null "${BUILDTYPE}" : ".*-ext"; then
+    ${WORKSPACE}/parsec/configure --with-platform=saturn --prefix=${BUILDDIR}.install ${PARSEC_DEBUG_OPTIONS}
+    make -j 12 -l 8 install || exit -1
+    WITH_PARSEC="--with-parsec=${BUILDDIR}.install"
+else
+    DPLASMA_DEBUG_OPTIONS+=" ${PARSEC_DEBUG_OPTIONS}"
+fi
+
+CONFCMD="${WORKSPACE}/configure --with-platform=saturn --prefix=${BUILDDIR}.install ${WITH_PARSEC} ${DPLASMA_DEBUG_OPTIONS}"
 echo $CONFCMD
 eval $CONFCMD
 
 # Build stage
-make -j 8 -l 4
+make -j 12 -l 8
 
 # Check that install works
 make install
