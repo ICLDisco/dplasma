@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 The University of Tennessee and The University
+ * Copyright (c) 2014-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -93,9 +93,9 @@ dplasma_zhetrd( parsec_context_t* parsec,
     dplasma_wait_until_completion(parsec);
 
 cleanup:
-    if( h2b ) PARSEC_INTERNAL_TASKPOOL_DESTRUCT( h2b );
-    if( band2rect ) PARSEC_INTERNAL_TASKPOOL_DESTRUCT( band2rect );
-    if( b2s ) PARSEC_INTERNAL_TASKPOOL_DESTRUCT( b2s );
+    if( h2b ) parsec_taskpool_free( &h2b->super );
+    if( band2rect ) parsec_taskpool_free( &band2rect->super );
+    if( b2s ) parsec_taskpool_free( &b2s->super );
     parsec_private_memory_fini( &pool[0] );
     parsec_private_memory_fini( &pool[1] );
     parsec_private_memory_fini( &pool[2] );

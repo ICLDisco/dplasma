@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 The University of Tennessee and The University
+ * Copyright (c) 2015-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -171,12 +171,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
                                      sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(A, m, k),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(B, k, n),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
                                      sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
@@ -197,12 +197,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
                                      sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(A, m, k),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(B, n, k),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
                                      sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
@@ -225,12 +225,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
                                      sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(A, k, m ),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m ),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(B, k, n),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
                                      sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
@@ -251,12 +251,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
                                      sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(A, k, m),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(B, n, k),     INPUT | TILE_FULL,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
                                      sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                     PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                     PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
@@ -410,12 +410,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
                                              sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(A, m, k),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(B, k, n),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
                                              sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
@@ -437,12 +437,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
                                              sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(A, m, k),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(B, n, k),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
                                              sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
@@ -466,12 +466,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
                                              sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(A, k, m),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(B, k, n),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
                                              sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
@@ -494,12 +494,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
                                              sizeof(parsec_complex64_t),           &alpha,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(A, k, m),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(B, n, k),     INPUT | TILE_FULL,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
                                              sizeof(parsec_complex64_t),           &zbeta,         VALUE,
-                                             PASSED_BY_REF,     TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                             PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
