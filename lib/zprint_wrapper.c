@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -79,7 +79,7 @@ int dplasma_zprint( parsec_context_t *parsec,
         dplasma_wait_until_completion(parsec);
 
         parsec_matrix_del2arena( tp->arenas[PARSEC_zprint_DEFAULT_ARENA] );
-        PARSEC_INTERNAL_TASKPOOL_DESTRUCT( tp );
+        parsec_taskpool_free( &tp->super );
         return 0;
     }
     return -101;

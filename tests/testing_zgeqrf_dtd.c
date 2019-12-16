@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 The University of Tennessee and The University
+ * Copyright (c) 2015-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -244,9 +244,9 @@ int main(int argc, char **argv)
                            sizeof(int),           &tempkm,                        VALUE,
                            sizeof(int),           &tempkn,                        VALUE,
                            sizeof(int),           &ib,                            VALUE,
-                           PASSED_BY_REF,         TILE_OF(A, k, k),     INOUT | TILE_FULL | AFFINITY,
+                           PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     INOUT | TILE_FULL | AFFINITY,
                            sizeof(int),           &ldak,                          VALUE,
-                           PASSED_BY_REF,         TILE_OF(T, k, k),     OUTPUT | TILE_RECTANGLE,
+                           PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, k, k),     OUTPUT | TILE_RECTANGLE,
                            sizeof(int),           &dcT.super.mb,                  VALUE,
                            sizeof(parsec_complex64_t)*dcT.super.nb,       NULL,   SCRATCH,
                            sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,   SCRATCH,
@@ -262,17 +262,17 @@ int main(int argc, char **argv)
                                sizeof(int),           &tempnn,                            VALUE,
                                sizeof(int),           &tempkm,                            VALUE,
                                sizeof(int),           &ib,                                VALUE,
-                               PASSED_BY_REF,         TILE_OF(A, k, k),      INPUT | TILE_FULL,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),      INPUT | TILE_FULL,
                                sizeof(int),           &ldak,                              VALUE,
-                               PASSED_BY_REF,         TILE_OF(T, k, k),      INPUT | TILE_RECTANGLE,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, k, k),      INPUT | TILE_RECTANGLE,
                                sizeof(int),           &dcT.super.mb,                   VALUE,
-                               PASSED_BY_REF,         TILE_OF(A, k, n),      INOUT | TILE_FULL | AFFINITY,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),      INOUT | TILE_FULL | AFFINITY,
                                sizeof(int),           &ldak,                              VALUE,
                                sizeof(parsec_complex64_t)*ib*dcT.super.nb,   NULL,        SCRATCH,
                                sizeof(int),           &dcT.super.nb,                      VALUE,
                                PARSEC_DTD_ARG_END );
         }
-        parsec_dtd_data_flush( dtd_tp, TILE_OF(T, k, k) );
+        parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(T, k, k) );
 
         for( m = k+1; m < dcA.super.mt; m++ ) {
             tempmm = m == dcA.super.mt-1 ? dcA.super.m-(m*dcA.super.mb) : dcA.super.mb;
@@ -283,11 +283,11 @@ int main(int argc, char **argv)
                                sizeof(PLASMA_enum),   &tempmm,                            VALUE,
                                sizeof(int),           &tempkn,                            VALUE,
                                sizeof(int),           &ib,                                VALUE,
-                               PASSED_BY_REF,         TILE_OF(A, k, k),     INOUT | TILE_FULL,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     INOUT | TILE_FULL,
                                sizeof(int),           &ldak,                              VALUE,
-                               PASSED_BY_REF,         TILE_OF(A, m, k),     INOUT | TILE_FULL | AFFINITY,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     INOUT | TILE_FULL | AFFINITY,
                                sizeof(int),           &ldam,                              VALUE,
-                               PASSED_BY_REF,         TILE_OF(T, m, k),     OUTPUT | TILE_RECTANGLE,
+                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, m, k),     OUTPUT | TILE_RECTANGLE,
                                sizeof(int),           &dcT.super.mb,                     VALUE,
                                sizeof(parsec_complex64_t)*dcT.super.nb,       NULL,      SCRATCH,
                                sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
@@ -307,27 +307,27 @@ int main(int argc, char **argv)
                                    sizeof(int),           &tempnn,                           VALUE,
                                    sizeof(int),           &dcA.super.nb,                     VALUE,
                                    sizeof(int),           &ib,                               VALUE,
-                                   PASSED_BY_REF,         TILE_OF(A, k, n),     INOUT | TILE_FULL,
+                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),     INOUT | TILE_FULL,
                                    sizeof(int),           &ldak,                             VALUE,
-                                   PASSED_BY_REF,         TILE_OF(A, m, n),     INOUT | TILE_FULL | AFFINITY,
+                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, n),     INOUT | TILE_FULL | AFFINITY,
                                    sizeof(int),           &ldam,                             VALUE,
-                                   PASSED_BY_REF,         TILE_OF(A, m, k),     INPUT | TILE_FULL,
+                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                    sizeof(int),           &ldam,                             VALUE,
-                                   PASSED_BY_REF,         TILE_OF(T, m, k),     INPUT | TILE_RECTANGLE,
+                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, m, k),     INPUT | TILE_RECTANGLE,
                                    sizeof(int),           &dcT.super.mb,                     VALUE,
                                    sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
                                    sizeof(int),           &ldwork,                           VALUE,
                                    PARSEC_DTD_ARG_END );
             }
-            parsec_dtd_data_flush( dtd_tp, TILE_OF(T, m, k) );
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(T, m, k) );
         }
         for( n = k+1; n < dcA.super.nt; n++ ) {
-            parsec_dtd_data_flush( dtd_tp, TILE_OF(A, k, n) );
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, n) );
         }
         for( m = k+1; m < dcA.super.mt; m++ ) {
-            parsec_dtd_data_flush( dtd_tp, TILE_OF(A, m, k) );
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, m, k) );
         }
-        parsec_dtd_data_flush( dtd_tp, TILE_OF(A, k, k) );
+        parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, k) );
     }
 
     parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcA );
