@@ -136,9 +136,6 @@ int main(int argc, char ** argv)
         parsec_data_free(dcA.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
     }
-#if defined(_UNUSED_)
-    }
-#endif
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     for(tA=0; tA<3; tA++) {
@@ -202,9 +199,6 @@ int main(int argc, char ** argv)
         parsec_data_free(dcA.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
     }
-#if defined(_UNUSED_)
-    }
-#endif
 
     parsec_data_free(dcC.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcC);

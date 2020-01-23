@@ -181,10 +181,6 @@ int main(int argc, char ** argv)
                 }
             }
         }
-#if defined(_UNUSED_)
-            }
-        }
-#endif
         parsec_data_free(dcC2.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcC2);
     }
