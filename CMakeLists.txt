@@ -187,7 +187,12 @@ set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
 # Find or Build PaRSEC package
 option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
 if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
-  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
+    # We are allowed to look for an external PaRSEC, but lets do it only when
+    # 1. User requested a specific PaRSEC, or
+    # 2. We have not already used the submodule in the past, so just look for any available PaRSEC
+    if(EXISTS "${PaRSEC_ROOT}" OR NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+      find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
+    endif()
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
@@ -227,7 +232,7 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
     # Import targets and load dependent libraries
-    find_package(PaRSEC NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
+    find_package(parsec-submodule NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
     set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
     message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
     message(STATUS "########################################################################")
