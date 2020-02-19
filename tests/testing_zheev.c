@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 The University of Tennessee and The University
+ * Copyright (c) 2011-2019 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -244,7 +244,7 @@ goto fin;
     }
 
     dplasma_zherbt_Destruct( PARSEC_zherbt );
-    PARSEC_INTERNAL_TASKPOOL_DESTRUCT( PARSEC_diag_band_to_rect );
+    parsec_taskpool_free( &PARSEC_diag_band_to_rect->super );
     dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
 
     parsec_data_free(dcBAND.mat);

@@ -85,14 +85,19 @@ pipeline {
             steps {
                 script {
                     try {
-                        slackSend color: 'YELLOW', channel: "ci", 
-                            text: "Starting: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                        slackSend color: 'YELLOW', channel: "ci",
+                            message: "Starting: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
                                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
-                    } catch (Exception ex) {  //disable Slack notifier plugin
+                    } catch (Exception ex) {  //disable Slack
                         config.useSlack = false
                     }
                 }
                 checkout scm
+            }
+        }
+        stage ('Fetch Submodule PaRSEC') {
+            steps {
+                sh "git --work-tree=${env.WORKSPACE} --git-dir=${env.WORKSPACE}/.git submodule update --force --init --recursive --remote"
             }
         }
         stage ('Build and Test') {
@@ -100,7 +105,7 @@ pipeline {
                 BUILDDIR = "build"
             }
             parallel {
-               stage ('Debug all') {
+               stage ('Debug w/mod-parsec') {
                     environment {
                         BUILDTYPE = "Debug"
                         BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
@@ -109,14 +114,14 @@ pipeline {
                         timeout(time:1, unit: 'HOURS')
                     }
                     steps {
-                        sh "echo 'Prepare for a full Debug build'"
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} build'"
                         sh "mkdir -p ${env.BUILDDIR}"
                         dir (env.BUILDDIR) {
                             sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
                         }
                     }
                 }
-                stage ('Release all') {
+                stage ('Release w/mod-parsec') {
                     environment {
                         BUILDTYPE = "Release"
                         BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
@@ -125,7 +130,23 @@ pipeline {
                         timeout(time:1, unit: 'HOURS')
                     }
                     steps {
-                        sh "echo 'Prepare for a full Debug build'"
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} build'"
+                        sh "mkdir -p ${env.BUILDDIR}"
+                        dir (env.BUILDDIR) {
+                            sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
+                        }
+                    }
+                }
+                stage ('Debug w/ext-parsec') {
+                    environment {
+                        BUILDTYPE = "Debug-ext"
+                        BUILDDIR = "${env.BUILDDIR}/${env.BUILDTYPE}"
+                    }
+                    options {
+                        timeout(time:1, unit: 'HOURS')
+                    }
+                    steps {
+                        sh "echo 'Prepare for a ${env.BUILDTYPE} w/external PaRSEC build'"
                         sh "mkdir -p ${env.BUILDDIR}"
                         dir (env.BUILDDIR) {
                             sh "${env.WORKSPACE}/contrib/jenkins/script.saturn ${env.BUILDTYPE}"
@@ -138,8 +159,8 @@ pipeline {
     post { 
         // no always
         regression {
-            slackSend color: 'RED', notify: true, channel: "ci",
-                text: "REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+            slackSend color: 'RED', channel: "ci",
+                message: "REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
                          "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
             //emailext (
             //    subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
@@ -150,15 +171,15 @@ pipeline {
         }
         success {
             slackSend color: 'GREEN', channel: "ci",
-                text: "SUCCESS: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> ready to merge"
+                message: "SUCCESS: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> ready to merge"
             approvePullRequest(config.repository, env.CHANGE_ID)
         }
         failure {
-            slackSend color: 'GREEN', notify: true, channel: "ci",
-                text: "FAILURE: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                      "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> consistently fails.<br>" +
-                      "This kind of consistency is N.O.T. good"
+            slackSend color: 'RED', channel: "ci",
+                message: "FAILURE: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> consistently fails.<br>" +
+                         "This kind of consistency is N.O.T. good"
         }
     }
 }

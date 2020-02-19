@@ -53,7 +53,7 @@ cat <<EOF
 --with-blas[=vendor]
                 use the specific BLAS Vendor (e.g., one of IBMESSL, Intel10_64lp_seq, OpenBLAS, Apple, etc. See FindBLAS BLA_VENDOR for the full list)
 
---with-precisions[=s;d;c;z]
+--enable-precisions[=s;d;c;z]
                 semicolon separated list of precisions to enable (disable)
                 s: float, d: double, c: single complex, z: double complex
                 (default, enable all)
@@ -108,8 +108,6 @@ cat <<EOF
 
 --with-python[=DIR]
                 use the Python interpreter [installed in DIR] (default=autodetect)
---with-omega[=DIR]
-                use the Omega package for afine loops transformations (optional)
 
 --with-mpi[=DIR]
                 use the MPI communication library [installed in DIR] (default=autodetect)
@@ -154,7 +152,7 @@ it to find libraries and programs with nonstandard names/locations.
 Please report bugs to <https://bitbucket.org/icldistcomp/dplasma/issues>
 
 EOF
-[ -z $1 ] || cat >&2 <<EOF
+[ -z "$1" ] || cat >&2 <<EOF
 #######################################################################
 CONFIGURATION ERROR: $*
 #######################################################################
@@ -177,6 +175,8 @@ while [ "x$1" != x ]; do
         --srcdir=*) srcdir="$(printf %q "$(expand_relative_path "${1#*=}")")"; shift;;
         --prefix=*) prefix="$(printf %q "$(expand_relative_path "${1#*=}")")"; shift;;
         --host=*) host="${1#*=}"; shift;;
+        --enable-fortran) enable_fortran=yes; shift;;
+        --disable-fortran) enable_fortran=no; shift;;
 # Environment variables
         [^-]*=*) eval export $(printf %q "$1"); shift;;
         *) shift;;
@@ -206,11 +206,7 @@ while [ "x$1" != x ]; do
         --with-external-parsec=*) with_parsec="${1#*=}"; shift;;
         --with-external-parsec) with_parsec=yes; shift;;
         --without-external-parsec) with_parsec=no; shift;;
-        --without-parsec)
-            echo >&2 "DPLASMA requires a version of PaRSEC"
-            echo >&2 "  You can provide an external PaRSEC package using --with-parsec"
-            echo >&2 "  If you do not specify an external, the PaRSEC submodule will be compiled automatically"
-            with_parsec=no; shift;;
+        --without-parsec) with_parsec=no; shift;;
 
 ##########################################################
 # Options common with submodule PaRSEC
@@ -286,11 +282,6 @@ while [ "x$1" != x ]; do
         --with-python) with_python=yes; shift;;
         --without-python) with_python=no; shift;;
 
-# Omega options
-        --with-omega=*) with_omega="${1#*=}"; shift;;
-        --with-omega) with_omega=yes; shift;;
-        --without-omega) with_omega=no; shift;;
-
 # Cmake passthrough
         -D*=*) CMAKE_DEFINES+=" $(printf %q "$1")"; shift;;
         --) shift;
@@ -338,10 +329,10 @@ for i in "$@"; do
     fi
     # convert disable/without_xxx to enable/with_xxx=no
     for varname in ${!disable_*}; do
-      enable_${varname#*disable_}=no
+      eval enable_${varname#*disable_}=no
     done
     for varname in ${!without_*}; do
-      with_${varname#*without_}=no
+      eval with_${varname#*without_}=no
     done
 done
 }
@@ -478,7 +469,7 @@ esac
 
 case x$with_parsec in
 xyes) CMAKE_DEFINES+=" -DPaRSEC_ROOT=NOTFOUND";;
-xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON";;
+xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON"; echo >&2 "Forcing DPLASMA to use the internal submodule PaRSEC.";;
 x) ;;
 *) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
 esac
@@ -596,17 +587,10 @@ case x$with_python in
 xno) echo >&2 "Python is required. Please provide a path to the python executable."; exit 3;;
 xyes) ;;
 x) ;;
-*)  PYTHON_EXECUTABLES=$(PATH=$with_python:$with_python/bin command -v python{,3,2})
+*)  PYTHON_EXECUTABLES=$(PATH=$with_python:$with_python/bin command -v $with_python python{,3,2})
     for PYTHON_EXECUTABLE in $PYTHON_EXECUTABLES; do
         [[ $PYTHON_EXECUTABLE =~ $with_python ]] && CMAKE_DEFINES+=" -DPYTHON_EXECUTABLE=$(printf %q "$PYTHON_EXECUTABLE")" && break
     done
-esac
-
-case x$with_omega in
-xno) CMAKE_DEFINES+=" -DPARSEC_Q2J=OFF";;
-xyes) CMAKE_DEFINES+=" -DPARSEC_Q2J=ON";;
-x) ;;
-*) CMAKE_DEFINES+=" -DOMEGA_DIR=$(printf %q $with_omega)";;
 esac
 
 # CMAKE INVOCATION

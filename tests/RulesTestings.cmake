@@ -27,7 +27,7 @@ function(testings_addexec OUTPUTLIST PRECISIONS)
       add_executable(${exec} ${generated_testing})
       add_dependencies(${exec} dplasma dplasma_includes)
       target_link_libraries(${exec}
-                            PRIVATE common
+                            PRIVATE dplasma_tests_common
                             PUBLIC dplasma
                             $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>)
     endif(NOT TARGET ${exec})

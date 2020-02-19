@@ -156,9 +156,6 @@ int main(int argc, char ** argv)
                         }
                     }
                 }
-#ifdef __UNUSED__
-                }
-#endif
             }
             free(dcA);
         }

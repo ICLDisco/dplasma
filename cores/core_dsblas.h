@@ -1,4 +1,8 @@
 /**
+ * Copyright (c) 2019      The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ * Imported from:
  *
  * @file core_dsblas.h
  *
@@ -30,28 +34,6 @@ void CORE_slag2d(int m, int n,
 void CORE_dlag2s(int m, int n,
                  const double *A, int lda,
                  float *B, int ldb, int *info);
-
-#if defined(QUARK_H)
-/** ****************************************************************************
- *  Declarations of QUARK wrappers (called by PLASMA) - alphabetical order
- **/
-void QUARK_CORE_slag2d(Quark *quark, Quark_Task_Flags *task_flags,
-                       int m, int n, int nb,
-                       const float *A, int lda,
-                       double *B, int ldb);
-void QUARK_CORE_dlag2s(Quark *quark, Quark_Task_Flags *task_flags,
-                       int m, int n, int nb,
-                       const double *A, int lda,
-                       float *B, int ldb,
-                       PLASMA_sequence *sequence, PLASMA_request *request);
-
-/** ****************************************************************************
- *  Declarations of QUARK wrappers (called by QUARK) - alphabetical order
- **/
-void CORE_slag2d_quark(Quark *quark);
-void CORE_dlag2s_quark(Quark *quark);
-
-#endif /* defined(QUARK_H) */
 
 #ifdef __cplusplus
 }

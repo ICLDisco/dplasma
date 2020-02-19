@@ -1,18 +1,16 @@
 
-if(NOT TARGET common)
-  add_library(common STATIC common.c)
-
-  target_include_directories(common
+if(NOT TARGET dplasma_tests_common)
+  add_library(dplasma_tests_common OBJECT common.c)
+  target_include_directories(dplasma_tests_common
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR})
 #  common_timing.h flops.h)
-  target_link_libraries(common
+  target_link_libraries(dplasma_tests_common
     PUBLIC
     dplasma
-    PaRSEC::parsec
     $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>)
-  add_dependencies(common dplasma_includes)
-endif(NOT TARGET common)
+  add_dependencies(dplasma_tests_common dplasma_includes)
+endif(NOT TARGET dplasma_tests_common)
 
 include(RulesTestings.cmake)
 

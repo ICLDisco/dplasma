@@ -11,27 +11,40 @@ cat <<_EOF
 #
 _EOF
 
-module load cmake # ATM this is 3.15; use CMAKE_EXECUTABLE to override
+[ -n "$OLCF_CMAKE_ROOT" ] || module load cmake
+echo -e "Using CMake\tfrom\t$OLCF_CMAKE_ROOT"
 
 # The following unload has to be done externally as it modifies the internal 
 # behavior of mpicc, which cannot be cached by CMake
 #  module unload xalt
-[ -z $OLCF_XALT ] || echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."
+[ -n "$XALT_OLCF" ] && (echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."; exit 1)
+[ -n "$OLCF_CUDA_ROOT" ] || module load cuda
+echo -e "Using CUDA\tfrom\t$OLCF_CUDA_ROOT"
 
-# for now, module loading cuda has to be done externally
-[ -z $OLCF_CUDA_ROOT ] && echo "Do not forget to do a 'module load cuda'"
-module load cuda
+[ -n "$LMOD_MPI_NAME" ] || module load spectrum-mpi
+echo -e "Using MPI\tfrom\t$LMOD_MPI_NAME"
 
-# FindBLAS with ESSL is not working very good. Force detection.
-[ -z $OLCF_ESSL_ROOT ] && module load essl
+[ -n "$OLCF_ESSL_ROOT" ] || module load essl
+echo -e "Using BLAS\tfrom\t$OLCF_ESSL_ROOT"
 CMAKE_DEFINES+=" -DBLAS_LIBRARIES='${OLCF_ESSL_ROOT}/lib64/libessl.so'"
-[ -d $HOME/parsec/dplasma/lapack ] && ENVVARS+=" LAPACKE_ROOT=$HOME/parsec/dplasma/lapack" || echo "System installed LAPACKE does not work with ESSL. You need to compile your own"
+
+if [ -z "$LAPACKE_ROOT" ]; then
+  F=$(find $PWD $srcdir $prefix -name liblapacke.a -print -quit)
+  if [ -z "$F" ]; then
+    echo "System installed LAPACKE does not work with ESSL. Please compile your own"
+    exit 1
+  fi
+  #echo "  Found liblapacke.a in $F"
+  LAPACKE_ROOT=$(dirname $(dirname $F)..)
+fi
+echo -e "Using LAPACKE\tfrom\t$LAPACKE_ROOT"
+ENVVARS+=" LAPACKE_ROOT=$LAPACKE_ROOT"
 
 ENVVARS+=" CC=mpicc CXX=mpicxx FC=mpif90 CFLAGS='$CFLAGS' LDFLAGS='$LDFLAGS'"
 
 #enable_static=no
 with_blas=IBMESSL
-with_cuda=yes
+with_cuda=$OLCF_CUDA_ROOT
 with_mpi=yes
 with_hwloc=yes # system default works fine
 
