@@ -1,4 +1,4 @@
-include(dplasmaCompilerFlags)
+include(DplasmaCompilerFlags)
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}/include")
 if(NOT DPLASMA_BUILD_INPLACE)
