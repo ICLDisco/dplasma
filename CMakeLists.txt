@@ -186,13 +186,21 @@ set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
 #
 # Find or Build PaRSEC package
 option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
-if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
-    # We are allowed to look for an external PaRSEC, but lets do it only when
-    # 1. User requested a specific PaRSEC, or
-    # 2. We have not already used the submodule in the past, so just look for any available PaRSEC
-    if(EXISTS "${PaRSEC_ROOT}" OR NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
-      find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
+if(NOT DPLASMA_FORCE_INTERNAL_PARSEC AND EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+    # We were not instructed to ignore external PaRSEC during the fist configuration, but we did 
+    # use the submodule in the past. Keep doing so now, except if a PaRSEC_ROOT has been supplied
+    # explicit, in which case we will be noisy about this being unusual.
+    if(PaRSEC_ROOT)
+      message(WARNING "This source directory contains the PaRSEC submodule, but PaRSEC_ROOT=${PaRSEC_ROOT} has been supplied.\n  This build will now ignore the submodule and use the external PaRSEC in ${PaRSEC_ROOT}.")
+    else()
+      # PaRSEC set to autodetect, and we used the submodule in the past, keep doing so.
+      # Not in the cache, we want to do the check for PaRSEC_ROOT again next time.
+      set(DPLASMA_FORCE_INTERNAL_PARSEC ON)
     endif()
+endif()
+# Find external PaRSEC if not disallowed by submodule
+if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
+    find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
