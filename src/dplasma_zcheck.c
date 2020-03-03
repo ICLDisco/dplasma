@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -80,7 +80,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     two_dim_block_cyclic_init(&LLt, matrix_ComplexDouble, matrix_Tile,
                               A->super.nodes, twodA->grid.rank,
                               A->mb, A->nb, M, N, 0, 0,
-                              M, N, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows);
+                              M, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows);
 
     LLt.mat = parsec_data_allocate((size_t)LLt.super.nb_local_tiles *
                                   (size_t)LLt.super.bsiz *
@@ -278,7 +278,7 @@ int check_zpoinv( parsec_context_t *parsec, int loud,
     two_dim_block_cyclic_init(&Id, matrix_ComplexDouble, matrix_Tile,
                                A->super.nodes, twodA->grid.rank,
                                A->mb, A->nb, A->n, A->n, 0, 0,
-                               A->n, A->n, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows);
+                               A->n, A->n, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows);
 
     Id.mat = parsec_data_allocate((size_t)Id.super.nb_local_tiles *
                                   (size_t)Id.super.bsiz *

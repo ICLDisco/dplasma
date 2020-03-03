@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -18,16 +18,18 @@
 #include <math.h>
 #include <cblas.h>
 #include <lapacke.h>
-#include <core_blas.h>
 
 #include "parsec/profiling.h"
 #include "parsec/parsec_internal.h"
 #include "parsec/utils/debug.h"
 #include "dplasma.h"
+#include "dplasmatypes.h"
+
+#include <core_blas.h>
 /* timings */
 #include "common_timing.h"
 
-#include "dplasma/lib/flops.h"
+#include "flops.h"
 
 /* these are globals in common.c */
 extern char *PARSEC_SCHED_NAME[];
@@ -51,8 +53,8 @@ enum iparam_t {
   IPARAM_IB,           /* Inner-blocking size               */
   IPARAM_NB,           /* Number of columns in a tile       */
   IPARAM_MB,           /* Number of rows in a tile          */
-  IPARAM_SNB,          /* Number of columns in a super-tile */
-  IPARAM_SMB,          /* Number of rows in a super-tile    */
+  IPARAM_KQ,           /* Number of columns repetitions in a k-cyclic distribution */
+  IPARAM_KP,           /* Number of rows repetititions in a k-cyclic distribution */
   IPARAM_HMB,          /* Small MB for recursive hdags */
   IPARAM_HNB,          /* Small NB for recursive hdags */
   IPARAM_CHECK,        /* Checking activated or not         */
@@ -104,8 +106,8 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int IB    = iparam[IPARAM_IB];                                      \
     int MB    = iparam[IPARAM_MB];                                      \
     int NB    = iparam[IPARAM_NB];                                      \
-    int SMB   = iparam[IPARAM_SMB];                                     \
-    int SNB   = iparam[IPARAM_SNB];                                     \
+    int SMB   = iparam[IPARAM_KP];                                      \
+    int SNB   = iparam[IPARAM_KQ];                                      \
     int HMB   = iparam[IPARAM_HMB];                                     \
     int HNB   = iparam[IPARAM_HNB];                                     \
     int MT    = (M%MB==0) ? (M/MB) : (M/MB+1);                          \
@@ -215,8 +217,8 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_IB", iparam[IPARAM_IB]);                \
     PROFILING_SAVE_iINFO("PARAM_NB", iparam[IPARAM_NB]);                \
     PROFILING_SAVE_iINFO("PARAM_MB", iparam[IPARAM_MB]);                \
-    PROFILING_SAVE_iINFO("PARAM_SNB", iparam[IPARAM_SNB]);              \
-    PROFILING_SAVE_iINFO("PARAM_SMB", iparam[IPARAM_SMB]);              \
+    PROFILING_SAVE_iINFO("PARAM_KP", iparam[IPARAM_KQ]);                \
+    PROFILING_SAVE_iINFO("PARAM_KQ", iparam[IPARAM_KP]);                \
     PROFILING_SAVE_iINFO("PARAM_HNB", iparam[IPARAM_HNB]);              \
     PROFILING_SAVE_iINFO("PARAM_CHECK", iparam[IPARAM_CHECK]);          \
     PROFILING_SAVE_iINFO("PARAM_CHECKINV", iparam[IPARAM_CHECKINV]);    \

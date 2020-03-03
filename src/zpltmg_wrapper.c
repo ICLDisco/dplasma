@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -318,7 +318,7 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
     two_dim_block_cyclic_t Q;
     two_dim_block_cyclic_init( &Q, matrix_ComplexDouble, matrix_Tile,
                                1, A->super.myrank,
-                               A->mb, A->nb, A->mb*A->mt, 3, 0, 0, A->m, 3, twodA->grid.strows, twodA->grid.stcols, 1 );
+                               A->mb, A->nb, A->mb*A->mt, 3, 0, 0, A->m, 3, twodA->grid.krows, twodA->grid.kcols, 1 );
     Q.mat = parsec_data_allocate((size_t)Q.super.nb_local_tiles *
                                 (size_t)Q.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(Q.super.mtype));

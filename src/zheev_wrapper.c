@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -86,7 +86,7 @@ dplasma_zheev_New(PLASMA_enum jobz, PLASMA_enum uplo,
         two_dim_block_cyclic_t* T = calloc(1, sizeof(two_dim_block_cyclic_t));
         two_dim_block_cyclic_init(T, matrix_ComplexDouble, matrix_Tile,
              A->super.nodes, A->super.myrank, ib, A->nb, A->mt*ib, A->n, 0, 0,
-             A->mt*ib, A->n, As->grid.strows, As->grid.strows, As->grid.rows);
+             A->mt*ib, A->n, As->grid.krows, As->grid.krows, As->grid.rows);
         T->mat = parsec_data_allocate((size_t)T->super.nb_local_tiles *
                                      (size_t)T->super.bsiz *
                                      (size_t)parsec_datadist_getsizeoftype(T->super.mtype));
