@@ -17,9 +17,7 @@
 
 #include <math.h>
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_zcores.h"
+#include "core_blas.h"
 #include "core_zblas.h"
 
 #define pi (3.1415926535897932384626433832795028841971693992)

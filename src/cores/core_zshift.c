@@ -20,9 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_zcores.h"
+#include "core_blas.h"
 
 /** ****************************************************************************
  *

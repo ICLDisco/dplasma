@@ -13,8 +13,7 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "parsec/parsec_config.h"
-#include "dplasma_zcores.h"
+#include "core_blas.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>

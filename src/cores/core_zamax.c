@@ -15,17 +15,9 @@
  * @precisions normal z -> c d s
  */
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_zcores.h"
+#include "core_blas.h"
 
-#ifdef BLKLDD
-#undef BLKLDD
-#define BLKLDD(A, k) ( ( (k) + (A).i/(A).mb) < (A).lm1 ? (A).mb : (A).lm%(A).mb )
-#endif
-
-#define BLKADDR(A, type, m, n)  (type *)plasma_getaddr(A, m, n)
-#define A(m) BLKADDR(descA, PLASMA_Complex64_t, m, 0)
+#define A(m) PLASMA_BLKADDR(descA, PLASMA_Complex64_t, m, 0)
 
 /***************************************************************************//**
  *
@@ -138,7 +130,7 @@ int CORE_zamax_tile( PLASMA_enum storev,
 
     for( m = 0; m < descA.mt; m++)
     {
-        lda    = BLKLDD( descA, m );
+        lda    = PLASMA_BLKLDD( descA, m );
         A      = A( m );
         tempmm = (m == (descA.mt-1)) ? (descA.m - m * descA.mb) : descA.mb;
 

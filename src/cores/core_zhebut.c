@@ -8,9 +8,8 @@
  */
 #include <math.h>
 #include <stdlib.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_zcores.h"
+#include <assert.h>
+#include "core_blas.h"
 
 /*
 #define DEBUG_BUTTERFLY

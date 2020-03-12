@@ -14,8 +14,6 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "parsec/parsec_config.h"
-#include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
@@ -27,6 +25,8 @@
 #ifdef PARSEC_HAVE_LIMITS_H
 #include <limits.h>
 #endif
+
+#include "core_blas.h"
 
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,

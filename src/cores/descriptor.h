@@ -62,6 +62,9 @@ typedef struct plasma_desc_t {
 } PLASMA_desc;
 
 
+#define PLASMA_BLKADDR(A, type, m, n) (type *)plasma_getaddr(A, m, n)
+#define PLASMA_BLKLDD(A, k) ( ( (k) + (A).i/(A).mb) < (A).lm1 ? (A).mb : (A).lm%(A).mb )
+
 /***************************************************************************//**
  *  Internal routines used by coreblas library
  **/

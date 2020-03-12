@@ -13,9 +13,7 @@
  *
  **/
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_zcores.h"
+#include "core_blas.h"
 #include "core_zblas.h"
 
 #undef REAL
