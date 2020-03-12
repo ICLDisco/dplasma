@@ -20,7 +20,7 @@
  *
  * @ingroup dplasma_cores_complex64
  *
- *  dplasma_core_zgeadd adds to matrices together as in PBLAS pzgeadd.
+ *  CORE_zgeadd adds to matrices together as in PBLAS pzgeadd.
  *
  *       B <- alpha * op(A)  + beta * B
  *
@@ -65,7 +65,7 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-int dplasma_core_zgeadd(PLASMA_enum trans, int M, int N,
+int CORE_zgeadd(PLASMA_enum trans, int M, int N,
                               PLASMA_Complex64_t  alpha,
                         const PLASMA_Complex64_t *A, int LDA,
                               PLASMA_Complex64_t  beta,

@@ -34,6 +34,9 @@ typedef struct CORE_zgetrf_data_s CORE_zgetrf_data_t;
 /** ****************************************************************************
  *  Declarations of serial kernels - alphabetical order
  **/
+int CORE_zamax(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
+               const PLASMA_Complex64_t *A, int lda, double *work);
+int CORE_zamax_tile( PLASMA_enum storev, PLASMA_enum uplo, const PLASMA_desc descA, double *work);
 void CORE_dzasum(int storev, PLASMA_enum uplo, int M, int N,
                  const PLASMA_Complex64_t *A, int lda, double *work);
 void CORE_zbrdalg1( PLASMA_enum uplo,

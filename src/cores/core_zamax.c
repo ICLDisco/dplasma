@@ -24,7 +24,7 @@
  * @ingroup dplasma_cores_complex64
  *
  **/
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_dzamax = PCORE_dzamax
 #define CORE_dzamax PCORE_dzamax
 #endif
@@ -95,7 +95,7 @@ int CORE_zamax(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
 }
 
 
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_dzamax_tile = PCORE_dzamax_tile
 #define CORE_dzamax_tile PCORE_dzamax_tile
 #endif

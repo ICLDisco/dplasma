@@ -52,7 +52,7 @@ void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_zhetrf2_nopiv = PCORE_zhetrf2_nopiv
 #define CORE_zhetrf2_nopiv PCORE_zhetrf2_nopiv
 #endif

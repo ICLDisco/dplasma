@@ -17,21 +17,7 @@ int blgchase_ztrdv2(int NT, int N, int NB,
                    PLASMA_Complex64_t *V2, PLASMA_Complex64_t *TAU2,
                    int sweep, int id, int blktile);
 
-int CORE_zamax(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
-               const PLASMA_Complex64_t *A, int lda, double *work);
-int CORE_zamax_tile( PLASMA_enum storev, PLASMA_enum uplo, const PLASMA_desc descA, double *work);
 
-int dplasma_core_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
-                              PLASMA_Complex64_t  alpha,
-                        const PLASMA_Complex64_t *A, int LDA,
-                              PLASMA_Complex64_t  beta,
-                              PLASMA_Complex64_t *B, int LDB);
-
-int dplasma_core_zgeadd(PLASMA_enum trans, int M, int N,
-                              PLASMA_Complex64_t  alpha,
-                        const PLASMA_Complex64_t *A, int LDA,
-                              PLASMA_Complex64_t  beta,
-                              PLASMA_Complex64_t *B, int LDB);
 
 #if defined(PARSEC_HAVE_CUDA)
 #include <cuda.h>

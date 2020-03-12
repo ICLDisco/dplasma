@@ -1,5 +1,5 @@
 set(ZHEADERS
-  dplasma_zcores.h
+  dplasma_zcores.h core_zblas.h
 )
 set(ZSOURCES
   core_dzasum.c

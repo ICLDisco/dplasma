@@ -20,7 +20,7 @@
  *
  * @ingroup dplasma_cores_complex64
  *
- *  dplasma_core_ztradd adds to matrices together as in PBLAS pztradd.
+ *  CORE_ztradd adds to matrices together as in PBLAS pztradd.
  *
  *       B <- alpha * op(A)  + beta * B
  *
@@ -71,7 +71,7 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-int dplasma_core_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
+int CORE_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
                               PLASMA_Complex64_t  alpha,
                         const PLASMA_Complex64_t *A, int LDA,
                               PLASMA_Complex64_t  beta,
@@ -81,7 +81,7 @@ int dplasma_core_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
     int j;
 
     if (uplo == PlasmaUpperLower){
-        return dplasma_core_zgeadd( trans, M, N, alpha, A, LDA, beta, B, LDB );
+        return CORE_zgeadd( trans, M, N, alpha, A, LDA, beta, B, LDB );
     }
 
     if ((uplo != PlasmaUpper) &&
