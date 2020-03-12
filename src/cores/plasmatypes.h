@@ -220,13 +220,13 @@ enum matrix_type_e {
     #include <math.h>
     #undef _Complex
     #undef complex
-    typedef float  _Complex parsec_complex32_t;
-    typedef double _Complex parsec_complex64_t;
+    typedef float  _Complex PLASMA_Complex32_t;
+    typedef double _Complex PLASMA_Complex64_t;
 # else
     /* Use MS VC complex class */
     #include <complex>
-    typedef std::complex<float> parsec_complex32_t;
-    typedef std::complex<double> parsec_complex64_t;
+    typedef std::complex<float> PLASMA_Complex32_t;
+    typedef std::complex<double> PLASMA_Complex64_t;
     /* For LAPACKE lapacke.h force usage of Windows C++ Complex types */
     #define LAPACK_COMPLEX_CUSTOM
     #define lapack_complex_float std::complex<float>
@@ -238,8 +238,8 @@ enum matrix_type_e {
 
 #else /* defined(_WIN32) */
 
-    typedef float  _Complex parsec_complex32_t;
-    typedef double _Complex parsec_complex64_t;
+    typedef float  _Complex PLASMA_Complex32_t;
+    typedef double _Complex PLASMA_Complex64_t;
 
 #endif /* defined(_WIN32) */
 
@@ -265,12 +265,12 @@ extern "C" {
 
 /* These declarations will not clash with what C++ provides because the names in C++ are name-mangled. */
 #if !defined(_WIN32)
-extern double cabs(parsec_complex64_t z);
-extern parsec_complex64_t conj(parsec_complex64_t z);
+extern double cabs(PLASMA_Complex64_t z);
+extern PLASMA_Complex64_t conj(PLASMA_Complex64_t z);
 #endif
-extern float cabsf(parsec_complex32_t z);
-extern double cimag(parsec_complex64_t z);
-extern double creal(parsec_complex64_t z);
+extern float cabsf(PLASMA_Complex32_t z);
+extern double cimag(PLASMA_Complex64_t z);
+extern double creal(PLASMA_Complex64_t z);
 
 #ifdef __cplusplus
 }

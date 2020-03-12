@@ -53,7 +53,7 @@
  *          The leading dimension of the array A. LDA >= max(1,N).
  *
  ******************************************************************************/
-void CORE_zlauum(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA)
+void CORE_zlauum(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA)
 {
     LAPACKE_zlauum_work(LAPACK_COL_MAJOR, lapack_const(uplo), N, A, LDA );
 }

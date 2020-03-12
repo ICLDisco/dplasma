@@ -88,9 +88,9 @@
  ******************************************************************************/
 void CORE_zgemm(PLASMA_enum transA, int transB,
                 int M, int N, int K,
-                parsec_complex64_t alpha, const parsec_complex64_t *A, int LDA,
-                                          const parsec_complex64_t *B, int LDB,
-                parsec_complex64_t beta, parsec_complex64_t *C, int LDC)
+                PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int LDA,
+                                          const PLASMA_Complex64_t *B, int LDB,
+                PLASMA_Complex64_t beta, PLASMA_Complex64_t *C, int LDC)
 {
     cblas_zgemm(
         CblasColMajor,

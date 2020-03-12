@@ -64,10 +64,10 @@
  ******************************************************************************/
 int
 CORE_zgetf2_nopiv(int M, int N,
-                  parsec_complex64_t *A, int LDA)
+                  PLASMA_Complex64_t *A, int LDA)
 {
-    parsec_complex64_t mzone = (parsec_complex64_t)-1.0;
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t mzone = (PLASMA_Complex64_t)-1.0;
+    PLASMA_Complex64_t alpha;
     double sfmin;
     int i, j, k;
     int info;
@@ -95,7 +95,7 @@ CORE_zgetf2_nopiv(int M, int N,
     k = coreblas_imin(M, N);
     for(i=0 ; i < k; i++) {
         alpha = A[i*LDA+i];
-        if ( alpha != (parsec_complex64_t)0.0 ) {
+        if ( alpha != (PLASMA_Complex64_t)0.0 ) {
             /* Compute elements J+1:M of J-th column. */
             if (i < M) {
                 if ( cabs(alpha) > sfmin ) {

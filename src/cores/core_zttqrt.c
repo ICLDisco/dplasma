@@ -96,16 +96,16 @@
  *
  ******************************************************************************/
 int CORE_zttqrt(int M, int N, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *TAU, parsec_complex64_t *WORK)
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *TAU, PLASMA_Complex64_t *WORK)
 {
     static int                ione  = 1;
-    static parsec_complex64_t zone  = 1.0;
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zone  = 1.0;
+    static PLASMA_Complex64_t zzero = 0.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int i, j, l, ii, sb, mi, ni;
 
     /* Check input arguments */

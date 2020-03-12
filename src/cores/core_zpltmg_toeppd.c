@@ -67,7 +67,7 @@
  *         all call to this routines generating the w and theta vectors.
  *
  ******************************************************************************/
-void CORE_zpltmg_toeppd1( int gM, int m0, int M, parsec_complex64_t *W,
+void CORE_zpltmg_toeppd1( int gM, int m0, int M, PLASMA_Complex64_t *W,
                           unsigned long long int seed )
 {
     int i;
@@ -143,10 +143,10 @@ void CORE_zpltmg_toeppd1( int gM, int m0, int M, parsec_complex64_t *W,
  *
  ******************************************************************************/
 void CORE_zpltmg_toeppd2( int M, int N, int K, int m0, int n0,
-                          const parsec_complex64_t *W,
-                                parsec_complex64_t *A, int LDA )
+                          const PLASMA_Complex64_t *W,
+                                PLASMA_Complex64_t *A, int LDA )
 {
-    const parsec_complex64_t *tmpW;
+    const PLASMA_Complex64_t *tmpW;
     int i, j, k, ii, jj;
 
     for (j=0, jj=n0; j<N; j++, jj++) {

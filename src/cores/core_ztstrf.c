@@ -89,17 +89,17 @@
  ******************************************************************************/
 
 int CORE_ztstrf(int M, int N, int IB, int NB,
-                parsec_complex64_t *U, int LDU,
-                parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *L, int LDL,
+                PLASMA_Complex64_t *U, int LDU,
+                PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *L, int LDL,
                 int *IPIV,
-                parsec_complex64_t *WORK, int LDWORK,
+                PLASMA_Complex64_t *WORK, int LDWORK,
                 int *INFO)
 {
-    static parsec_complex64_t zzero = 0.0;
-    static parsec_complex64_t mzone =-1.0;
+    static PLASMA_Complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t mzone =-1.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int i, j, ii, sb;
     int im, ip;
 
@@ -135,7 +135,7 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
         return PLASMA_SUCCESS;
 
     /* Set L to 0 */
-    memset(L, 0, LDL*N*sizeof(parsec_complex64_t));
+    memset(L, 0, LDL*N*sizeof(PLASMA_Complex64_t));
 
     ip = 0;
     for (ii = 0; ii < N; ii += IB) {
@@ -169,7 +169,7 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
                 *INFO = ii+i+1;
             }
 
-            alpha = ((parsec_complex64_t)1. / U[LDU*(ii+i)+ii+i]);
+            alpha = ((PLASMA_Complex64_t)1. / U[LDU*(ii+i)+ii+i]);
             cblas_zscal(M, CBLAS_SADDR(alpha), &A[LDA*(ii+i)], 1);
             cblas_zcopy(M, &A[LDA*(ii+i)], 1, &WORK[LDWORK*i], 1);
             cblas_zgeru(

@@ -18,7 +18,7 @@
 #include "dplasma_cores.h"
 #include "dplasma_zcores.h"
 
-#define A(m, n) PLASMA_BLKADDR(descA, parsec_complex64_t, m, n)
+#define A(m, n) PLASMA_BLKADDR(descA, PLASMA_Complex64_t, m, n)
 
 /***************************************************************************//**
  *
@@ -58,7 +58,7 @@
  *
  *******************************************************************************
  */
-void CORE_zlaswp(int N, parsec_complex64_t *A, int LDA, int I1, int I2, const int *IPIV, int INC)
+void CORE_zlaswp(int N, PLASMA_Complex64_t *A, int LDA, int I1, int I2, const int *IPIV, int INC)
 {
     LAPACKE_zlaswp_work( LAPACK_COL_MAJOR, N, A, LDA, I1, I2, IPIV, INC );
 }
@@ -102,7 +102,7 @@ void CORE_zlaswp(int N, parsec_complex64_t *A, int LDA, int I1, int I2, const in
 int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc)
 {
     int i, j, ip, it;
-    parsec_complex64_t *A1;
+    PLASMA_Complex64_t *A1;
     int lda1, lda2;
 
     /* Change i1 to C notation */
@@ -213,9 +213,9 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
  *******************************************************************************
  */
 int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc,
-                       const parsec_complex64_t *Akk, int ldak)
+                       const PLASMA_Complex64_t *Akk, int ldak)
 {
-    parsec_complex64_t zone  = 1.0;
+    PLASMA_Complex64_t zone  = 1.0;
     int lda;
     int m = descA.mt == 1 ? descA.m : descA.mb;
 
@@ -283,7 +283,7 @@ int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
 int CORE_zlaswpc_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc)
 {
     int i, j, ip, it;
-    parsec_complex64_t *A1;
+    PLASMA_Complex64_t *A1;
     int lda;
 
     /* Change i1 to C notation */

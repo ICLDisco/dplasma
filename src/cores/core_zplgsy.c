@@ -68,10 +68,10 @@
  *         all tiles initialized with this routine.
  *
  ******************************************************************************/
-void CORE_zplgsy( parsec_complex64_t bump, int m, int n, parsec_complex64_t *A, int lda,
+void CORE_zplgsy( PLASMA_Complex64_t bump, int m, int n, PLASMA_Complex64_t *A, int lda,
                   int gM, int m0, int n0, unsigned long long int seed )
 {
-    parsec_complex64_t *tmp = A;
+    PLASMA_Complex64_t *tmp = A;
     int64_t i, j;
     unsigned long long int ran, jump;
 

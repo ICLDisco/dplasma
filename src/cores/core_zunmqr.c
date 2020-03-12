@@ -107,10 +107,10 @@
  ******************************************************************************/
 int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
                 int M, int N, int K, int IB,
-                const parsec_complex64_t *A, int LDA,
-                const parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *WORK, int LDWORK)
+                const PLASMA_Complex64_t *A, int LDA,
+                const PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *WORK, int LDWORK)
 {
     int i, kb;
     int i1, i3;

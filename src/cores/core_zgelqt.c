@@ -82,10 +82,10 @@
  *
  ******************************************************************************/
 int CORE_zgelqt(int M, int N, int IB,
-                parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *TAU,
-                parsec_complex64_t *WORK)
+                PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *TAU,
+                PLASMA_Complex64_t *WORK)
 {
     int i, k, sb;
 

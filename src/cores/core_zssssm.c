@@ -91,14 +91,14 @@
  ******************************************************************************/
 
 int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                const parsec_complex64_t *L1, int LDL1,
-                const parsec_complex64_t *L2, int LDL2,
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                const PLASMA_Complex64_t *L1, int LDL1,
+                const PLASMA_Complex64_t *L2, int LDL2,
                 const int *IPIV)
 {
-    static parsec_complex64_t zone  = 1.0;
-    static parsec_complex64_t mzone =-1.0;
+    static PLASMA_Complex64_t zone  = 1.0;
+    static PLASMA_Complex64_t mzone =-1.0;
 
     int i, ii, sb;
     int im, ip;

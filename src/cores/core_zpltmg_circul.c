@@ -72,9 +72,9 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_circul( int M, int N, parsec_complex64_t *A, int LDA,
+int CORE_zpltmg_circul( int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int gM, int m0, int n0,
-                        const parsec_complex64_t *V )
+                        const PLASMA_Complex64_t *V )
 {
     int i, j, ii, jj;
 

@@ -82,8 +82,8 @@
  ******************************************************************************/
 void CORE_zherk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                double alpha, const parsec_complex64_t *A, int LDA,
-                double beta, parsec_complex64_t *C, int LDC)
+                double alpha, const PLASMA_Complex64_t *A, int LDA,
+                double beta, PLASMA_Complex64_t *C, int LDC)
 {
     cblas_zherk(
         CblasColMajor,

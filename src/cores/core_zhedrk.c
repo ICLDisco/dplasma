@@ -31,16 +31,16 @@
 
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                double alpha, parsec_complex64_t *A, int LDA,
-                double beta,  parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *D, int incD);
+                double alpha, PLASMA_Complex64_t *A, int LDA,
+                double beta,  PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *D, int incD);
 
 int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, parsec_complex64_t *A, int LDA,
-                double beta,  parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *D,    int incD,
-                parsec_complex64_t *WORK, int LWORK);
+                double alpha, PLASMA_Complex64_t *A, int LDA,
+                double beta,  PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *D,    int incD,
+                PLASMA_Complex64_t *WORK, int LWORK);
 
 /***************************************************************************//**
  *
@@ -88,7 +88,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  *         Unchanged on exit.
  *
  * @param[in] A
- *         parsec_complex64_t array of DIMENSION ( LDA, ka ), where ka is
+ *         PLASMA_Complex64_t array of DIMENSION ( LDA, ka ), where ka is
  *         k  when  TRANS = PlasmaTrans,  and is  n  otherwise.
  *         Before entry with  TRANS = PlasmaTrans,  the  leading  n by k
  *         part of the array  A  must contain the matrix  A,  otherwise
@@ -110,7 +110,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  *       Unchanged on exit.
  *
  * @param[in] C
- *       parsec_complex64_t array of DIMENSION ( LDC, n ).
+ *       PLASMA_Complex64_t array of DIMENSION ( LDC, n ).
  *
  *       DB_TEMP FOR NOW, BOTH UPPER AND LOWER PARTS OF C MUST BE STORED IN C.
  *
@@ -145,13 +145,13 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
  ******************************************************************************/
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                double alpha, parsec_complex64_t *A, int LDA,
-                double beta,  parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *D, int incD)
+                double alpha, PLASMA_Complex64_t *A, int LDA,
+                double beta,  PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *D, int incD)
 {
     int i, j, k, Am;
-    parsec_complex64_t tmp;
-    parsec_complex64_t *Aik, *Dkk, *Akj, *Cij;
+    PLASMA_Complex64_t tmp;
+    PLASMA_Complex64_t *Aik, *Dkk, *Akj, *Cij;
 
     Am = (trans == PlasmaNoTrans ) ? N : K;
 
@@ -284,17 +284,17 @@ int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
 #endif
 int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, parsec_complex64_t *A, int LDA,
-                double beta,  parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *D,    int incD,
-                parsec_complex64_t *WORK, int LWORK)
+                double alpha, PLASMA_Complex64_t *A, int LDA,
+                double beta,  PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *D,    int incD,
+                PLASMA_Complex64_t *WORK, int LWORK)
 {
     int i, j, ii, sb, Am;
-    parsec_complex64_t *wD, *AD, *wDC;
-    parsec_complex64_t *X, *Y;
-    parsec_complex64_t zzero  = (parsec_complex64_t)0.;
-    parsec_complex64_t zalpha = alpha;
-    parsec_complex64_t zbeta  = beta;
+    PLASMA_Complex64_t *wD, *AD, *wDC;
+    PLASMA_Complex64_t *X, *Y;
+    PLASMA_Complex64_t zzero  = (PLASMA_Complex64_t)0.;
+    PLASMA_Complex64_t zalpha = alpha;
+    PLASMA_Complex64_t zbeta  = beta;
 
     Am = (trans == PlasmaNoTrans ) ? N : K;
 

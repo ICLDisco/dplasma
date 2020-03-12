@@ -121,12 +121,12 @@
  ******************************************************************************/
 int CORE_ztsmqr_corner( int m1, int n1, int m2, int n2, int m3, int n3,
                         int k, int ib, int nb,
-                        parsec_complex64_t *A1, int lda1,
-                        parsec_complex64_t *A2, int lda2,
-                        parsec_complex64_t *A3, int lda3,
-                        const parsec_complex64_t *V, int ldv,
-                        const parsec_complex64_t *T, int ldt,
-                        parsec_complex64_t *WORK, int ldwork)
+                        PLASMA_Complex64_t *A1, int lda1,
+                        PLASMA_Complex64_t *A2, int lda2,
+                        PLASMA_Complex64_t *A3, int lda3,
+                        const PLASMA_Complex64_t *V, int ldv,
+                        const PLASMA_Complex64_t *T, int ldt,
+                        PLASMA_Complex64_t *WORK, int ldwork)
 {
     int i, j;
     PLASMA_enum side, trans;

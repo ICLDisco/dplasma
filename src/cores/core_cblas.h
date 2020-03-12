@@ -35,455 +35,455 @@ typedef struct CORE_cgetrf_data_s CORE_cgetrf_data_t;
  *  Declarations of serial kernels - alphabetical order
  **/
 void CORE_scasum(int storev, PLASMA_enum uplo, int M, int N,
-                 const parsec_complex32_t *A, int lda, float *work);
+                 const PLASMA_Complex32_t *A, int lda, float *work);
 void CORE_cbrdalg1( PLASMA_enum uplo,
                     int n,
                     int nb,
-                    parsec_complex32_t *A,
+                    PLASMA_Complex32_t *A,
                     int lda,
-                    parsec_complex32_t *VQ,
-                    parsec_complex32_t *TAUQ,
-                    parsec_complex32_t *VP,
-                    parsec_complex32_t *TAUP,
+                    PLASMA_Complex32_t *VQ,
+                    PLASMA_Complex32_t *TAUQ,
+                    PLASMA_Complex32_t *VP,
+                    PLASMA_Complex32_t *TAUP,
                     int Vblksiz, int wantz,
                     int i, int sweepid, int m, int grsiz,
-                    parsec_complex32_t *work);
+                    PLASMA_Complex32_t *work);
 int CORE_cgbelr(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 int CORE_cgbrce(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 int CORE_cgblrx(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 int CORE_cgeadd(PLASMA_enum trans, int M, int N,
-                      parsec_complex32_t alpha,
-                const parsec_complex32_t *A, int LDA,
-                      parsec_complex32_t beta,
-                      parsec_complex32_t *B, int LDB);
+                      PLASMA_Complex32_t alpha,
+                const PLASMA_Complex32_t *A, int LDA,
+                      PLASMA_Complex32_t beta,
+                      PLASMA_Complex32_t *B, int LDB);
 int  CORE_cgelqt(int M, int N, int IB,
-                 parsec_complex32_t *A, int LDA,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU,
-                 parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A, int LDA,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU,
+                 PLASMA_Complex32_t *WORK);
 void CORE_cgemm(PLASMA_enum transA, PLASMA_enum transB,
                 int M, int N, int K,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                          const parsec_complex32_t *B, int LDB,
-                parsec_complex32_t beta,        parsec_complex32_t *C, int LDC);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                          const PLASMA_Complex32_t *B, int LDB,
+                PLASMA_Complex32_t beta,        PLASMA_Complex32_t *C, int LDC);
 void CORE_cgemv(PLASMA_enum trans, int M, int N,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                          const parsec_complex32_t *x, int incx,
-                parsec_complex32_t beta,        parsec_complex32_t *y, int incy);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                          const PLASMA_Complex32_t *x, int incx,
+                PLASMA_Complex32_t beta,        PLASMA_Complex32_t *y, int incy);
 void CORE_cgeqp3_init( int n, int *jpvt );
 void CORE_cgeqp3_larfg( PLASMA_desc A, int ii, int jj, int i, int j,
-                        parsec_complex32_t *tau, parsec_complex32_t *beta );
+                        PLASMA_Complex32_t *tau, PLASMA_Complex32_t *beta );
 void CORE_cgeqp3_norms( PLASMA_desc A, int ioff, int joff, float *norms1, float *norms2 );
-void CORE_cgeqp3_pivot( PLASMA_desc A, parsec_complex32_t *F, int ldf,
+void CORE_cgeqp3_pivot( PLASMA_desc A, PLASMA_Complex32_t *F, int ldf,
                         int jj, int k, int *jpvt,
                         float *norms1, float *norms2, int *info );
 int  CORE_cgeqp3_tntpiv(int m, int n,
-                        parsec_complex32_t *A, int lda,
-                        int *IPIV, parsec_complex32_t *tau,
+                        PLASMA_Complex32_t *A, int lda,
+                        int *IPIV, PLASMA_Complex32_t *tau,
                         int *iwork);
-void CORE_cgeqp3_update( const parsec_complex32_t *Ajj, int lda1,
-                         parsec_complex32_t       *Ajk, int lda2,
-                         const parsec_complex32_t *Fk,  int ldf,
+void CORE_cgeqp3_update( const PLASMA_Complex32_t *Ajj, int lda1,
+                         PLASMA_Complex32_t       *Ajk, int lda2,
+                         const PLASMA_Complex32_t *Fk,  int ldf,
                          int joff, int k, int koff, int nb,
                          float *norms1, float *norms2,
                          int *info );
 int  CORE_cgeqrt(int M, int N, int IB,
-                 parsec_complex32_t *A, int LDA,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU, parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A, int LDA,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU, PLASMA_Complex32_t *WORK);
 int  CORE_cgessm(int M, int N, int K, int IB,
                  const int *IPIV,
-                 const parsec_complex32_t *L, int LDL,
-                 parsec_complex32_t *A, int LDA);
+                 const PLASMA_Complex32_t *L, int LDL,
+                 PLASMA_Complex32_t *A, int LDA);
 int  CORE_cgessq(int M, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *scale, float *sumsq);
 int  CORE_cgetf2_nopiv(int m, int n,
-                      parsec_complex32_t *A, int lda);
+                      PLASMA_Complex32_t *A, int lda);
 int  CORE_cgetrf(int M, int N,
-                 parsec_complex32_t *A, int LDA,
+                 PLASMA_Complex32_t *A, int LDA,
                  int *IPIV, int *INFO);
 int  CORE_cgetrf_incpiv(int M, int N, int IB,
-                        parsec_complex32_t *A, int LDA,
+                        PLASMA_Complex32_t *A, int LDA,
                         int *IPIV, int *INFO);
 int  CORE_cgetrf_nopiv(int m, int n, int ib,
-                      parsec_complex32_t *A, int lda);
+                      PLASMA_Complex32_t *A, int lda);
 int  CORE_cgetrf_reclap(CORE_cgetrf_data_t *data, int M, int N,
-                        parsec_complex32_t *A, int LDA,
+                        PLASMA_Complex32_t *A, int LDA,
                         int *IPIV, int *info);
 CORE_cgetrf_data_t *CORE_cgetrf_reclap_init(int nbthrd);
 int  CORE_cgetrf_rectil(CORE_cgetrf_data_t *data, const PLASMA_desc A, int *IPIV, int *info);
 CORE_cgetrf_data_t *CORE_cgetrf_rectil_init(int nbthrd);
-void CORE_cgetrip(int m, int n, parsec_complex32_t *A,
-                  parsec_complex32_t *work);
+void CORE_cgetrip(int m, int n, PLASMA_Complex32_t *A,
+                  PLASMA_Complex32_t *work);
 int CORE_chbelr(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 int CORE_chblrx(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 int CORE_chbrce(PLASMA_enum uplo, int N,
-                PLASMA_desc *A, parsec_complex32_t *V, parsec_complex32_t *TAU,
+                PLASMA_desc *A, PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                 int st, int ed, int eltsize);
 void CORE_chbtype1cb(int N, int NB,
-                     parsec_complex32_t *A, int LDA,
-                     parsec_complex32_t *V, parsec_complex32_t *TAU,
+                     PLASMA_Complex32_t *A, int LDA,
+                     PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                      int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                     parsec_complex32_t *WORK);
+                     PLASMA_Complex32_t *WORK);
 void CORE_chbtype2cb(int N, int NB,
-                     parsec_complex32_t *A, int LDA,
-                     parsec_complex32_t *V, parsec_complex32_t *TAU,
+                     PLASMA_Complex32_t *A, int LDA,
+                     PLASMA_Complex32_t *V, PLASMA_Complex32_t *TAU,
                      int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                     parsec_complex32_t *WORK);
+                     PLASMA_Complex32_t *WORK);
 void CORE_chbtype3cb(int N, int NB,
-                     parsec_complex32_t *A, int LDA,
-                     const parsec_complex32_t *V, const parsec_complex32_t *TAU,
+                     PLASMA_Complex32_t *A, int LDA,
+                     const PLASMA_Complex32_t *V, const PLASMA_Complex32_t *TAU,
                      int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                     parsec_complex32_t *WORK);
+                     PLASMA_Complex32_t *WORK);
 void CORE_cgbtype1cb(PLASMA_enum uplo, int N, int NB,
-                parsec_complex32_t *A, int LDA,
-                parsec_complex32_t *VQ, parsec_complex32_t *TAUQ,
-                parsec_complex32_t *VP, parsec_complex32_t *TAUP,
+                PLASMA_Complex32_t *A, int LDA,
+                PLASMA_Complex32_t *VQ, PLASMA_Complex32_t *TAUQ,
+                PLASMA_Complex32_t *VP, PLASMA_Complex32_t *TAUP,
                 int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                parsec_complex32_t *WORK);
+                PLASMA_Complex32_t *WORK);
 void CORE_cgbtype2cb(PLASMA_enum uplo, int N, int NB,
-                parsec_complex32_t *A, int LDA,
-                parsec_complex32_t *VQ, parsec_complex32_t *TAUQ,
-                parsec_complex32_t *VP, parsec_complex32_t *TAUP,
+                PLASMA_Complex32_t *A, int LDA,
+                PLASMA_Complex32_t *VQ, PLASMA_Complex32_t *TAUQ,
+                PLASMA_Complex32_t *VP, PLASMA_Complex32_t *TAUP,
                 int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                parsec_complex32_t *WORK);
+                PLASMA_Complex32_t *WORK);
 void CORE_cgbtype3cb(PLASMA_enum uplo, int N, int NB,
-                parsec_complex32_t *A, int LDA,
-                parsec_complex32_t *VQ, parsec_complex32_t *TAUQ,
-                parsec_complex32_t *VP, parsec_complex32_t *TAUP,
+                PLASMA_Complex32_t *A, int LDA,
+                PLASMA_Complex32_t *VQ, PLASMA_Complex32_t *TAUQ,
+                PLASMA_Complex32_t *VP, PLASMA_Complex32_t *TAUP,
                 int st, int ed, int sweep, int Vblksiz, int WANTZ,
-                parsec_complex32_t *WORK);
+                PLASMA_Complex32_t *WORK);
 void CORE_chegst(int itype, PLASMA_enum uplo, int N,
-                 parsec_complex32_t *A, int LDA,
-                 parsec_complex32_t *B, int LDB, int *INFO);
+                 PLASMA_Complex32_t *A, int LDA,
+                 PLASMA_Complex32_t *B, int LDB, int *INFO);
 #ifdef COMPLEX
 void CORE_chemm(PLASMA_enum side, PLASMA_enum uplo,
                 int M, int N,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                          const parsec_complex32_t *B, int LDB,
-                parsec_complex32_t beta,        parsec_complex32_t *C, int LDC);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                          const PLASMA_Complex32_t *B, int LDB,
+                PLASMA_Complex32_t beta,        PLASMA_Complex32_t *C, int LDC);
 void CORE_cherk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                float alpha, const parsec_complex32_t *A, int LDA,
-                float beta,        parsec_complex32_t *C, int LDC);
+                float alpha, const PLASMA_Complex32_t *A, int LDA,
+                float beta,        PLASMA_Complex32_t *C, int LDC);
 void CORE_cher2k(PLASMA_enum uplo, PLASMA_enum trans,
                  int N, int K,
-                 parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                           const parsec_complex32_t *B, int LDB,
-                 float beta,                    parsec_complex32_t *C, int LDC);
+                 PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                           const PLASMA_Complex32_t *B, int LDB,
+                 float beta,                    PLASMA_Complex32_t *C, int LDC);
 int  CORE_chessq(PLASMA_enum uplo, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *scale, float *sumsq);
 #endif
 int  CORE_cherfb(PLASMA_enum uplo, int N, int K, int IB, int NB,
-                 const parsec_complex32_t *A,    int LDA,
-                 const parsec_complex32_t *T,    int LDT,
-                       parsec_complex32_t *C,    int LDC,
-                       parsec_complex32_t *WORK, int LDWORK);
+                 const PLASMA_Complex32_t *A,    int LDA,
+                 const PLASMA_Complex32_t *T,    int LDT,
+                       PLASMA_Complex32_t *C,    int LDC,
+                       PLASMA_Complex32_t *WORK, int LDWORK);
 void CORE_clacpy(PLASMA_enum uplo, int M, int N,
-                 const parsec_complex32_t *A, int LDA,
-                       parsec_complex32_t *B, int LDB);
+                 const PLASMA_Complex32_t *A, int LDA,
+                       PLASMA_Complex32_t *B, int LDB);
 int CORE_clacpy_pivot( const PLASMA_desc descA,
                        PLASMA_enum direct,
                        int k1, int k2, const int *ipiv,
                        int *rankin, int *rankout,
-                       parsec_complex32_t *A, int lda,
+                       PLASMA_Complex32_t *A, int lda,
                        int init);
 void CORE_clange(int norm, int M, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *work, float *normA);
 #ifdef COMPLEX
 void CORE_clanhe(int norm, PLASMA_enum uplo, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *work, float *normA);
 #endif
 void CORE_clansy(int norm, PLASMA_enum uplo, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *work, float *normA);
 void CORE_clantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *work, float *normA);
 int CORE_clarfb_gemm(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum direct, PLASMA_enum storev,
                      int M, int N, int K,
-                     const parsec_complex32_t *V, int LDV,
-                     const parsec_complex32_t *T, int LDT,
-                           parsec_complex32_t *C, int LDC,
-                           parsec_complex32_t *WORK, int LDWORK);
+                     const PLASMA_Complex32_t *V, int LDV,
+                     const PLASMA_Complex32_t *T, int LDT,
+                           PLASMA_Complex32_t *C, int LDC,
+                           PLASMA_Complex32_t *WORK, int LDWORK);
 int CORE_clarfx2(PLASMA_enum side, int N,
-                 parsec_complex32_t V,
-                 parsec_complex32_t TAU,
-                 parsec_complex32_t *C1, int LDC1,
-                 parsec_complex32_t *C2, int LDC2);
+                 PLASMA_Complex32_t V,
+                 PLASMA_Complex32_t TAU,
+                 PLASMA_Complex32_t *C1, int LDC1,
+                 PLASMA_Complex32_t *C2, int LDC2);
 int CORE_clarfx2c(PLASMA_enum uplo,
-                  parsec_complex32_t V,
-                  parsec_complex32_t TAU,
-                  parsec_complex32_t *C1,
-                  parsec_complex32_t *C2,
-                  parsec_complex32_t *C3);
+                  PLASMA_Complex32_t V,
+                  PLASMA_Complex32_t TAU,
+                  PLASMA_Complex32_t *C1,
+                  PLASMA_Complex32_t *C2,
+                  PLASMA_Complex32_t *C3);
 int CORE_clarfx2ce(PLASMA_enum uplo,
-                   parsec_complex32_t *V,
-                   parsec_complex32_t *TAU,
-                   parsec_complex32_t *C1,
-                   parsec_complex32_t *C2,
-                   parsec_complex32_t *C3);
+                   PLASMA_Complex32_t *V,
+                   PLASMA_Complex32_t *TAU,
+                   PLASMA_Complex32_t *C1,
+                   PLASMA_Complex32_t *C2,
+                   PLASMA_Complex32_t *C3);
 void CORE_clarfy(int N,
-                 parsec_complex32_t *A, int LDA,
-                 const parsec_complex32_t *V,
-                 const parsec_complex32_t *TAU,
-                 parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *V,
+                 const PLASMA_Complex32_t *TAU,
+                 PLASMA_Complex32_t *WORK);
 int  CORE_clascal(PLASMA_enum uplo, int m, int n,
-                  parsec_complex32_t alpha, parsec_complex32_t *A, int lda);
+                  PLASMA_Complex32_t alpha, PLASMA_Complex32_t *A, int lda);
 void CORE_claset(PLASMA_enum uplo, int n1, int n2,
-                 parsec_complex32_t alpha, parsec_complex32_t beta,
-                 parsec_complex32_t *tileA, int ldtilea);
-void CORE_claset2(PLASMA_enum uplo, int n1, int n2, parsec_complex32_t alpha,
-                  parsec_complex32_t *tileA, int ldtilea);
-void CORE_claswp(int N, parsec_complex32_t *A, int LDA,
+                 PLASMA_Complex32_t alpha, PLASMA_Complex32_t beta,
+                 PLASMA_Complex32_t *tileA, int ldtilea);
+void CORE_claset2(PLASMA_enum uplo, int n1, int n2, PLASMA_Complex32_t alpha,
+                  PLASMA_Complex32_t *tileA, int ldtilea);
+void CORE_claswp(int N, PLASMA_Complex32_t *A, int LDA,
                  int I1,  int I2, const int *IPIV, int INC);
 int  CORE_claswp_ontile( PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc);
 int  CORE_claswpc_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc);
 int  CORE_clatro(PLASMA_enum uplo, PLASMA_enum trans,
                  int M, int N,
-                 const parsec_complex32_t *A, int LDA,
-                       parsec_complex32_t *B, int LDB);
-void CORE_clauum(PLASMA_enum uplo, int N, parsec_complex32_t *A, int LDA);
+                 const PLASMA_Complex32_t *A, int LDA,
+                       PLASMA_Complex32_t *B, int LDB);
+void CORE_clauum(PLASMA_enum uplo, int N, PLASMA_Complex32_t *A, int LDA);
 int CORE_cpamm(int op, PLASMA_enum side, PLASMA_enum storev,
                int M, int N, int K, int L,
-               const parsec_complex32_t *A1, int LDA1,
-                     parsec_complex32_t *A2, int LDA2,
-               const parsec_complex32_t *V, int LDV,
-                     parsec_complex32_t *W, int LDW);
+               const PLASMA_Complex32_t *A1, int LDA1,
+                     PLASMA_Complex32_t *A2, int LDA2,
+               const PLASMA_Complex32_t *V, int LDV,
+                     PLASMA_Complex32_t *W, int LDW);
 int  CORE_cparfb(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum direct, PLASMA_enum storev,
                  int M1, int N1, int M2, int N2, int K, int L,
-                       parsec_complex32_t *A1, int LDA1,
-                       parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                       parsec_complex32_t *WORK, int LDWORK);
+                       PLASMA_Complex32_t *A1, int LDA1,
+                       PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                       PLASMA_Complex32_t *WORK, int LDWORK);
 int CORE_cpemv(PLASMA_enum trans, PLASMA_enum storev,
                int M, int N, int L,
-               parsec_complex32_t ALPHA,
-               const parsec_complex32_t *A, int LDA,
-               const parsec_complex32_t *X, int INCX,
-               parsec_complex32_t BETA,
-               parsec_complex32_t *Y, int INCY,
-               parsec_complex32_t *WORK);
-void CORE_cplghe(float bump, int m, int n, parsec_complex32_t *A, int lda,
+               PLASMA_Complex32_t ALPHA,
+               const PLASMA_Complex32_t *A, int LDA,
+               const PLASMA_Complex32_t *X, int INCX,
+               PLASMA_Complex32_t BETA,
+               PLASMA_Complex32_t *Y, int INCY,
+               PLASMA_Complex32_t *WORK);
+void CORE_cplghe(float bump, int m, int n, PLASMA_Complex32_t *A, int lda,
                  int bigM, int m0, int n0, unsigned long long int seed );
-void CORE_cplgsy(parsec_complex32_t bump, int m, int n, parsec_complex32_t *A, int lda,
+void CORE_cplgsy(PLASMA_Complex32_t bump, int m, int n, PLASMA_Complex32_t *A, int lda,
                  int bigM, int m0, int n0, unsigned long long int seed );
-void CORE_cplrnt(int m, int n, parsec_complex32_t *A, int lda,
+void CORE_cplrnt(int m, int n, PLASMA_Complex32_t *A, int lda,
                  int bigM, int m0, int n0, unsigned long long int seed );
-int  CORE_cpltmg(PLASMA_enum mtxtype, int m, int n, parsec_complex32_t *A, int lda,
+int  CORE_cpltmg(PLASMA_enum mtxtype, int m, int n, PLASMA_Complex32_t *A, int lda,
                   int gM, int gN, int m0, int n0, unsigned long long int seed );
-int  CORE_cpltmg_chebvand( int M, int N, parsec_complex32_t *A, int LDA,
+int  CORE_cpltmg_chebvand( int M, int N, PLASMA_Complex32_t *A, int LDA,
                            int gN, int m0, int n0,
-                           parsec_complex32_t *W );
-int  CORE_cpltmg_circul( int M, int N, parsec_complex32_t *A, int LDA,
+                           PLASMA_Complex32_t *W );
+int  CORE_cpltmg_circul( int M, int N, PLASMA_Complex32_t *A, int LDA,
                          int gM, int m0, int n0,
-                         const parsec_complex32_t *V );
-void CORE_cpltmg_condexq( int M, int N, parsec_complex32_t *Q, int LDQ );
+                         const PLASMA_Complex32_t *V );
+void CORE_cpltmg_condexq( int M, int N, PLASMA_Complex32_t *Q, int LDQ );
 void CORE_cpltmg_fiedler(int m, int n,
-                         const parsec_complex32_t *X, int incX,
-                         const parsec_complex32_t *Y, int incY,
-                         parsec_complex32_t *A, int lda);
-int  CORE_cpltmg_hankel( PLASMA_enum uplo, int M, int N, parsec_complex32_t *A, int LDA,
+                         const PLASMA_Complex32_t *X, int incX,
+                         const PLASMA_Complex32_t *Y, int incY,
+                         PLASMA_Complex32_t *A, int lda);
+int  CORE_cpltmg_hankel( PLASMA_enum uplo, int M, int N, PLASMA_Complex32_t *A, int LDA,
                          int m0, int n0, int nb,
-                         const parsec_complex32_t *V1,
-                         const parsec_complex32_t *V2 );
-void CORE_cpltmg_toeppd1( int gM, int m0, int M, parsec_complex32_t *W,
+                         const PLASMA_Complex32_t *V1,
+                         const PLASMA_Complex32_t *V2 );
+void CORE_cpltmg_toeppd1( int gM, int m0, int M, PLASMA_Complex32_t *W,
                           unsigned long long int seed );
 void CORE_cpltmg_toeppd2( int M, int N, int K, int m0, int n0,
-                          const parsec_complex32_t *W,
-                          parsec_complex32_t *A, int LDA );
-void CORE_cpotrf(PLASMA_enum uplo, int N, parsec_complex32_t *A, int LDA, int *INFO);
-void CORE_csetvar(const parsec_complex32_t *alpha, parsec_complex32_t *x);
+                          const PLASMA_Complex32_t *W,
+                          PLASMA_Complex32_t *A, int LDA );
+void CORE_cpotrf(PLASMA_enum uplo, int N, PLASMA_Complex32_t *A, int LDA, int *INFO);
+void CORE_csetvar(const PLASMA_Complex32_t *alpha, PLASMA_Complex32_t *x);
 void CORE_cshift(int s, int m, int n, int L,
-                 parsec_complex32_t *A);
+                 PLASMA_Complex32_t *A);
 void CORE_cshiftw(int s, int cl, int m, int n, int L,
-                  parsec_complex32_t *A, parsec_complex32_t *W);
+                  PLASMA_Complex32_t *A, PLASMA_Complex32_t *W);
 int  CORE_cssssm(int M1, int N1, int M2, int N2, int K, int IB,
-                       parsec_complex32_t *A1, int LDA1,
-                       parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *L1, int LDL1,
-                 const parsec_complex32_t *L2, int LDL2,
+                       PLASMA_Complex32_t *A1, int LDA1,
+                       PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *L1, int LDL1,
+                 const PLASMA_Complex32_t *L2, int LDL2,
                  const int *IPIV);
 int CORE_cstedc(PLASMA_enum compz, int n,
                 float *D, float *E,
-                parsec_complex32_t *Z, int LDZ,
-                parsec_complex32_t *WORK, int LWORK,
+                PLASMA_Complex32_t *Z, int LDZ,
+                PLASMA_Complex32_t *WORK, int LWORK,
 #ifdef COMPLEX
                 float *RWORK, int LRWORK,
 #endif
                 int *IWORK, int LIWORK);
 int CORE_csteqr(PLASMA_enum compz, int n,
                 float *D, float *E,
-                parsec_complex32_t *Z, int LDZ,
+                PLASMA_Complex32_t *Z, int LDZ,
                 float *WORK);
 void CORE_csymm(PLASMA_enum side, PLASMA_enum uplo,
                 int M, int N,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                          const parsec_complex32_t *B, int LDB,
-                parsec_complex32_t beta,        parsec_complex32_t *C, int LDC);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                          const PLASMA_Complex32_t *B, int LDB,
+                PLASMA_Complex32_t beta,        PLASMA_Complex32_t *C, int LDC);
 void CORE_csyrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                parsec_complex32_t beta,        parsec_complex32_t *C, int LDC);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                PLASMA_Complex32_t beta,        PLASMA_Complex32_t *C, int LDC);
 void CORE_csyr2k(PLASMA_enum uplo, PLASMA_enum trans,
                  int N, int K,
-                 parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                           const parsec_complex32_t *B, int LDB,
-                 parsec_complex32_t beta,        parsec_complex32_t *C, int LDC);
+                 PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                           const PLASMA_Complex32_t *B, int LDB,
+                 PLASMA_Complex32_t beta,        PLASMA_Complex32_t *C, int LDC);
 int  CORE_csyssq(PLASMA_enum uplo, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *scale, float *sumsq);
 void CORE_cswpab(int i, int n1, int n2,
-                 parsec_complex32_t *A, parsec_complex32_t *work);
+                 PLASMA_Complex32_t *A, PLASMA_Complex32_t *work);
 int  CORE_cswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc,
-                        const parsec_complex32_t *Akk, int ldak);
+                        const PLASMA_Complex32_t *Akk, int ldak);
 int CORE_ctradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
-                      parsec_complex32_t alpha,
-                const parsec_complex32_t *A, int LDA,
-                      parsec_complex32_t beta,
-                      parsec_complex32_t *B, int LDB);
+                      PLASMA_Complex32_t alpha,
+                const PLASMA_Complex32_t *A, int LDA,
+                      PLASMA_Complex32_t beta,
+                      PLASMA_Complex32_t *B, int LDB);
 void CORE_ctrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
-                 int M, int N, const parsec_complex32_t *A, int lda, float *work);
+                 int M, int N, const PLASMA_Complex32_t *A, int lda, float *work);
 void CORE_ctrdalg1(int n,
                         int nb,
-                        parsec_complex32_t *A,
+                        PLASMA_Complex32_t *A,
                         int lda,
-                        parsec_complex32_t *V,
-                        parsec_complex32_t *TAU,
+                        PLASMA_Complex32_t *V,
+                        PLASMA_Complex32_t *TAU,
                         int Vblksiz, int wantz,
                         int i, int sweepid, int m, int grsiz,
-                        parsec_complex32_t *work);
+                        PLASMA_Complex32_t *work);
 void CORE_ctrmm(PLASMA_enum side, PLASMA_enum uplo,
                 PLASMA_enum transA, PLASMA_enum diag,
                 int M, int N,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                                parsec_complex32_t *B, int LDB);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                                PLASMA_Complex32_t *B, int LDB);
 void CORE_ctrsm(PLASMA_enum side, PLASMA_enum uplo,
                 PLASMA_enum transA, PLASMA_enum diag,
                 int M, int N,
-                parsec_complex32_t alpha, const parsec_complex32_t *A, int LDA,
-                                                parsec_complex32_t *B, int LDB);
+                PLASMA_Complex32_t alpha, const PLASMA_Complex32_t *A, int LDA,
+                                                PLASMA_Complex32_t *B, int LDB);
 int  CORE_ctrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
-                 const parsec_complex32_t *A, int LDA,
+                 const PLASMA_Complex32_t *A, int LDA,
                  float *scale, float *sumsq);
 void CORE_ctrtri(PLASMA_enum uplo, PLASMA_enum diag, int N,
-                 parsec_complex32_t *A, int LDA, int *info);
+                 PLASMA_Complex32_t *A, int LDA, int *info);
 int  CORE_ctslqt(int M, int N, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU, parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU, PLASMA_Complex32_t *WORK);
 int  CORE_ctsmlq(PLASMA_enum side, PLASMA_enum trans,
                  int M1, int N1, int M2, int N2, int K, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 int CORE_ctsmlq_corner( int m1, int n1, int m2, int n2, int m3, int n3,
                         int k, int ib, int nb,
-                        parsec_complex32_t *A1, int lda1,
-                        parsec_complex32_t *A2, int lda2,
-                        parsec_complex32_t *A3, int lda3,
-                        const parsec_complex32_t *V, int ldv,
-                        const parsec_complex32_t *T, int ldt,
-                        parsec_complex32_t *WORK, int ldwork);
+                        PLASMA_Complex32_t *A1, int lda1,
+                        PLASMA_Complex32_t *A2, int lda2,
+                        PLASMA_Complex32_t *A3, int lda3,
+                        const PLASMA_Complex32_t *V, int ldv,
+                        const PLASMA_Complex32_t *T, int ldt,
+                        PLASMA_Complex32_t *WORK, int ldwork);
 int CORE_ctsmlq_hetra1( PLASMA_enum side, PLASMA_enum trans,
                         int m1, int n1, int m2, int n2,
                         int k, int ib,
-                        parsec_complex32_t *A1, int lda1,
-                        parsec_complex32_t *A2, int lda2,
-                        const parsec_complex32_t *V, int ldv,
-                        const parsec_complex32_t *T, int ldt,
-                        parsec_complex32_t *WORK, int ldwork);
+                        PLASMA_Complex32_t *A1, int lda1,
+                        PLASMA_Complex32_t *A2, int lda2,
+                        const PLASMA_Complex32_t *V, int ldv,
+                        const PLASMA_Complex32_t *T, int ldt,
+                        PLASMA_Complex32_t *WORK, int ldwork);
 int  CORE_ctsmqr(PLASMA_enum side, PLASMA_enum trans,
                  int M1, int N1, int M2, int N2, int K, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 int CORE_ctsmqr_corner( int m1, int n1, int m2, int n2, int m3, int n3,
                         int k, int ib, int nb,
-                        parsec_complex32_t *A1, int lda1,
-                        parsec_complex32_t *A2, int lda2,
-                        parsec_complex32_t *A3, int lda3,
-                        const parsec_complex32_t *V, int ldv,
-                        const parsec_complex32_t *T, int ldt,
-                        parsec_complex32_t *WORK, int ldwork);
+                        PLASMA_Complex32_t *A1, int lda1,
+                        PLASMA_Complex32_t *A2, int lda2,
+                        PLASMA_Complex32_t *A3, int lda3,
+                        const PLASMA_Complex32_t *V, int ldv,
+                        const PLASMA_Complex32_t *T, int ldt,
+                        PLASMA_Complex32_t *WORK, int ldwork);
 int CORE_ctsmqr_hetra1( PLASMA_enum side, PLASMA_enum trans,
                         int m1, int n1, int m2, int n2,
                         int k, int ib,
-                        parsec_complex32_t *A1, int lda1,
-                        parsec_complex32_t *A2, int lda2,
-                        const parsec_complex32_t *V, int ldv,
-                        const parsec_complex32_t *T, int ldt,
-                        parsec_complex32_t *WORK, int ldwork);
+                        PLASMA_Complex32_t *A1, int lda1,
+                        PLASMA_Complex32_t *A2, int lda2,
+                        const PLASMA_Complex32_t *V, int ldv,
+                        const PLASMA_Complex32_t *T, int ldt,
+                        PLASMA_Complex32_t *WORK, int ldwork);
 int  CORE_ctsqrt(int M, int N, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU, parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU, PLASMA_Complex32_t *WORK);
 int  CORE_ctstrf(int M, int N, int IB, int NB,
-                 parsec_complex32_t *U, int LDU,
-                 parsec_complex32_t *A, int LDA,
-                 parsec_complex32_t *L, int LDL,
-                 int *IPIV, parsec_complex32_t *WORK,
+                 PLASMA_Complex32_t *U, int LDU,
+                 PLASMA_Complex32_t *A, int LDA,
+                 PLASMA_Complex32_t *L, int LDL,
+                 int *IPIV, PLASMA_Complex32_t *WORK,
                  int LDWORK, int *INFO);
 int  CORE_cttmqr(PLASMA_enum side, PLASMA_enum trans,
                  int M1, int N1, int M2, int N2, int K, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 int  CORE_cttqrt(int M, int N, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU,
-                 parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU,
+                 PLASMA_Complex32_t *WORK);
 int  CORE_cttmlq(PLASMA_enum side, PLASMA_enum trans,
                  int M1, int N1, int M2, int N2, int K, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 int  CORE_cttlqt(int M, int N, int IB,
-                 parsec_complex32_t *A1, int LDA1,
-                 parsec_complex32_t *A2, int LDA2,
-                 parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *TAU,
-                 parsec_complex32_t *WORK);
+                 PLASMA_Complex32_t *A1, int LDA1,
+                 PLASMA_Complex32_t *A2, int LDA2,
+                 PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *TAU,
+                 PLASMA_Complex32_t *WORK);
 int  CORE_cunmlq(PLASMA_enum side, PLASMA_enum trans,
                  int M, int N, int IB, int K,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *C, int LDC,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *C, int LDC,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 int  CORE_cunmqr(PLASMA_enum side, PLASMA_enum trans,
                  int M, int N, int K, int IB,
-                 const parsec_complex32_t *V, int LDV,
-                 const parsec_complex32_t *T, int LDT,
-                 parsec_complex32_t *C, int LDC,
-                 parsec_complex32_t *WORK, int LDWORK);
+                 const PLASMA_Complex32_t *V, int LDV,
+                 const PLASMA_Complex32_t *T, int LDT,
+                 PLASMA_Complex32_t *C, int LDC,
+                 PLASMA_Complex32_t *WORK, int LDWORK);
 
 #ifndef COMPLEX
 void CORE_slaed2_computeK(int *K, int n, int n1,
@@ -521,14 +521,14 @@ void CORE_slaed3_updatevectors(int op, int wsmode, int n, int n1, int K,
                                float *Q, int ldq, float *Q2,
                                const int *ctot, float *WORK, int start, int end);
 #endif
-void CORE_cswap(int m, int n, parsec_complex32_t *Q, int ldq,
-                const parsec_complex32_t *work, const int *perm,
+void CORE_cswap(int m, int n, PLASMA_Complex32_t *Q, int ldq,
+                const PLASMA_Complex32_t *work, const int *perm,
                 int start, int end);
 int CORE_clascl(PLASMA_enum type, int kl, int ku, float cfrom, float cto,
-                int m, int n, parsec_complex32_t *A, int lda);
+                int m, int n, PLASMA_Complex32_t *A, int lda);
 #ifdef COMPLEX
 int CORE_slag2c(int m, int n, const float *Q, int LDQ,
-                 parsec_complex32_t *Z, int LDZ);
+                 PLASMA_Complex32_t *Z, int LDZ);
 #endif
 
 #ifndef COMPLEX

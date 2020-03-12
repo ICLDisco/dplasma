@@ -57,8 +57,8 @@
  *
  ******************************************************************************/
 void CORE_zlacpy(PLASMA_enum uplo, int M, int N,
-                 const parsec_complex64_t *A, int LDA,
-                 parsec_complex64_t *B, int LDB)
+                 const PLASMA_Complex64_t *A, int LDA,
+                 PLASMA_Complex64_t *B, int LDB)
 {
     LAPACKE_zlacpy_work(
         LAPACK_COL_MAJOR,

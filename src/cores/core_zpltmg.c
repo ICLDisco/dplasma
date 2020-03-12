@@ -83,7 +83,7 @@
  *
  ******************************************************************************/
 int CORE_zpltmg( PLASMA_enum mtxtype,
-                  int M, int N, parsec_complex64_t *A, int LDA,
+                  int M, int N, PLASMA_Complex64_t *A, int LDA,
                   int gM, int gN, int m0, int n0,
                   unsigned long long int seed )
 {
@@ -176,7 +176,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
                     nbone += ( tmp & 1 );
                     tmp >>= 1;
                 }
-                A[j*LDA+i] = (parsec_complex64_t)(1. - 2. * ( nbone % 2 ));
+                A[j*LDA+i] = (PLASMA_Complex64_t)(1. - 2. * ( nbone % 2 ));
             }
         }
     }
@@ -194,17 +194,17 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixParter:
     {
-        parsec_complex64_t tmp;
+        PLASMA_Complex64_t tmp;
 
         if (gM != gN) {
             coreblas_error(6, "Illegal value of gM (Matrix must be square for Parter)");
             return -6;
         }
 
-        tmp = (parsec_complex64_t)( .5 + m0 - n0 );
+        tmp = (PLASMA_Complex64_t)( .5 + m0 - n0 );
         for (j=0; j<N; j++) {
             for (i=0; i<M; i++) {
-                A[j*LDA+i] = (parsec_complex64_t)1. / (parsec_complex64_t)( tmp + i - j );
+                A[j*LDA+i] = (PLASMA_Complex64_t)1. / (PLASMA_Complex64_t)( tmp + i - j );
             }
         }
     }
@@ -224,17 +224,17 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
      case PlasmaMatrixRis:
     {
-        parsec_complex64_t tmp;
+        PLASMA_Complex64_t tmp;
 
         if (gM != gN) {
             coreblas_error(6, "Illegal value of gM (Matrix must be square for RIS)");
             return -6;
         }
 
-        tmp = (parsec_complex64_t)( gM - m0 - n0 - 0.5 );
+        tmp = (PLASMA_Complex64_t)( gM - m0 - n0 - 0.5 );
         for (j=0; j<N; j++) {
             for (i=0; i<M; i++) {
-                A[j*LDA+i] = (parsec_complex64_t).5 / (parsec_complex64_t)( tmp - i - j );
+                A[j*LDA+i] = (PLASMA_Complex64_t).5 / (PLASMA_Complex64_t)( tmp - i - j );
             }
         }
     }
@@ -261,7 +261,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixKms:
     {
-        parsec_complex64_t rho;
+        PLASMA_Complex64_t rho;
 
         if (gM != gN) {
             coreblas_error(6, "Illegal value of gM (Matrix must be square for KMS)");
@@ -271,7 +271,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         rho = .5;
         for (j=0; j<N; j++) {
             for (i=0; i<M; i++) {
-                A[j*LDA+i] = (parsec_complex64_t)( cpow( rho, fabs( (double)( m0 + i - n0 - j ) ) ) );
+                A[j*LDA+i] = (PLASMA_Complex64_t)( cpow( rho, fabs( (double)( m0 + i - n0 - j ) ) ) );
             }
         }
     }
@@ -295,9 +295,9 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         for (j=0,jj=n0; j<N; j++,jj++) {
             for (i=0,ii=m0; i<M; i++,ii++) {
                 if ( ii == jj ) {
-                    A[j*LDA+i] = (parsec_complex64_t)( ii + 1. );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( ii + 1. );
                 } else {
-                    A[j*LDA+i] = (parsec_complex64_t)( coreblas_imin( ii, jj ) - 1. );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( coreblas_imin( ii, jj ) - 1. );
                 }
             }
         }
@@ -322,7 +322,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
 
         /* First row */
         if ( m0 == 0 ) {
-            parsec_complex64_t v0;
+            PLASMA_Complex64_t v0;
             /* Get V0 */
             CORE_zplrnt( 1, 1, &v0, 1, 1, 1, 0, seed );
             v0 = 1. / v0 ;
@@ -374,9 +374,9 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         for (j=0,jj=n0+2; j<N; j++,jj++) {
             for (i=0,ii=m0+2; i<M; i++,ii++) {
                 if ( jj%ii == 0 ) {
-                    A[j*LDA+i] = (parsec_complex64_t)( ii - 1. );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( ii - 1. );
                 } else {
-                    A[j*LDA+i] = (parsec_complex64_t)( -1. );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( -1. );
                 }
             }
         }
@@ -404,9 +404,9 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
                 if ( jj >= ii ) {
-                    A[j*LDA+i] = (parsec_complex64_t)( ii ) / (parsec_complex64_t)( jj );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( ii ) / (PLASMA_Complex64_t)( jj );
                 } else {
-                    A[j*LDA+i] = (parsec_complex64_t)( jj ) / (parsec_complex64_t)( ii );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( jj ) / (PLASMA_Complex64_t)( ii );
                 }
             }
         }
@@ -435,7 +435,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         int ii, jj;
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
-                A[j*LDA+i] = (parsec_complex64_t) coreblas_imin( ii, jj );
+                A[j*LDA+i] = (PLASMA_Complex64_t) coreblas_imin( ii, jj );
             }
         }
     }
@@ -454,9 +454,9 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixDorr:
     {
-        parsec_complex64_t theta = 0.01;
-        parsec_complex64_t h     = 1. / ( gN + 1. );
-        parsec_complex64_t term  = theta / ( h * h );
+        PLASMA_Complex64_t theta = 0.01;
+        PLASMA_Complex64_t h     = 1. / ( gN + 1. );
+        PLASMA_Complex64_t term  = theta / ( h * h );
         int jj;
         int half = (gN+1) / 2;
 
@@ -520,7 +520,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixDemmel:
     {
-        parsec_complex64_t dii;
+        PLASMA_Complex64_t dii;
         int ii, jj;
 
         /* Randomize the matrix */
@@ -560,9 +560,9 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
                 if ( jj <= ii ) {
-                    A[j*LDA+i] = (parsec_complex64_t)( jj );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( jj );
                 } else {
-                    A[j*LDA+i] = (parsec_complex64_t)( -ii );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( -ii );
                 }
             }
         }
@@ -582,7 +582,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         int ii, jj;
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
-                A[j*LDA+i] = (parsec_complex64_t)( 1. ) / (parsec_complex64_t)( ii+jj );
+                A[j*LDA+i] = (PLASMA_Complex64_t)( 1. ) / (PLASMA_Complex64_t)( ii+jj );
             }
         }
     }
@@ -600,10 +600,10 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixHilb:
     {
-        parsec_complex64_t tmp = (parsec_complex64_t)( m0 + n0 + 1. );
+        PLASMA_Complex64_t tmp = (PLASMA_Complex64_t)( m0 + n0 + 1. );
         for (j=0; j<N; j++) {
             for (i=0; i<M; i++) {
-                A[j*LDA+i] = (parsec_complex64_t)1. / (parsec_complex64_t)( tmp + i + j );
+                A[j*LDA+i] = (PLASMA_Complex64_t)1. / (PLASMA_Complex64_t)( tmp + i + j );
             }
         }
     }
@@ -622,18 +622,18 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixLotkin:
     {
-        parsec_complex64_t tmp = (parsec_complex64_t)( m0 + n0 + 1. );
+        PLASMA_Complex64_t tmp = (PLASMA_Complex64_t)( m0 + n0 + 1. );
         if (m0 == 0) {
             for (j=0; j<N; j++) {
-                A[j*LDA] = (parsec_complex64_t)1.;
+                A[j*LDA] = (PLASMA_Complex64_t)1.;
                 for (i=1; i<M; i++) {
-                    A[j*LDA+i] = (parsec_complex64_t)1. / (parsec_complex64_t)( tmp + i + j );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)1. / (PLASMA_Complex64_t)( tmp + i + j );
                 }
             }
         } else {
             for (j=0; j<N; j++) {
                 for (i=0; i<M; i++) {
-                    A[j*LDA+i] = (parsec_complex64_t)1. / (parsec_complex64_t)( tmp + i + j );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)1. / (PLASMA_Complex64_t)( tmp + i + j );
                 }
             }
         }
@@ -653,13 +653,13 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixOrthog: /* Default: k=1 */
     {
-        parsec_complex64_t sqrtn = (parsec_complex64_t) sqrt( 2. / (gN+1.) );
+        PLASMA_Complex64_t sqrtn = (PLASMA_Complex64_t) sqrt( 2. / (gN+1.) );
         double scale = pi / (double)(gN+1.);
 
         int ii, jj;
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
-                A[j*LDA+i] = sqrtn * (parsec_complex64_t) sin( (double)ii * (double)jj * scale );
+                A[j*LDA+i] = sqrtn * (PLASMA_Complex64_t) sin( (double)ii * (double)jj * scale );
             }
         }
     }
@@ -686,14 +686,14 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         for (j=0,jj=n0; j<N; j++,jj++) {
             for (i=0,ii=m0; i<M; i++,ii++) {
                 if (ii == jj) {
-                    parsec_complex64_t tmp = (parsec_complex64_t)(( (gN - 1 - ii) < ii ) ? gN - 1 - ii : ii );
-                     A[j*LDA+i] = (parsec_complex64_t)(gN - 2. * tmp - 1.) / 2.;
+                    PLASMA_Complex64_t tmp = (PLASMA_Complex64_t)(( (gN - 1 - ii) < ii ) ? gN - 1 - ii : ii );
+                     A[j*LDA+i] = (PLASMA_Complex64_t)(gN - 2. * tmp - 1.) / 2.;
                 }
                 else if ( (ii == jj+1) || (ii == jj-1) ) {
-                     A[j*LDA+i] = (parsec_complex64_t)1.;
+                     A[j*LDA+i] = (PLASMA_Complex64_t)1.;
                 }
                 else {
-                     A[j*LDA+i] = (parsec_complex64_t)0.;
+                     A[j*LDA+i] = (PLASMA_Complex64_t)0.;
                 }
            }
        }
@@ -722,23 +722,23 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
 
                 if (ii == jj) {
                     if (jj == 0)
-                        A[j*LDA+i] = (parsec_complex64_t)1.;
+                        A[j*LDA+i] = (PLASMA_Complex64_t)1.;
                     else if (jj == gN-1)
-                        A[j*LDA+i] = (parsec_complex64_t)(1. - (1. / c) - (k*h)/2. );
+                        A[j*LDA+i] = (PLASMA_Complex64_t)(1. - (1. / c) - (k*h)/2. );
                     else
-                        A[j*LDA+i] = (parsec_complex64_t)(1. - (k*h)/2. );
+                        A[j*LDA+i] = (PLASMA_Complex64_t)(1. - (k*h)/2. );
                 }
                 else if (jj == 0) {
-                    A[j*LDA+i] = (parsec_complex64_t)(-k*h/2.);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-k*h/2.);
                 }
                 else if (jj == gN-1) {
-                    A[j*LDA+i] = (parsec_complex64_t)(-1./c);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-1./c);
                 }
                 else if (ii > jj) {
-                    A[j*LDA+i] = (parsec_complex64_t)(-k*h);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-k*h);
                 }
                 else {
-                    A[j*LDA+i] = (parsec_complex64_t)0.;
+                    A[j*LDA+i] = (PLASMA_Complex64_t)0.;
                 }
             }
         }
@@ -764,21 +764,21 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
             for (i=0,ii=m0; i<M; i++,ii++) {
 
                 if (ii == jj)
-                    A[j*LDA+i] = (parsec_complex64_t)1.;
+                    A[j*LDA+i] = (PLASMA_Complex64_t)1.;
                 else if ((ii == jj + 2) && (jj % 2 == 0))
-                    A[j*LDA+i] = (parsec_complex64_t)(-0.9048);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-0.9048);
                 else if ((ii == jj + 3) && (jj % 2 == 0))
-                    A[j*LDA+i] = (parsec_complex64_t)(-1.2092);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-1.2092);
                 else if ((ii == jj + 2) && (jj % 2 == 1))
-                    A[j*LDA+i] = (parsec_complex64_t)(-0.8270);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-0.8270);
                 else if ((ii == jj + 3) && (jj % 2 == 1))
-                    A[j*LDA+i] = (parsec_complex64_t)(-1.3499);
+                    A[j*LDA+i] = (PLASMA_Complex64_t)(-1.3499);
                 else if ((jj == gM-2) && (ii == 0))
-                    A[j*LDA+i] = (parsec_complex64_t)1.;
+                    A[j*LDA+i] = (PLASMA_Complex64_t)1.;
                 else if ((jj == gM-1) && (ii == 1))
-                    A[j*LDA+i] = (parsec_complex64_t)1.;
+                    A[j*LDA+i] = (PLASMA_Complex64_t)1.;
                 else
-                    A[j*LDA+i] = (parsec_complex64_t)0.;
+                    A[j*LDA+i] = (PLASMA_Complex64_t)0.;
             }
         }
     }
@@ -795,7 +795,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
      */
     case PlasmaMatrixLangou:
     {
-        parsec_complex64_t eps = (parsec_complex64_t) LAPACKE_dlamch_work( 'e' );
+        PLASMA_Complex64_t eps = (PLASMA_Complex64_t) LAPACKE_dlamch_work( 'e' );
         int ii, jj, mm, minMN;
         int firstcol, lastcol;
 

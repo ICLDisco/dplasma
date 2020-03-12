@@ -76,7 +76,7 @@
  *
  ******************************************************************************/
 int CORE_zgetrf_incpiv(int M, int N, int IB,
-                       parsec_complex64_t *A, int LDA,
+                       PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *INFO)
 {
     int i, j, k, sb;

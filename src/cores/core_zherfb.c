@@ -96,12 +96,12 @@
  ******************************************************************************/
 int CORE_zherfb( PLASMA_enum uplo, int n,
                  int k, int ib, int nb,
-                 const parsec_complex64_t *A, int lda,
-                 const parsec_complex64_t *T, int ldt,
-                 parsec_complex64_t *C, int ldc,
-                 parsec_complex64_t *WORK, int ldwork )
+                 const PLASMA_Complex64_t *A, int lda,
+                 const PLASMA_Complex64_t *T, int ldt,
+                 PLASMA_Complex64_t *C, int ldc,
+                 PLASMA_Complex64_t *WORK, int ldwork )
 {
-    parsec_complex64_t tmp;
+    PLASMA_Complex64_t tmp;
     int i, j;
 
     /* Check input arguments */

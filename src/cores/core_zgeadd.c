@@ -69,38 +69,38 @@
  *
  ******************************************************************************/
 int dplasma_core_zgeadd(PLASMA_enum trans, int M, int N,
-                              parsec_complex64_t  alpha,
-                        const parsec_complex64_t *A, int LDA,
-                              parsec_complex64_t  beta,
-                              parsec_complex64_t *B, int LDB)
+                              PLASMA_Complex64_t  alpha,
+                        const PLASMA_Complex64_t *A, int LDA,
+                              PLASMA_Complex64_t  beta,
+                              PLASMA_Complex64_t *B, int LDB)
 {
-    static parsec_complex64_t zone = (parsec_complex64_t)1.;
+    static PLASMA_Complex64_t zone = (PLASMA_Complex64_t)1.;
     int j;
 
     if ((trans != PlasmaNoTrans) &&
         (trans != PlasmaTrans)   &&
         (trans != PlasmaConjTrans))
     {
-        dplasma_error("dplasma_core_zgeadd", "illegal value of trans");
+        coreblas_error(1, "illegal value of trans");
         return -1;
     }
 
     if (M < 0) {
-        dplasma_error("dplasma_core_zgeadd", "Illegal value of M");
+        coreblas_error(2, "Illegal value of M");
         return -2;
     }
     if (N < 0) {
-        dplasma_error("dplasma_core_zgeadd", "Illegal value of N");
+        coreblas_error(3, "Illegal value of N");
         return -3;
     }
     if ( ((trans == PlasmaNoTrans) && (LDA < coreblas_imax(1,M)) && (M > 0)) ||
          ((trans != PlasmaNoTrans) && (LDA < coreblas_imax(1,N)) && (N > 0)) )
     {
-        dplasma_error("dplasma_core_zgeadd", "Illegal value of LDA");
+        coreblas_error(6, "Illegal value of LDA");
         return -6;
     }
     if ( (LDB < coreblas_imax(1,M)) && (M > 0) ) {
-        dplasma_error("dplasma_core_zgeadd", "Illegal value of LDB");
+        coreblas_error(8, "Illegal value of LDB");
         return -8;
     }
 

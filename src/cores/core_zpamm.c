@@ -22,17 +22,17 @@
 static inline int CORE_zpamm_a2(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
                                 int M, int N, int K, int L,
                                 int vi2, int vi3,
-                                      parsec_complex64_t *A2, int LDA2,
-                                const parsec_complex64_t *V,  int LDV,
-                                      parsec_complex64_t *W,  int LDW);
+                                      PLASMA_Complex64_t *A2, int LDA2,
+                                const PLASMA_Complex64_t *V,  int LDV,
+                                      PLASMA_Complex64_t *W,  int LDW);
 
 static inline int CORE_zpamm_w(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
                                int M, int N, int K, int L,
                                int vi2, int vi3,
-                               const parsec_complex64_t *A1, int LDA1,
-                                     parsec_complex64_t *A2, int LDA2,
-                               const parsec_complex64_t *V,  int LDV,
-                                     parsec_complex64_t *W,  int LDW);
+                               const PLASMA_Complex64_t *A1, int LDA1,
+                                     PLASMA_Complex64_t *A2, int LDA2,
+                               const PLASMA_Complex64_t *V,  int LDV,
+                                     PLASMA_Complex64_t *W,  int LDW);
 
 /***************************************************************************//**
  *
@@ -177,10 +177,10 @@ static inline int CORE_zpamm_w(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum 
 int
 CORE_zpamm(int op, PLASMA_enum side, PLASMA_enum storev,
            int M, int N, int K, int L,
-           const parsec_complex64_t *A1, int LDA1,
-                 parsec_complex64_t *A2, int LDA2,
-           const parsec_complex64_t *V, int LDV,
-                 parsec_complex64_t *W, int LDW)
+           const PLASMA_Complex64_t *A1, int LDA1,
+                 PLASMA_Complex64_t *A2, int LDA2,
+           const PLASMA_Complex64_t *V, int LDV,
+                 PLASMA_Complex64_t *W, int LDW)
 {
 
 
@@ -301,10 +301,10 @@ static inline int
 CORE_zpamm_w(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
              int M, int N, int K, int L,
              int vi2, int vi3,
-             const parsec_complex64_t *A1, int LDA1,
-                   parsec_complex64_t *A2, int LDA2,
-             const parsec_complex64_t *V, int LDV,
-                   parsec_complex64_t *W, int LDW)
+             const PLASMA_Complex64_t *A1, int LDA1,
+                   PLASMA_Complex64_t *A2, int LDA2,
+             const PLASMA_Complex64_t *V, int LDV,
+                   PLASMA_Complex64_t *W, int LDW)
 {
 
    /*
@@ -312,8 +312,8 @@ CORE_zpamm_w(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
     */
 
     int j;
-    static parsec_complex64_t zone  =  1.0;
-    static parsec_complex64_t zzero =  0.0;
+    static PLASMA_Complex64_t zone  =  1.0;
+    static PLASMA_Complex64_t zzero =  0.0;
 
     if (side == PlasmaLeft) {
 
@@ -443,9 +443,9 @@ static inline int
 CORE_zpamm_a2(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
               int M, int N, int K, int L,
               int vi2, int vi3,
-                    parsec_complex64_t *A2, int LDA2,
-              const parsec_complex64_t *V, int LDV,
-                    parsec_complex64_t *W, int LDW)
+                    PLASMA_Complex64_t *A2, int LDA2,
+              const PLASMA_Complex64_t *V, int LDV,
+                    PLASMA_Complex64_t *W, int LDW)
 {
 
    /*
@@ -453,8 +453,8 @@ CORE_zpamm_a2(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
     */
 
     int j;
-    static parsec_complex64_t zone  =  1.0;
-    static parsec_complex64_t mzone  =  -1.0;
+    static PLASMA_Complex64_t zone  =  1.0;
+    static PLASMA_Complex64_t mzone  =  -1.0;
 
     if (side == PlasmaLeft) {
 

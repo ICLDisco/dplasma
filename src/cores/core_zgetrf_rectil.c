@@ -22,17 +22,17 @@
 #include "dplasma_cores.h"
 #include "dplasma_zcores.h"
 
-#define A(m, n) PLASMA_BLKADDR(A, parsec_complex64_t, m, n)
+#define A(m, n) PLASMA_BLKADDR(A, PLASMA_Complex64_t, m, n)
 
 struct CORE_zgetrf_data_s {
-    volatile parsec_complex64_t *CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax;
     volatile int                *CORE_zstep;
 };
 
 static inline void
 CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info,
-                       parsec_complex64_t *pivot,
+                       PLASMA_Complex64_t *pivot,
                        int thidx,  int thcnt,
                        int column, int width,
                        int ft,     int lt);
@@ -121,7 +121,7 @@ int CORE_zgetrf_rectil(CORE_zgetrf_data_t *data,
     int thidx = info[1];
     int thcnt = coreblas_imin( info[2], A.mt );
     int minMN = coreblas_imin( A.m, A.n );
-    parsec_complex64_t pivot;
+    PLASMA_Complex64_t pivot;
 
     info[0] = 0;
     info[2] = thcnt;
@@ -172,11 +172,11 @@ CORE_zgetrf_rectil_init(int nbthrd)
     int i;
     CORE_zgetrf_data_t *data;
 
-    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(parsec_complex64_t)+sizeof(int))
+    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(PLASMA_Complex64_t)+sizeof(int))
                                         + 2 * sizeof(void*) );
 
-    data->CORE_zamax = (parsec_complex64_t*)((char*)data + 2 * sizeof(void*));
-    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(parsec_complex64_t));
+    data->CORE_zamax = (PLASMA_Complex64_t*)((char*)data + 2 * sizeof(void*));
+    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(PLASMA_Complex64_t));
 
     for (i = 0; i < nbthrd; ++i) {
         data->CORE_zamax[i] = 0.;
@@ -190,18 +190,18 @@ CORE_zgetrf_rectil_init(int nbthrd)
 
 static inline void
 CORE_zamax1_thread(CORE_zgetrf_data_t *data,
-                   parsec_complex64_t localamx,
+                   PLASMA_Complex64_t localamx,
                    int thidx, int thcnt, int *thwinner,
-                   parsec_complex64_t *diagvalue,
-                   parsec_complex64_t *globalamx,
+                   PLASMA_Complex64_t *diagvalue,
+                   PLASMA_Complex64_t *globalamx,
                    int pividx, int *ipiv)
 {
-    volatile parsec_complex64_t *CORE_zamax = data->CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax = data->CORE_zamax;
     volatile int                *CORE_zstep = data->CORE_zstep;
 
     if (thidx == 0) {
         int i, j = 0;
-        parsec_complex64_t curval = localamx, tmp;
+        PLASMA_Complex64_t curval = localamx, tmp;
         double curamx = cabs(localamx);
 
         /* make sure everybody filled in their value */
@@ -269,8 +269,8 @@ CORE_zbarrier_thread(CORE_zgetrf_data_t *data,
                      int thidx, int thcnt)
 {
     int idum1, idum2;
-    parsec_complex64_t ddum1 = 0.;
-    parsec_complex64_t ddum2 = 0.;
+    PLASMA_Complex64_t ddum1 = 0.;
+    PLASMA_Complex64_t ddum2 = 0.;
     /* it's probably faster to implement a dedicated barrier */
     CORE_zamax1_thread( data, 1.0, thidx, thcnt, &idum1, &ddum1, &ddum2, 0, &idum2 );
 }
@@ -284,9 +284,9 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
 {
     int ld, lm, tmpM;
     int ip, j, it, i, ldft;
-    parsec_complex64_t zone  = 1.0;
-    parsec_complex64_t mzone = -1.0;
-    parsec_complex64_t *Atop, *Atop2, *U, *L;
+    PLASMA_Complex64_t zone  = 1.0;
+    PLASMA_Complex64_t mzone = -1.0;
+    PLASMA_Complex64_t *Atop, *Atop2, *U, *L;
     int offset = A.i;
 
     ldft = PLASMA_BLKLDD(A, 0);
@@ -373,7 +373,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
 static void
 CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info,
-                       parsec_complex64_t *pivot,
+                       PLASMA_Complex64_t *pivot,
                        int thidx,  int thcnt,
                        int column, int width,
                        int ft,     int lt)
@@ -381,12 +381,12 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
     int ld, jp, n1, n2, lm, tmpM, piv_sf;
     int ip, j, it, i, ldft;
     int max_i, max_it, thwin;
-    parsec_complex64_t zone  = 1.0;
-    parsec_complex64_t mzone = -1.0;
-    parsec_complex64_t tmp1;
-    parsec_complex64_t tmp2 = 0.;
-    parsec_complex64_t pivval;
-    parsec_complex64_t *Atop, *Atop2, *U, *L;
+    PLASMA_Complex64_t zone  = 1.0;
+    PLASMA_Complex64_t mzone = -1.0;
+    PLASMA_Complex64_t tmp1;
+    PLASMA_Complex64_t tmp2 = 0.;
+    PLASMA_Complex64_t pivval;
+    PLASMA_Complex64_t *Atop, *Atop2, *U, *L;
     double             abstmp1;
     int offset = A.i;
 

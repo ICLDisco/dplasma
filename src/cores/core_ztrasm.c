@@ -63,9 +63,9 @@
  ******************************************************************************/
 void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
-                 const parsec_complex64_t *A, int lda, double *work)
+                 const PLASMA_Complex64_t *A, int lda, double *work)
 {
-    const parsec_complex64_t *tmpA;
+    const PLASMA_Complex64_t *tmpA;
     int i, j, imax;
     int idiag = (diag == PlasmaUnit) ? 1 : 0;
 

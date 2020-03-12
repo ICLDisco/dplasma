@@ -68,11 +68,11 @@
  ******************************************************************************/
 int CORE_zgessm(int M, int N, int K, int IB,
                 const int *IPIV,
-                const parsec_complex64_t *L, int LDL,
-                parsec_complex64_t *A, int LDA)
+                const PLASMA_Complex64_t *L, int LDL,
+                PLASMA_Complex64_t *A, int LDA)
 {
-    static parsec_complex64_t zone  =  1.0;
-    static parsec_complex64_t mzone = -1.0;
+    static PLASMA_Complex64_t zone  =  1.0;
+    static PLASMA_Complex64_t mzone = -1.0;
     static int                ione  =  1;
 
     int i, sb;

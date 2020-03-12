@@ -64,7 +64,7 @@
  *               solution has not been computed.
  *
  ******************************************************************************/
-void CORE_zpotrf(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA, int *info)
+void CORE_zpotrf(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA, int *info)
 {
     *info = LAPACKE_zpotrf_work(
         LAPACK_COL_MAJOR,

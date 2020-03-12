@@ -55,9 +55,9 @@
  *
  ******************************************************************************/
 void CORE_dzasum(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
-                 const parsec_complex64_t *A, int lda, double *work)
+                 const PLASMA_Complex64_t *A, int lda, double *work)
 {
-    const parsec_complex64_t *tmpA;
+    const PLASMA_Complex64_t *tmpA;
     double *tmpW, sum, abs;
     int i,j;
 

@@ -114,12 +114,12 @@
 
 int CORE_zpemv(PLASMA_enum trans, int storev,
                int M, int N, int L,
-               parsec_complex64_t ALPHA,
-               const parsec_complex64_t *A, int LDA,
-               const parsec_complex64_t *X, int INCX,
-               parsec_complex64_t BETA,
-               parsec_complex64_t *Y, int INCY,
-               parsec_complex64_t *WORK)
+               PLASMA_Complex64_t ALPHA,
+               const PLASMA_Complex64_t *A, int LDA,
+               const PLASMA_Complex64_t *X, int INCX,
+               PLASMA_Complex64_t BETA,
+               PLASMA_Complex64_t *Y, int INCY,
+               PLASMA_Complex64_t *WORK)
 {
 
    /*
@@ -127,7 +127,7 @@ int CORE_zpemv(PLASMA_enum trans, int storev,
     */
 
     int K;
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zzero = 0.0;
 
 
     /* Check input arguments */

@@ -84,10 +84,10 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, parsec_complex64_t *A, int LDA,
+int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int m0, int n0, int nb,
-                        const parsec_complex64_t *V1,
-                        const parsec_complex64_t *V2 )
+                        const PLASMA_Complex64_t *V1,
+                        const PLASMA_Complex64_t *V2 )
 {
     int p, i, j, ii, jj;
 

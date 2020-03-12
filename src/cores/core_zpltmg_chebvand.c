@@ -79,11 +79,11 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_chebvand( int M, int N, parsec_complex64_t *A, int LDA,
+int CORE_zpltmg_chebvand( int M, int N, PLASMA_Complex64_t *A, int LDA,
                           int gN, int m0, int n0,
-                          parsec_complex64_t *W )
+                          PLASMA_Complex64_t *W )
 {
-    parsec_complex64_t step;
+    PLASMA_Complex64_t step;
     int i, j, jj;
 
     /* Check input arguments */
@@ -112,7 +112,7 @@ int CORE_zpltmg_chebvand( int M, int N, parsec_complex64_t *A, int LDA,
         return -5;
     }
 
-    step = (parsec_complex64_t)1. / (gN - 1.);
+    step = (PLASMA_Complex64_t)1. / (gN - 1.);
 
     /* Initialize W if required */
     if (m0 == 0) {

@@ -84,7 +84,7 @@
  ******************************************************************************/
 void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
-                 const parsec_complex64_t *A, int LDA,
+                 const PLASMA_Complex64_t *A, int LDA,
                  double *work, double *normA)
 {
 #if defined(LAPACKE_CORRECT_DLANTR)
@@ -95,7 +95,7 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
         lapack_const(diag),
         M, N, A, LDA, work);
 #else
-    const parsec_complex64_t *tmpA;
+    const PLASMA_Complex64_t *tmpA;
     double value;
     int i, j, imax;
     int idiag = (diag == PlasmaUnit) ? 1 : 0;

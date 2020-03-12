@@ -62,7 +62,7 @@
  *          matrix is singular and its inverse can not be computed.
  *
  ******************************************************************************/
-void CORE_ztrtri(PLASMA_enum uplo, PLASMA_enum diag, int N, parsec_complex64_t *A, int LDA, int *info)
+void CORE_ztrtri(PLASMA_enum uplo, PLASMA_enum diag, int N, PLASMA_Complex64_t *A, int LDA, int *info)
 {
     *info = LAPACKE_ztrtri_work(
         LAPACK_COL_MAJOR,

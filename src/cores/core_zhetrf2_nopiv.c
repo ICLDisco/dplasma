@@ -34,13 +34,13 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 extern void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         parsec_complex64_t *A, int LDA,
-                         parsec_complex64_t *WORK, int LDWORK,
+                         PLASMA_Complex64_t *A, int LDA,
+                         PLASMA_Complex64_t *WORK, int LDWORK,
                          int *INFO);
 
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        parsec_complex64_t *A, int LDA,
-        parsec_complex64_t *WORK, int LWORK, int *INFO);
+        PLASMA_Complex64_t *A, int LDA,
+        PLASMA_Complex64_t *WORK, int LWORK, int *INFO);
 
 /***************************************************************************//**
  *
@@ -60,12 +60,12 @@ void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
 #define CORE_zhetrf2_nopiv PCORE_zhetrf2_nopiv
 #endif
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        parsec_complex64_t *A, int LDA,
-        parsec_complex64_t *WORK, int LWORK, int *INFO)
+        PLASMA_Complex64_t *A, int LDA,
+        PLASMA_Complex64_t *WORK, int LWORK, int *INFO)
 {
 
     int j;
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
 
     /* Factorize A as L*D*L' using the lower/upper triangle of A */
     CORE_zhetrf_nopiv(uplo, N, ib, A, LDA, WORK, LWORK, INFO);

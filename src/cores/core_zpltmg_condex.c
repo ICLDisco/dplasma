@@ -49,26 +49,26 @@
  *         The leading dimension of the matrix Q. LDQ >= max(1,M).
  *
  ******************************************************************************/
-void CORE_zpltmg_condexq( int M, int N, parsec_complex64_t *Q, int LDQ )
+void CORE_zpltmg_condexq( int M, int N, PLASMA_Complex64_t *Q, int LDQ )
 {
-    parsec_complex64_t tau[3];
-    parsec_complex64_t *tQ = Q;
+    PLASMA_Complex64_t tau[3];
+    PLASMA_Complex64_t *tQ = Q;
     int i;
 
     /* First column is [ 1 ... 1 ] */
     for( i=0; i < M; i++, tQ++ )
-        *tQ = (parsec_complex64_t)1.0;
+        *tQ = (PLASMA_Complex64_t)1.0;
 
     /* Second column is [1 0 0 ... 0] */
     tQ = Q + LDQ;
-    *tQ = (parsec_complex64_t)1.;
+    *tQ = (PLASMA_Complex64_t)1.;
     tQ++;
-    memset( tQ, 0, (M-1) * sizeof(parsec_complex64_t) );
+    memset( tQ, 0, (M-1) * sizeof(PLASMA_Complex64_t) );
 
     /* Third column is  (-1)^i * (1. + i / (N-1)) */
     tQ = Q + 2 * LDQ;
     for( i=0; i<M; i++, tQ++ )
-        *tQ = (parsec_complex64_t)( cpow( -1.0, (double)i ) * (1.0 + (double)i/(N-1) ) );
+        *tQ = (PLASMA_Complex64_t)( cpow( -1.0, (double)i ) * (1.0 + (double)i/(N-1) ) );
 
     /* Generate orthogonal projector */
     LAPACKE_zgeqrf( LAPACK_COL_MAJOR, M, 3,    Q, LDQ, tau );

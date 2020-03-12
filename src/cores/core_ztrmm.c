@@ -83,9 +83,9 @@
 void CORE_ztrmm(PLASMA_enum side, PLASMA_enum uplo,
                 PLASMA_enum transA, PLASMA_enum diag,
                 int M, int N,
-                parsec_complex64_t alpha,
-                const parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *B, int LDB)
+                PLASMA_Complex64_t alpha,
+                const PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *B, int LDB)
 {
     cblas_ztrmm(
         CblasColMajor,

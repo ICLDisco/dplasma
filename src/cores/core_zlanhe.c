@@ -72,7 +72,7 @@
  *
  ******************************************************************************/
 void CORE_zlanhe(int norm, PLASMA_enum uplo, int N,
-                 const parsec_complex64_t *A, int LDA,
+                 const PLASMA_Complex64_t *A, int LDA,
                  double *work, double *normA)
 {
     *normA = LAPACKE_zlanhe_work(

@@ -85,7 +85,7 @@
  *
  */
 int CORE_zgessq(int M, int N,
-                const parsec_complex64_t *A, int LDA,
+                const PLASMA_Complex64_t *A, int LDA,
                 double *scale, double *sumsq)
 {
     int i, j;

@@ -26,45 +26,45 @@
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-//static void band_to_trd_vmpi1(int N, int NB, parsec_complex64_t *A, int LDA);
-//static void band_to_trd_vmpi2(int N, int NB, parsec_complex64_t *A, int LDA);
-//static void band_to_trd_v8seq(int N, int NB, parsec_complex64_t *A, int LDA, int INgrsiz, int INthgrsiz);
-//static int  TRD_seqgralgtype(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *C, parsec_complex64_t *S, int i, int j, int m, int grsiz, int BAND);
-int  blgchase_ztrdv1(int NT, int N, int NB, parsec_complex64_t *A, parsec_complex64_t *V, parsec_complex64_t *TAU, int sweep, int id, int blktile);
-int  blgchase_ztrdv2(int NT, int N, int NB, parsec_complex64_t *A1, parsec_complex64_t *A2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, parsec_complex64_t *V2, parsec_complex64_t *TAU2, int sweep, int id, int blktile);
+//static void band_to_trd_vmpi1(int N, int NB, PLASMA_Complex64_t *A, int LDA);
+//static void band_to_trd_vmpi2(int N, int NB, PLASMA_Complex64_t *A, int LDA);
+//static void band_to_trd_v8seq(int N, int NB, PLASMA_Complex64_t *A, int LDA, int INgrsiz, int INthgrsiz);
+//static int  TRD_seqgralgtype(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *C, PLASMA_Complex64_t *S, int i, int j, int m, int grsiz, int BAND);
+int  blgchase_ztrdv1(int NT, int N, int NB, PLASMA_Complex64_t *A, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int sweep, int id, int blktile);
+int  blgchase_ztrdv2(int NT, int N, int NB, PLASMA_Complex64_t *A1, PLASMA_Complex64_t *A2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, PLASMA_Complex64_t *V2, PLASMA_Complex64_t *TAU2, int sweep, int id, int blktile);
 
 int CORE_zlarfx2(int side, int N,
-                parsec_complex64_t V,
-                parsec_complex64_t TAU,
-                parsec_complex64_t *C1, int LDC1,
-                parsec_complex64_t *C2, int LDC2);
+                PLASMA_Complex64_t V,
+                PLASMA_Complex64_t TAU,
+                PLASMA_Complex64_t *C1, int LDC1,
+                PLASMA_Complex64_t *C2, int LDC2);
 
 int CORE_zlarfx2c(int uplo,
-                parsec_complex64_t V,
-                parsec_complex64_t TAU,
-                parsec_complex64_t *C1,
-                parsec_complex64_t *C2,
-                parsec_complex64_t *C3);
+                PLASMA_Complex64_t V,
+                PLASMA_Complex64_t TAU,
+                PLASMA_Complex64_t *C1,
+                PLASMA_Complex64_t *C2,
+                PLASMA_Complex64_t *C3);
 
-static void CORE_zhbtelr(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, int st, int ed);
-static void CORE_zhbtrce(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, parsec_complex64_t *V2, parsec_complex64_t *TAU2, int st, int ed, int edglob);
-static void CORE_zhbtlrx(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, int st, int ed);
+static void CORE_zhbtelr(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, int st, int ed);
+static void CORE_zhbtrce(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, PLASMA_Complex64_t *V2, PLASMA_Complex64_t *TAU2, int st, int ed, int edglob);
+static void CORE_zhbtlrx(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, int st, int ed);
 
-static void DLARFX_C(char side, int N, parsec_complex64_t V, parsec_complex64_t TAU, parsec_complex64_t *C, int LDC);
-static void TRD_type1bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed);
-static void TRD_type2bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed);
-static void TRD_type3bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed);
+static void DLARFX_C(char side, int N, PLASMA_Complex64_t V, PLASMA_Complex64_t TAU, PLASMA_Complex64_t *C, int LDC);
+static void TRD_type1bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed);
+static void TRD_type2bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed);
+static void TRD_type3bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed);
 
 
 int CORE_zlarfx2(int side, int N,
-                parsec_complex64_t V,
-                parsec_complex64_t TAU,
-                parsec_complex64_t *C1, int LDC1,
-                parsec_complex64_t *C2, int LDC2)
+                PLASMA_Complex64_t V,
+                PLASMA_Complex64_t TAU,
+                PLASMA_Complex64_t *C1, int LDC1,
+                PLASMA_Complex64_t *C2, int LDC2)
 {
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zzero = 0.0;
     int    J;
-    parsec_complex64_t V2, T2, SUM;
+    PLASMA_Complex64_t V2, T2, SUM;
 
     /* Quick return */
     /*
@@ -102,14 +102,14 @@ int CORE_zlarfx2(int side, int N,
  *
  **/
 int CORE_zlarfx2c(int uplo,
-                parsec_complex64_t V,
-                parsec_complex64_t TAU,
-                parsec_complex64_t *C1,
-                parsec_complex64_t *C2,
-                parsec_complex64_t *C3)
+                PLASMA_Complex64_t V,
+                PLASMA_Complex64_t TAU,
+                PLASMA_Complex64_t *C1,
+                PLASMA_Complex64_t *C2,
+                PLASMA_Complex64_t *C3)
 {
-    static parsec_complex64_t zzero = 0.0;
-    parsec_complex64_t T2, SUM, TEMP;
+    static PLASMA_Complex64_t zzero = 0.0;
+    PLASMA_Complex64_t T2, SUM, TEMP;
 
     /* Quick return */
     if (TAU == zzero)
@@ -190,9 +190,9 @@ int CORE_zlarfx2c(int uplo,
 ///////////////////////////////////////////////////////////
 //                  DLARFX en C
 ///////////////////////////////////////////////////////////
-static void DLARFX_C(char side, int N, parsec_complex64_t V, parsec_complex64_t TAU, parsec_complex64_t *C, int LDC)
+static void DLARFX_C(char side, int N, PLASMA_Complex64_t V, PLASMA_Complex64_t TAU, PLASMA_Complex64_t *C, int LDC)
 {
- parsec_complex64_t T2, SUM, TEMP;
+ PLASMA_Complex64_t T2, SUM, TEMP;
  int    J, pt;
 
 /*
@@ -261,7 +261,7 @@ static void DLARFX_C(char side, int N, parsec_complex64_t V, parsec_complex64_t 
 ///////////////////////////////////////////////////////////
 //                  TYPE 1-BAND Householder
 ///////////////////////////////////////////////////////////
-static void CORE_zhbtelr(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, int st, int ed) {
+static void CORE_zhbtelr(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, int st, int ed) {
   int    J1, J2, KDM1, LDX;
   int    len, len1, len2, t1ed, t2st;
   int    i, IONE, ITWO;
@@ -334,11 +334,11 @@ static void CORE_zhbtelr(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec
 ///////////////////////////////////////////////////////////
 //                  TYPE 2-BAND Householder
 ///////////////////////////////////////////////////////////
-static void CORE_zhbtrce(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, parsec_complex64_t *V2, parsec_complex64_t *TAU2, int st, int ed, int edglob) {
+static void CORE_zhbtrce(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, PLASMA_Complex64_t *V2, PLASMA_Complex64_t *TAU2, int st, int ed, int edglob) {
   int    J1, J2, J3, KDM1, LDX, pt;
   int    len, len1, len2, t1ed, t2st, iglob;
   int    i, IONE, ITWO;
-  parsec_complex64_t V,T,SUM;
+  PLASMA_Complex64_t V,T,SUM;
   IONE=1;
   ITWO=2;
 
@@ -444,7 +444,7 @@ static void CORE_zhbtrce(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec
 ///////////////////////////////////////////////////////////
 //                  TYPE 1-BAND Householder
 ///////////////////////////////////////////////////////////
-static void CORE_zhbtlrx(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec_complex64_t *A2, int LDA2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, int st, int ed) {
+static void CORE_zhbtlrx(int N, int NB, PLASMA_Complex64_t *A1, int LDA1, PLASMA_Complex64_t *A2, int LDA2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, int st, int ed) {
   int    J1, J2, KDM1, LDX;
   int    len, len1, len2, t1ed, t2st;
   int    i;
@@ -524,7 +524,7 @@ static void CORE_zhbtlrx(int N, int NB, parsec_complex64_t *A1, int LDA1, parsec
 #define A(m,n)   &(A[((m)-(n)) + LDA*((n)-1)])
 #define V(m)     &(V[m-1])
 #define TAU(m)   &(TAU[m-1])
-static void TRD_type1bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed) {
+static void TRD_type1bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed) {
   int    J1, J2, len, LDX;
   int    i, IONE, ITWO;
   IONE=1;
@@ -572,7 +572,7 @@ static void TRD_type1bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_c
 #define A(m,n)   &(A[((m)-(n)) + LDA*((n)-1)])
 #define V(m)     &(V[m-1])
 #define TAU(m)   &(TAU[m-1])
-static void TRD_type2bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed) {
+static void TRD_type2bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed) {
   int    J1, J2, J3, KDM2, len, LDX;
   int    i, IONE, ITWO;
   IONE=1;
@@ -632,7 +632,7 @@ static void TRD_type2bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_c
 #define A(m,n)   &(A[((m)-(n)) + LDA*((n)-1)])
 #define V(m)     &(V[m-1])
 #define TAU(m)   &(TAU[m-1])
-static void TRD_type3bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *V, parsec_complex64_t *TAU, int st, int ed) {
+static void TRD_type3bHL(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int st, int ed) {
   int    J1, J2, len, LDX;
   int    i;
   (void)NB;
@@ -668,7 +668,7 @@ static void TRD_type3bHL(int N, int NB, parsec_complex64_t *A, int LDA, parsec_c
 //                  grouping sched wrapper call
 ///////////////////////////////////////////////////////////
 #if 0
-int TRD_seqgralgtype(int N, int NB, parsec_complex64_t *A, int LDA, parsec_complex64_t *C, parsec_complex64_t *S, int i, int j, int m, int grsiz, int BAND) {
+int TRD_seqgralgtype(int N, int NB, PLASMA_Complex64_t *A, int LDA, PLASMA_Complex64_t *C, PLASMA_Complex64_t *S, int i, int j, int m, int grsiz, int BAND) {
   int    k,shift=3;
   int    myid,colpt,stind,edind,blklastind,stepercol;
   (void) BAND;
@@ -728,20 +728,20 @@ return 0;
 //                  REDUCTION BAND TO TRIDIAG
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if 0
-static void band_to_trd_v8seq(int N, int NB, parsec_complex64_t *A, int LDA, int INgrsiz, int INthgrsiz) {
+static void band_to_trd_v8seq(int N, int NB, PLASMA_Complex64_t *A, int LDA, int INgrsiz, int INthgrsiz) {
   int myid, grsiz, shift, stt, st, ed, stind, edind, BAND;
   int blklastind, colpt;
   int stepercol,mylastid;
-  parsec_complex64_t *C, *S;
+  PLASMA_Complex64_t *C, *S;
   int i,j,m;
   int thgrsiz, thgrnb, thgrid, thed;
   int INFO;
   INFO=-1;
   BAND = 0;
-  C   = malloc(N*sizeof(parsec_complex64_t));
-  S   = malloc(N*sizeof(parsec_complex64_t));
-  memset(C,0,N*sizeof(parsec_complex64_t));
-  memset(S,0,N*sizeof(parsec_complex64_t));
+  C   = malloc(N*sizeof(PLASMA_Complex64_t));
+  S   = malloc(N*sizeof(PLASMA_Complex64_t));
+  memset(C,0,N*sizeof(PLASMA_Complex64_t));
+  memset(S,0,N*sizeof(PLASMA_Complex64_t));
 
   grsiz   = INgrsiz;
   thgrsiz = INthgrsiz;
@@ -807,7 +807,7 @@ static void band_to_trd_v8seq(int N, int NB, parsec_complex64_t *A, int LDA, int
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int blgchase_ztrdv1(int NT, int N, int NB, parsec_complex64_t *A, parsec_complex64_t *V, parsec_complex64_t *TAU, int sweep, int id, int blktile) {
+int blgchase_ztrdv1(int NT, int N, int NB, PLASMA_Complex64_t *A, PLASMA_Complex64_t *V, PLASMA_Complex64_t *TAU, int sweep, int id, int blktile) {
   int    /*edloc,*/ stloc, st, ed, KDM1, LDA;
 
   (void)NT;
@@ -852,14 +852,14 @@ int blgchase_ztrdv1(int NT, int N, int NB, parsec_complex64_t *A, parsec_complex
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static void band_to_trd_vmpi1(int N, int NB, parsec_complex64_t *A, int LDA) {
+static void band_to_trd_vmpi1(int N, int NB, PLASMA_Complex64_t *A, int LDA) {
   int NT;
-  parsec_complex64_t *V, *TAU;
+  PLASMA_Complex64_t *V, *TAU;
   int blktile, S, id, sweep;
-  V   = malloc(N*sizeof(parsec_complex64_t));
-  TAU = malloc(N*sizeof(parsec_complex64_t));
-  memset(V,0,N*sizeof(parsec_complex64_t));
-  memset(TAU,0,N*sizeof(parsec_complex64_t));
+  V   = malloc(N*sizeof(PLASMA_Complex64_t));
+  TAU = malloc(N*sizeof(PLASMA_Complex64_t));
+  memset(V,0,N*sizeof(PLASMA_Complex64_t));
+  memset(TAU,0,N*sizeof(PLASMA_Complex64_t));
 
 
   NT = N/NB;
@@ -886,7 +886,7 @@ static void band_to_trd_vmpi1(int N, int NB, parsec_complex64_t *A, int LDA) {
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-int blgchase_ztrdv2(int NT, int N, int NB, parsec_complex64_t *A1, parsec_complex64_t *A2, parsec_complex64_t *V1, parsec_complex64_t *TAU1, parsec_complex64_t *V2, parsec_complex64_t *TAU2, int sweep, int id, int blktile) {
+int blgchase_ztrdv2(int NT, int N, int NB, PLASMA_Complex64_t *A1, PLASMA_Complex64_t *A2, PLASMA_Complex64_t *V1, PLASMA_Complex64_t *TAU1, PLASMA_Complex64_t *V2, PLASMA_Complex64_t *TAU2, int sweep, int id, int blktile) {
   int    edloc, stloc, st, ed, KDM1, LDA;
 
   KDM1   = NB-1;
@@ -926,14 +926,14 @@ int blgchase_ztrdv2(int NT, int N, int NB, parsec_complex64_t *A1, parsec_comple
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-static void band_to_trd_vmpi2(int N, int NB, parsec_complex64_t *A, int LDA) {
+static void band_to_trd_vmpi2(int N, int NB, PLASMA_Complex64_t *A, int LDA) {
     int NT;
-    parsec_complex64_t *V, *TAU;
+    PLASMA_Complex64_t *V, *TAU;
     int blktile, S, id, sweep;
-    V   = malloc(N*sizeof(parsec_complex64_t));
-    TAU = malloc(N*sizeof(parsec_complex64_t));
-    memset(V,0,N*sizeof(parsec_complex64_t));
-    memset(TAU,0,N*sizeof(parsec_complex64_t));
+    V   = malloc(N*sizeof(PLASMA_Complex64_t));
+    TAU = malloc(N*sizeof(PLASMA_Complex64_t));
+    memset(V,0,N*sizeof(PLASMA_Complex64_t));
+    memset(TAU,0,N*sizeof(PLASMA_Complex64_t));
 
 
     NT = N/NB;

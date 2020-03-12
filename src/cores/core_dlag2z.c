@@ -56,7 +56,7 @@
  ******************************************************************************/
 int CORE_dlag2z( int m, int n,
                  const double *R, int ldr,
-                 parsec_complex64_t *Z, int ldz )
+                 PLASMA_Complex64_t *Z, int ldz )
 {
     int i, j;
 

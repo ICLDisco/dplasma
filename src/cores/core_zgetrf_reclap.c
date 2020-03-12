@@ -23,19 +23,19 @@
 #include "dplasma_zcores.h"
 
 struct CORE_zgetrf_data_s {
-    volatile parsec_complex64_t *CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax;
     volatile int                *CORE_zstep;
 };
 
 static inline void
 CORE_zgetrf_reclap_update(CORE_zgetrf_data_t *data,
                           int M, int column, int n1, int n2,
-                          parsec_complex64_t *A, int LDA, int *IPIV,
+                          PLASMA_Complex64_t *A, int LDA, int *IPIV,
                           int thidx, int thcnt);
 static inline void
 CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data,
                        int M, int N,
-                       parsec_complex64_t *A, int LDA,
+                       PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *info,
                        int thidx, int thcnt, int column);
 
@@ -119,7 +119,7 @@ CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data,
  */
 int CORE_zgetrf_reclap(CORE_zgetrf_data_t *data,
                        int M, int N,
-                       parsec_complex64_t *A, int LDA,
+                       PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *info)
 {
     int thidx = info[1];
@@ -173,10 +173,10 @@ CORE_zgetrf_reclap_init(int nbthrd)
     int i;
     CORE_zgetrf_data_t *data;
 
-    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(parsec_complex64_t)+sizeof(int))
+    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(PLASMA_Complex64_t)+sizeof(int))
                                         + 2 * sizeof(void*) );
-    data->CORE_zamax = (parsec_complex64_t*)((char*)data + 2 * sizeof(void*));
-    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(parsec_complex64_t));
+    data->CORE_zamax = (PLASMA_Complex64_t*)((char*)data + 2 * sizeof(void*));
+    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(PLASMA_Complex64_t));
 
     for (i = 0; i < nbthrd; ++i) {
         data->CORE_zamax[i] = 0.;
@@ -205,17 +205,17 @@ psplit(int n, int pidx, int pcnt, int *poff_p, int *psiz_p)
 
 static inline void
 CORE_zamax1_thread(CORE_zgetrf_data_t *data,
-                   parsec_complex64_t localamx,
+                   PLASMA_Complex64_t localamx,
                    int thidx, int thcnt, int *thwinner,
-                   parsec_complex64_t *globalamx,
+                   PLASMA_Complex64_t *globalamx,
                    int pividx, int *ipiv)
 {
-    volatile parsec_complex64_t *CORE_zamax = data->CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax = data->CORE_zamax;
     volatile int                *CORE_zstep = data->CORE_zstep;
 
     if (thidx == 0) {
         int i, j = 0;
-        parsec_complex64_t curval = localamx, tmp;
+        PLASMA_Complex64_t curval = localamx, tmp;
         double curamx = cabs(localamx);
 
         /* make sure everybody filled in their value */
@@ -281,17 +281,17 @@ CORE_zbarrier_thread(CORE_zgetrf_data_t *data,
                      int thidx, int thcnt)
 {
     int idum1, idum2;
-    parsec_complex64_t ddum2 = 0.;
+    PLASMA_Complex64_t ddum2 = 0.;
     /* it's probably faster to implement a dedicated barrier */
     CORE_zamax1_thread( data, 1.0, thidx, thcnt, &idum1, &ddum2, 0, &idum2 );
 }
 
 static inline void
-CORE_zlaswap1(int ncol, parsec_complex64_t *a, int lda,
+CORE_zlaswap1(int ncol, PLASMA_Complex64_t *a, int lda,
               int idxStart, int idxMax, const int *piv)
 {
     int i, j;
-    parsec_complex64_t tmp;
+    PLASMA_Complex64_t tmp;
 
     for (j = 0; j < ncol; ++j) {
         for (i = idxStart; i < idxMax; ++i) {
@@ -305,13 +305,13 @@ CORE_zlaswap1(int ncol, parsec_complex64_t *a, int lda,
 static inline void
 CORE_zgetrf_reclap_update(CORE_zgetrf_data_t *data,
                           int M, int column, int n1, int n2,
-                          parsec_complex64_t *A, int LDA, int *IPIV,
+                          PLASMA_Complex64_t *A, int LDA, int *IPIV,
                           int thidx, int thcnt)
 {
-    static parsec_complex64_t posone =  1.0;
-    static parsec_complex64_t negone = -1.0;
-    parsec_complex64_t *Atop  = A    + column*LDA;
-    parsec_complex64_t *Atop2 = Atop + n1    *LDA;
+    static PLASMA_Complex64_t posone =  1.0;
+    static PLASMA_Complex64_t negone = -1.0;
+    PLASMA_Complex64_t *Atop  = A    + column*LDA;
+    PLASMA_Complex64_t *Atop2 = Atop + n1    *LDA;
     int coff, ccnt, lm, loff;
 
     CORE_zbarrier_thread( data, thidx, thcnt );
@@ -342,13 +342,13 @@ CORE_zgetrf_reclap_update(CORE_zgetrf_data_t *data,
 
 static void
 CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data, int M, int N,
-                       parsec_complex64_t *A, int LDA,
+                       PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *info,
                        int thidx, int thcnt, int column)
 {
     int jp, n1, n2, lm, loff;
-    parsec_complex64_t tmp1, tmp2, tmp3;
-    parsec_complex64_t *Atop = A + column*LDA;
+    PLASMA_Complex64_t tmp1, tmp2, tmp3;
+    PLASMA_Complex64_t *Atop = A + column*LDA;
 
     /* Assumption: N = min( M, N ); */
     if (N > 1) {
@@ -401,12 +401,12 @@ CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data, int M, int N,
 
         if ( tmp3 != 0.0 ) {
             if ( cabs(tmp3) >= sfmin ) {
-                parsec_complex64_t tmp = (parsec_complex64_t)1.0 / tmp3;
+                PLASMA_Complex64_t tmp = (PLASMA_Complex64_t)1.0 / tmp3;
                 n1 = (thidx == 0) ? 1 : 0;
                 cblas_zscal( lm - n1, CBLAS_SADDR(tmp), Atop + loff + n1, 1 );
             } else {
                 int i;
-                parsec_complex64_t *Atop2;
+                PLASMA_Complex64_t *Atop2;
                 n1 = (thidx == 0) ? 1 : 0;
                 Atop2 = Atop + loff + n1;
 

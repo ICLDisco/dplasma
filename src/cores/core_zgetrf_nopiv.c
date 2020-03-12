@@ -66,10 +66,10 @@
  *
  ******************************************************************************/
 int CORE_zgetrf_nopiv(int M, int N, int IB,
-                      parsec_complex64_t *A, int LDA)
+                      PLASMA_Complex64_t *A, int LDA)
 {
-    parsec_complex64_t zone  = (parsec_complex64_t)1.0;
-    parsec_complex64_t mzone = (parsec_complex64_t)-1.0;
+    PLASMA_Complex64_t zone  = (PLASMA_Complex64_t)1.0;
+    PLASMA_Complex64_t mzone = (PLASMA_Complex64_t)-1.0;
     int i, k, sb;
     int info, iinfo;
 

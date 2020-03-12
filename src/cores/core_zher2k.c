@@ -91,9 +91,9 @@
  ******************************************************************************/
 void CORE_zher2k(PLASMA_enum uplo, PLASMA_enum trans,
                  int N, int K,
-                 parsec_complex64_t alpha, const parsec_complex64_t *A, int LDA,
-                 const parsec_complex64_t *B, int LDB,
-                 double beta, parsec_complex64_t *C, int LDC)
+                 PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int LDA,
+                 const PLASMA_Complex64_t *B, int LDB,
+                 double beta, PLASMA_Complex64_t *C, int LDC)
 {
     cblas_zher2k(
         CblasColMajor,

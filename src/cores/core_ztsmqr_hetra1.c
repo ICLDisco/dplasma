@@ -119,11 +119,11 @@
 int CORE_ztsmqr_hetra1( PLASMA_enum side, PLASMA_enum trans,
                         int m1, int n1, int m2, int n2,
                         int k, int ib,
-                        parsec_complex64_t *A1, int lda1,
-                        parsec_complex64_t *A2, int lda2,
-                        const parsec_complex64_t *V, int ldv,
-                        const parsec_complex64_t *T, int ldt,
-                        parsec_complex64_t *WORK, int ldwork)
+                        PLASMA_Complex64_t *A1, int lda1,
+                        PLASMA_Complex64_t *A2, int lda2,
+                        const PLASMA_Complex64_t *V, int ldv,
+                        const PLASMA_Complex64_t *T, int ldt,
+                        PLASMA_Complex64_t *WORK, int ldwork)
 {
     int i, j;
 

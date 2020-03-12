@@ -115,11 +115,11 @@
  ******************************************************************************/
 int CORE_zttmqr(PLASMA_enum side, PLASMA_enum trans,
                 int M1, int N1, int M2, int N2, int K, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                const parsec_complex64_t *V, int LDV,
-                const parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *WORK, int LDWORK)
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                const PLASMA_Complex64_t *V, int LDV,
+                const PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *WORK, int LDWORK)
 {
     int i,  i1, i3;
     int NQ, NW;
