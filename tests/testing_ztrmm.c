@@ -12,7 +12,7 @@
 
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                           parsec_complex64_t alpha,
+                           dplasma_complex64_t alpha,
                            int Am, int An, int Aseed,
                            int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal );
@@ -24,7 +24,7 @@ int main(int argc, char ** argv)
     int ret = 0;
     int Aseed = 3872;
     int Cseed = 2873;
-    parsec_complex64_t alpha = 3.5;
+    dplasma_complex64_t alpha = 3.5;
     parsec_tiled_matrix_dc_t *dcA;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -183,7 +183,7 @@ int main(int argc, char ** argv)
  */
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                           parsec_complex64_t alpha,
+                           dplasma_complex64_t alpha,
                            int Am, int An, int Aseed,
                            int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal )

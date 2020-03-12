@@ -18,9 +18,9 @@ enum regions {
 
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal );
 
 static int
@@ -32,13 +32,13 @@ parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     int m;
     int n;
     int k;
-    parsec_complex64_t alpha;
-    parsec_complex64_t *A;
+    dplasma_complex64_t alpha;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *B;
+    dplasma_complex64_t *B;
     int ldb;
-    parsec_complex64_t beta;
-    parsec_complex64_t *C;
+    dplasma_complex64_t beta;
+    dplasma_complex64_t *C;
     int ldc;
 
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha, &A,
@@ -62,8 +62,8 @@ int main(int argc, char ** argv)
     int Cseed = 2873;
     int tA = PlasmaNoTrans;
     int tB = PlasmaNoTrans;
-    parsec_complex64_t alpha =  0.51;
-    parsec_complex64_t beta  = -0.42;
+    dplasma_complex64_t alpha =  0.51;
+    dplasma_complex64_t beta  = -0.42;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     alpha -= I * 0.32;
@@ -121,7 +121,7 @@ int main(int argc, char ** argv)
 
         /* Default type */
         dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                                dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                                dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -136,8 +136,8 @@ int main(int argc, char ** argv)
         int ldam, ldak, ldbn, ldbk, ldcm;
         int tempmm, tempnn, tempkn;
 
-        parsec_complex64_t zbeta;
-        parsec_complex64_t zone = (parsec_complex64_t)1.0;
+        dplasma_complex64_t zbeta;
+        dplasma_complex64_t zone = (dplasma_complex64_t)1.0;
 
         parsec_context_add_taskpool( parsec, dtd_tp );
 
@@ -170,12 +170,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -196,12 +196,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -224,12 +224,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m ),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -250,12 +250,12 @@ int main(int argc, char ** argv)
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -346,7 +346,7 @@ int main(int argc, char ** argv)
                 /* Allocating data arrays to be used by comm engine */
                 /* Default type */
                 dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                                        dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                                        dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                         PARSEC_ARENA_ALIGNMENT_SSE,
                                         parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -372,8 +372,8 @@ int main(int argc, char ** argv)
                 int ldam, ldak, ldbn, ldbk, ldcm;
                 int tempmm, tempnn, tempkn, tempkm;
 
-                parsec_complex64_t zbeta;
-                parsec_complex64_t zone = (parsec_complex64_t)1.0;
+                dplasma_complex64_t zbeta;
+                dplasma_complex64_t zone = (dplasma_complex64_t)1.0;
 
                 /* Registering the handle with parsec context */
                 parsec_context_add_taskpool( parsec, dtd_tp );
@@ -409,12 +409,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -436,12 +436,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -465,12 +465,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -493,12 +493,12 @@ int main(int argc, char ** argv)
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -581,9 +581,9 @@ int main(int argc, char ** argv)
  */
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal )
 {
     int info_solution = 1;

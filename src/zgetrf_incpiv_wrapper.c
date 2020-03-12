@@ -126,23 +126,23 @@ dplasma_zgetrf_incpiv_New( parsec_tiled_matrix_dc_t *A,
     }
 
     parsec_getrf_incpiv->_g_work_pool = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( parsec_getrf_incpiv->_g_work_pool, ib * L->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( parsec_getrf_incpiv->_g_work_pool, ib * L->nb * sizeof(dplasma_complex64_t) );
 
     /* A */
     dplasma_add2arena_tile( parsec_getrf_incpiv->arenas[PARSEC_zgetrf_incpiv_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower part of A without diagonal part */
     dplasma_add2arena_lower( parsec_getrf_incpiv->arenas[PARSEC_zgetrf_incpiv_LOWER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Upper part of A with diagonal part */
     dplasma_add2arena_upper( parsec_getrf_incpiv->arenas[PARSEC_zgetrf_incpiv_UPPER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
@@ -154,7 +154,7 @@ dplasma_zgetrf_incpiv_New( parsec_tiled_matrix_dc_t *A,
 
     /* L */
     dplasma_add2arena_rectangle( parsec_getrf_incpiv->arenas[PARSEC_zgetrf_incpiv_SMALL_L_ARENA],
-                                 L->mb*L->nb*sizeof(parsec_complex64_t),
+                                 L->mb*L->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, L->mb, L->nb, -1);
 

@@ -14,17 +14,17 @@
 
 static int check_tr_solution( parsec_context_t *parsec, int loud,
                               PLASMA_enum uplo, PLASMA_enum trans,
-                              parsec_complex64_t alpha,
+                              dplasma_complex64_t alpha,
                               int Am, int An, parsec_tiled_matrix_dc_t *dcA,
-                              parsec_complex64_t beta,
+                              dplasma_complex64_t beta,
                               int M,  int N,  parsec_tiled_matrix_dc_t *dcC,
                               parsec_tiled_matrix_dc_t *dcC2 );
 
 static int check_ge_solution( parsec_context_t *parsec, int loud,
                               PLASMA_enum trans,
-                              parsec_complex64_t alpha,
+                              dplasma_complex64_t alpha,
                               int Am, int An, parsec_tiled_matrix_dc_t *dcA,
-                              parsec_complex64_t beta,
+                              dplasma_complex64_t beta,
                               int M,  int N,  parsec_tiled_matrix_dc_t *dcC,
                               parsec_tiled_matrix_dc_t *dcC2 );
 
@@ -37,8 +37,8 @@ int main(int argc, char ** argv)
     int Cseed = 2873;
     int tA, u, Am, An;
 
-    parsec_complex64_t alpha = 0.43;
-    parsec_complex64_t beta  = 0.78;
+    dplasma_complex64_t alpha = 0.43;
+    dplasma_complex64_t beta  = 0.78;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     alpha -= I * 0.32;
@@ -106,9 +106,9 @@ int main(int argc, char ** argv)
             /* Create GEMM PaRSEC */
             if(loud) printf("Compute ... ... ");
             dplasma_ztradd(parsec, uplo[u], trans[tA],
-                           (parsec_complex64_t)alpha,
+                           (dplasma_complex64_t)alpha,
                            (parsec_tiled_matrix_dc_t *)&dcA,
-                           (parsec_complex64_t)beta,
+                           (dplasma_complex64_t)beta,
                            (parsec_tiled_matrix_dc_t *)&dcC);
             if(loud) printf("Done\n");
 
@@ -170,9 +170,9 @@ int main(int argc, char ** argv)
         /* Create GEMM PaRSEC */
         if(loud) printf("Compute ... ... ");
         dplasma_zgeadd(parsec, trans[tA],
-                       (parsec_complex64_t)alpha,
+                       (dplasma_complex64_t)alpha,
                        (parsec_tiled_matrix_dc_t *)&dcA,
-                       (parsec_complex64_t)beta,
+                       (dplasma_complex64_t)beta,
                        (parsec_tiled_matrix_dc_t *)&dcC);
         if(loud) printf("Done\n");
 
@@ -216,16 +216,16 @@ int main(int argc, char ** argv)
  */
 static int check_tr_solution( parsec_context_t *parsec, int loud,
                               PLASMA_enum uplo, PLASMA_enum trans,
-                              parsec_complex64_t alpha,
+                              dplasma_complex64_t alpha,
                               int Am, int An, parsec_tiled_matrix_dc_t *dcA,
-                              parsec_complex64_t beta,
+                              dplasma_complex64_t beta,
                               int M,  int N,  parsec_tiled_matrix_dc_t *dcC,
                               parsec_tiled_matrix_dc_t *dcC2 )
 {
     int info_solution = 1;
     double Anorm, Cinitnorm, Cdplasmanorm, Rnorm;
     double eps, result;
-    parsec_complex64_t mzone = (parsec_complex64_t)-1.;
+    dplasma_complex64_t mzone = (dplasma_complex64_t)-1.;
     int MB = dcC2->mb;
     int NB = dcC2->nb;
     int LDA = Am;
@@ -266,9 +266,9 @@ static int check_tr_solution( parsec_context_t *parsec, int loud,
     dplasma_zlacpy( parsec, PlasmaUpperLower, dcC2, (parsec_tiled_matrix_dc_t *)&localC2 );
 
     if ( rank == 0 ) {
-        parsec_complex64_t *A  = localA.mat;
-        parsec_complex64_t *C  = localC.mat;
-        parsec_complex64_t *C2 = localC2.mat;
+        dplasma_complex64_t *A  = localA.mat;
+        dplasma_complex64_t *C  = localC.mat;
+        dplasma_complex64_t *C2 = localC2.mat;
 
         dplasma_core_ztradd( uplo, trans, M, N, alpha, A, LDA, beta, C, LDC );
         cblas_zaxpy( LDC * N, CBLAS_SADDR(mzone), C, 1, C2, 1);
@@ -312,16 +312,16 @@ static int check_tr_solution( parsec_context_t *parsec, int loud,
  */
 static int check_ge_solution( parsec_context_t *parsec, int loud,
                               PLASMA_enum trans,
-                              parsec_complex64_t alpha,
+                              dplasma_complex64_t alpha,
                               int Am, int An, parsec_tiled_matrix_dc_t *dcA,
-                              parsec_complex64_t beta,
+                              dplasma_complex64_t beta,
                               int M,  int N,  parsec_tiled_matrix_dc_t *dcC,
                               parsec_tiled_matrix_dc_t *dcC2 )
 {
     int info_solution = 1;
     double Anorm, Cinitnorm, Cdplasmanorm, Rnorm;
     double eps, result;
-    parsec_complex64_t mzone = (parsec_complex64_t)-1.;
+    dplasma_complex64_t mzone = (dplasma_complex64_t)-1.;
     int MB = dcC2->mb;
     int NB = dcC2->nb;
     int LDA = Am;
@@ -352,9 +352,9 @@ static int check_ge_solution( parsec_context_t *parsec, int loud,
     dplasma_zlacpy( parsec, PlasmaUpperLower, dcC2, (parsec_tiled_matrix_dc_t *)&localC2 );
 
     if ( rank == 0 ) {
-        parsec_complex64_t *A  = localA.mat;
-        parsec_complex64_t *C  = localC.mat;
-        parsec_complex64_t *C2 = localC2.mat;
+        dplasma_complex64_t *A  = localA.mat;
+        dplasma_complex64_t *C  = localC.mat;
+        dplasma_complex64_t *C2 = localC2.mat;
 
         dplasma_core_zgeadd( trans, M, N, alpha, A, LDA, beta, C, LDC );
         cblas_zaxpy( LDC * N, CBLAS_SADDR(mzone), C, 1, C2, 1);

@@ -80,10 +80,10 @@ goto fin;
                                MB+1, (NB+2)*(NT+1), 1, KQ, 1 /* 1D cyclic */ ));
     SYNC_TIME_START();
     parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)&dcA, &dcBAND,
-                                                                                            MT, NT, MB, NB, sizeof(parsec_complex64_t));
+                                                                                            MT, NT, MB, NB, sizeof(dplasma_complex64_t));
     parsec_arena_t* arena = PARSEC_diag_band_to_rect->arenas[PARSEC_diag_band_to_rect_DEFAULT_ARENA];
     dplasma_add2arena_tile(arena,
-                           MB*NB*sizeof(parsec_complex64_t),
+                           MB*NB*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, MB);
     rc = parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)PARSEC_diag_band_to_rect);
@@ -103,9 +103,9 @@ goto fin;
     PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
 
     if( check ) {
-        PLASMA_Complex64_t *A0  = (PLASMA_Complex64_t *)malloc(LDA*N*sizeof(PLASMA_Complex64_t));
+        dplasma_complex64_t *A0  = (dplasma_complex64_t *)malloc(LDA*N*sizeof(dplasma_complex64_t));
         double *W0              = (double *)malloc(N*sizeof(double));
-        PLASMA_Complex64_t* band;
+        dplasma_complex64_t* band;
         double *D               = (double *)malloc(N*sizeof(double));
         double *E               = (double *)malloc(N*sizeof(double));
         int INFO;

@@ -46,8 +46,8 @@ ib       [type = "int"]
 criteria [type = "int"]
 alpha    [type = "double"]
 W        [type = "double *"]
-p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*ib*(TS->nb))"]
-p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)   *(TS->nb))"]
+p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*(TS->nb))"]
+p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *(TS->nb))"]
 INFO     [type = "int*"]
 
 param_p   [type = int default="((two_dim_block_cyclic_t*)descA)->grid.rows" hidden=on ]
@@ -759,7 +759,7 @@ zlufacto(k, t)
 
 BODY
   {
-      /* parsec_complex64_t *lA  = (parsec_complex64_t*)A; */
+      /* dplasma_complex64_t *lA  = (dplasma_complex64_t*)A; */
       int ks = k + (s-1)*param_p;
       int tempm = (s-1) * descA->mb +
           (( ks == descA->mt-1 ) ? descA->m - ks * descA->mb : descA->mb);

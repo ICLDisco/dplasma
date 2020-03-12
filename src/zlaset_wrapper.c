@@ -21,8 +21,8 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
                          void *args )
 {
     int tempmm, tempnn, ldam;
-    parsec_complex64_t *alpha = (parsec_complex64_t*)args;
-    parsec_complex64_t *A = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *alpha = (dplasma_complex64_t*)args;
+    dplasma_complex64_t *A = (dplasma_complex64_t*)_A;
     (void)es;
 
     tempmm = ((m)==((descA->mt)-1)) ? ((descA->m)-(m*(descA->mb))) : (descA->mb);
@@ -90,11 +90,11 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zlaset_New( PLASMA_enum uplo,
-                    parsec_complex64_t alpha,
-                    parsec_complex64_t beta,
+                    dplasma_complex64_t alpha,
+                    dplasma_complex64_t beta,
                     parsec_tiled_matrix_dc_t *A )
 {
-    parsec_complex64_t *params = (parsec_complex64_t*)malloc(2 * sizeof(parsec_complex64_t));
+    dplasma_complex64_t *params = (dplasma_complex64_t*)malloc(2 * sizeof(dplasma_complex64_t));
 
     params[0] = alpha;
     params[1] = beta;
@@ -177,8 +177,8 @@ dplasma_zlaset_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zlaset( parsec_context_t *parsec,
                 PLASMA_enum uplo,
-                parsec_complex64_t alpha,
-                parsec_complex64_t beta,
+                dplasma_complex64_t alpha,
+                dplasma_complex64_t beta,
                 parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_zlaset = NULL;

@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
     dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     /* Scale down the full matrix to keep stability in diag = PlasmaUnit case */
     dplasma_zlascal( parsec, PlasmaUpperLower,
-                     1. / (parsec_complex64_t)Am,
+                     1. / (dplasma_complex64_t)Am,
                      (parsec_tiled_matrix_dc_t *)&dcA );
     if(loud > 2) printf("Done\n");
 

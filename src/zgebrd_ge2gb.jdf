@@ -30,8 +30,8 @@ lqtree   [type = "dplasma_qrtree_t *"]
 rbidiag  [type = "int" ]
 ib       [type = "int" ]
 
-p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*ib*(descA->nb))"]
-p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)   *(descA->nb))"]
+p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*(descA->nb))"]
+p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *(descA->nb))"]
 
 KT       [type = "int" hidden=on default="( rbidiag ? descA->nt : 1 )" ]
 NT       [type = "int" hidden=on default="( descA->nt )" ]
@@ -1147,7 +1147,7 @@ BODY
                              0., 0., B, ldbd );
     }
     LAPACKE_zlacpy_work( LAPACK_COL_MAJOR, 'U', tempkm, tempkn,
-                         A, ldak, ((parsec_complex64_t*)B)+descA->mb, ldbd-1 );
+                         A, ldak, ((dplasma_complex64_t*)B)+descA->mb, ldbd-1 );
 }
 END
 

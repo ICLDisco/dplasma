@@ -13,7 +13,7 @@
 
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum uplo, PLASMA_enum trans,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
                            double beta,             int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal );
 
@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
     int Aseed = 3872;
     int Bseed = 4674;
     int Cseed = 2873;
-    parsec_complex64_t alpha = 3.5 - I * 4.2;
+    dplasma_complex64_t alpha = 3.5 - I * 4.2;
     double beta = -2.8;
 
     /* Set defaults for non argv iparams */
@@ -182,7 +182,7 @@ int main(int argc, char ** argv)
  */
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum uplo, PLASMA_enum trans,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
                            double beta,             int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal )
 {

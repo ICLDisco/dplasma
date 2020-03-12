@@ -16,9 +16,9 @@ extern "C" %{
 
 uplo      [type = "PLASMA_enum"]
 trans     [type = "PLASMA_enum"]
-alpha     [type = "parsec_complex64_t"]
+alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
-beta      [type = "parsec_complex64_t"]
+beta      [type = "dplasma_complex64_t"]
 descC     [type = "parsec_tiled_matrix_dc_t*"]
 
 
@@ -41,7 +41,7 @@ BODY
     int tempnn = (n==(descC->nt-1)) ? (descC->n-(n*descC->nb)) : descC->nb;
     int tempkm = (k==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int ldak = BLKLDD( descA, k );
-    parsec_complex64_t zbeta = (k==0) ? beta : (parsec_complex64_t)1.;
+    dplasma_complex64_t zbeta = (k==0) ? beta : (dplasma_complex64_t)1.;
     int ldcn = BLKLDD( descC, n );
 
     printlog("CORE_zsyrk(%d, %d)\n"
@@ -93,7 +93,7 @@ BODY
     int tempnn = (n==(descC->nt-1)) ? (descC->n-(n*descC->nb)) : descC->nb;
     int tempkm = (k==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int ldak = BLKLDD( descA, k );
-    parsec_complex64_t zbeta = (k==0) ? beta : ((parsec_complex64_t)1.);
+    dplasma_complex64_t zbeta = (k==0) ? beta : ((dplasma_complex64_t)1.);
     int ldcm = BLKLDD( descC, m );
 
     printlog("CORE_zgemm(%d, %d, %d)\n"

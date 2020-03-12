@@ -24,12 +24,12 @@ parsec_core_geqrt(parsec_execution_stream_t *es, parsec_task_t *this_task)
     int m;
     int n;
     int ib;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *T;
+    dplasma_complex64_t *T;
     int ldt;
-    parsec_complex64_t *TAU;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *TAU;
+    dplasma_complex64_t *WORK;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &ib, &A, &lda, &T, &ldt, &TAU, &WORK);
 
@@ -48,13 +48,13 @@ parsec_core_unmqr(parsec_execution_stream_t *es, parsec_task_t *this_task)
     int n;
     int k;
     int ib;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *T;
+    dplasma_complex64_t *T;
     int ldt;
-    parsec_complex64_t *C;
+    dplasma_complex64_t *C;
     int ldc;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *WORK;
     int ldwork;
 
     parsec_dtd_unpack_args(this_task, &side, &trans, &m, &n, &k, &ib, &A,
@@ -73,14 +73,14 @@ parsec_core_tsqrt(parsec_execution_stream_t *es, parsec_task_t *this_task)
     int m;
     int n;
     int ib;
-    parsec_complex64_t *A1;
+    dplasma_complex64_t *A1;
     int lda1;
-    parsec_complex64_t *A2;
+    dplasma_complex64_t *A2;
     int lda2;
-    parsec_complex64_t *T;
+    dplasma_complex64_t *T;
     int ldt;
-    parsec_complex64_t *TAU;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *TAU;
+    dplasma_complex64_t *WORK;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &ib, &A1, &lda1, &A2, &lda2, &T, &ldt, &TAU, &WORK);
 
@@ -101,15 +101,15 @@ parsec_core_tsmqr(parsec_execution_stream_t *es, parsec_task_t *this_task)
     int n2;
     int k;
     int ib;
-    parsec_complex64_t *A1;
+    dplasma_complex64_t *A1;
     int lda1;
-    parsec_complex64_t *A2;
+    dplasma_complex64_t *A2;
     int lda2;
-    parsec_complex64_t *V;
+    dplasma_complex64_t *V;
     int ldv;
-    parsec_complex64_t *T;
+    dplasma_complex64_t *T;
     int ldt;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *WORK;
     int ldwork;
 
     parsec_dtd_unpack_args(this_task, &side, &trans, &m1, &n1, &m2, &n2, &k,
@@ -217,12 +217,12 @@ int main(int argc, char **argv)
     /* Allocating data arrays to be used by comm engine */
     /* Default type */
     dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                            dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                            dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
     dplasma_add2arena_rectangle( parsec_dtd_arenas[TILE_RECTANGLE],
-                                 dcT.super.mb*dcT.super.nb*sizeof(parsec_complex64_t),
+                                 dcT.super.mb*dcT.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcT.super.mb, dcT.super.nb, -1);
 
@@ -248,8 +248,8 @@ int main(int argc, char **argv)
                            sizeof(int),           &ldak,                          VALUE,
                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, k, k),     OUTPUT | TILE_RECTANGLE,
                            sizeof(int),           &dcT.super.mb,                  VALUE,
-                           sizeof(parsec_complex64_t)*dcT.super.nb,       NULL,   SCRATCH,
-                           sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,   SCRATCH,
+                           sizeof(dplasma_complex64_t)*dcT.super.nb,       NULL,   SCRATCH,
+                           sizeof(dplasma_complex64_t)*ib*dcT.super.nb,    NULL,   SCRATCH,
                            PARSEC_DTD_ARG_END );
 
         for( n = k+1; n < dcA.super.nt; n++ ) {
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
                                sizeof(int),           &dcT.super.mb,                   VALUE,
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),      INOUT | TILE_FULL | AFFINITY,
                                sizeof(int),           &ldak,                              VALUE,
-                               sizeof(parsec_complex64_t)*ib*dcT.super.nb,   NULL,        SCRATCH,
+                               sizeof(dplasma_complex64_t)*ib*dcT.super.nb,   NULL,        SCRATCH,
                                sizeof(int),           &dcT.super.nb,                      VALUE,
                                PARSEC_DTD_ARG_END );
         }
@@ -289,8 +289,8 @@ int main(int argc, char **argv)
                                sizeof(int),           &ldam,                              VALUE,
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, m, k),     OUTPUT | TILE_RECTANGLE,
                                sizeof(int),           &dcT.super.mb,                     VALUE,
-                               sizeof(parsec_complex64_t)*dcT.super.nb,       NULL,      SCRATCH,
-                               sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
+                               sizeof(dplasma_complex64_t)*dcT.super.nb,       NULL,      SCRATCH,
+                               sizeof(dplasma_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
                                PARSEC_DTD_ARG_END );
 
             for( n = k+1; n < dcA.super.nt; n++ ) {
@@ -315,7 +315,7 @@ int main(int argc, char **argv)
                                    sizeof(int),           &ldam,                             VALUE,
                                    PASSED_BY_REF,         PARSEC_DTD_TILE_OF(T, m, k),     INPUT | TILE_RECTANGLE,
                                    sizeof(int),           &dcT.super.mb,                     VALUE,
-                                   sizeof(parsec_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
+                                   sizeof(dplasma_complex64_t)*ib*dcT.super.nb,    NULL,      SCRATCH,
                                    sizeof(int),           &ldwork,                           VALUE,
                                    PARSEC_DTD_ARG_END );
             }

@@ -30,7 +30,7 @@ int main(int argc, char ** argv)
     int iparam[IPARAM_SIZEOF];
     int ret = 0;
     int uplo = PlasmaLower;
-    PLASMA_Complex64_t *U_but_vec;
+    dplasma_complex64_t *U_but_vec;
     DagDouble_t time_butterfly, time_facto, time_total;
 
     /* Set defaults for non argv iparams */

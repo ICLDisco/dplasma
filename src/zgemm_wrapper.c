@@ -90,8 +90,8 @@
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t* C)
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C)
 {
     parsec_taskpool_t* zgemm_tp;
     parsec_arena_t* arena;
@@ -202,7 +202,7 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
     }
 
     dplasma_add2arena_tile(arena,
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
     return zgemm_tp;
@@ -310,9 +310,9 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zgemm( parsec_context_t *parsec,
                PLASMA_enum transA, PLASMA_enum transB,
-               parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
+               dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
                                         const parsec_tiled_matrix_dc_t *B,
-               parsec_complex64_t beta,        parsec_tiled_matrix_dc_t *C)
+               dplasma_complex64_t beta,        parsec_tiled_matrix_dc_t *C)
 {
     parsec_taskpool_t *parsec_zgemm = NULL;
     int M, N, K;
@@ -380,7 +380,7 @@ dplasma_zgemm( parsec_context_t *parsec,
 
     /* Quick return */
     if (M == 0 || N == 0 ||
-        ((alpha == (PLASMA_Complex64_t)0.0 || K == 0) && beta == (PLASMA_Complex64_t)1.0))
+        ((alpha == (dplasma_complex64_t)0.0 || K == 0) && beta == (dplasma_complex64_t)1.0))
         return 0;
 
     parsec_zgemm = dplasma_zgemm_New(transA, transB,

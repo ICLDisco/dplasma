@@ -69,7 +69,7 @@ int main(int argc, char ** argv)
 
             if ( rank == 0 ) {
                 normlap = LAPACKE_zlange_work(LAPACK_COL_MAJOR, normsstr[i][0], M, N,
-                                              (parsec_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
+                                              (dplasma_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
             }
             if(loud > 2) printf("Done.\n");
 
@@ -150,7 +150,7 @@ int main(int argc, char ** argv)
 
                     if ( rank == 0 ) {
                         normlap = LAPACKE_zlantr_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], diagstr[d][0], M, N,
-                                                      (parsec_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
+                                                      (dplasma_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
                     }
                     if(loud > 2) printf("Done.\n");
 
@@ -234,7 +234,7 @@ int main(int argc, char ** argv)
 
                 if ( rank == 0 ) {
                     normlap = LAPACKE_zlansy_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], M,
-                                                  (parsec_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
+                                                  (dplasma_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
                 }
                 if(loud > 2) printf("Done.\n");
 
@@ -314,7 +314,7 @@ int main(int argc, char ** argv)
 
                 if ( rank == 0 ) {
                     normlap = LAPACKE_zlanhe_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], M,
-                                                  (parsec_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
+                                                  (dplasma_complex64_t*)(dcA0.mat), dcA0.super.lm, work);
                 }
                 if(loud > 2) printf("Done.\n");
 

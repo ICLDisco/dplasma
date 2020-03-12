@@ -12,9 +12,9 @@
 
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal );
 
 int main(int argc, char ** argv)
@@ -27,8 +27,8 @@ int main(int argc, char ** argv)
     int Cseed = 2873;
     int tA = PlasmaNoTrans;
     int tB = PlasmaNoTrans;
-    parsec_complex64_t alpha =  0.51;
-    parsec_complex64_t beta  = -0.42;
+    dplasma_complex64_t alpha =  0.51;
+    dplasma_complex64_t beta  = -0.42;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     alpha -= I * 0.32;
@@ -149,10 +149,10 @@ int main(int argc, char ** argv)
                 /* Create GEMM PaRSEC */
                 if(loud) printf("Compute ... ... ");
                 dplasma_zgemm(parsec, trans[tA], trans[tB],
-                              (parsec_complex64_t)alpha,
+                              (dplasma_complex64_t)alpha,
                               (parsec_tiled_matrix_dc_t *)&dcA,
                               (parsec_tiled_matrix_dc_t *)&dcB,
-                              (parsec_complex64_t)beta,
+                              (dplasma_complex64_t)beta,
                               (parsec_tiled_matrix_dc_t *)&dcC);
                 if(loud) printf("Done\n");
 
@@ -202,9 +202,9 @@ int main(int argc, char ** argv)
  */
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal )
 {
     int info_solution = 1;

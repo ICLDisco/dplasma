@@ -27,33 +27,33 @@ extern "C" %{
 
 /* Forward declarations */
 void BFT_zQTL( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal );
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal );
 void BFT_zQBL( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal);
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal);
 void BFT_zQTR_trans( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose);
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose);
 void BFT_zQTR( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose);
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose);
 void BFT_zQBR( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal );
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal );
 %}
 
 descA  [type = "parsec_seg_dc_t*"]
-Ubef   [type = "PLASMA_Complex64_t *"]
-Uaft   [type = "PLASMA_Complex64_t *"]
+Ubef   [type = "dplasma_complex64_t *"]
+Uaft   [type = "dplasma_complex64_t *"]
 nt     [type = "int"]
 mt     [type = "int"]
-pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*descA->A_org.mb*descA->A_org.nb)"]
+pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descA->A_org.mb*descA->A_org.nb)"]
 
 %option PARSEC_ARENA_STRUT = 36
 
@@ -122,8 +122,8 @@ BODY
 
   /* The bottom left segment will always be rectangular */
   for(jj=0; jj<nb_seg; jj++){
-      uintptr_t off = (mb_tile*jj) * sizeof(PLASMA_Complex64_t);
-      sz = mb_seg * sizeof(PLASMA_Complex64_t);
+      uintptr_t off = (mb_tile*jj) * sizeof(dplasma_complex64_t);
+      sz = mb_seg * sizeof(dplasma_complex64_t);
       memcpy((void *)(off+(uintptr_t)Abl), (void *)(off+(uintptr_t)p_elem_bl), sz);
 #if defined(DEBUG_BUTTERFLY)
       printf ("--> HEBUT_Diag(%d): Abl: %p, sz:%d\n",i, Abl, sz);
@@ -132,8 +132,8 @@ BODY
 
   /* The top left and bottom right segments in this task are always triangular, so copy only the triangle */
   for(jj=0; jj<nb_seg; jj++){
-      uintptr_t off = (mb_tile*jj+jj) * sizeof(PLASMA_Complex64_t);
-      sz = (mb_seg-jj) * sizeof(PLASMA_Complex64_t);
+      uintptr_t off = (mb_tile*jj+jj) * sizeof(dplasma_complex64_t);
+      sz = (mb_seg-jj) * sizeof(dplasma_complex64_t);
       if( 0 != sz ){
           memcpy((void *)(off+(uintptr_t)Atl), (void *)(off+(uintptr_t)p_elem_tl), sz);
           memcpy((void *)(off+(uintptr_t)Abr), (void *)(off+(uintptr_t)p_elem_br), sz);
@@ -141,7 +141,7 @@ BODY
 #if defined(DEBUG_BUTTERFLY)
           printf ("--> HEBUT_Diag(%d): Atl+off: %p+%lu, sz:%d\n",i, Atl, off, sz);
           printf ("--> HEBUT_Diag(%d): Abr+off: %p+%lu, sz:%d\n",i, Abr, off, sz);
-          printf ("--> HEBUT_Diag(%d): (off = (%u*%u+%u)*%lu)\n",i, mb_tile, jj, jj, sizeof(PLASMA_Complex64_t));
+          printf ("--> HEBUT_Diag(%d): (off = (%u*%u+%u)*%lu)\n",i, mb_tile, jj, jj, sizeof(dplasma_complex64_t));
 #endif
       }
   }
@@ -239,8 +239,8 @@ BODY
 
   /* The bottom left segment will always be rectangular */
   for(jj=0; jj<nb_seg; jj++){
-      uintptr_t off = (mb_tile*jj) * sizeof(PLASMA_Complex64_t);
-      sz = mb_seg * sizeof(PLASMA_Complex64_t);
+      uintptr_t off = (mb_tile*jj) * sizeof(dplasma_complex64_t);
+      sz = mb_seg * sizeof(dplasma_complex64_t);
       memcpy((void *)(off+(uintptr_t)Atl), (void *)(off+(uintptr_t)p_elem_tl), sz);
       memcpy((void *)(off+(uintptr_t)Abl), (void *)(off+(uintptr_t)p_elem_bl), sz);
       memcpy((void *)(off+(uintptr_t)Abr), (void *)(off+(uintptr_t)p_elem_br), sz);
@@ -252,11 +252,11 @@ BODY
   }
 
   /* Atr is transposed, so it's mb elements in the horizontal dimension */
-  //sz = (mb_tile*(mb_seg-1)+nb_seg) * sizeof(PLASMA_Complex64_t);
+  //sz = (mb_tile*(mb_seg-1)+nb_seg) * sizeof(dplasma_complex64_t);
   //memcpy(Atr, p_elem_tr, sz);
   for(jj=0; jj<mb_seg; jj++){
-      uintptr_t off = (mb_tile*jj) * sizeof(PLASMA_Complex64_t);
-      sz = nb_seg * sizeof(PLASMA_Complex64_t);
+      uintptr_t off = (mb_tile*jj) * sizeof(dplasma_complex64_t);
+      sz = nb_seg * sizeof(dplasma_complex64_t);
       memcpy((void *)(off+(uintptr_t)Atr), (void *)(off+(uintptr_t)p_elem_tr), sz);
 #if defined(DEBUG_BUTTERFLY)
       printf ("--> HEBUT_Lower(%d,%d): Atr+off: %p+%lu, sz:%d\n",i,j, Atr, off, sz);

@@ -14,7 +14,7 @@ extern "C" %{
 static inline void
 dplasma_zprint_tile( int m, int n,
                      const parsec_tiled_matrix_dc_t* descA,
-                     parsec_complex64_t *M )
+                     dplasma_complex64_t *M )
 {
     int tempmm = ( m == descA->mt-1 ) ? descA->m - m*descA->mb : descA->mb;
     int tempnn = ( n == descA->nt-1 ) ? descA->n - n*descA->nb : descA->nb;
@@ -78,7 +78,7 @@ CTL  ctl <- (k > 0)       ? ctl PRINT_F(k-1)
          -> (k < sizef-1) ? ctl PRINT_F(k+1)
 BODY
 {
-    dplasma_zprint_tile( m, n, descA, (parsec_complex64_t *)A );
+    dplasma_zprint_tile( m, n, descA, (dplasma_complex64_t *)A );
 }
 END
 
@@ -101,7 +101,13 @@ CTL   ctl <- (k > 0)       ? ctl PRINT_L(k-1)
           -> (k < sizel-1) ? ctl PRINT_L(k+1)
 BODY
 {
+<<<<<<< HEAD
     dplasma_zprint_tile( m, n, descA, (parsec_complex64_t *)A );
+=======
+#if !defined(PARSEC_DRY_RUN)
+    dplasma_zprint_tile( m, n, descA, (dplasma_complex64_t *)A );
+#endif /* !defined(PARSEC_DRY_RUN) */
+>>>>>>> dplasma: parsec_complex -> dplasma_complex (parsec_complex does not exist in parsec)
 }
 END
 
@@ -123,6 +129,12 @@ CTL   ctl <- (k > 0)       ? ctl PRINT_U(k-1)
           -> (k < sizeu-1) ? ctl PRINT_U(k+1)
 BODY
 {
+<<<<<<< HEAD
     dplasma_zprint_tile( m, n, descA, (parsec_complex64_t *)A );
+=======
+#if !defined(PARSEC_DRY_RUN)
+    dplasma_zprint_tile( m, n, descA, (dplasma_complex64_t *)A );
+#endif /* !defined(PARSEC_DRY_RUN) */
+>>>>>>> dplasma: parsec_complex -> dplasma_complex (parsec_complex does not exist in parsec)
 }
 END

@@ -25,8 +25,8 @@ extern "C" %{
 transA [type = int]
 transB [type = int]
 
-alpha  [type = parsec_complex64_t]
-beta   [type = parsec_complex64_t]
+alpha  [type = dplasma_complex64_t]
+beta   [type = dplasma_complex64_t]
 
 descA  [type = "const parsec_tiled_matrix_dc_t*"]
 descB  [type = "const parsec_tiled_matrix_dc_t*"]
@@ -176,7 +176,7 @@ END
 
 BODY
 {
-    parsec_complex64_t lbeta = (k == 0) ? beta : (parsec_complex64_t)1.0;
+    dplasma_complex64_t lbeta = (k == 0) ? beta : (dplasma_complex64_t)1.0;
     int tempmm = m == descC->mt-1 ? descC->m - m * descC->mb : descC->mb;
     int tempnn = n == descC->nt-1 ? descC->n - n * descC->nb : descC->nb;
     int tempkk = k == descA->nt-1 ? descA->n - k * descA->nb : descA->nb;

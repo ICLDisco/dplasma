@@ -13,41 +13,41 @@ extern "C" %{
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/private_mempool.h"
 
-extern int CORE_zgemdm(int transA, int transB,
+extern int CORE_zgemdm(PLASMA_enum transA, PLASMA_enum transB,
                 int M, int N, int K,
-                PLASMA_Complex64_t alpha, PLASMA_Complex64_t *A, int LDA,
-                PLASMA_Complex64_t *B, int LDB,
-                PLASMA_Complex64_t beta, PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D, int incD,
-                PLASMA_Complex64_t *WORK, int LWORK);
+                dplasma_complex64_t alpha, dplasma_complex64_t *A, int LDA,
+                dplasma_complex64_t *B, int LDB,
+                dplasma_complex64_t beta, dplasma_complex64_t *C, int LDC,
+                dplasma_complex64_t *D, int incD,
+                dplasma_complex64_t *WORK, int LWORK);
 
 extern int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, PLASMA_Complex64_t *A, int LDA,
-                double beta,  PLASMA_Complex64_t *C, int LDC,
-                PLASMA_Complex64_t *D,    int incD,
-                PLASMA_Complex64_t *WORK, int LWORK);
+                double alpha, dplasma_complex64_t *A, int LDA,
+                double beta,  dplasma_complex64_t *C, int LDC,
+                dplasma_complex64_t *D,    int incD,
+                dplasma_complex64_t *WORK, int LWORK);
 
 extern void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        PLASMA_Complex64_t *A, int LDA,
-        PLASMA_Complex64_t *WORK, int LWORK, int *INFO);
+        dplasma_complex64_t *A, int LDA,
+        dplasma_complex64_t *WORK, int LWORK, int *INFO);
 
 extern void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         PLASMA_Complex64_t *A, int LDA,
-                         PLASMA_Complex64_t *WORK, int LDWORK,
+                         dplasma_complex64_t *A, int LDA,
+                         dplasma_complex64_t *WORK, int LDWORK,
                          int *INFO);
 
-extern int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
+extern int CORE_ztrmdm(PLASMA_enum uplo, int N, dplasma_complex64_t *A, int LDA);
 
 
 %}
 
-uplo       [type = "int"]
+uplo       [type = "dplasma_enum_t"]
 desc_A     [type = "parsec_tiled_matrix_dc_t*"]
 data_A     [type = "parsec_data_collection_t *"]
 DPLASMA_IB [type = "int"]
-pool_1     [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t))*lwork"]
-pool_0     [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t))*ldwork"]
+pool_1     [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t))*lwork"]
+pool_0     [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t))*ldwork"]
 INFO       [type = "int*"]
 
 
@@ -167,7 +167,7 @@ BODY
 
   int tempmm = ((m)==((desc_A->mt)-1)) ? ((desc_A->m)-(m*(desc_A->mb))) : (desc_A->mb);
   int tempkn = ((k)==((desc_A->nt)-1)) ? ((desc_A->n)-(k*(desc_A->nb))) : (desc_A->nb);
-  PLASMA_Complex64_t zone = (PLASMA_Complex64_t)1.000000;
+  dplasma_complex64_t zone = (dplasma_complex64_t)1.000000;
   int ldak = desc_A->mb;
   int ldam = desc_A->mb;
 
@@ -280,9 +280,10 @@ BODY
   int tempmm = ((m1)==((desc_A->mt)-1)) ? ((desc_A->m)-(m1*(desc_A->mb))) : (desc_A->mb);
   int tempnn = ((n)==((desc_A->nt)-1)) ? ((desc_A->n)-(n*(desc_A->nb))) : (desc_A->nb);
   int tempkn = ((k)==((desc_A->nt)-1)) ? ((desc_A->n)-(k*(desc_A->nb))) : (desc_A->nb);
-  PLASMA_Complex64_t mzone = (PLASMA_Complex64_t)-1.000000;
+  dplasma_complex64_t mzone = (dplasma_complex64_t)-1.000000;
   int ldam = desc_A->mb;
   PLASMA_Complex64_t zone = (PLASMA_Complex64_t)1.000000;
+  dplasma_complex64_t zone = (dplasma_complex64_t)1.000000;
   int lwork = ((PlasmaNoTrans)==(PlasmaNoTrans)) ? ((tempmm+1)*tempkn) : ((tempnn+1)*tempkn);
   int ldak = desc_A->mb;
 

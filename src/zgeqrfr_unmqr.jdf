@@ -19,7 +19,7 @@ extern "C" %{
 descA  [type = "parsec_tiled_matrix_dc_t*"]
 descC  [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
 descT  [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
-p_work [type = "parsec_memory_pool_t *" size = "(sizeof(parsec_complex64_t)*descT->mb*descT->nb)"]
+p_work [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descT->mb*descT->nb)"]
 
 minMNT [type = "int" hidden=on default = "dplasma_imin(descA->nt, ((descA->m+descA->nb-1)/descA->nb))-1"]
 ib     [type = "int" hidden=on default = "descT->mb" ]
@@ -40,8 +40,8 @@ zunmqr_zunmqr(k, n)
 
 BODY
 {
-    parsec_complex64_t *lV = (parsec_complex64_t*)V;
-    parsec_complex64_t *lC = (parsec_complex64_t*)C;
+    dplasma_complex64_t *lV = (dplasma_complex64_t*)V;
+    dplasma_complex64_t *lC = (dplasma_complex64_t*)C;
     int tempm = descC->m - k * descC->nb;
     int tempnn = (n == (descC->nt-1)) ? (descC->n - n * descC->nb) : descC->nb;
     int tempkk = (k == (descA->nt-1)) ? (descA->n - k * descA->nb) : descA->nb;
@@ -175,13 +175,13 @@ dplasma_zgeqrfr_unmqr_New( parsec_tiled_matrix_dc_t *A,
 
     /* Default type */
     dplasma_add2arena_rectangle( ((parsec_zgeqrfr_unmqr_taskpool_t*)tp)->arenas[PARSEC_zgeqrfr_unmqr_DEFAULT_ARENA],
-                                 A->mb*A->nb*sizeof(parsec_complex64_t),
+                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A->mb , A->nb, -1);
 
     /* Little T */
     dplasma_add2arena_rectangle( ((parsec_zgeqrfr_unmqr_taskpool_t*)tp)->arenas[PARSEC_zgeqrfr_unmqr_LITTLE_T_ARENA],
-                                 T->mb*T->nb*sizeof(parsec_complex64_t),
+                                 T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
 

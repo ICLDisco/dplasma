@@ -129,13 +129,13 @@ dplasma_map2_New( PLASMA_enum uplo,
     switch( A->mtype ) {
     case matrix_ComplexDouble :
         dplasma_add2arena_tile( parsec_map2->arenas[PARSEC_map2_DEFAULT_ARENA],
-                                A->mb*A->nb*sizeof(parsec_complex64_t),
+                                A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb);
         break;
     case matrix_ComplexFloat  :
         dplasma_add2arena_tile( parsec_map2->arenas[PARSEC_map2_DEFAULT_ARENA],
-                                A->mb*A->nb*sizeof(parsec_complex32_t),
+                                A->mb*A->nb*sizeof(dplasma_complex32_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_complex_t, A->mb);
         break;

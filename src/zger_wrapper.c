@@ -44,7 +44,7 @@
  *
  ******************************************************************************/
 static inline parsec_taskpool_t*
-dplasma_zger_internal_New( int trans, parsec_complex64_t alpha,
+dplasma_zger_internal_New( int trans, dplasma_complex64_t alpha,
                            const parsec_tiled_matrix_dc_t *X,
                            const parsec_tiled_matrix_dc_t *Y,
                            parsec_tiled_matrix_dc_t *A)
@@ -62,12 +62,12 @@ dplasma_zger_internal_New( int trans, parsec_complex64_t alpha,
                               A);
 
     dplasma_add2arena_tile( zger_tp->arenas[PARSEC_zger_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb);
 
     dplasma_add2arena_rectangle( zger_tp->arenas[PARSEC_zger_VECTOR_ARENA],
-                                 X->mb*sizeof(parsec_complex64_t),
+                                 X->mb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, X->mb, 1, -1);
 
@@ -86,7 +86,7 @@ dplasma_zger_internal_Destruct( parsec_taskpool_t *tp )
 static inline int
 dplasma_zger_internal( parsec_context_t *parsec,
                        const int trans,
-                       const parsec_complex64_t alpha,
+                       const dplasma_complex64_t alpha,
                        const parsec_tiled_matrix_dc_t *X,
                        const parsec_tiled_matrix_dc_t *Y,
                              parsec_tiled_matrix_dc_t *A)
@@ -161,7 +161,7 @@ dplasma_zger_internal( parsec_context_t *parsec,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgeru_New( const parsec_complex64_t alpha,
+dplasma_zgeru_New( const dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
@@ -242,7 +242,7 @@ dplasma_zgeru_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgeru( parsec_context_t *parsec,
-               const parsec_complex64_t alpha,
+               const dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *X,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)
@@ -300,7 +300,7 @@ dplasma_zgeru( parsec_context_t *parsec,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgerc_New( parsec_complex64_t alpha,
+dplasma_zgerc_New( dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
@@ -381,7 +381,7 @@ dplasma_zgerc_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgerc( parsec_context_t *parsec,
-               parsec_complex64_t alpha,
+               dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *X,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)

@@ -31,16 +31,16 @@ dplasma_zherbt_New( PLASMA_enum uplo, int IB,
     }
 
     pool[0] = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));  /* tau */
-    parsec_private_memory_init( pool[0], (sizeof(parsec_complex64_t)*T->nb) );
+    parsec_private_memory_init( pool[0], (sizeof(dplasma_complex64_t)*T->nb) );
 
     pool[1] = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));  /* work */
-    parsec_private_memory_init( pool[1], (sizeof(parsec_complex64_t)*T->nb*IB) );
+    parsec_private_memory_init( pool[1], (sizeof(dplasma_complex64_t)*T->nb*IB) );
 
     pool[2] = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));  /* work for HERFB1 */
-    parsec_private_memory_init( pool[2], (sizeof(parsec_complex64_t)*T->nb*2 *T->nb) );
+    parsec_private_memory_init( pool[2], (sizeof(dplasma_complex64_t)*T->nb*2 *T->nb) );
 
     pool[3] = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));  /* work for the TSMQRLR */
-    parsec_private_memory_init( pool[3], (sizeof(parsec_complex64_t)*T->nb*4 *T->nb) );
+    parsec_private_memory_init( pool[3], (sizeof(dplasma_complex64_t)*T->nb*4 *T->nb) );
 
     if( PlasmaLower == uplo ) {
         parsec_zherbt = parsec_zherbt_L_new(uplo, IB,
@@ -48,11 +48,11 @@ dplasma_zherbt_New( PLASMA_enum uplo, int IB,
                                           T,
                                           pool[3], pool[2], pool[1], pool[0]);
         dplasma_add2arena_rectangle( parsec_zherbt->arenas[PARSEC_zherbt_L_DEFAULT_ARENA],
-                                     A->mb*A->nb*sizeof(parsec_complex64_t),
+                                     A->mb*A->nb*sizeof(dplasma_complex64_t),
                                      PARSEC_ARENA_ALIGNMENT_SSE,
                                      parsec_datatype_double_complex_t, A->mb, A->nb, -1);
         dplasma_add2arena_rectangle( parsec_zherbt->arenas[PARSEC_zherbt_L_LITTLE_T_ARENA],
-                                     T->mb*T->nb*sizeof(parsec_complex64_t),
+                                     T->mb*T->nb*sizeof(dplasma_complex64_t),
                                      PARSEC_ARENA_ALIGNMENT_SSE,
                                      parsec_datatype_double_complex_t, T->mb, T->nb, -1);
     }

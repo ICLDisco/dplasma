@@ -30,7 +30,7 @@ dplasma_zlatms_operator( parsec_execution_stream_t *es,
 {
     int tempmm, tempnn, ldam, i;
     double            *cond = (double*)args;
-    parsec_complex64_t *A    = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *A    = (dplasma_complex64_t*)_A;
     (void)es;
 
     tempmm = ((m)==((descA->mt)-1)) ? ((descA->m)-(m*(descA->mb))) : (descA->mb);
@@ -55,7 +55,7 @@ dplasma_zlatms_operator( parsec_execution_stream_t *es,
             double alp = ( 1. - tmp ) / ((double)( descA->n - 1 ));
             int minmn = dplasma_imin( tempmm, tempnn );
             for(; i < minmn; i++){
-                A[i+i*ldam] = (parsec_complex64_t)( (double)(descA->n-(descA->nb*n+i+1)) * alp + tmp );
+                A[i+i*ldam] = (dplasma_complex64_t)( (double)(descA->n-(descA->nb*n+i+1)) * alp + tmp );
             }
         }
     } else {

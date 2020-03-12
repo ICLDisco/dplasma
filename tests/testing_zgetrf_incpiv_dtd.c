@@ -25,7 +25,7 @@ parsec_core_getrf_incpiv(parsec_execution_stream_t *es, parsec_task_t * this_tas
     int m;
     int n;
     int ib;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
     int *IPIV;
     PLASMA_bool check_info;
@@ -51,11 +51,11 @@ parsec_core_gessm(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int k;
     int ib;
     int *IPIV;
-    parsec_complex64_t *L;
+    dplasma_complex64_t *L;
     int ldl;
-    parsec_complex64_t *D;
+    dplasma_complex64_t *D;
     int ldd;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &k, &ib, &IPIV, &L, &ldl,
@@ -74,14 +74,14 @@ parsec_core_tstrf(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int n;
     int ib;
     int nb;
-    parsec_complex64_t *U;
+    dplasma_complex64_t *U;
     int ldu;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *L;
+    dplasma_complex64_t *L;
     int ldl;
     int *IPIV;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *WORK;
     int ldwork;
     PLASMA_bool *check_info;
     int *info;
@@ -107,13 +107,13 @@ parsec_core_ssssm(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int n2;
     int k;
     int ib;
-    parsec_complex64_t *A1;
+    dplasma_complex64_t *A1;
     int lda1;
-    parsec_complex64_t *A2;
+    dplasma_complex64_t *A2;
     int lda2;
-    parsec_complex64_t *L1;
+    dplasma_complex64_t *L1;
     int ldl1;
-    parsec_complex64_t *L2;
+    dplasma_complex64_t *L2;
     int ldl2;
     int *IPIV;
 
@@ -245,7 +245,7 @@ int main(int argc, char ** argv)
     /* Allocating data arrays to be used by comm engine */
     /* A */
     dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                            dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                            dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -257,7 +257,7 @@ int main(int argc, char ** argv)
 
     /* L */
     dplasma_add2arena_rectangle( parsec_dtd_arenas[L_TILE_RECTANGLE],
-                                 dcL.super.mb*dcL.super.nb*sizeof(parsec_complex64_t),
+                                 dcL.super.mb*dcL.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcL.super.mb, dcL.super.nb, -1);
 
@@ -329,7 +329,7 @@ int main(int argc, char ** argv)
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     OUTPUT | L_TILE_RECTANGLE,
                                sizeof(int),           &ldl,                              VALUE,
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  OUTPUT | TILE_RECTANGLE,
-                               sizeof(parsec_complex64_t)*ib*nb,    NULL,                SCRATCH,
+                               sizeof(dplasma_complex64_t)*ib*nb,    NULL,                SCRATCH,
                                sizeof(int),           &nb,                               VALUE,
                                sizeof(PLASMA_bool),   &check_info,                       VALUE,
                                sizeof(int *),         &info,                             REF,

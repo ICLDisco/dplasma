@@ -43,7 +43,7 @@ dplasma_zhetrf_New( parsec_tiled_matrix_dc_t *A, int *INFO)
     parsec_zhetrf = (parsec_taskpool_t *)parsec_zhetrf_new(PlasmaLower, A, (parsec_data_collection_t *)A, ib, pool_1, pool_0, INFO);
 
     dplasma_add2arena_tile(((parsec_zhetrf_taskpool_t*)parsec_zhetrf)->arenas[PARSEC_zhetrf_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 
@@ -73,7 +73,7 @@ dplasma_ztrmdm_New( parsec_tiled_matrix_dc_t *A)
     parsec_ztrmdm = (parsec_taskpool_t *)parsec_ztrmdm_new(A);
 
     dplasma_add2arena_tile(((parsec_ztrmdm_taskpool_t*)parsec_ztrmdm)->arenas[PARSEC_ztrmdm_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 

@@ -112,7 +112,7 @@ dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
 
     /* A */
     dplasma_add2arena_tile( parsec_trsmpl->arenas[PARSEC_ztrsmpl_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
@@ -124,7 +124,7 @@ dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
 
     /* L */
     dplasma_add2arena_rectangle( parsec_trsmpl->arenas[PARSEC_ztrsmpl_SMALL_L_ARENA],
-                                 L->mb*L->nb*sizeof(parsec_complex64_t),
+                                 L->mb*L->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, L->mb, L->nb, -1);
 

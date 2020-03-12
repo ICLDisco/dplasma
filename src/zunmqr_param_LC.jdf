@@ -29,7 +29,7 @@ qrtree    [type = "dplasma_qrtree_t"]
 ib      [type = "int" hidden = on default = "descTT->mb" ]
 KT      [type = "int" hidden = on default = "descA->nt-1" ]
 KT2     [type = "int" hidden = on default = "dplasma_imin( KT, descA->mt-2 )" ]
-p_work  [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*ib*(descTT->nb))"]
+p_work  [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*(descTT->nb))"]
 
 zunmqr(k, i, n)
   /* Execution space */

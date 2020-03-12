@@ -103,9 +103,9 @@ int main(int argc, char ** argv)
             {
               parsec_data_t* data = dcA->super.data_of(&dcA->super, t, t);
               parsec_data_copy_t* copy = parsec_data_get_copy(data, 0);
-              parsec_complex64_t *tab = (parsec_complex64_t*)parsec_data_copy_get_ptr(copy);
+              dplasma_complex64_t *tab = (dplasma_complex64_t*)parsec_data_copy_get_ptr(copy);
               for(e = 0; e < dcA->mb; e++)
-                tab[e * dcA->mb + e] += (parsec_complex64_t)minmn;
+                tab[e * dcA->mb + e] += (dplasma_complex64_t)minmn;
             }
         }
     }
@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
         if( rank  == 0 ) {
             int i;
             LAPACKE_zgetrf_work(LAPACK_COL_MAJOR, M, N,
-                                (parsec_complex64_t*)(dcAl.mat), LDA,
+                                (dplasma_complex64_t*)(dcAl.mat), LDA,
                                 (int *)(dcIPIVl.mat));
 
             printf("The Lapack swap are :\n");

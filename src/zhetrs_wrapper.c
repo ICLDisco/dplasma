@@ -14,7 +14,7 @@
 #define HIGH_TO_LOW 0
 #define LOW_TO_HIGH 1
 
-static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t* B, PLASMA_Complex64_t *U_but_vec, int level, int trans, int order, int *info){
+static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t* B, dplasma_complex64_t *U_but_vec, int level, int trans, int order, int *info){
     int cur_level, L;
     parsec_taskpool_t **op;
 
@@ -55,7 +55,7 @@ static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t
 }
 
 int
-dplasma_zhetrs(parsec_context_t *parsec, int uplo, const parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* B, PLASMA_Complex64_t *U_but_vec, int level)
+dplasma_zhetrs(parsec_context_t *parsec, int uplo, const parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* B, dplasma_complex64_t *U_but_vec, int level)
 {
     int info;
 #if defined(DEBUG_BUTTERFLY)

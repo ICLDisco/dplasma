@@ -91,9 +91,9 @@ BODY
     int tempnn = (n==(descC->nt-1)) ? (descC->n-(n*descC->nb)) : descC->nb;
     int tempmm = ((m)==(descC->mt-1)) ? (descC->m-(m*descC->mb)) : descC->mb;
     int tempkm = (k==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
-    parsec_complex64_t zalpha = (parsec_complex64_t)alpha;
+    dplasma_complex64_t zalpha = (dplasma_complex64_t)alpha;
     int ldak = BLKLDD( descA, k );
-    parsec_complex64_t zbeta = (k==0) ? ((parsec_complex64_t)beta) : ((parsec_complex64_t)1.);
+    dplasma_complex64_t zbeta = (k==0) ? ((dplasma_complex64_t)beta) : ((dplasma_complex64_t)1.);
     int ldcn = BLKLDD( descC, n );
 
     printlog("CORE_zgemm(%d, %d, %d)\n"

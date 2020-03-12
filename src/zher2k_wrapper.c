@@ -85,7 +85,7 @@
 parsec_taskpool_t*
 dplasma_zher2k_New( PLASMA_enum uplo,
                     PLASMA_enum trans,
-                    parsec_complex64_t alpha,
+                    dplasma_complex64_t alpha,
                     const parsec_tiled_matrix_dc_t* A,
                     const parsec_tiled_matrix_dc_t* B,
                     double beta,
@@ -151,7 +151,7 @@ dplasma_zher2k_New( PLASMA_enum uplo,
     }
 
     dplasma_add2arena_tile(((parsec_zher2k_LN_taskpool_t*)tp)->arenas[PARSEC_zher2k_LN_DEFAULT_ARENA],
-                           C->mb*C->nb*sizeof(parsec_complex64_t),
+                           C->mb*C->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, C->mb);
 
@@ -251,7 +251,7 @@ int
 dplasma_zher2k( parsec_context_t *parsec,
                 PLASMA_enum uplo,
                 PLASMA_enum trans,
-                parsec_complex64_t alpha,
+                dplasma_complex64_t alpha,
                 const parsec_tiled_matrix_dc_t *A,
                 const parsec_tiled_matrix_dc_t *B,
                 double beta,

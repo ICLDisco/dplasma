@@ -29,10 +29,10 @@ descA-> [type = "parsec_tiled_matrix_dc_t"]
 T      [type = "parsec_tiled_matrix_dc_t *" aligned=A]
 descT-> [type = "parsec_tiled_matrix_dc_t"]
 
-pool_3 [type = "parsec_memory_pool_t *" size = "(sizeof(parsec_complex64_t)*descT->nb*4 *descT->nb)"]
-pool_2 [type = "parsec_memory_pool_t *" size = "(sizeof(parsec_complex64_t)*descT->nb*2 *descT->nb)"]
-pool_1 [type = "parsec_memory_pool_t *" size = "(sizeof(parsec_complex64_t)*descT->nb*ib)"]
-pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(parsec_complex64_t)*descT->nb)"]
+pool_3 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descT->nb*4 *descT->nb)"]
+pool_2 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descT->nb*2 *descT->nb)"]
+pool_1 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descT->nb*ib)"]
+pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descT->nb)"]
 
 zgelqt(k)
   /* Execution space */

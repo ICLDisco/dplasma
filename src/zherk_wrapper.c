@@ -116,7 +116,7 @@ dplasma_zherk_New( PLASMA_enum uplo,
     }
 
     dplasma_add2arena_tile(((parsec_zherk_LN_taskpool_t*)tp)->arenas[PARSEC_zherk_LN_DEFAULT_ARENA],
-                           C->mb*C->nb*sizeof(parsec_complex64_t),
+                           C->mb*C->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, C->mb);
 

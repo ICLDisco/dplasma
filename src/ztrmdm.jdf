@@ -12,7 +12,7 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
-extern int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
+extern int CORE_ztrmdm(PLASMA_enum uplo, int N, dplasma_complex64_t *A, int LDA);
 
 %}
 

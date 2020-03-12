@@ -149,7 +149,7 @@ dplasma_zlansy_New( PLASMA_enum norm,
 
     /* Set the datatypes */
     dplasma_add2arena_tile(((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas[PARSEC_zlansy_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
     dplasma_add2arena_rectangle(((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas[PARSEC_zlansy_COL_ARENA],

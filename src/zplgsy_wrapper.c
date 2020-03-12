@@ -14,7 +14,7 @@
 #include "cores/core_blas.h"
 
 struct zplgsy_args_s {
-    parsec_complex64_t      bump;
+    dplasma_complex64_t      bump;
     unsigned long long int seed;
 };
 typedef struct zplgsy_args_s zplgsy_args_t;
@@ -28,7 +28,7 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
 {
     int tempmm, tempnn, ldam;
     zplgsy_args_t     *args = (zplgsy_args_t*)op_data;
-    parsec_complex64_t *A    = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *A    = (dplasma_complex64_t*)_A;
     (void)es;
     (void)uplo;
 
@@ -93,7 +93,7 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
 *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zplgsy_New( parsec_complex64_t bump, PLASMA_enum uplo,
+dplasma_zplgsy_New( dplasma_complex64_t bump, PLASMA_enum uplo,
                     parsec_tiled_matrix_dc_t *A,
                     unsigned long long int seed)
 {
@@ -179,7 +179,7 @@ dplasma_zplgsy_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zplgsy( parsec_context_t *parsec,
-                parsec_complex64_t bump, PLASMA_enum uplo,
+                dplasma_complex64_t bump, PLASMA_enum uplo,
                 parsec_tiled_matrix_dc_t *A,
                 unsigned long long int seed)
 {

@@ -18,7 +18,7 @@ side      [type = "PLASMA_enum"]
 uplo      [type = "PLASMA_enum"]
 trans     [type = "PLASMA_enum"]
 diag      [type = "PLASMA_enum"]
-alpha     [type = "parsec_complex64_t"]
+alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
 descB     [type = "parsec_tiled_matrix_dc_t*"]
 

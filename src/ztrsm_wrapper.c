@@ -93,7 +93,7 @@
 parsec_taskpool_t*
 dplasma_ztrsm_New( PLASMA_enum side,  PLASMA_enum uplo,
                    PLASMA_enum trans, PLASMA_enum diag,
-                   parsec_complex64_t alpha,
+                   dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *A,
                    parsec_tiled_matrix_dc_t *B )
 {
@@ -154,7 +154,7 @@ dplasma_ztrsm_New( PLASMA_enum side,  PLASMA_enum uplo,
     }
 
     dplasma_add2arena_tile(((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->arenas[PARSEC_ztrsm_LLN_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 
@@ -263,7 +263,7 @@ int
 dplasma_ztrsm( parsec_context_t *parsec,
                PLASMA_enum side,  PLASMA_enum uplo,
                PLASMA_enum trans, PLASMA_enum diag,
-               parsec_complex64_t alpha,
+               dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *A,
                parsec_tiled_matrix_dc_t *B)
 {

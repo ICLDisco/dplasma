@@ -23,8 +23,8 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
                          void *args )
 {
     int tempmm, tempnn, ldam, ldbm;
-    const parsec_complex64_t *A = (const parsec_complex64_t*)_A;
-    parsec_complex64_t       *B = (parsec_complex64_t*)_B;
+    const dplasma_complex64_t *A = (const dplasma_complex64_t*)_A;
+    dplasma_complex64_t       *B = (dplasma_complex64_t*)_B;
     (void)es;
     (void)args;
 

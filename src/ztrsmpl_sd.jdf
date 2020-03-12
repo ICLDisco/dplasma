@@ -18,7 +18,7 @@ extern "C" %{
 #endif
 
 #define getIPIV(__ptr) ((int*)(__ptr))
-#define getL(__ptr)    ((parsec_complex64_t*)(__ptr) + descL->nb)
+#define getL(__ptr)    ((dplasma_complex64_t*)(__ptr) + descL->nb)
 
 %}
 

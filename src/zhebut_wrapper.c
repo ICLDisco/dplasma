@@ -90,12 +90,12 @@ static parsec_data_t *parsec_rbt_data_of(parsec_data_collection_t *desc, ...){
 
     segment_to_tile(segA, m_seg, n_seg, &m_tile, &n_tile, &offset);
 
-    data_start = offset*sizeof(parsec_complex64_t) + (uintptr_t)A->data_of(A, m_tile, n_tile);
+    data_start = offset*sizeof(dplasma_complex64_t) + (uintptr_t)A->data_of(A, m_tile, n_tile);
 
     /*
     fprintf(stderr, "Dataof (%d, %d) -> (%d, %d): %p + %llu * %u = %p\n",
             m_seg, n_seg, m_tile, n_tile,
-            A->data_of(A, m_tile, n_tile), offset, sizeof(parsec_complex64_t), data_start);
+            A->data_of(A, m_tile, n_tile), offset, sizeof(dplasma_complex64_t), data_start);
     */
 
     return (void *)data_start;
@@ -107,12 +107,12 @@ static parsec_data_t *parsec_rbt_data_of(parsec_data_collection_t *desc, ...){
  * dplasma_zhebut_New()
  */
 parsec_taskpool_t*
-dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
+dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
 {
     parsec_taskpool_t *parsec_zhebut = NULL;
     parsec_seg_dc_t *seg_descA;
     parsec_memory_pool_t* pool_0;
-    PLASMA_Complex64_t *U_before, *U_after;
+    dplasma_complex64_t *U_before, *U_after;
     int i, mt, nt, N;
 
     (void)info;
@@ -136,7 +136,7 @@ dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, 
     nt = seg_descA->seg_info.tot_seg_cnt_n;
 
     pool_0 = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(dplasma_complex64_t) );
 
     U_before = &U_but_vec[level*N];
     U_after  = &U_but_vec[level*N];
@@ -178,13 +178,13 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
  * dplasma_zgebut_New()
  */
 parsec_taskpool_t*
-dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
+dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
 {
     parsec_taskpool_t *parsec_zgebut = NULL;
     parsec_seg_dc_t *seg_descA;
     parsec_memory_pool_t *pool_0;
     int i, mt, nt, N;
-    PLASMA_Complex64_t *U_before, *U_after;
+    dplasma_complex64_t *U_before, *U_after;
 
     (void)info;
 
@@ -210,7 +210,7 @@ dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, 
     U_after  = &U_but_vec[level*N];
 
     pool_0 = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(dplasma_complex64_t) );
 
     parsec_zgebut = (parsec_taskpool_t *)parsec_zgebut_new(seg_descA, U_before, U_after, nt, mt, pool_0);
 
@@ -247,7 +247,7 @@ dplasma_zgebut_Destruct( parsec_taskpool_t *tp )
  * dplasma_zgebmm_New()
  */
 parsec_taskpool_t*
-dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, int i_block, int j_block, int level, int trans, int *info)
+dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int trans, int *info)
 {
     parsec_taskpool_t *parsec_zgebmm = NULL;
     parsec_seg_dc_t *seg_descA;
@@ -281,7 +281,7 @@ dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t *U_but_vec, 
     nt = seg_descA->seg_info.tot_seg_cnt_n;
 
     pool_0 = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( pool_0, A->mb * A->nb * sizeof(dplasma_complex64_t) );
 
     parsec_zgebmm = (parsec_taskpool_t *)parsec_zgebmm_new(seg_descA, U_but_vec, nt, mt, trans, pool_0);
 
@@ -324,7 +324,7 @@ static parsec_taskpool_t **iterate_ops(parsec_tiled_matrix_dc_t *A, int tmp_leve
                                     int target_level, int i_block, int j_block,
                                     parsec_taskpool_t **subop,
                                     parsec_context_t *parsec,
-                                    PLASMA_Complex64_t *U_but_vec,
+                                    dplasma_complex64_t *U_but_vec,
                                     int destroy, int *info)
 {
     if(tmp_level == target_level){
@@ -361,21 +361,21 @@ static parsec_taskpool_t **iterate_ops(parsec_tiled_matrix_dc_t *A, int tmp_leve
 
 }
 
-static void RBT_zrandom(int N, PLASMA_Complex64_t *V)
+static void RBT_zrandom(int N, dplasma_complex64_t *V)
 {
     int i;
 
     for (i=0; i<N; i++){
-        V[i] = (PLASMA_Complex64_t)exp(((random()/(double)RAND_MAX)-0.5)/10.0);
+        V[i] = (dplasma_complex64_t)exp(((random()/(double)RAND_MAX)-0.5)/10.0);
     }
 
 }
 
 
-int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, PLASMA_Complex64_t **U_but_ptr, int levels)
+int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, dplasma_complex64_t **U_but_ptr, int levels)
 {
     parsec_taskpool_t **subop;
-    PLASMA_Complex64_t *U_but_vec, beta;
+    dplasma_complex64_t *U_but_vec, beta;
     int cur_level, N;
     int info = 0;
     int nbhe = 1<<levels;
@@ -397,12 +397,12 @@ int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, PLASMA
 
     N = A->lm;
 
-    U_but_vec = (PLASMA_Complex64_t *)malloc( (levels+1)*N*sizeof(PLASMA_Complex64_t) );
+    U_but_vec = (dplasma_complex64_t *)malloc( (levels+1)*N*sizeof(dplasma_complex64_t) );
     *U_but_ptr = U_but_vec;
     srandom(0);
     RBT_zrandom((levels+1)*N, U_but_vec);
 
-    beta = (PLASMA_Complex64_t)pow(1.0/sqrt(2.0), levels);
+    beta = (dplasma_complex64_t)pow(1.0/sqrt(2.0), levels);
     cblas_zscal(levels*N, CBLAS_SADDR(beta), U_but_vec, 1);
 #if defined(DEBUG_BUTTERFLY)
     for(i=0; i<levels*N; i++){

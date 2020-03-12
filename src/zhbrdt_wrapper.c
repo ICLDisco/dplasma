@@ -24,7 +24,7 @@ parsec_taskpool_t* dplasma_zhbrdt_New(parsec_tiled_matrix_dc_t* A /* data A */)
     parsec_zhbrdt = parsec_zhbrdt_new(A, A->mb-1);
 
     dplasma_add2arena_rectangle( parsec_zhbrdt->arenas[PARSEC_zhbrdt_DEFAULT_ARENA],
-                                 (A->nb)*(A->mb)*sizeof(parsec_complex64_t), 16,
+                                 (A->nb)*(A->mb)*sizeof(dplasma_complex64_t), 16,
                                  parsec_datatype_double_complex_t,
                                  A->mb, A->nb, -1 );
     return (parsec_taskpool_t*)parsec_zhbrdt;

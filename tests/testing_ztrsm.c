@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
     int ret = 0;
     int Aseed = 3872;
     int Cseed = 2873;
-    parsec_complex64_t alpha = 0.98;
+    dplasma_complex64_t alpha = 0.98;
     parsec_tiled_matrix_dc_t *dcA;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
     dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_dc_t *)&dcA0, Aseed);
     /* Scale down the full matrix to keep stability in diag = PlasmaUnit case */
     dplasma_zlascal( parsec, PlasmaUpperLower,
-                     1. / (parsec_complex64_t)Am,
+                     1. / (dplasma_complex64_t)Am,
                      (parsec_tiled_matrix_dc_t *)&dcA0 );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed);
     if (check)

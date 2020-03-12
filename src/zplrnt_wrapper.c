@@ -29,7 +29,7 @@ dplasma_zplrnt_operator( parsec_execution_stream_t *es,
 {
     int tempmm, tempnn, ldam;
     zplrnt_args_t     *args = (zplrnt_args_t*)op_data;
-    parsec_complex64_t *A    = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *A    = (dplasma_complex64_t*)_A;
     (void)es;
     (void)uplo;
 
@@ -43,7 +43,7 @@ dplasma_zplrnt_operator( parsec_execution_stream_t *es,
 
     if (args->diagdom && (m == n))
     {
-        parsec_complex64_t  alpha;
+        dplasma_complex64_t  alpha;
         int maxmn = dplasma_imax( descA->m, descA->n );
         int i;
 

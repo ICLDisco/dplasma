@@ -11,14 +11,14 @@
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
-double check_zlanm2(int M, int N, parsec_complex64_t *A, int LDA, int *info )
+double check_zlanm2(int M, int N, dplasma_complex64_t *A, int LDA, int *info )
 {
     double            *DX  = (double*)malloc(N * sizeof(double));
-    parsec_complex64_t *ZX  = (parsec_complex64_t*)malloc(N * sizeof(parsec_complex64_t));
-    parsec_complex64_t *ZSX = (parsec_complex64_t*)malloc(M * sizeof(parsec_complex64_t));
-    parsec_complex64_t zone  = 1.;
-    parsec_complex64_t zzero = 0.;
-    parsec_complex64_t alpha;
+    dplasma_complex64_t *ZX  = (dplasma_complex64_t*)malloc(N * sizeof(dplasma_complex64_t));
+    dplasma_complex64_t *ZSX = (dplasma_complex64_t*)malloc(M * sizeof(dplasma_complex64_t));
+    dplasma_complex64_t zone  = 1.;
+    dplasma_complex64_t zzero = 0.;
+    dplasma_complex64_t alpha;
     double normx, normsx, e0, e1, tol;
     int maxiter, i = 0;
 
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
                                  &infodag);
 
         if ( rank == 0 ) {
-            normlap = check_zlanm2(M, N, (parsec_complex64_t*)(dcA0.mat), dcA0.super.lm, &infolap );
+            normlap = check_zlanm2(M, N, (dplasma_complex64_t*)(dcA0.mat), dcA0.super.lm, &infolap );
         }
         if(loud > 2) printf("Done.\n");
 

@@ -13,8 +13,8 @@
 
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum uplo, PLASMA_enum trans,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal );
 
 int main(int argc, char ** argv)
@@ -25,8 +25,8 @@ int main(int argc, char ** argv)
     int Aseed = 3872;
     int Bseed = 4674;
     int Cseed = 2873;
-    parsec_complex64_t alpha = 3.5;
-    parsec_complex64_t beta = -2.8;
+    dplasma_complex64_t alpha = 3.5;
+    dplasma_complex64_t beta = -2.8;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     alpha -= I * 4.2;
@@ -184,8 +184,8 @@ int main(int argc, char ** argv)
  */
 static int check_solution( parsec_context_t *parsec, int loud,
                            PLASMA_enum uplo, PLASMA_enum trans,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal )
 {
     int info_solution = 1;
