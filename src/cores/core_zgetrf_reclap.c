@@ -19,7 +19,6 @@
 #include <math.h>
 #include "parsec/parsec_config.h"
 #include "dplasma.h"
-#include "dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 struct CORE_zgetrf_data_s {

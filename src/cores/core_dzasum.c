@@ -13,7 +13,6 @@
  *
  **/
 #include <math.h>
-#include "dplasma_cores.h"
 #include "dplasma_dcores.h"
 
 /***************************************************************************//**

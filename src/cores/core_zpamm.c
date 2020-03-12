@@ -16,7 +16,6 @@
 #include <lapacke.h>
 #include "parsec/parsec_config.h"
 #include "dplasma.h"
-#include "dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 static inline int CORE_zpamm_a2(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,

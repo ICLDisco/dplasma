@@ -16,7 +16,6 @@
  */
 #include "parsec/parsec_config.h"
 #include "dplasma.h"
-#include "dplasma_cores.h"
 #include "dplasma_zcores.h"
 
 #if defined(PARSEC_HAVE_STRING_H)
