@@ -9,12 +9,6 @@
 #include "dplasma.h"
 #include "parsec/arena.h"
 
-#define dplasma_wait_until_completion( object )              \
-    do {                                        \
-        parsec_context_start( object );         \
-        parsec_context_wait( object );          \
-    } while (0)
-
 static inline int
 dplasma_add2arena_rectangle( parsec_arena_t *arena, size_t elem_size, size_t alignment,
                              parsec_datatype_t oldtype,

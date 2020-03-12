@@ -22,7 +22,7 @@
 #include "dplasma.h"
 #include "parsec/runtime.h"
 #include "parsec/interfaces/superscalar/insert_function.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "common.h"

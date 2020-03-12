@@ -10,7 +10,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 #include "ztrsm_LLN.h"
 #include "ztrsm_LLT.h"

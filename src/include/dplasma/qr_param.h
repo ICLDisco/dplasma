@@ -118,16 +118,16 @@ struct dplasma_qrtree_s {
 };
 
 int  dplasma_systolic_init( dplasma_qrtree_t *qrtree,
-                            PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                            dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                             int p, int q );
 void dplasma_systolic_finalize( dplasma_qrtree_t *qrtree );
 
 int  dplasma_svd_init( dplasma_qrtree_t *qrtree,
-                       PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                       dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                        int type_hlvl, int p, int nbcores_per_node, int ratio );
 
 int  dplasma_hqr_init( dplasma_qrtree_t *qrtree,
-                       PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                       dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                        int type_llvl, int type_hlvl,
                        int a, int p, int domino, int tsrr );
 void dplasma_hqr_finalize( dplasma_qrtree_t *qrtree );

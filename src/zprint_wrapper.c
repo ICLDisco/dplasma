@@ -9,7 +9,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 #include "zprint.h"
 

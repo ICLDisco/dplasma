@@ -4,7 +4,7 @@
  *                         reserved.
  */
 
-#include "dplasma_complex.h"
+#include "dplasma/complex.h"
 
 #ifndef DPLASMA_HAVE_COMPLEX_H
 

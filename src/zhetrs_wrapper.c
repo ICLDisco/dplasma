@@ -8,7 +8,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include <core_blas.h>
 
 #define HIGH_TO_LOW 0

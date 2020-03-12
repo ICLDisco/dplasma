@@ -10,7 +10,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 #include "ztrtri_L.h"
 #include "ztrtri_U.h"

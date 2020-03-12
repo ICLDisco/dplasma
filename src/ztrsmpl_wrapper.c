@@ -10,7 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasmaaux.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include <core_blas.h>
 
 #include "ztrsmpl.h"

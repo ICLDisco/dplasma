@@ -116,16 +116,6 @@ precisions_rules_py(generated_cores_headers
 add_custom_target(dplasma_cores_includes ALL SOURCES
                   ${generated_cores_headers} )
 
-foreach(generated_header ${generated_cores_headers})
-  if( generated_header STREQUAL "dplasma_zcores.h" )
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${generated_header}
-            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
-  else( generated_header STREQUAL "dplasma_zcores.h" )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${generated_header}
-            DESTINATION ${DPLASMA_INSTALL_PREFIX}/include/cores)
-  endif( generated_header STREQUAL "dplasma_zcores.h" )
-endforeach()
-
 ### Publish the documented files
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_cores} ${generated_cores_sdcz} ${generated_cores_cz} ${generated_cores_headers})
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PSOURCES})
@@ -234,8 +224,8 @@ if( DPLASMA_HAVE_CUDA )
       else()
         target_link_libraries(dplasma_cores PUBLIC dplasma_cucores_sm${_smtarget})
         install(TARGETS dplasma_cucores_sm${_smtarget}
-          LIBRARY DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib
-          ARCHIVE DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib )
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
       endif()
     endif()
   endforeach()

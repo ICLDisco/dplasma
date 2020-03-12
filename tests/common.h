@@ -23,7 +23,7 @@
 #include "parsec/parsec_internal.h"
 #include "parsec/utils/debug.h"
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 #include <core_blas.h>
 /* timings */

@@ -71,7 +71,7 @@
  *     These lines are defined by (i-k)/p = 0.
  */
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 
 #include <math.h>

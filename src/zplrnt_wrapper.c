@@ -9,7 +9,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 
 struct zplrnt_args_s {

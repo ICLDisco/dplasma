@@ -11,7 +11,7 @@
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/diag_band_to_rect.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "lapacke.h"
 
 /* Including the bulge chassing */

@@ -10,7 +10,7 @@
 
 #include <cblas.h>
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 
 
 static int
