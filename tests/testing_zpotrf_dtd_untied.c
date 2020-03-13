@@ -34,7 +34,7 @@ int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo;
+    dplasma_enum_t uplo;
     int m, lda, *info;
     dplasma_complex64_t *A;
 
@@ -49,7 +49,7 @@ int
 parsec_core_trsm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum side, uplo, trans, diag;
+    dplasma_enum_t side, uplo, trans, diag;
     int  m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t *A, *C;
@@ -69,7 +69,7 @@ int
 parsec_core_herk(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo, trans;
+    dplasma_enum_t uplo, trans;
     int m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t beta;
@@ -90,7 +90,7 @@ int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum transA, transB;
+    dplasma_enum_t transA, transB;
     int m, n, k, lda, ldb, ldc;
     dplasma_complex64_t alpha, beta;
     dplasma_complex64_t *A;
@@ -127,16 +127,16 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
     sym_two_dim_block_cyclic_t *__dcA = dcA;
 
-    PLASMA_enum uplo = uplo_enum;
-    side = PlasmaRight;
-    transA_p = PlasmaConjTrans;
-    diag = PlasmaNonUnit;
+    dplasma_enum_t uplo = uplo_enum;
+    side = dplasmaRight;
+    transA_p = dplasmaConjTrans;
+    diag = dplasmaNonUnit;
     alpha_trsm = 1.0;
-    trans = PlasmaNoTrans;
+    trans = dplasmaNoTrans;
     alpha_herk = -1.0;
     beta = 1.0;
-    transB = PlasmaConjTrans;
-    transA_g = PlasmaNoTrans;
+    transB = dplasmaConjTrans;
+    transA_g = dplasmaNoTrans;
 
     /* Testing Insert Function */
     for( k = *iteration; k < total; k++, *iteration += 1, count++ ) {
@@ -235,17 +235,17 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
     sym_two_dim_block_cyclic_t *__dcA = dcA;
 
-    PLASMA_enum uplo = uplo_enum;
+    dplasma_enum_t uplo = uplo_enum;
 
-    side = PlasmaLeft;
-    transA_p = PlasmaConjTrans;
-    diag = PlasmaNonUnit;
+    side = dplasmaLeft;
+    transA_p = dplasmaConjTrans;
+    diag = dplasmaNonUnit;
     alpha_trsm = 1.0;
-    trans = PlasmaConjTrans;
+    trans = dplasmaConjTrans;
     alpha_herk = -1.0;
     beta = 1.0;
-    transB = PlasmaNoTrans;
-    transA_g = PlasmaConjTrans;
+    transB = dplasmaNoTrans;
+    transA_g = dplasmaConjTrans;
 
     /* Testing Insert Function */
     for( k = *iteration; k < total; k++, *iteration += 1, count++ ) {
@@ -329,7 +329,7 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    dplasma_enum_t uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 
@@ -385,7 +385,7 @@ int main(int argc, char **argv)
     int *iteration = malloc(sizeof(int));
     *iteration = 0;
     int total;
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
         total = dcA.super.mt;
         parsec_dtd_taskpool_insert_task( dtd_tp,       insert_task_lower, 0, "insert_task_lower",
                            sizeof(int),           &total,              VALUE,
@@ -450,7 +450,7 @@ int main(int argc, char **argv)
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, KP, KQ, P));
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
         dplasma_zpotrs(parsec, uplo,

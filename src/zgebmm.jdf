@@ -15,10 +15,10 @@ extern "C" %{
 #include "parsec/private_mempool.h"
 #include "butterfly_map.h"
 
-extern void RBMM_zTOP( int mb, int nb, int lda, int off, int lvl, int N, PLASMA_enum trans,
+extern void RBMM_zTOP( int mb, int nb, int lda, int off, int lvl, int N, dplasma_enum_t trans,
           dplasma_complex64_t *top, dplasma_complex64_t *btm,
           dplasma_complex64_t *C, dplasma_complex64_t *U_but_vec );
-extern void RBMM_zBTM( int mb, int nb, int lda, int off, int lvl, int N, PLASMA_enum trans,
+extern void RBMM_zBTM( int mb, int nb, int lda, int off, int lvl, int N, dplasma_enum_t trans,
           dplasma_complex64_t *top, dplasma_complex64_t *btm,
           dplasma_complex64_t *C, dplasma_complex64_t *U_but_vec );
 
@@ -66,7 +66,7 @@ BODY
   int type, sz, type_exists, i_tile, j_tile;
   void *p_elem_tl, *p_elem_bl, *p_elem_tr, *p_elem_br;
 
-  printlog( "GEBMM(%d, %d) (PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+  printlog( "GEBMM(%d, %d) (dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
              i, j, i, j, Atl);
 
   type = segment_to_type_index(&descA->seg_info, i, j);
@@ -133,7 +133,7 @@ READ A <- descA(i, j)                                              [ type = %{ r
 BODY
   /* nothing */
 
-  printlog( "GEBMM_Reader(%d, %d) (PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+  printlog( "GEBMM_Reader(%d, %d) (dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
              i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -163,7 +163,7 @@ READ A <- ( (i<mt/2)  && (j<nt/2)  ) ? Atl GEBMM(i,j)           [ type = %{ retu
 BODY
   /* nothing */
 
-  printlog( "GEBMM_Writer(%d, %d) (PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+  printlog( "GEBMM_Writer(%d, %d) (dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
              i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)

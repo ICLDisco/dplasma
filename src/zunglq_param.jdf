@@ -49,10 +49,10 @@ BODY
     int ldqm = BLKLDD( descQ, m );
 
     printlog("CORE_zlaset(%d, %d)\n"
-             "\t(PlasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
+             "\t(dplasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
              m, n, m, n, A);
 
-    CORE_zlaset(PlasmaUpperLower, tempmm, tempnn,
+    CORE_zlaset(dplasmaUpperLower, tempmm, tempnn,
                 0., (m == n) ? 1.: 0.,
                 A /* descQ(m,n) */, ldqm );
 }
@@ -92,11 +92,11 @@ BODY
     printlog("CORE_zunmlq(%d, %d, %d) [%d, %d]\n"
              "\t(side=%s, trans=%s, M=%d, N=%d, K=%d, ib=%d,\n"
              "\t A(%d,%d)[%p], lda=%d, T(%d,%d)[%p], ldt=%d, B(%d,%d)[%p], ldb=%d, W=%p, LDW=%d)\n",
-             k, i, m, n, nextn, plasma_const( PlasmaRight ), plasma_const( PlasmaNoTrans ), tempmm, tempnn, tempmin, ib,
+             k, i, m, n, nextn, dplasma_lapack_const( dplasmaRight ), dplasma_lapack_const( dplasmaNoTrans ), tempmm, tempnn, tempmin, ib,
              k, n, A, ldak, k, n, T, descTT->mb, m, n, C, ldqm, W, descTT->nb );
 
     CORE_zunmlq(
-        PlasmaRight, PlasmaNoTrans,
+        dplasmaRight, dplasmaNoTrans,
         tempmm, tempnn, tempmin, ib,
         A /* A(k, n) */, ldak,
         T /* T(k, n) */, descTT->mb,
@@ -193,13 +193,13 @@ BODY
     printlog("CORE_ztsmlq(%d, %d, %d)\n"
              "\t(side=%s, trans=%s, M1=%d, N1=%d, M2=%d, N2=%d, K=%d, ib=%d,\n"
              "\t A1(%d,%d)[%p], lda1=%d, A2(%d,%d)[%p], lda2=%d, V(%d,%d)[%p], ldv=%d, T(%d,%d)[%p], ldt=%d, W=%p, LDW=%d)\n",
-             k, m, n, plasma_const( PlasmaRight ), plasma_const( PlasmaNoTrans ),
+             k, m, n, dplasma_lapack_const( dplasmaRight ), dplasma_lapack_const( dplasmaNoTrans ),
              tempmm, descQ->nb, tempmm, tempnn, tempkm, ib,
              m, p, A1, ldqm, m, n, A2, ldqm, k, n, V, ldak, k, n, T, descTT->mb, W, ldwork );
 
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
         CORE_ztsmlq(
-            PlasmaRight, PlasmaNoTrans,
+            dplasmaRight, dplasmaNoTrans,
             tempmm, descQ->nb, tempmm, tempnn, tempkm, ib,
             A1 /* B(m, p) */, ldqm,
             A2 /* B(m, n) */, ldqm,
@@ -208,7 +208,7 @@ BODY
             W, ldwork );
     } else {
         CORE_zttmlq(
-            PlasmaRight, PlasmaNoTrans,
+            dplasmaRight, dplasmaNoTrans,
             tempmm, descQ->nb, tempmm, tempnn, tempkm, ib,
             A1 /* B(m, p) */, ldqm,
             A2 /* B(m, n) */, ldqm,

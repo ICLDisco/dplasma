@@ -14,16 +14,16 @@ extern "C" %{
 /*
  * Globals
  */
-uplo     [type = PLASMA_enum]
-trans    [type = PLASMA_enum]
+uplo     [type = dplasma_enum_t]
+trans    [type = dplasma_enum_t]
 descA    [type="const parsec_tiled_matrix_dc_t*"]
 descB    [type="parsec_tiled_matrix_dc_t*"]
 operator [type = "tiled_matrix_binary_op_t" ]
 op_args  [type = "void *" ]
 
-plasma_upper   [type="PLASMA_enum" hidden=on default=PlasmaUpper ]
-plasma_lower   [type="PLASMA_enum" hidden=on default=PlasmaLower ]
-plasma_notrans [type="PLASMA_enum" hidden=on default=PlasmaNoTrans ]
+plasma_upper   [type="dplasma_enum_t" hidden=on default=dplasmaUpper ]
+plasma_lower   [type="dplasma_enum_t" hidden=on default=dplasmaLower ]
+plasma_notrans [type="dplasma_enum_t" hidden=on default=dplasmaNoTrans ]
 
 L_m_limit      [type="int" hidden=on default="(((uplo == plasma_upper) && (trans == plasma_notrans)) || ((uplo == plasma_lower) && (trans != plasma_notrans)) ? 0 : descA->mt-1)" ]
 U_n_limit      [type="int" hidden=on default="(((uplo == plasma_lower) && (trans == plasma_notrans)) || ((uplo == plasma_upper) && (trans != plasma_notrans)) ? 0 : descA->nt-1)" ]
@@ -61,7 +61,7 @@ MAP_L(m, n)  [profile = off]
 BODY
 {
     operator( es, descA, descB,
-              A, B, PlasmaUpperLower, m, n, op_args );
+              A, B, dplasmaUpperLower, m, n, op_args );
 
     printlog("map_l( %d, %d )\n", m, n );
 }
@@ -100,7 +100,7 @@ MAP_U(m, n)  [profile = off]
 BODY
 {
     operator( es, descA, descB,
-              A, B, PlasmaUpperLower, m, n, op_args );
+              A, B, dplasmaUpperLower, m, n, op_args );
 
     printlog("map_u( %d, %d )\n", m, n );
 }

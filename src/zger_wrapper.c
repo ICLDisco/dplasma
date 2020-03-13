@@ -9,6 +9,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zger.h"
 
@@ -26,8 +27,8 @@
  *******************************************************************************
  *
  * @param[in] trans
- *          @arg PlasmaTrans: geru operation is performed
- *          @arg PlasmaConjTrans: gerc operation is performed
+ *          @arg dplasmaTrans: geru operation is performed
+ *          @arg dplasmaConjTrans: gerc operation is performed
  *
  * @param[in] alpha
  *          Specifies the scalar alpha.
@@ -52,7 +53,7 @@ dplasma_zger_internal_New( int trans, dplasma_complex64_t alpha,
     parsec_zger_taskpool_t* zger_tp;
 
     /* Check input arguments */
-    if ((trans != PlasmaTrans) && (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaTrans) && (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zger", "illegal value of trans");
         return NULL /*-1*/;
     }
@@ -94,7 +95,7 @@ dplasma_zger_internal( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zger = NULL;
 
     /* Check input arguments */
-    if ((trans != PlasmaTrans) && (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaTrans) && (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zger", "illegal value of trans");
         return -1;
     }
@@ -166,7 +167,7 @@ dplasma_zgeru_New( const dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal_New( PlasmaTrans, alpha, X, Y, A );
+    return dplasma_zger_internal_New( dplasmaTrans, alpha, X, Y, A );
 }
 
 /**
@@ -247,7 +248,7 @@ dplasma_zgeru( parsec_context_t *parsec,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal( parsec, PlasmaTrans, alpha, X, Y, A );
+    return dplasma_zger_internal( parsec, dplasmaTrans, alpha, X, Y, A );
 }
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -305,7 +306,7 @@ dplasma_zgerc_New( dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal_New( PlasmaConjTrans, alpha, X, Y, A );
+    return dplasma_zger_internal_New( dplasmaConjTrans, alpha, X, Y, A );
 }
 
 /**
@@ -386,7 +387,7 @@ dplasma_zgerc( parsec_context_t *parsec,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal( parsec, PlasmaConjTrans, alpha, X, Y, A );
+    return dplasma_zger_internal( parsec, dplasmaConjTrans, alpha, X, Y, A );
 }
 
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */

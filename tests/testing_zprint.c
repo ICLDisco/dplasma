@@ -16,7 +16,7 @@ int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaLower;
+    dplasma_enum_t uplo = dplasmaLower;
     int i, info, ret = 0;
 
     /* Set defaults for non argv iparams */
@@ -51,7 +51,7 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("Done\n");
 
     ret |= dplasma_zprint( parsec, uplo,             (parsec_tiled_matrix_dc_t *)&dcA );
-    ret |= dplasma_zprint( parsec, PlasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcB );
+    ret |= dplasma_zprint( parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcB );
 
     for(i=0; i<43; i++) {
         if ( rank == 0 ) {
@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
         }
         info = dplasma_zpltmg( parsec, i, (parsec_tiled_matrix_dc_t *)&dcB, 5373 );
         if (info == 0)
-            ret |= dplasma_zprint( parsec, PlasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcB );
+            ret |= dplasma_zprint( parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcB );
     }
 
     parsec_data_free(dcB.mat);

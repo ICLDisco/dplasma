@@ -87,9 +87,9 @@ int main(int argc, char ** argv)
     if(loud > 3) printf("+++ Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
     if( check )
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA0 );
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcT);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcT);
     if(loud > 3) printf("Done\n");
 
     /* Create PaRSEC */
@@ -111,7 +111,7 @@ int main(int argc, char ** argv)
 
         if(loud > 2) printf("+++ Solve the system ...");
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcX, 2354);
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcX, (parsec_tiled_matrix_dc_t *)&dcB );
         dplasma_zgeqrs( parsec,
                        (parsec_tiled_matrix_dc_t *)&dcA,
@@ -170,18 +170,18 @@ static int check_orthogonality(parsec_context_t *parsec, int loud, parsec_tiled_
                                Q->mb, Q->nb, minMN, minMN, 0, 0,
                                minMN, minMN, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.rows));
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
     /* Perform Id - Q'Q (could be done with Herk) */
     if ( M >= N ) {
-      dplasma_zgemm( parsec, PlasmaConjTrans, PlasmaNoTrans,
+      dplasma_zgemm( parsec, dplasmaConjTrans, dplasmaNoTrans,
                      1.0, Q, Q, -1.0, (parsec_tiled_matrix_dc_t*)&Id );
     } else {
-      dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaConjTrans,
+      dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaConjTrans,
                      1.0, Q, Q, -1.0, (parsec_tiled_matrix_dc_t*)&Id );
     }
 
-    normQ = dplasma_zlange(parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Id);
+    normQ = dplasma_zlange(parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Id);
 
     result = normQ / (minMN * eps);
     if ( loud ) {
@@ -236,14 +236,14 @@ check_factorization(parsec_context_t *parsec, int loud,
                                N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     /* Copy the original A in Residual */
-    dplasma_zlacpy( parsec, PlasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );
+    dplasma_zlacpy( parsec, dplasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );
 
     /* Extract the R */
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&R);
-    dplasma_zlacpy( parsec, PlasmaUpper, A, (parsec_tiled_matrix_dc_t *)&R );
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&R);
+    dplasma_zlacpy( parsec, dplasmaUpper, A, (parsec_tiled_matrix_dc_t *)&R );
 
     /* Perform Residual = Aorig - Q*R */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans,
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans,
                    -1.0, Q, (parsec_tiled_matrix_dc_t *)&R,
                    1.0, (parsec_tiled_matrix_dc_t *)&Residual);
 
@@ -251,8 +251,8 @@ check_factorization(parsec_context_t *parsec, int loud,
     parsec_data_free(R.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&R);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Residual);
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, Aorig);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Residual);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, Aorig);
 
     result = Rnorm / ( Anorm * minMN * eps);
 
@@ -289,14 +289,14 @@ static int check_solution( parsec_context_t *parsec, int loud,
     int m = dcB->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute b - A*x */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * m * eps ) ;
 

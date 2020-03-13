@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #include "zlanm2.h"

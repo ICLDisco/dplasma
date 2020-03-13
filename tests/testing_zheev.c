@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaLower;
+    dplasma_enum_t uplo = dplasmaLower;
     int j;
     int rc;
 
@@ -95,7 +95,7 @@ goto fin;
     SYNC_TIME_PRINT(rank, ( "diag_band_to_rect N= %d NB = %d : %f s\n", N, NB, sync_time_elapsed));
 #ifdef PRINTF_HEAVY
     printf("########### BAND (converted from A)\n");
-    dplasma_zprint(parsec, PlasmaUpperLower, &dcBAND);
+    dplasma_zprint(parsec, dplasmaUpperLower, &dcBAND);
 #endif
 
     /* Step 3 - Reduce band to bi-diag form */
@@ -125,7 +125,7 @@ goto fin;
                                                               1, rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
                                                               MB+1, (NB+2)*NT, 1, 1, 1 /* rank0 only */ ));
 #endif
-            dplasma_zlacpy(parsec, PlasmaUpperLower, &dcBAND.super, &dcW.super);
+            dplasma_zlacpy(parsec, dplasmaUpperLower, &dcBAND.super, &dcW.super);
             band = dcW.mat;
         }
         else {
@@ -175,7 +175,7 @@ goto fin;
                                                           1, rank, MB, NB, LDA, N, 0, 0,
                                                           N, N, 1, 1, 1));
         /* Fill A0 again */
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0.0, 0.0, &dcA0t.super);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0.0, 0.0, &dcA0t.super);
         dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_dc_t *)&dcA0t, 3872);
         /* Convert into Lapack format */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1, 
@@ -194,7 +194,7 @@ goto fin;
             /* Compute eigenvalues directly */
             TIME_START();
             LAPACKE_zheev( LAPACK_COL_MAJOR,
-                           lapack_const(PlasmaNoVec), lapack_const(uplo),
+                           dplasma_lapack_const(dplasmaNoVec), dplasma_lapack_const(uplo),
                            N, A0, LDA, W0);
             TIME_PRINT(rank, ("LAPACK HEEV\n"));
         }

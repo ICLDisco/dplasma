@@ -10,7 +10,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
-#include <core_blas.h>
+#include "cores/core_blas.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/private_mempool.h"
 
@@ -247,7 +247,7 @@ dplasma_zgebut_Destruct( parsec_taskpool_t *tp )
  * dplasma_zgebmm_New()
  */
 parsec_taskpool_t*
-dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int trans, int *info)
+dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, dplasma_enum_t trans, int *info)
 {
     parsec_taskpool_t *parsec_zgebmm = NULL;
     parsec_seg_dc_t *seg_descA;
@@ -436,7 +436,7 @@ int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, dplasm
 
 #if defined(DEBUG_BUTTERFLY)
         printf("\n\n -+-+-+> Matrix after level %d\n\n", cur_level);
-        dplasma_zprint(parsec, PlasmaLower, A);
+        dplasma_zprint(parsec, dplasmaLower, A);
         printf("\n\n");
 #endif
 

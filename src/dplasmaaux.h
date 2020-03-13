@@ -101,9 +101,7 @@ extern void *dplasma_pcomm;
         parsec_context_wait( object );          \
     } while (0)
 
-#endif
 
-#define DPLASMA_DEBUG
 #if defined(DPLASMA_DEBUG)
 #include <stdio.h>
 #define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); *((volatile int*)0) = 42; } while(0)

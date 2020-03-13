@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-/* Plasma and math libs */
+/* math libs */
 #include <math.h>
 #include <cblas.h>
 #include <lapacke.h>
@@ -25,10 +25,10 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 
-#include <core_blas.h>
+#include "cores/core_blas.h"
+
 /* timings */
 #include "common_timing.h"
-
 #include "flops.h"
 
 /* these are globals in common.c */

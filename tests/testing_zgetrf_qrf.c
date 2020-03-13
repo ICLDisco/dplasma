@@ -103,10 +103,10 @@ int main(int argc, char ** argv)
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
     dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_dc_t *)&dcA, random_seed );
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTS);
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTT);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTS);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTT);
     dplasma_hqr_init( &qrtree,
-                      PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                      dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                       iparam[IPARAM_LOWLVL_TREE],
                       iparam[IPARAM_HIGHLVL_TREE],
                       iparam[IPARAM_QR_TS_SZE],
@@ -114,17 +114,17 @@ int main(int argc, char ** argv)
                       0 /*iparam[IPARAM_QR_DOMINO]*/,
                       0 /*iparam[IPARAM_QR_TSRR]  */);
     if ( check ) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcA0 );
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1 );
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
                         (parsec_tiled_matrix_dc_t *)&dcX );
     }
     if ( check_inv ) {
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
     }
     if(loud > 2) printf("Done\n");
 
@@ -190,7 +190,7 @@ int main(int argc, char ** argv)
                              (parsec_tiled_matrix_dc_t *)&dcTS,
                              (parsec_tiled_matrix_dc_t *)&dcTT,
                              lu_tab);
-        dplasma_ztrsm(parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0,
+        dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0,
                       (parsec_tiled_matrix_dc_t *)&dcA,
                       (parsec_tiled_matrix_dc_t *)&dcX);
 
@@ -211,7 +211,7 @@ int main(int argc, char ** argv)
                                  (parsec_tiled_matrix_dc_t *)&dcTS,
                                  (parsec_tiled_matrix_dc_t *)&dcTT,
                                  lu_tab);
-            dplasma_ztrsm(parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0,
+            dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0,
                           (parsec_tiled_matrix_dc_t *)&dcA,
                           (parsec_tiled_matrix_dc_t *)&dcInvA);
 
@@ -267,14 +267,14 @@ static int check_solution( parsec_context_t *parsec, int loud,
     int m = dcB->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute b - A*x */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * m * eps ) ;
 
@@ -311,13 +311,13 @@ static int check_inverse( parsec_context_t *parsec, int loud,
     int m = dcA->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm    = dplasma_zlange(parsec, PlasmaInfNorm, dcA   );
-    InvAnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcInvA);
+    Anorm    = dplasma_zlange(parsec, dplasmaInfNorm, dcA   );
+    InvAnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcInvA);
 
     /* Compute I - A*A^{-1} */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcI);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcI);
 
     result = Rnorm / ( ( Anorm * InvAnorm ) * m * eps ) ;
 

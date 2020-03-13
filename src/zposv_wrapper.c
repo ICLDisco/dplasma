@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -22,7 +23,7 @@
  * definite in the complex case) matrix and X and B are N-by-NRHS matrices.  The
  * Cholesky decomposition is used to factor A as
  *
- *    \f[ A = \{_{L\times L^H, if uplo = PlasmaLower}^{U^H\times U, if uplo = PlasmaUpper} \f]
+ *    \f[ A = \{_{L\times L^H, if uplo = dplasmaLower}^{U^H\times U, if uplo = dplasmaUpper} \f]
  *
  * where U is an upper triangular matrix and  L is a lower triangular matrix.
  * The factored form of A is then used to solve the system of equations A * X = B.
@@ -33,8 +34,8 @@
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A.
@@ -62,14 +63,14 @@
  ******************************************************************************/
 int
 dplasma_zposv( parsec_context_t *parsec,
-               PLASMA_enum uplo,
+               dplasma_enum_t uplo,
                parsec_tiled_matrix_dc_t *A,
                parsec_tiled_matrix_dc_t *B )
 {
     int info;
 
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_zposv", "illegal value of uplo");
         return -1;
     }
@@ -80,12 +81,12 @@ dplasma_zposv( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zpotrf = NULL;
 
     parsec_zpotrf = dplasma_zpotrf_New(uplo, A, &info);
-    if ( uplo == PlasmaUpper ) {
-      parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B);
-      parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B);
+    if ( uplo == dplasmaUpper ) {
+      parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B);
     } else {
-      parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B);
-      parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B);
     }
 
     parsec_context_add_taskpool( parsec, parsec_zpotrf );
@@ -100,12 +101,12 @@ dplasma_zposv( parsec_context_t *parsec,
 #else
     info = dplasma_zpotrf( parsec, uplo, A);
     if ( info == 0 ) {
-      if ( uplo == PlasmaUpper ) {
-        dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B );
-        dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B );
+      if ( uplo == dplasmaUpper ) {
+        dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B );
+        dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B );
       } else {
-        dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B );
-        dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B );
+        dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B );
+        dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B );
       }
     }
 #endif

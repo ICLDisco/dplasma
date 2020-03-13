@@ -89,7 +89,7 @@ BODY
 
     void *p_elem_W = parsec_private_memory_pop( p_work );
 
-    CORE_zunmqr( PlasmaLeft, PlasmaConjTrans,
+    CORE_zunmqr( dplasmaLeft, dplasmaConjTrans,
                  tempm, tempnn, descA->nb, ib,
                  lV + k * descA->nb, lda,
                  T,                 descT->mb,

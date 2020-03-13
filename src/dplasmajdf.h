@@ -2,7 +2,9 @@
 #define _DPLASMAJDF_H_
 
 #include "dplasma.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
+#include "cores/dplasma_cores.h"
 #include "parsec/private_mempool.h"
 #include "floputils.h"
 
@@ -15,7 +17,6 @@
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
 
-#define plasma_const( x )  plasma_lapack_constants[x]
 
 #ifdef PARSEC_CALL_TRACE
 #   include <stdlib.h>

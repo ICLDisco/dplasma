@@ -103,13 +103,13 @@ BODY
     int ldam = BLKLDD( descA, m );
 
     printlog("CORE_zunmlq(%d, %d)\n"
-             "\t(PlasmaRight, PlasmaConjTrans, tempmm, tempkn, tempkn, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldam, p_elem_A, descT->nb)\n",
+             "\t(dplasmaRight, dplasmaConjTrans, tempmm, tempkn, tempkn, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldam, p_elem_A, descT->nb)\n",
              k, m, k, k, A, k, k, T, m, k, C);
 
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_zunmlq(PlasmaRight, PlasmaConjTrans,
+    CORE_zunmlq(dplasmaRight, dplasmaConjTrans,
                 tempmm, tempkn, tempkn, ib,
                 A /* descA(k,k) */, ldak,
                 T /* descT(k,k) */, descT->mb,
@@ -229,12 +229,12 @@ BODY
     int ldam = BLKLDD( descA, m );
 
     printlog("CORE_ztsmlq(%d, %d, %d)\n"
-             "\t(PlasmaRight, PlasmaConjTrans, tempmm, descA->nb, tempmm, tempnn, descA->mb, ib, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+             "\t(dplasmaRight, dplasmaConjTrans, tempmm, descA->nb, tempmm, tempnn, descA->mb, ib, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, n, m, m, k, A1, m, n, A2, k, n, V, k, n, T);
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_ztsmlq(PlasmaRight, PlasmaConjTrans,
+    CORE_ztsmlq(dplasmaRight, dplasmaConjTrans,
                 tempmm, descA->nb, tempmm, tempnn, descA->mb, ib,
                 A1 /* descA(m,k) */, ldam,
                 A2 /* descA(m,n) */, ldam,

@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #include "zlange_frb_cyclic.h"
@@ -22,13 +23,13 @@
  *
  *  dplasma_zlantr_New - Generates the taskpool that computes the value
  *
- *     zlantr = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlantr = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -41,18 +42,18 @@
  *******************************************************************************
  *
  * @param[in] norm
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] diag
- *          = PlasmaNonUnit: Non-unit diagonal
- *          = PlasmaUnit: Unit diagonal
+ *          = dplasmaNonUnit: Non-unit diagonal
+ *          = dplasmaUnit: Unit diagonal
  *
  * @param[in] A
  *          The descriptor of the matrix A.
@@ -79,7 +80,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlantr_New( PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
+dplasma_zlantr_New( dplasma_enum_t norm, dplasma_enum_t uplo, dplasma_enum_t diag,
                     const parsec_tiled_matrix_dc_t *A,
                     double *result )
 {
@@ -87,8 +88,8 @@ dplasma_zlantr_New( PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
     two_dim_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlantr = NULL;
 
-    if ( (norm != PlasmaMaxNorm) && (norm != PlasmaOneNorm)
-        && (norm != PlasmaInfNorm) && (norm != PlasmaFrobeniusNorm) ) {
+    if ( (norm != dplasmaMaxNorm) && (norm != dplasmaOneNorm)
+        && (norm != dplasmaInfNorm) && (norm != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlantr", "illegal value of norm");
         return NULL;
     }
@@ -102,28 +103,28 @@ dplasma_zlantr_New( PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     switch( norm ) {
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
         mb = 2;
         nb = 1;
         m  = dplasma_imax(A->mt, P);
         n  = Q;
         elt = 2;
         break;
-    case PlasmaInfNorm:
+    case dplasmaInfNorm:
         mb = A->mb;
         nb = 1;
         m  = dplasma_imax(A->mt, P);
         n  = Q;
         elt = 1;
         break;
-    case PlasmaOneNorm:
+    case dplasmaOneNorm:
         mb = 1;
         nb = A->nb;
         m  = P;
         n  = dplasma_imax(A->nt, Q);
         elt = 1;
         break;
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     default:
         mb = 1;
         nb = 1;
@@ -151,14 +152,14 @@ dplasma_zlantr_New( PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
 
     /* Create the DAG */
     switch( norm ) {
-    case PlasmaOneNorm:
+    case dplasmaOneNorm:
         parsec_zlantr = (parsec_taskpool_t*)parsec_zlange_one_cyclic_new(
             P, Q, norm, uplo, diag, A, (parsec_data_collection_t*)Tdist, result);
         break;
 
-    case PlasmaMaxNorm:
-    case PlasmaInfNorm:
-    case PlasmaFrobeniusNorm:
+    case dplasmaMaxNorm:
+    case dplasmaInfNorm:
+    case dplasmaFrobeniusNorm:
     default:
         parsec_zlantr = (parsec_taskpool_t*)parsec_zlange_frb_cyclic_new(
             P, Q, norm, uplo, diag, A, (parsec_data_collection_t*)Tdist, result);
@@ -221,13 +222,13 @@ dplasma_zlantr_Destruct( parsec_taskpool_t *tp )
  *
  *  dplasma_zlantr - Computes the value
  *
- *     zlantr = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlantr = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -241,18 +242,18 @@ dplasma_zlantr_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] norm
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] diag
- *          = PlasmaNonUnit: Non-unit diagonal
- *          = PlasmaUnit: Unit diagonal
+ *          = dplasmaNonUnit: Non-unit diagonal
+ *          = dplasmaUnit: Unit diagonal
  *
  * @param[in] A
  *          The descriptor of the matrix A.
@@ -274,14 +275,14 @@ dplasma_zlantr_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 double
 dplasma_zlantr( parsec_context_t *parsec,
-                PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
+                dplasma_enum_t norm, dplasma_enum_t uplo, dplasma_enum_t diag,
                 const parsec_tiled_matrix_dc_t *A)
 {
     double result = 0.;
     parsec_taskpool_t *parsec_zlantr = NULL;
 
-    if ( (norm != PlasmaMaxNorm) && (norm != PlasmaOneNorm)
-        && (norm != PlasmaInfNorm) && (norm != PlasmaFrobeniusNorm) ) {
+    if ( (norm != dplasmaMaxNorm) && (norm != dplasmaOneNorm)
+        && (norm != dplasmaInfNorm) && (norm != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlantr", "illegal value of norm");
         return -2.;
     }

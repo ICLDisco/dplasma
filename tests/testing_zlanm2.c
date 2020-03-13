@@ -23,7 +23,7 @@ double check_zlanm2(int M, int N, dplasma_complex64_t *A, int LDA, int *info )
     int maxiter, i = 0;
 
     memset( DX, 0, N * sizeof(double) );
-    CORE_dzasum(PlasmaColumnwise, PlasmaUpperLower,
+    CORE_dzasum(dplasmaColumnwise, dplasmaUpperLower,
                 M, N, A, LDA, DX);
 
     normx = cblas_dnrm2( N, DX, 1 );
@@ -36,7 +36,7 @@ double check_zlanm2(int M, int N, dplasma_complex64_t *A, int LDA, int *info )
 #if defined(PRECISION_z) || defined(PRECISION_c)
     CORE_dlag2z( 1, N, DX, 1, ZX, 1 );
 #else
-    CORE_zlacpy( PlasmaUpperLower, 1, N, DX, 1, ZX, 1 );
+    CORE_zlacpy( dplasmaUpperLower, 1, N, DX, 1, ZX, 1 );
 #endif
 
     while( (i < maxiter) &&

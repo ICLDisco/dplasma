@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 
@@ -22,13 +23,13 @@
  *
  *  dplasma_zlansy_New - Generates the taskpool that computes the value
  *
- *     zlansy = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlansy = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -41,14 +42,14 @@
  *******************************************************************************
  *
  * @param[in] norm
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] A
  *          The descriptor of the symmetric matrix A.
@@ -76,8 +77,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlansy_New( PLASMA_enum norm,
-                    PLASMA_enum uplo,
+dplasma_zlansy_New( dplasma_enum_t norm,
+                    dplasma_enum_t uplo,
                     const parsec_tiled_matrix_dc_t *A,
                     double *result )
 {
@@ -85,12 +86,12 @@ dplasma_zlansy_New( PLASMA_enum norm,
     two_dim_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlansy = NULL;
 
-    if ( (norm != PlasmaMaxNorm) && (norm != PlasmaOneNorm)
-        && (norm != PlasmaInfNorm) && (norm != PlasmaFrobeniusNorm) ) {
+    if ( (norm != dplasmaMaxNorm) && (norm != dplasmaOneNorm)
+        && (norm != dplasmaInfNorm) && (norm != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlansy", "illegal value of norm");
         return NULL;
     }
-    if ( (uplo != PlasmaUpper) && (uplo != PlasmaLower) ) {
+    if ( (uplo != dplasmaUpper) && (uplo != dplasmaLower) ) {
         dplasma_error("dplasma_zlansy", "illegal value of uplo");
         return NULL;
     }
@@ -104,18 +105,18 @@ dplasma_zlansy_New( PLASMA_enum norm,
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     switch( norm ) {
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
         mb = 2;
         nb = 1;
         elt = 2;
         break;
-    case PlasmaInfNorm:
-    case PlasmaOneNorm:
+    case dplasmaInfNorm:
+    case dplasmaOneNorm:
         mb = A->mb;
         nb = 1;
         elt = 1;
         break;
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     default:
         mb = 1;
         nb = 1;
@@ -142,7 +143,7 @@ dplasma_zlansy_New( PLASMA_enum norm,
 
     /* Create the DAG */
     parsec_zlansy = (parsec_taskpool_t*)parsec_zlansy_new(
-        P, Q, norm, uplo, PlasmaTrans,
+        P, Q, norm, uplo, dplasmaTrans,
         A,
         (parsec_data_collection_t*)Tdist,
         result);
@@ -204,13 +205,13 @@ dplasma_zlansy_Destruct( parsec_taskpool_t *tp )
  *
  *  dplasma_zlansy - Computes the value
  *
- *     zlansy = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlansy = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -224,14 +225,14 @@ dplasma_zlansy_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] norm
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] A
  *          The descriptor of the symmetric matrix A.
@@ -254,19 +255,19 @@ dplasma_zlansy_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 double
 dplasma_zlansy( parsec_context_t *parsec,
-                PLASMA_enum norm,
-                PLASMA_enum uplo,
+                dplasma_enum_t norm,
+                dplasma_enum_t uplo,
                 const parsec_tiled_matrix_dc_t *A)
 {
     double result = 0.;
     parsec_taskpool_t *parsec_zlansy = NULL;
 
-    if ( (norm != PlasmaMaxNorm) && (norm != PlasmaOneNorm)
-        && (norm != PlasmaInfNorm) && (norm != PlasmaFrobeniusNorm) ) {
+    if ( (norm != dplasmaMaxNorm) && (norm != dplasmaOneNorm)
+        && (norm != dplasmaInfNorm) && (norm != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlansy", "illegal value of norm");
         return -2.;
     }
-    if ( (uplo != PlasmaUpper) && (uplo != PlasmaLower) ) {
+    if ( (uplo != dplasmaUpper) && (uplo != dplasmaLower) ) {
         dplasma_error("dplasma_zlansy", "illegal value of uplo");
         return -3.;
     }

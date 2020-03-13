@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
                                 continue;
 
                             B = tiled_matrix_submatrix((parsec_tiled_matrix_dc_t*)&dcA, 0, 0, allM[m], allN[n] );
-                            dplasma_hqr_init( &qrtree, PlasmaNoTrans, B, alltreel[l], 0, allA[a], -1, 0, r );
+                            dplasma_hqr_init( &qrtree, dplasmaNoTrans, B, alltreel[l], 0, allA[a], -1, 0, r );
 
                             rc = dplasma_qrtree_check( B, &qrtree );
                             if (rc != 0) {
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
                                             continue;
 
                                         B = tiled_matrix_submatrix((parsec_tiled_matrix_dc_t*)&dcA, 0, 0, allM[m], allN[n] );
-                                        dplasma_hqr_init( &qrtree, PlasmaNoTrans, B, alltreel[l], alltreeh[h], allA[a], allP[p], d, r);
+                                        dplasma_hqr_init( &qrtree, dplasmaNoTrans, B, alltreel[l], alltreeh[h], allA[a], allP[p], d, r);
 
                                         rc = dplasma_qrtree_check( B, &qrtree );
                                         if (rc != 0) {
@@ -140,7 +140,7 @@ int main(int argc, char ** argv)
                 for( m=0; m<nbM; m++) {
                     for( n=0; n<nbN; n++) {
                         B = tiled_matrix_submatrix((parsec_tiled_matrix_dc_t*)&dcA, 0, 0, allM[m], allN[n] );
-                        dplasma_systolic_init( &qrtree, PlasmaNoTrans, B, allA[a], allP[p]);
+                        dplasma_systolic_init( &qrtree, dplasmaNoTrans, B, allA[a], allP[p]);
 
                         rc = dplasma_qrtree_check( B, &qrtree );
                         if (rc != 0) {
@@ -173,12 +173,12 @@ int main(int argc, char ** argv)
 
 #if defined(SYSTOLIC)
         dplasma_systolic_init( &qrtree,
-                               PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                               dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                                iparam[IPARAM_QR_HLVL_SZE],
                                iparam[IPARAM_QR_TS_SZE] );
 #else
         dplasma_hqr_init( &qrtree,
-                          PlasmaNoTrans, (parsec_tiled_matrix_dc_t*)&dcA,
+                          dplasmaNoTrans, (parsec_tiled_matrix_dc_t*)&dcA,
                           iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                           iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_HLVL_SZE],
                           iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR] );

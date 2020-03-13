@@ -28,9 +28,9 @@ extern "C" %{
  * More information in zlange.f and zlassq.f from Netlib LAPACK.
  *
  * Details on W:
- *    - PlasmaMaxNorm: W[0) stores the maximum absolute value encountered
- *    - PlasmaInfNorm: In first steps, sums of set of rows, then identical to Max.
- *    - PlasmaFrbNorm: W[0] corresponds to scale and W[1] to sum.
+ *    - dplasmaMaxNorm: W[0) stores the maximum absolute value encountered
+ *    - dplasmaInfNorm: In first steps, sums of set of rows, then identical to Max.
+ *    - dplasmaFrbNorm: W[0] corresponds to scale and W[1] to sum.
  *
  */
 #include <math.h>
@@ -43,19 +43,19 @@ extern "C" %{
  */
 P            [type = "int"]
 Q            [type = "int"]
-ntype        [type = "PLASMA_enum"]
-uplo         [type = "PLASMA_enum"]
-diag         [type = "PLASMA_enum"]
+ntype        [type = "dplasma_enum_t"]
+uplo         [type = "dplasma_enum_t"]
+diag         [type = "dplasma_enum_t"]
 descA        [type = "const parsec_tiled_matrix_dc_t*"]
 Tdist        [type = "parsec_data_collection_t *"]
 norm         [type = "double *"]
 
 minMNT       [type = "int" hidden=on default="dplasma_imin( descA->mt, descA->nt )" ]
 minMN        [type = "int" hidden=on default="dplasma_imin( descA->m,  descA->n )"  ]
-MT           [type = "int" hidden=on default="(uplo == PlasmaUpper) ? minMNT : descA->mt"]
-NT           [type = "int" hidden=on default="(uplo == PlasmaLower) ? minMNT : descA->nt"]
-M            [type = "int" hidden=on default="(uplo == PlasmaUpper) ? minMN  : descA->m"]
-N            [type = "int" hidden=on default="(uplo == PlasmaLower) ? minMN  : descA->n"]
+MT           [type = "int" hidden=on default="(uplo == dplasmaUpper) ? minMNT : descA->mt"]
+NT           [type = "int" hidden=on default="(uplo == dplasmaLower) ? minMNT : descA->nt"]
+M            [type = "int" hidden=on default="(uplo == dplasmaUpper) ? minMN  : descA->m"]
+N            [type = "int" hidden=on default="(uplo == dplasmaLower) ? minMN  : descA->n"]
 
 /**************************************************
  *
@@ -68,8 +68,8 @@ STEP1(m, n)
 
     // Execution space
     m = 0 .. MT-1
-    nmin = %{ if (uplo == PlasmaUpper ) return m; else return 0; %}
-    nmax = %{ if (uplo == PlasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
+    nmin = %{ if (uplo == dplasmaUpper ) return m; else return 0; %}
+    nmax = %{ if (uplo == dplasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
     n = nmin .. nmax
 
     // Parallel partitioning
@@ -95,17 +95,17 @@ BODY
      * Max norm
      */
     switch (ntype) {
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     {
         double lnorm = 0.;
         if (n > (nmax-Q)) {
             dW[0] = 0.;
         }
-        if ( (n == m)  && (uplo != PlasmaUpperLower) ) {
-            CORE_zlantr(PlasmaMaxNorm, uplo, diag, tempmm, tempnn,
+        if ( (n == m)  && (uplo != dplasmaUpperLower) ) {
+            CORE_zlantr(dplasmaMaxNorm, uplo, diag, tempmm, tempnn,
                         A, ldam, NULL, &lnorm);
         } else {
-            CORE_zlange(PlasmaMaxNorm, tempmm, tempnn,
+            CORE_zlange(dplasmaMaxNorm, tempmm, tempnn,
                         A, ldam, NULL, &lnorm);
         }
         *dW = ( lnorm > *dW ) ? lnorm : *dW;
@@ -115,18 +115,18 @@ BODY
     /*
      * Infinite norms
      */
-    case PlasmaInfNorm:
+    case dplasmaInfNorm:
     {
         if (n > (nmax-Q)) {
             memset( W, 0, descA->mb * sizeof(double) );
         }
-        if ( (m == n) && (uplo != PlasmaUpperLower) ) {
-            CORE_ztrasm( PlasmaRowwise, uplo, diag,
+        if ( (m == n) && (uplo != dplasmaUpperLower) ) {
+            CORE_ztrasm( dplasmaRowwise, uplo, diag,
                          tempmm, tempnn,
                          A, ldam, W);
         }
         else {
-            CORE_dzasum(PlasmaRowwise, PlasmaUpperLower,
+            CORE_dzasum(dplasmaRowwise, dplasmaUpperLower,
                         tempmm, tempnn,
                         A, ldam, W);
         }
@@ -136,13 +136,13 @@ BODY
     /*
      * Frobenius Norm
      */
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
     {
         if (n > (nmax-Q)) {
             dW[0] = 0.;
             dW[1] = 1.;
         }
-        if ( (n == m)  && (uplo != PlasmaUpperLower) ) {
+        if ( (n == m)  && (uplo != dplasmaUpperLower) ) {
             CORE_ztrssq( uplo, diag, tempmm, tempnn,
                          A, ldam, dW, dW+1);
         } else {
@@ -170,12 +170,12 @@ STEP2(m, n)
     m = 0 .. MT-1
     n = 0 .. Q-1
     col  = %{
-    if ( uplo == PlasmaUpper ) {
+    if ( uplo == dplasmaUpper ) {
         return (n >= m%Q ) ? m + n - m%Q : m + n + Q - m%Q;
     } else {
         return n;
     } %}
-    nmax = %{ if (uplo == PlasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
+    nmax = %{ if (uplo == dplasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
 
     // Parallel partitioning
     :Tdist(m, n)
@@ -195,7 +195,7 @@ BODY
               m, n, nmax, col, m, n-1, m, n);
 
     switch( ntype ) {
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     {
         if( col > nmax ) {
             *dW = 0.;
@@ -206,7 +206,7 @@ BODY
     }
     break;
 
-    case PlasmaInfNorm:
+    case dplasmaInfNorm:
     {
         int tempmm = ( m == (MT-1) ) ? M - m * descA->mb : descA->mb;
         if( col > nmax ) {
@@ -218,7 +218,7 @@ BODY
     }
     break;
 
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
     {
         if(n > 0) {
             if( col > nmax ) {
@@ -278,7 +278,7 @@ BODY
     printlog( "zlange STEP3(%d, %d)\n", m, n);
 
     switch( ntype ) {
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     {
         if ( m < (MT-P) ) {
             *dW = ( *dA > *dW ) ? *dA : *dW;
@@ -288,7 +288,7 @@ BODY
     }
     break;
 
-    case PlasmaInfNorm:
+    case dplasmaInfNorm:
     {
         int tempmm = ( m == (MT-1) ) ? M - m * descA->mb : descA->mb;
         double maxval = 0;
@@ -305,7 +305,7 @@ BODY
     }
     break;
 
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
     {
         if (m >= (MT-P)) {
             dW[0] = 0.;
@@ -354,8 +354,8 @@ BODY
     double *dW = (double*)W;
     if(m > 0) {
         switch( ntype ) {
-        case PlasmaMaxNorm:
-        case PlasmaInfNorm:
+        case dplasmaMaxNorm:
+        case dplasmaInfNorm:
         {
             if (m  > (MT-1)) {
                 dW[0] = 0.;
@@ -364,7 +364,7 @@ BODY
         }
         break;
 
-        case PlasmaFrobeniusNorm:
+        case dplasmaFrobeniusNorm:
         {
             double  sqr;
 
@@ -414,14 +414,14 @@ BODY
     double *dW = (double*)W;
 
     switch( ntype ) {
-    case PlasmaMaxNorm:
-    case PlasmaInfNorm:
+    case dplasmaMaxNorm:
+    case dplasmaInfNorm:
     {
         *norm = *dW;
     }
     break;
 
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
     {
         *norm = dW[0] * dplasma_dsqrt( dW[1] );
     }

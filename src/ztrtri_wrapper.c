@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "ztrtri_L.h"
 #include "ztrtri_U.h"
@@ -30,22 +31,22 @@
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] diag
  *          Specifies whether or not A is unit triangular:
- *          = PlasmaNonUnit: A is non unit;
- *          = PlasmaUnit:    A us unit.
+ *          = dplasmaNonUnit: A is non unit;
+ *          = dplasmaUnit:    A us unit.
  *
  * @param[in,out] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
- *          is not referenced. If diag = PlasmaUnit, the diagonal elements of A
+ *          is not referenced. If diag = dplasmaUnit, the diagonal elements of A
  *          are also not referenced and are assumed to be 1.
  *          On exit, the (triangular) inverse of the original matrix, in the
  *          same storage format.
@@ -72,14 +73,14 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_ztrtri_New( PLASMA_enum uplo,
-                    PLASMA_enum diag,
+dplasma_ztrtri_New( dplasma_enum_t uplo,
+                    dplasma_enum_t diag,
                     parsec_tiled_matrix_dc_t *A,
                     int *INFO )
 {
     parsec_taskpool_t *parsec_trtri = NULL;
 
-    if ( uplo == PlasmaLower ) {
+    if ( uplo == dplasmaLower ) {
         parsec_trtri = (parsec_taskpool_t*)parsec_ztrtri_L_new(
             uplo, diag, A, INFO );
 
@@ -153,22 +154,22 @@ dplasma_ztrtri_Destruct( parsec_taskpool_t *tp )
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] diag
  *          Specifies whether or not A is unit triangular:
- *          = PlasmaNonUnit: A is non unit;
- *          = PlasmaUnit:    A us unit.
+ *          = dplasmaNonUnit: A is non unit;
+ *          = dplasmaUnit:    A us unit.
  *
  * @param[in,out] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
- *          is not referenced. If diag = PlasmaUnit, the diagonal elements of A
+ *          is not referenced. If diag = dplasmaUnit, the diagonal elements of A
  *          are also not referenced and are assumed to be 1.
  *          On exit, the (triangular) inverse of the original matrix, in the
  *          same storage format.
@@ -192,19 +193,19 @@ dplasma_ztrtri_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_ztrtri( parsec_context_t *parsec,
-                PLASMA_enum uplo,
-                PLASMA_enum diag,
+                dplasma_enum_t uplo,
+                dplasma_enum_t diag,
                 parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_ztrtri = NULL;
     int info = 0;
 
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_ztrtri", "illegal value of uplo");
         return -1;
     }
-    if (diag != PlasmaUnit && diag != PlasmaNonUnit) {
+    if (diag != dplasmaUnit && diag != dplasmaNonUnit) {
         dplasma_error("dplasma_ztrtri", "illegal value of diag");
         return -2;
     }

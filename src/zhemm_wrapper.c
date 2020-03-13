@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zhemm.h"
 
@@ -36,15 +37,15 @@
  * @param[in] side
  *          Specifies whether the hermitian matrix A appears on the
  *          left or right in the operation as follows:
- *          = PlasmaLeft:      \f[ C = \alpha \times A \times B + \beta \times C \f]
- *          = PlasmaRight:     \f[ C = \alpha \times B \times A + \beta \times C \f]
+ *          = dplasmaLeft:      \f[ C = \alpha \times A \times B + \beta \times C \f]
+ *          = dplasmaRight:     \f[ C = \alpha \times B \times A + \beta \times C \f]
  *
  * @param[in] uplo
  *          Specifies whether the upper or lower triangular part of
  *          the hermitian matrix A is to be referenced as follows:
- *          = PlasmaLower:     Only the lower triangular part of the
+ *          = dplasmaLower:     Only the lower triangular part of the
  *                             hermitian matrix A is to be referenced.
- *          = PlasmaUpper:     Only the upper triangular part of the
+ *          = dplasmaUpper:     Only the upper triangular part of the
  *                             hermitian matrix A is to be referenced.
  *
  * @param[in] alpha
@@ -52,7 +53,7 @@
  *
  * @param[in] A
  *          Descriptor of the hermitian matrix A. A is a ka-by-ka
- *          matrix, where ka is C->M when side = PlasmaLeft, and is
+ *          matrix, where ka is C->M when side = dplasmaLeft, and is
  *          C->N otherwise. Only the uplo triangular part is
  *          referenced.
  *
@@ -82,8 +83,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zhemm_New( PLASMA_enum side,
-                   PLASMA_enum uplo,
+dplasma_zhemm_New( dplasma_enum_t side,
+                   dplasma_enum_t uplo,
                    dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t* A,
                    const parsec_tiled_matrix_dc_t* B,
@@ -157,15 +158,15 @@ dplasma_zhemm_Destruct( parsec_taskpool_t *tp )
  * @param[in] side
  *          Specifies whether the hermitian matrix A appears on the
  *          left or right in the operation as follows:
- *          = PlasmaLeft:      \f[ C = \alpha \times A \times B + \beta \times C \f]
- *          = PlasmaRight:     \f[ C = \alpha \times B \times A + \beta \times C \f]
+ *          = dplasmaLeft:      \f[ C = \alpha \times A \times B + \beta \times C \f]
+ *          = dplasmaRight:     \f[ C = \alpha \times B \times A + \beta \times C \f]
  *
  * @param[in] uplo
  *          Specifies whether the upper or lower triangular part of
  *          the hermitian matrix A is to be referenced as follows:
- *          = PlasmaLower:     Only the lower triangular part of the
+ *          = dplasmaLower:     Only the lower triangular part of the
  *                             hermitian matrix A is to be referenced.
- *          = PlasmaUpper:     Only the upper triangular part of the
+ *          = dplasmaUpper:     Only the upper triangular part of the
  *                             hermitian matrix A is to be referenced.
  *
  * @param[in] alpha
@@ -173,7 +174,7 @@ dplasma_zhemm_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] A
  *          Descriptor of the hermitian matrix A.  A is a ka-by-ka
- *          matrix, where ka is C->M when side = PlasmaLeft, and is
+ *          matrix, where ka is C->M when side = dplasmaLeft, and is
  *          C->N otherwise. Only the uplo triangular part is
  *          referenced.
  *
@@ -202,8 +203,8 @@ dplasma_zhemm_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zhemm( parsec_context_t *parsec,
-               PLASMA_enum side,
-               PLASMA_enum uplo,
+               dplasma_enum_t side,
+               dplasma_enum_t uplo,
                dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *A,
                const parsec_tiled_matrix_dc_t *B,
@@ -213,11 +214,11 @@ dplasma_zhemm( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zhemm = NULL;
 
     /* Check input arguments */
-    if ((side != PlasmaLeft) && (side != PlasmaRight)) {
+    if ((side != dplasmaLeft) && (side != dplasmaRight)) {
         dplasma_error("dplasma_zhemm", "illegal value of side");
         return -1;
     }
-    if ((uplo != PlasmaLower) && (uplo != PlasmaUpper)) {
+    if ((uplo != dplasmaLower) && (uplo != dplasmaUpper)) {
         dplasma_error("dplasma_zhemm", "illegal value of uplo");
         return -2;
     }
@@ -229,8 +230,8 @@ dplasma_zhemm( parsec_context_t *parsec,
         dplasma_error("dplasma_zhemm", "illegal sizes of matrices B and C");
         return -5;
     }
-    if ( ((side == PlasmaLeft) && (A->n != C->m)) ||
-         ((side == PlasmaRight) && (A->n != C->n)) ) {
+    if ( ((side == dplasmaLeft) && (A->n != C->m)) ||
+         ((side == dplasmaRight) && (A->n != C->n)) ) {
         dplasma_error("dplasma_zhemm", "illegal size of matrix A");
         return -6;
     }

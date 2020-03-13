@@ -87,7 +87,7 @@ BODY
   void *p_elem_tl, *p_elem_bl, *p_elem_tr, *p_elem_br;
 
   printlog("GEBUT(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, Atl);
 
   type = segment_to_type_index(&descA->seg_info, i, j);
@@ -164,7 +164,7 @@ BODY
 #endif
 
   printlog("GEBUT_Reader(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -217,7 +217,7 @@ BODY
 #endif
 
   printlog("GEBUT_Writer(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)

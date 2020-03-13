@@ -11,11 +11,12 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "cores/dplasma_zcores.h"
+#include "dplasmaaux.h"
 
 #include "map2.h"
 
 typedef struct ztradd_args_s {
-    PLASMA_enum       trans;
+    dplasma_enum_t       trans;
     dplasma_complex64_t alpha;
     dplasma_complex64_t beta;
 } ztradd_args_t;
@@ -25,13 +26,13 @@ dplasma_ztradd_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          const parsec_tiled_matrix_dc_t *descB,
                          const void *_A, void *_B,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *args )
 {
     const dplasma_complex64_t *A     = (dplasma_complex64_t*)_A;
     dplasma_complex64_t       *B     = (dplasma_complex64_t*)_B;
     ztradd_args_t           *_args = (ztradd_args_t*)args;
-    PLASMA_enum              trans = _args->trans;
+    dplasma_enum_t              trans = _args->trans;
     dplasma_complex64_t        alpha = _args->alpha;
     dplasma_complex64_t        beta  = _args->beta;
 
@@ -40,7 +41,7 @@ dplasma_ztradd_operator( parsec_execution_stream_t *es,
 
     tempmm = ((m)==((descB->mt)-1)) ? ((descB->m)-(m*(descB->mb))) : (descB->mb);
     tempnn = ((n)==((descB->nt)-1)) ? ((descB->n)-(n*(descB->nb))) : (descB->nb);
-    if (trans == PlasmaNoTrans) {
+    if (trans == dplasmaNoTrans) {
         ldam = BLKLDD( descA, m );
     }
     else {
@@ -48,7 +49,7 @@ dplasma_ztradd_operator( parsec_execution_stream_t *es,
     }
     ldbm = BLKLDD( descB, m );
 
-    return dplasma_core_ztradd( uplo, trans, tempmm, tempnn,
+    return CORE_ztradd( uplo, trans, tempmm, tempnn,
                                 alpha, A, ldam, beta, B, ldbm );
 }
 
@@ -72,16 +73,16 @@ dplasma_ztradd_operator( parsec_execution_stream_t *es,
  *
  * @param[in] uplo
  *          Specifies the shape of A and B matrices:
- *          = PlasmaUpperLower: A and B are general matrices.
- *          = PlasmaUpper: op(A) and B are upper trapezoidal matrices.
- *          = PlasmaLower: op(A) and B are lower trapezoidal matrices.
+ *          = dplasmaUpperLower: A and B are general matrices.
+ *          = dplasmaUpper: op(A) and B are upper trapezoidal matrices.
+ *          = dplasmaLower: op(A) and B are lower trapezoidal matrices.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is non-transposed, transposed, or
  *          conjugate transposed
- *          = PlasmaNoTrans:   op(A) = A
- *          = PlasmaTrans:     op(A) = A'
- *          = PlasmaConjTrans: op(A) = conj(A')
+ *          = dplasmaNoTrans:   op(A) = A
+ *          = dplasmaTrans:     op(A) = A'
+ *          = dplasmaConjTrans: op(A) = conj(A')
  *
  * @param[in] alpha
  *          The scalar alpha
@@ -115,7 +116,7 @@ dplasma_ztradd_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_ztradd_New( PLASMA_enum uplo, PLASMA_enum trans,
+dplasma_ztradd_New( dplasma_enum_t uplo, dplasma_enum_t trans,
                     dplasma_complex64_t alpha,
                     const parsec_tiled_matrix_dc_t *A,
                     dplasma_complex64_t beta,
@@ -149,9 +150,9 @@ dplasma_ztradd_New( PLASMA_enum uplo, PLASMA_enum trans,
  * @param[in] trans
  *          Specifies whether the matrix A is non-transposed, transposed, or
  *          conjugate transposed
- *          = PlasmaNoTrans:   op(A) = A
- *          = PlasmaTrans:     op(A) = A'
- *          = PlasmaConjTrans: op(A) = conj(A')
+ *          = dplasmaNoTrans:   op(A) = A
+ *          = dplasmaTrans:     op(A) = A'
+ *          = dplasmaConjTrans: op(A) = conj(A')
  *
  * @param[in] alpha
  *          The scalar alpha
@@ -185,13 +186,13 @@ dplasma_ztradd_New( PLASMA_enum uplo, PLASMA_enum trans,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgeadd_New( PLASMA_enum trans,
+dplasma_zgeadd_New( dplasma_enum_t trans,
                     dplasma_complex64_t alpha,
                     const parsec_tiled_matrix_dc_t *A,
                     dplasma_complex64_t beta,
                     parsec_tiled_matrix_dc_t *B)
 {
-    return dplasma_ztradd_New( PlasmaUpperLower, trans, alpha, A, beta, B );
+    return dplasma_ztradd_New( dplasmaUpperLower, trans, alpha, A, beta, B );
 }
 
 /**
@@ -264,16 +265,16 @@ dplasma_zgeadd_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] uplo
  *          Specifies the shape of A and B matrices:
- *          = PlasmaUpperLower: A and B are general matrices.
- *          = PlasmaUpper: op(A) and B are upper trapezoidal matrices.
- *          = PlasmaLower: op(A) and B are lower trapezoidal matrices.
+ *          = dplasmaUpperLower: A and B are general matrices.
+ *          = dplasmaUpper: op(A) and B are upper trapezoidal matrices.
+ *          = dplasmaLower: op(A) and B are lower trapezoidal matrices.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is non-transposed, transposed, or
  *          conjugate transposed
- *          = PlasmaNoTrans:   op(A) = A
- *          = PlasmaTrans:     op(A) = A'
- *          = PlasmaConjTrans: op(A) = conj(A')
+ *          = dplasmaNoTrans:   op(A) = A
+ *          = dplasmaTrans:     op(A) = A'
+ *          = dplasmaConjTrans: op(A) = conj(A')
  *
  * @param[in] alpha
  *          The scalar alpha
@@ -306,8 +307,8 @@ dplasma_zgeadd_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_ztradd( parsec_context_t *parsec,
-                PLASMA_enum uplo,
-                PLASMA_enum trans,
+                dplasma_enum_t uplo,
+                dplasma_enum_t trans,
                 dplasma_complex64_t alpha,
                 const parsec_tiled_matrix_dc_t *A,
                 dplasma_complex64_t beta,
@@ -315,17 +316,17 @@ dplasma_ztradd( parsec_context_t *parsec,
 {
     parsec_taskpool_t *parsec_ztradd = NULL;
 
-    if ((uplo != PlasmaUpperLower) &&
-        (uplo != PlasmaUpper)      &&
-        (uplo != PlasmaLower))
+    if ((uplo != dplasmaUpperLower) &&
+        (uplo != dplasmaUpper)      &&
+        (uplo != dplasmaLower))
     {
         dplasma_error("dplasma_ztradd", "illegal value of uplo");
         return -1;
     }
 
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans))
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans))
     {
         dplasma_error("dplasma_ztradd", "illegal value of trans");
         return -2;
@@ -361,9 +362,9 @@ dplasma_ztradd( parsec_context_t *parsec,
  * @param[in] trans
  *          Specifies whether the matrix A is non-transposed, transposed, or
  *          conjugate transposed
- *          = PlasmaNoTrans:   op(A) = A
- *          = PlasmaTrans:     op(A) = A'
- *          = PlasmaConjTrans: op(A) = conj(A')
+ *          = dplasmaNoTrans:   op(A) = A
+ *          = dplasmaTrans:     op(A) = A'
+ *          = dplasmaConjTrans: op(A) = conj(A')
  *
  * @param[in] alpha
  *          The scalar alpha
@@ -396,12 +397,12 @@ dplasma_ztradd( parsec_context_t *parsec,
  ******************************************************************************/
 int
 dplasma_zgeadd( parsec_context_t *parsec,
-                PLASMA_enum trans,
+                dplasma_enum_t trans,
                 dplasma_complex64_t alpha,
                 const parsec_tiled_matrix_dc_t *A,
                 dplasma_complex64_t beta,
                 parsec_tiled_matrix_dc_t *B)
 {
-    return dplasma_ztradd( parsec, PlasmaUpperLower, trans,
+    return dplasma_ztradd( parsec, dplasmaUpperLower, trans,
                            alpha, A, beta, B );
 }

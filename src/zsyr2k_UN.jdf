@@ -14,8 +14,8 @@ extern "C" %{
 
 %}
 
-uplo      [type = "PLASMA_enum"]
-trans     [type = "PLASMA_enum"]
+uplo      [type = "dplasma_enum_t"]
+trans     [type = "dplasma_enum_t"]
 alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
 descB     [type = "const parsec_tiled_matrix_dc_t*"]
@@ -83,11 +83,11 @@ BODY
     dplasma_complex64_t zbeta = (k == 0) ? beta : (dplasma_complex64_t)1.;
 
     printlog("CORE_zgemm_AB(%d, %d, %d)\n"
-             "\t(PlasmaNoTrans, PlasmaTrans, m=%d, n=%d, k=%d, alpha=(%e,%e), A(%d,%d)[%p], lda=%d, B(%d,%d)[%p], ldb=%d, beta=(%e,%e), C(%d,%d)[%p], ldc=%d)\n",
+             "\t(dplasmaNoTrans, dplasmaTrans, m=%d, n=%d, k=%d, alpha=(%e,%e), A(%d,%d)[%p], lda=%d, B(%d,%d)[%p], ldb=%d, beta=(%e,%e), C(%d,%d)[%p], ldc=%d)\n",
              m, n, k, tempmm, tempnn, tempkn,
              creal(alpha), cimag(alpha), m, k, A, ldam, n, k, B, ldbn,
              creal(zbeta), cimag(zbeta), m, n, C, ldcm);
-        CORE_zgemm(PlasmaNoTrans, PlasmaTrans,
+        CORE_zgemm(dplasmaNoTrans, dplasmaTrans,
                    tempmm, tempnn, tempkn,
                    alpha, A /* descA(m,k) */, ldam,
                           B /* descB(n,k) */, ldbn,
@@ -120,12 +120,12 @@ BODY
     int ldcm = BLKLDD( descC, m );
 
     printlog("CORE_zgemm_BA(%d, %d, %d)\n"
-             "\t(PlasmaNoTrans, PlasmaTrans, m=%d, n=%d, k=%d, alpha=(%e,%e), B(%d,%d)[%p], ldb=%d, A(%d,%d)[%p], lda=%d, beta=(%e,%e), C(%d,%d)[%p], ldc=%d)\n",
+             "\t(dplasmaNoTrans, dplasmaTrans, m=%d, n=%d, k=%d, alpha=(%e,%e), B(%d,%d)[%p], ldb=%d, A(%d,%d)[%p], lda=%d, beta=(%e,%e), C(%d,%d)[%p], ldc=%d)\n",
              m, n, k, tempmm, tempnn, tempkn,
              creal(alpha), cimag(alpha), m, k, A, ldbm, n, k, B, ldan,
              creal(1.),    cimag(1.),    m, n, C, ldcm);
 
-        CORE_zgemm(PlasmaNoTrans, PlasmaTrans,
+        CORE_zgemm(dplasmaNoTrans, dplasmaTrans,
                    tempmm, tempnn, tempkn,
                    alpha, A /* descB(m,k) */, ldbm,
                           B /* descA(n,k) */, ldan,

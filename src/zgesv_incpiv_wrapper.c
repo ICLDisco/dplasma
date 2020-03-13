@@ -8,7 +8,7 @@
  */
 
 #include "dplasma.h"
-#include <core_blas.h>
+#include "cores/core_blas.h"
 
 /**
  *******************************************************************************
@@ -84,7 +84,7 @@ dplasma_zgesv_incpiv( parsec_context_t *parsec,
 #ifdef PARSEC_COMPOSITION
     parsec_taskpool_t *parsec_zgetrf  = dplasma_zgetrf_incpiv_New(A, L, IPIV, &info);
     parsec_taskpool_t *parsec_ztrsmpl = dplasma_ztrsmpl_New(A, L, IPIV, B);
-    parsec_taskpool_t *parsec_ztrsm   = dplasma_ztrsm_New(PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, A, B);
+    parsec_taskpool_t *parsec_ztrsm   = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
 
     parsec_context_add_taskpool( parsec, parsec_zgetrf  );
     parsec_context_add_taskpool( parsec, parsec_ztrsmpl );
@@ -98,7 +98,7 @@ dplasma_zgesv_incpiv( parsec_context_t *parsec,
 #else
     info = dplasma_zgetrf_incpiv(parsec, A, L, IPIV );
     if( info == 0 ) {
-        dplasma_zgetrs_incpiv(parsec, PlasmaNoTrans, A, L, IPIV, B );
+        dplasma_zgetrs_incpiv(parsec, dplasmaNoTrans, A, L, IPIV, B );
     }
 #endif
 

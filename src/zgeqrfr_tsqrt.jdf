@@ -95,12 +95,12 @@ BODY
     int lda2 = BLKLDD( descA2, 0 );
 
     printlog("CORE_ztsmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+             "\t(dplasmaLeft, dplasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, k, n, k, n, A1, k, n, A2, k, k, V, k, k, T);
 
     void *p_elem_W = parsec_private_memory_pop( p_work );
 
-    CORE_ztsmqr(PlasmaLeft, PlasmaConjTrans,
+    CORE_ztsmqr(dplasmaLeft, dplasmaConjTrans,
                 descA1->nb, tempnn, descA2->m, tempnn, descA1->nb, ib,
                 lA1 /* descA1(n) */, lda1,
                 A2  /* descA2(n) */, lda2,

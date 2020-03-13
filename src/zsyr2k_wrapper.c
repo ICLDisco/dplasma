@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zsyr2k_LN.h"
 #include "zsyr2k_LT.h"
@@ -42,13 +43,13 @@
  *******************************************************************************
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is not transposed or conjugate transposed:
- *          = PlasmaNoTrans: \f[ C = \alpha [ op( A )  \times op( B )' ] + conjg( \alpha ) [ op( B )  \times op( A )' ] + \beta C \f]
- *          = PlasmaTrans:   \f[ C = \alpha [ op( A )' \times op( B )  ] + conjg( \alpha ) [ op( B )' \times op( A )  ] + \beta C \f]
+ *          = dplasmaNoTrans: \f[ C = \alpha [ op( A )  \times op( B )' ] + conjg( \alpha ) [ op( B )  \times op( A )' ] + \beta C \f]
+ *          = dplasmaTrans:   \f[ C = \alpha [ op( A )' \times op( B )  ] + conjg( \alpha ) [ op( B )' \times op( A )  ] + \beta C \f]
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
@@ -83,8 +84,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zsyr2k_New( PLASMA_enum uplo,
-                    PLASMA_enum trans,
+dplasma_zsyr2k_New( dplasma_enum_t uplo,
+                    dplasma_enum_t trans,
                     dplasma_complex64_t alpha,
                     const parsec_tiled_matrix_dc_t* A,
                     const parsec_tiled_matrix_dc_t* B,
@@ -94,11 +95,11 @@ dplasma_zsyr2k_New( PLASMA_enum uplo,
     parsec_taskpool_t* tp;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) && (uplo != PlasmaUpper)) {
+    if ((uplo != dplasmaLower) && (uplo != dplasmaUpper)) {
         dplasma_error("dplasma_zsyr2k_New", "illegal value of uplo");
         return NULL;
     }
-    if (trans != PlasmaConjTrans && trans != PlasmaTrans && trans != PlasmaNoTrans ) {
+    if (trans != dplasmaConjTrans && trans != dplasmaTrans && trans != dplasmaNoTrans ) {
         dplasma_error("dplasma_zsyr2k_New", "illegal value of trans");
         return NULL;
     }
@@ -111,14 +112,14 @@ dplasma_zsyr2k_New( PLASMA_enum uplo,
         dplasma_error("dplasma_zsyr2k_New", "illegal descriptor A or B, they must have the same dimensions");
         return NULL;
     }
-    if ( (( trans == PlasmaNoTrans ) && ( A->m != C->m ))
-         || (( trans != PlasmaNoTrans ) && ( A->n != C->m )) ) {
+    if ( (( trans == dplasmaNoTrans ) && ( A->m != C->m ))
+         || (( trans != dplasmaNoTrans ) && ( A->n != C->m )) ) {
         dplasma_error("dplasma_zsyr2k_New", "illegal sizes for the matrices");
         return NULL;
     }
 
-    if ( uplo == PlasmaLower ) {
-        if ( trans == PlasmaNoTrans ) {
+    if ( uplo == dplasmaLower ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zsyr2k_LN_new(uplo, trans,
                                     alpha, A,
@@ -134,7 +135,7 @@ dplasma_zsyr2k_New( PLASMA_enum uplo,
         }
     }
     else {
-        if ( trans == PlasmaNoTrans ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zsyr2k_UN_new(uplo, trans,
                                     alpha, A,
@@ -209,13 +210,13 @@ dplasma_zsyr2k_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is not transposed or conjugate transposed:
- *          = PlasmaNoTrans:   \f[ C = \alpha [ op( A ) \times conjg( op( B )' )] + conjg( \alpha ) [ op( B ) \times conjg( op( A )' )] + \beta C \f]
- *          = PlasmaConjTrans: \f[ C = \alpha [ conjg( op( A )' ) \times op( B ) ] + conjg( \alpha ) [ conjg( op( B )' ) \times op( A ) ] + \beta C \f]
+ *          = dplasmaNoTrans:   \f[ C = \alpha [ op( A ) \times conjg( op( B )' )] + conjg( \alpha ) [ op( B ) \times conjg( op( A )' )] + \beta C \f]
+ *          = dplasmaConjTrans: \f[ C = \alpha [ conjg( op( A )' ) \times op( B ) ] + conjg( \alpha ) [ conjg( op( B )' ) \times op( A ) ] + \beta C \f]
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
@@ -249,8 +250,8 @@ dplasma_zsyr2k_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zsyr2k( parsec_context_t *parsec,
-                PLASMA_enum uplo,
-                PLASMA_enum trans,
+                dplasma_enum_t uplo,
+                dplasma_enum_t trans,
                 dplasma_complex64_t alpha,
                 const parsec_tiled_matrix_dc_t *A,
                 const parsec_tiled_matrix_dc_t *B,
@@ -260,11 +261,11 @@ dplasma_zsyr2k( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zsyr2k = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) && (uplo != PlasmaUpper)) {
+    if ((uplo != dplasmaLower) && (uplo != dplasmaUpper)) {
         dplasma_error("dplasma_zsyr2k", "illegal value of uplo");
         return -1;
     }
-    if (trans != PlasmaConjTrans && trans != PlasmaTrans && trans != PlasmaNoTrans ) {
+    if (trans != dplasmaConjTrans && trans != dplasmaTrans && trans != dplasmaNoTrans ) {
         dplasma_error("dplasma_zsyr2k", "illegal value of trans");
         return -2;
     }
@@ -277,8 +278,8 @@ dplasma_zsyr2k( parsec_context_t *parsec,
         dplasma_error("dplasma_zsyr2k", "illegal descriptor C (C->m != C->n)");
         return -6;
     }
-    if ( (( trans == PlasmaNoTrans ) && ( A->m != C->m )) ||
-         (( trans != PlasmaNoTrans ) && ( A->n != C->m )) ) {
+    if ( (( trans == dplasmaNoTrans ) && ( A->m != C->m )) ||
+         (( trans != dplasmaNoTrans ) && ( A->n != C->m )) ) {
         dplasma_error("dplasma_zsyr2k", "illegal sizes for the matrices");
         return -6;
     }

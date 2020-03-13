@@ -59,25 +59,25 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("+++ Generate matrices ... ");
     /* Generate matrix A with diagonal dominance to keep stability during computation */
     dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_dc_t *)&dcA0, Aseed);
-    /* Scale down the full matrix to keep stability in diag = PlasmaUnit case */
-    dplasma_zlascal( parsec, PlasmaUpperLower,
+    /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+    dplasma_zlascal( parsec, dplasmaUpperLower,
                      1. / (dplasma_complex64_t)Am,
                      (parsec_tiled_matrix_dc_t *)&dcA0 );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed);
     if (check)
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcC, (parsec_tiled_matrix_dc_t *)&dcC0 );
     if(loud > 2) printf("Done\n");
 
     if(!check)
     {
-        PLASMA_enum side  = PlasmaLeft;
-        PLASMA_enum uplo  = PlasmaLower;
-        PLASMA_enum trans = PlasmaNoTrans;
-        PLASMA_enum diag  = PlasmaUnit;
+        dplasma_enum_t side  = dplasmaLeft;
+        dplasma_enum_t uplo  = dplasmaLower;
+        dplasma_enum_t trans = dplasmaNoTrans;
+        dplasma_enum_t diag  = dplasmaUnit;
 
         /* Make A square */
-        if (side == PlasmaLeft) {
+        if (side == dplasmaLeft) {
             dcA = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&dcA0, 0, 0, M, M );
         } else {
             dcA = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&dcA0, 0, 0, N, N );
@@ -107,7 +107,7 @@ int main(int argc, char ** argv)
 
         for (s=0; s<2; s++) {
             /* Make A square */
-            if (side[s] == PlasmaLeft) {
+            if (side[s] == dplasmaLeft) {
                 dcA = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&dcA0, 0, 0, M, M );
             } else {
                 dcA = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&dcA0, 0, 0, N, N );
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
 
                         /* matrix generation */
                         printf("Generate matrices ... ");
-                        dplasma_zlacpy( parsec, PlasmaUpperLower,
+                        dplasma_zlacpy( parsec, dplasmaUpperLower,
                                         (parsec_tiled_matrix_dc_t *)&dcC0,
                                         (parsec_tiled_matrix_dc_t *)&dcC );
                         dplasma_ztrmm(parsec, side[s], uplo[u], trans[t], diag[d], 1./alpha,
@@ -196,14 +196,14 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     eps = LAPACKE_dlamch_work('e');
 
-    Cinitnorm    = dplasma_zlange( parsec, PlasmaInfNorm, dcC );
-    Cdplasmanorm = dplasma_zlange( parsec, PlasmaInfNorm, dcCfinal );
+    Cinitnorm    = dplasma_zlange( parsec, dplasmaInfNorm, dcC );
+    Cdplasmanorm = dplasma_zlange( parsec, dplasmaInfNorm, dcCfinal );
 
-    dplasma_zgeadd( parsec, PlasmaNoTrans,
+    dplasma_zgeadd( parsec, dplasmaNoTrans,
                     -1.0, (parsec_tiled_matrix_dc_t*)dcC,
                      1.0, (parsec_tiled_matrix_dc_t*)dcCfinal );
 
-    Rnorm = dplasma_zlange( parsec, PlasmaMaxNorm, dcCfinal );
+    Rnorm = dplasma_zlange( parsec, dplasmaMaxNorm, dcCfinal );
 
     result = Rnorm / (Cinitnorm * eps * dplasma_imax(M, N));
 

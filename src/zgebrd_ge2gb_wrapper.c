@@ -325,7 +325,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
     if ( A->mt >= A->nt || 1) {
         if ( A->mt > 2*A->nt ) {
             qrtre0 = malloc( sizeof(dplasma_qrtree_t) );
-            dplasma_hqr_init( qrtre0, PlasmaNoTrans,
+            dplasma_hqr_init( qrtre0, dplasmaNoTrans,
                               A, -1, -1, -1, P, -1, 0 );
 
             subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
@@ -336,11 +336,11 @@ dplasma_zgebrd_ge2gb_New( int ib,
         }
 
         dplasma_svd_init( qrtree,
-                          PlasmaNoTrans, subA,
+                          dplasmaNoTrans, subA,
                           -1, P, cores, 2 );
 
         dplasma_svd_init( lqtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, Q, cores, 2 );
 
         if (subA != A) {
@@ -353,7 +353,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
 #if 0
         if ( A->nt > 2*A->mt ) {
             qrtre0 = malloc( sizeof(dplasma_qrtree_t) );
-            dplasma_hqr_init( qrtre0, PlasmaTrans,
+            dplasma_hqr_init( qrtre0, dplasmaTrans,
                               A, -1, -1, -1, Q, -1, 0 );
 
             subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
@@ -364,11 +364,11 @@ dplasma_zgebrd_ge2gb_New( int ib,
         }
 
         dplasma_svd_init( qrtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, Q, cores, 2 );
 
         dplasma_svd_init( lqtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, P, cores, 2 );
 
         if (subA != A) {

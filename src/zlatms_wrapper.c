@@ -25,7 +25,7 @@ static int
 dplasma_zlatms_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *args )
 {
     int tempmm, tempnn, ldam, i;
@@ -39,7 +39,7 @@ dplasma_zlatms_operator( parsec_execution_stream_t *es,
 
     if (m == n) {
         LAPACKE_zlaset_work(
-            LAPACK_COL_MAJOR, lapack_const( uplo ), tempmm, tempnn,
+            LAPACK_COL_MAJOR, dplasma_lapack_const( uplo ), tempmm, tempnn,
             0., 0., A, ldam);
 
         /* D(i) = 1 - (i-1)/(N-1)*(1 - 1/COND) */
@@ -81,8 +81,8 @@ dplasma_zlatms_operator( parsec_execution_stream_t *es,
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] mtxtype
- *           - PlasmaGeneral:   Generate a general matrix
- *           - PlasmaSymmetric: Generate a symmetric matrix
+ *           - dplasmaGeneral:   Generate a general matrix
+ *           - dplasmaSymmetric: Generate a symmetric matrix
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to generate. Any tiled matrix
@@ -107,7 +107,7 @@ dplasma_zlatms_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 int
 dplasma_zlatms( parsec_context_t *parsec,
-                PLASMA_enum mtxtype, double cond,
+                dplasma_enum_t mtxtype, double cond,
                 parsec_tiled_matrix_dc_t *A,
                 unsigned long long int seed)
 {
@@ -120,7 +120,7 @@ dplasma_zlatms( parsec_context_t *parsec,
         parsec_taskpool_t *tp;
         double *condptr = malloc(sizeof( double ));
         *condptr = cond;
-        tp = parsec_apply_New( PlasmaUpperLower, A, dplasma_zlatms_operator, condptr );
+        tp = dplasma_apply_New( dplasmaUpperLower, A, dplasma_zlatms_operator, condptr );
         if ( tp != NULL ) {
             rc = parsec_context_add_taskpool(parsec, tp);
             rc = parsec_context_start( parsec );
@@ -167,7 +167,7 @@ dplasma_zlatms( parsec_context_t *parsec,
                                 (size_t)parsec_datadist_getsizeoftype(T.super.mtype));
     parsec_data_collection_set_key((parsec_data_collection_t*)&T, "T");
 
-    if ( mtxtype == PlasmaGeneral ) {
+    if ( mtxtype == dplasmaGeneral ) {
         if ( m >= n ) {
             parsec_tiled_matrix_dc_t *subA = tiled_matrix_submatrix( A, 0, 0, n, n );
             parsec_tiled_matrix_dc_t *subQ = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&Q,
@@ -179,7 +179,7 @@ dplasma_zlatms( parsec_context_t *parsec,
             /* Multiply on the right by an unitary matrix */
             dplasma_zplrnt( parsec, 0, subQ, seed + 1 );
             dplasma_zgeqrf( parsec, subQ, subT );
-            dplasma_zunmqr( parsec, PlasmaRight, PlasmaNoTrans,
+            dplasma_zunmqr( parsec, dplasmaRight, dplasmaNoTrans,
                             subQ, subT, subA );
 
             /* Multiply on the left by an unitary matrix */
@@ -188,7 +188,7 @@ dplasma_zlatms( parsec_context_t *parsec,
             dplasma_zgeqrf( parsec,
                             (parsec_tiled_matrix_dc_t*)&Q,
                             (parsec_tiled_matrix_dc_t*)&T );
-            dplasma_zunmqr( parsec, PlasmaLeft, PlasmaNoTrans,
+            dplasma_zunmqr( parsec, dplasmaLeft, dplasmaNoTrans,
                             (parsec_tiled_matrix_dc_t*)&Q,
                             (parsec_tiled_matrix_dc_t*)&T, A );
 
@@ -205,7 +205,7 @@ dplasma_zlatms( parsec_context_t *parsec,
             /* Multiply on the left by an unitary matrix */
             dplasma_zplrnt( parsec, 0, subQ, seed );
             dplasma_zgeqrf( parsec, subQ, subT );
-            dplasma_zunmqr( parsec, PlasmaLeft, PlasmaNoTrans,
+            dplasma_zunmqr( parsec, dplasmaLeft, dplasmaNoTrans,
                             subQ, subT, subA );
 
             /* Multiply on the right by an unitary matrix */
@@ -214,14 +214,14 @@ dplasma_zlatms( parsec_context_t *parsec,
             dplasma_zgeqrf( parsec,
                             (parsec_tiled_matrix_dc_t*)&Q,
                             (parsec_tiled_matrix_dc_t*)&T );
-            dplasma_zunmqr( parsec, PlasmaRight, PlasmaNoTrans,
+            dplasma_zunmqr( parsec, dplasmaRight, dplasmaNoTrans,
                             (parsec_tiled_matrix_dc_t*)&Q,
                             (parsec_tiled_matrix_dc_t*)&T, A );
             free(subA); free(subQ); free(subT);
         }
     }
     else {
-        assert( mtxtype == PlasmaHermitian );
+        assert( mtxtype == dplasmaHermitian );
 
         /* Init the unitary matrix */
         dplasma_zplrnt( parsec, 0,
@@ -230,10 +230,10 @@ dplasma_zlatms( parsec_context_t *parsec,
                         (parsec_tiled_matrix_dc_t*)&Q,
                         (parsec_tiled_matrix_dc_t*)&T );
 
-        dplasma_zunmqr( parsec, PlasmaLeft, PlasmaNoTrans,
+        dplasma_zunmqr( parsec, dplasmaLeft, dplasmaNoTrans,
                         (parsec_tiled_matrix_dc_t*)&Q,
                         (parsec_tiled_matrix_dc_t*)&T, A );
-        dplasma_zunmqr( parsec, PlasmaRight, PlasmaConjTrans,
+        dplasma_zunmqr( parsec, dplasmaRight, dplasmaConjTrans,
                         (parsec_tiled_matrix_dc_t*)&Q,
                         (parsec_tiled_matrix_dc_t*)&T, A );
     }

@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "cores/core_blas.h"
 
@@ -24,7 +25,7 @@ static int
 dplasma_zplrnt_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *op_data )
 {
     int tempmm, tempnn, ldam;
@@ -116,7 +117,7 @@ dplasma_zplrnt_New( int diagdom,
     params->diagdom = diagdom;
     params->seed    = seed;
 
-    return parsec_apply_New( PlasmaUpperLower, A, dplasma_zplrnt_operator, params );
+    return dplasma_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, params );
 }
 
 /**

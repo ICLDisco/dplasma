@@ -85,14 +85,14 @@ int main(int argc, char ** argv)
     if(loud > 3) printf("+++ Generate matrices ... ");
     dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_dc_t *)&dcA, random_seed );
     if( check )
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA0 );
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTS);
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTT);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTS);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcTT);
     if(loud > 3) printf("Done\n");
 
     dplasma_hqr_init( &qrtree,
-                      PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                      dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                       iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                       iparam[IPARAM_QR_TS_SZE],   iparam[IPARAM_QR_HLVL_SZE],
                       iparam[IPARAM_QR_DOMINO],   iparam[IPARAM_QR_TSRR] );
@@ -166,7 +166,7 @@ int main(int argc, char ** argv)
 
             if(loud > 2) printf("+++ Solve the system ...");
             dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcX, random_seed+1);
-            dplasma_zlacpy( parsec, PlasmaUpperLower,
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
                             (parsec_tiled_matrix_dc_t *)&dcX,
                             (parsec_tiled_matrix_dc_t *)&dcB );
             dplasma_zgeqrs_param( parsec, &qrtree,
@@ -236,18 +236,18 @@ static int check_orthogonality(parsec_context_t *parsec, int loud, parsec_tiled_
                                Q->mb, Q->nb, minMN, minMN, 0, 0,
                                minMN, minMN, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.rows));
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
     /* Perform Id - Q'Q */
     if ( M >= N ) {
-        dplasma_zherk( parsec, PlasmaUpper, PlasmaConjTrans,
+        dplasma_zherk( parsec, dplasmaUpper, dplasmaConjTrans,
                        1.0, Q, -1.0, (parsec_tiled_matrix_dc_t*)&Id );
     } else {
-        dplasma_zherk( parsec, PlasmaUpper, PlasmaNoTrans,
+        dplasma_zherk( parsec, dplasmaUpper, dplasmaNoTrans,
                        1.0, Q, -1.0, (parsec_tiled_matrix_dc_t*)&Id );
     }
 
-    normQ = dplasma_zlanhe(parsec, PlasmaInfNorm, PlasmaUpper, (parsec_tiled_matrix_dc_t*)&Id);
+    normQ = dplasma_zlanhe(parsec, dplasmaInfNorm, dplasmaUpper, (parsec_tiled_matrix_dc_t*)&Id);
 
     result = normQ / (minMN * eps);
     if ( loud ) {
@@ -302,17 +302,17 @@ check_factorization(parsec_context_t *parsec, int loud,
                                N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     /* Copy the original A in Residual */
-    dplasma_zlacpy( parsec, PlasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );
+    dplasma_zlacpy( parsec, dplasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );
 
     /* Extract the R */
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&R);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&R);
 
     subA = tiled_matrix_submatrix( A, 0, 0, N, N );
-    dplasma_zlacpy( parsec, PlasmaUpper, subA, (parsec_tiled_matrix_dc_t *)&R );
+    dplasma_zlacpy( parsec, dplasmaUpper, subA, (parsec_tiled_matrix_dc_t *)&R );
     free(subA);
 
     /* Perform Residual = Aorig - Q*R */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans,
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans,
                    -1.0, Q, (parsec_tiled_matrix_dc_t *)&R,
                     1.0, (parsec_tiled_matrix_dc_t *)&Residual);
 
@@ -320,8 +320,8 @@ check_factorization(parsec_context_t *parsec, int loud,
     parsec_data_free(R.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&R);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Residual);
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, Aorig);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&Residual);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, Aorig);
 
     result = Rnorm / ( Anorm * minMN * eps);
 
@@ -360,18 +360,18 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     subX = tiled_matrix_submatrix( dcX, 0, 0, dcA->n, dcX->n );
 
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, subX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, subX);
 
     /* Compute A*x-b */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, 1.0, dcA, subX, -1.0, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, 1.0, dcA, subX, -1.0, dcB);
 
     /* Compute A' * ( A*x - b ) */
-    dplasma_zgemm( parsec, PlasmaConjTrans, PlasmaNoTrans,
+    dplasma_zgemm( parsec, dplasmaConjTrans, dplasmaNoTrans,
                    1.0, dcA, dcB, 0., subX );
 
-    Rnorm = dplasma_zlange( parsec, PlasmaInfNorm, subX );
+    Rnorm = dplasma_zlange( parsec, dplasmaInfNorm, subX );
     free(subX);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * dcA->n * eps ) ;

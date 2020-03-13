@@ -87,12 +87,12 @@ int main(int argc, char ** argv)
         }
     }
 
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA,
                     (parsec_tiled_matrix_dc_t *)&dcA0 );
 
     if ( check ) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcAl );
         K = 0;
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
                                  (parsec_tiled_matrix_dc_t*)&dcIPIV);
 
     for(i=0; i<K; i++) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA0,
                         (parsec_tiled_matrix_dc_t *)&dcA );
 
@@ -134,7 +134,7 @@ int main(int argc, char ** argv)
 
         eps = LAPACKE_dlamch_work('e');
 
-        Anorm = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA0 );
+        Anorm = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA0 );
         if( rank  == 0 ) {
             dplasma_complex64_t *dA, *lA;
             int *dplasma_piv;
@@ -169,11 +169,11 @@ int main(int argc, char ** argv)
 #endif
 
         if ( ipivok ) {
-            dplasma_zgeadd( parsec, PlasmaNoTrans,
+            dplasma_zgeadd( parsec, dplasmaNoTrans,
                             -1.0, (parsec_tiled_matrix_dc_t*)&dcA,
                              1.0, (parsec_tiled_matrix_dc_t*)&dcAl );
 
-            Rnorm = dplasma_zlange( parsec, PlasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcAl );
+            Rnorm = dplasma_zlange( parsec, dplasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcAl );
             result = Rnorm / (Anorm * dplasma_imax(M,N) * eps);
 
             if ( rank == 0 && loud > 2 ) {

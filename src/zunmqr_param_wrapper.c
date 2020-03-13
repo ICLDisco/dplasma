@@ -34,20 +34,20 @@
  *
  *        Q = H(1) H(2) . . . H(k)
  *
- *  as returned by dplasma_zgeqrf_param(). Q is of order M if side = PlasmaLeft
- *  and of order N if side = PlasmaRight.
+ *  as returned by dplasma_zgeqrf_param(). Q is of order M if side = dplasmaLeft
+ *  and of order N if side = dplasmaRight.
  *
  * WARNING: The computations are not done by this call.
  *
  *******************************************************************************
  *
  * @param[in] side
- *          @arg PlasmaLeft:  apply Q or Q**H from the left;
- *          @arg PlasmaRight: apply Q or Q**H from the right.
+ *          @arg dplasmaLeft:  apply Q or Q**H from the left;
+ *          @arg dplasmaRight: apply Q or Q**H from the right.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   no transpose, apply Q;
- *          @arg PlasmaConjTrans: conjugate transpose, apply Q**H.
+ *          @arg dplasmaNoTrans:   no transpose, apply Q;
+ *          @arg dplasmaConjTrans: conjugate transpose, apply Q**H.
  *
  * @param[in] qrtree
  *          The structure that describes the trees used to perform the
@@ -61,8 +61,8 @@
  *          elementary reflector H(i), for i = 1,2,...,k, as returned by
  *          dplasma_zgeqrf_param_New_New() in the first k columns of its array
  *          argument A.
- *          If side == PlasmaLeft,  M >= K >= 0.
- *          If side == PlasmaRight, N >= K >= 0.
+ *          If side == dplasmaLeft,  M >= K >= 0.
+ *          If side == dplasmaRight, N >= K >= 0.
  *
  * @param[in] TS
  *          Descriptor of the matrix TS distributed exactly as the A
@@ -101,7 +101,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zunmqr_param_New( PLASMA_enum side, PLASMA_enum trans,
+dplasma_zunmqr_param_New( dplasma_enum_t side, dplasma_enum_t trans,
                           dplasma_qrtree_t *qrtree,
                           parsec_tiled_matrix_dc_t *A,
                           parsec_tiled_matrix_dc_t *TS,
@@ -123,18 +123,18 @@ dplasma_zunmqr_param_New( PLASMA_enum side, PLASMA_enum trans,
     /*     dplasma_error("dplasma_zunmqr_param_New", "illegal C descriptor"); */
     /*     return NULL; */
     /* } */
-    if ((side != PlasmaLeft) && (side != PlasmaRight)) {
+    if ((side != dplasmaLeft) && (side != dplasmaRight)) {
         dplasma_error("dplasma_zunmqr_param_New", "illegal value of side");
         return NULL;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zunmqr_param_New", "illegal value of trans");
         return NULL;
     }
 
-    if ( side == PlasmaLeft ) {
+    if ( side == dplasmaLeft ) {
         Am = C->m;
     } else {
         Am = C->n;
@@ -157,8 +157,8 @@ dplasma_zunmqr_param_New( PLASMA_enum side, PLASMA_enum trans,
         return NULL;
     }
 
-    if ( side == PlasmaLeft ) {
-        if ( trans == PlasmaNoTrans ) {
+    if ( side == dplasmaLeft ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)parsec_zunmqr_param_LN_new( side, trans,
                                                                  A,
                                                                  C,
@@ -176,7 +176,7 @@ dplasma_zunmqr_param_New( PLASMA_enum side, PLASMA_enum trans,
                                                                  NULL);
         }
     } else {
-        if ( trans == PlasmaNoTrans ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)parsec_zunmqr_param_RN_new( side, trans,
                                                                  A,
                                                                  C,
@@ -278,8 +278,8 @@ dplasma_zunmqr_param_Destruct( parsec_taskpool_t *tp )
  *
  *        Q = H(1) H(2) . . . H(k)
  *
- *  as returned by dplasma_zgeqrf_param(). Q is of order M if side = PlasmaLeft
- *  and of order N if side = PlasmaRight.
+ *  as returned by dplasma_zgeqrf_param(). Q is of order M if side = dplasmaLeft
+ *  and of order N if side = dplasmaRight.
  *
  *******************************************************************************
  *
@@ -287,12 +287,12 @@ dplasma_zunmqr_param_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] side
- *          @arg PlasmaLeft:  apply Q or Q**H from the left;
- *          @arg PlasmaRight: apply Q or Q**H from the right.
+ *          @arg dplasmaLeft:  apply Q or Q**H from the left;
+ *          @arg dplasmaRight: apply Q or Q**H from the right.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   no transpose, apply Q;
- *          @arg PlasmaConjTrans: conjugate transpose, apply Q**H.
+ *          @arg dplasmaNoTrans:   no transpose, apply Q;
+ *          @arg dplasmaConjTrans: conjugate transpose, apply Q**H.
  *
  * @param[in] qrtree
  *          The structure that describes the trees used to perform the
@@ -306,8 +306,8 @@ dplasma_zunmqr_param_Destruct( parsec_taskpool_t *tp )
  *          defines the elementary reflector H(i), for i = 1,2,...,k, as
  *          returned by dplasma_zgeqrf_New() in the first k columns of its array
  *          argument A.
- *          If side == PlasmaLeft,  M >= K >= 0.
- *          If side == PlasmaRight, N >= K >= 0.
+ *          If side == dplasmaLeft,  M >= K >= 0.
+ *          If side == dplasmaRight, N >= K >= 0.
  *
  * @param[in] TS
  *          Descriptor of the matrix TS distributed exactly as the A
@@ -345,7 +345,7 @@ dplasma_zunmqr_param_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zunmqr_param( parsec_context_t *parsec,
-                      PLASMA_enum side, PLASMA_enum trans,
+                      dplasma_enum_t side, dplasma_enum_t trans,
                       dplasma_qrtree_t    *qrtree,
                       parsec_tiled_matrix_dc_t *A,
                       parsec_tiled_matrix_dc_t *TS,
@@ -360,18 +360,18 @@ dplasma_zunmqr_param( parsec_context_t *parsec,
         return -1;
     }
 
-    if ((side != PlasmaLeft) && (side != PlasmaRight)) {
+    if ((side != dplasmaLeft) && (side != dplasmaRight)) {
         dplasma_error("dplasma_zunmqr_param", "illegal value of side");
         return -1;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zunmqr_param", "illegal value of trans");
         return -2;
     }
 
-    if ( side == PlasmaLeft ) {
+    if ( side == dplasmaLeft ) {
         Am = C->m;
     } else {
         Am = C->n;

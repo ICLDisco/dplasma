@@ -10,6 +10,7 @@
  */
 
 #include "dplasma.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -107,8 +108,8 @@ dplasma_zgelqs_param( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zunmlq = NULL;
     parsec_taskpool_t *parsec_ztrsm  = NULL;
 
-    parsec_ztrsm  = dplasma_ztrsm_New(  PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaNonUnit, 1.0, subA, subB );
-    parsec_zunmlq = dplasma_zunmlq_param_New( PlasmaLeft, PlasmaConjTrans, qrtree, A, TS, TT, B );
+    parsec_ztrsm  = dplasma_ztrsm_New(  dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
+    parsec_zunmlq = dplasma_zunmlq_param_New( dplasmaLeft, dplasmaConjTrans, qrtree, A, TS, TT, B );
 
     parsec_context_add_taskpool( parsec, parsec_ztrsm );
     parsec_context_add_taskpool( parsec, parsec_zunmlq );
@@ -120,8 +121,8 @@ dplasma_zgelqs_param( parsec_context_t *parsec,
 
 #else
 
-    dplasma_ztrsm(  parsec, PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaNonUnit, 1.0, subA, subB );
-    dplasma_zunmlq_param( parsec, PlasmaLeft, PlasmaConjTrans, qrtree, A, TS, TT, B );
+    dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
+    dplasma_zunmlq_param( parsec, dplasmaLeft, dplasmaConjTrans, qrtree, A, TS, TT, B );
 
 #endif
 

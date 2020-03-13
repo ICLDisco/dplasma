@@ -216,7 +216,7 @@ BODY
     }
 
     CORE_ztrsm(
-        PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,
+        dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,
         tempkm, tempnn,
         1., A /*(k, k)*/, ldak,
             B /*(k, n)*/, ldak);
@@ -280,7 +280,7 @@ BODY
              "\t(%d, %d, %d, dataA(%d,%d)[%p], %d, B(%d,%d)[%p], %d, C(%d,%d)[%p], %d)",
              k, m, n, tempmm, tempnn, descA->mb, k, k, A, ldam, k, k, B, ldak, k, n, C, ldam);
 
-    CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
+    CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                tempmm, tempnn, descA->mb,
                -1., A /*(m, k)*/, ldam,
                     B /*(k, n)*/, ldak,

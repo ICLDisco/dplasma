@@ -8,7 +8,8 @@
  */
 #include "dplasma.h"
 #include "dplasma/types.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 #include "zsyrk_LN.h"
 #include "zsyrk_LT.h"
@@ -37,19 +38,19 @@
  *******************************************************************************
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed or transposed:
- *          = PlasmaNoTrans: A is not transposed;
- *          = PlasmaTrans:   A is transposed.
+ *          = dplasmaNoTrans: A is not transposed;
+ *          = dplasmaTrans:   A is transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
  *
  * @param[in] A
- *          A is a LDA-by-ka matrix, where ka is K when trans = PlasmaNoTrans,
+ *          A is a LDA-by-ka matrix, where ka is K when trans = dplasmaNoTrans,
  *          and is N otherwise.
  *
  * @param[in] beta
@@ -77,8 +78,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zsyrk_New( PLASMA_enum uplo,
-                   PLASMA_enum trans,
+dplasma_zsyrk_New( dplasma_enum_t uplo,
+                   dplasma_enum_t trans,
                    dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t* A,
                    dplasma_complex64_t beta,
@@ -86,8 +87,8 @@ dplasma_zsyrk_New( PLASMA_enum uplo,
 {
     parsec_taskpool_t* tp;
 
-    if ( uplo == PlasmaLower ) {
-        if ( trans == PlasmaNoTrans ) {
+    if ( uplo == dplasmaLower ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zsyrk_LN_new(uplo, trans,
                                    alpha, A,
@@ -101,7 +102,7 @@ dplasma_zsyrk_New( PLASMA_enum uplo,
         }
     }
     else {
-        if ( trans == PlasmaNoTrans ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zsyrk_UN_new(uplo, trans,
                                    alpha, A,
@@ -174,19 +175,19 @@ dplasma_zsyrk_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed or transposed:
- *          = PlasmaNoTrans: A is not transposed;
- *          = PlasmaTrans:   A is transposed.
+ *          = dplasmaNoTrans: A is not transposed;
+ *          = dplasmaTrans:   A is transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
  *
  * @param[in] A
- *          A is a LDA-by-ka matrix, where ka is K when trans = PlasmaNoTrans,
+ *          A is a LDA-by-ka matrix, where ka is K when trans = dplasmaNoTrans,
  *          and is N otherwise.
  *
  * @param[in] beta
@@ -214,8 +215,8 @@ dplasma_zsyrk_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zsyrk( parsec_context_t *parsec,
-               PLASMA_enum uplo,
-               PLASMA_enum trans,
+               dplasma_enum_t uplo,
+               dplasma_enum_t trans,
                dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *A,
                dplasma_complex64_t beta,
@@ -224,11 +225,11 @@ dplasma_zsyrk( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zsyrk = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) && (uplo != PlasmaUpper)) {
-        dplasma_error("PLASMA_zsyrk", "illegal value of uplo");
+    if ((uplo != dplasmaLower) && (uplo != dplasmaUpper)) {
+        dplasma_error("dplasma_zsyrk", "illegal value of uplo");
         return -1;
     }
-    if (trans != PlasmaTrans && trans != PlasmaNoTrans ) {
+    if (trans != dplasmaTrans && trans != dplasmaNoTrans ) {
         dplasma_error("dplasma_zsyrk", "illegal value of trans");
         return -2;
     }
@@ -236,8 +237,8 @@ dplasma_zsyrk( parsec_context_t *parsec,
         dplasma_error("dplasma_zsyrk", "illegal size of matrix C which should be square");
         return -6;
     }
-    if ( ((trans == PlasmaNoTrans) && (A->m != C->m)) ||
-         ((trans != PlasmaNoTrans) && (A->n != C->m)) ) {
+    if ( ((trans == dplasmaNoTrans) && (A->m != C->m)) ||
+         ((trans != dplasmaNoTrans) && (A->n != C->m)) ) {
         dplasma_error("dplasma_zsyrk", "illegal size of matrix A");
         return -4;
     }

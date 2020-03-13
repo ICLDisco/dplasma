@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/private_mempool.h"
 
 #include "zgetrf_incpiv.h"

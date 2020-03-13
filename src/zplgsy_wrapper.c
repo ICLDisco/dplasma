@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "cores/core_blas.h"
 
@@ -23,7 +24,7 @@ static int
 dplasma_zplgsy_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *op_data )
 {
     int tempmm, tempnn, ldam;
@@ -63,9 +64,9 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
  *
  * @param[in] uplo
  *          Specifies which elements of the matrix are to be set
- *          = PlasmaUpper: Upper part of A is set;
- *          = PlasmaLower: Lower part of A is set;
- *          = PlasmaUpperLower: ALL elements of A are set.
+ *          = dplasmaUpper: Upper part of A is set;
+ *          = dplasmaLower: Lower part of A is set;
+ *          = dplasmaUpperLower: ALL elements of A are set.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to generate. Any tiled matrix
@@ -93,7 +94,7 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
 *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zplgsy_New( dplasma_complex64_t bump, PLASMA_enum uplo,
+dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A,
                     unsigned long long int seed)
 {
@@ -150,9 +151,9 @@ dplasma_zplgsy_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] uplo
  *          Specifies which elements of the matrix are to be set
- *          = PlasmaUpper: Upper part of A is set;
- *          = PlasmaLower: Lower part of A is set;
- *          = PlasmaUpperLower: ALL elements of A are set.
+ *          = dplasmaUpper: Upper part of A is set;
+ *          = dplasmaLower: Lower part of A is set;
+ *          = dplasmaUpperLower: ALL elements of A are set.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to generate. Any tiled matrix
@@ -179,16 +180,16 @@ dplasma_zplgsy_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zplgsy( parsec_context_t *parsec,
-                dplasma_complex64_t bump, PLASMA_enum uplo,
+                dplasma_complex64_t bump, dplasma_enum_t uplo,
                 parsec_tiled_matrix_dc_t *A,
                 unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zplgsy = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) &&
-        (uplo != PlasmaUpper) &&
-        (uplo != PlasmaUpperLower))
+    if ((uplo != dplasmaLower) &&
+        (uplo != dplasmaUpper) &&
+        (uplo != dplasmaUpperLower))
     {
         dplasma_error("dplasma_zplgsy", "illegal value of type");
         return -3;

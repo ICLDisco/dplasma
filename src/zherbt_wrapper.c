@@ -11,21 +11,21 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
-#include <core_blas.h>
+#include "cores/core_blas.h"
 
 #include "parsec/private_mempool.h"
 
 #include "zherbt_L.h"
 
 parsec_taskpool_t *
-dplasma_zherbt_New( PLASMA_enum uplo, int IB,
+dplasma_zherbt_New( dplasma_enum_t uplo, int IB,
                     parsec_tiled_matrix_dc_t *A,
                     parsec_tiled_matrix_dc_t *T)
 {
     parsec_zherbt_L_taskpool_t *parsec_zherbt = NULL;
     parsec_memory_pool_t *pool[4];
 
-    if( PlasmaLower != uplo ) {
+    if( dplasmaLower != uplo ) {
         dplasma_error("dplasma_zherbt_New", "illegal value of uplo");
         return NULL;
     }
@@ -42,7 +42,7 @@ dplasma_zherbt_New( PLASMA_enum uplo, int IB,
     pool[3] = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));  /* work for the TSMQRLR */
     parsec_private_memory_init( pool[3], (sizeof(dplasma_complex64_t)*T->nb*4 *T->nb) );
 
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
         parsec_zherbt = parsec_zherbt_L_new(uplo, IB,
                                           A,
                                           T,
@@ -64,7 +64,7 @@ void dplasma_zherbt_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zherbt_L_taskpool_t *parsec_zherbt = (parsec_zherbt_L_taskpool_t *)tp;
 
-    if( PlasmaLower == parsec_zherbt->_g_uplo ) {
+    if( dplasmaLower == parsec_zherbt->_g_uplo ) {
 
         parsec_matrix_del2arena( parsec_zherbt->arenas[PARSEC_zherbt_L_DEFAULT_ARENA   ] );
         parsec_matrix_del2arena( parsec_zherbt->arenas[PARSEC_zherbt_L_LITTLE_T_ARENA  ] );

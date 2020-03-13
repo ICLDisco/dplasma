@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #include "zgemm_NN.h"
@@ -44,15 +45,15 @@
  *
  * @param[in] transA
  *          Specifies whether the matrix A is transposed, not transposed or conjugate transposed:
- *          = PlasmaNoTrans:   A is not transposed;
- *          = PlasmaTrans:     A is transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is not transposed;
+ *          = dplasmaTrans:     A is transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] transB
  *          Specifies whether the matrix B is transposed, not transposed or conjugate transposed:
- *          = PlasmaNoTrans:   B is not transposed;
- *          = PlasmaTrans:     B is transposed;
- *          = PlasmaConjTrans: B is conjugate transposed.
+ *          = dplasmaNoTrans:   B is not transposed;
+ *          = dplasmaTrans:     B is transposed;
+ *          = dplasmaConjTrans: B is conjugate transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha
@@ -89,7 +90,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
+dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C)
 {
@@ -99,11 +100,11 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
     int P, Q, m, n;
 
     /* Check input arguments */
-    if ((transA != PlasmaNoTrans) && (transA != PlasmaTrans) && (transA != PlasmaConjTrans)) {
+    if ((transA != dplasmaNoTrans) && (transA != dplasmaTrans) && (transA != dplasmaConjTrans)) {
         dplasma_error("dplasma_zgemm_New", "illegal value of transA");
         return NULL /*-1*/;
     }
-    if ((transB != PlasmaNoTrans) && (transB != PlasmaTrans) && (transB != PlasmaConjTrans)) {
+    if ((transB != dplasmaNoTrans) && (transB != dplasmaTrans) && (transB != dplasmaConjTrans)) {
         dplasma_error("dplasma_zgemm_New", "illegal value of transB");
         return NULL /*-2*/;
     }
@@ -132,8 +133,8 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
         Cdist->super.super.data_of = NULL;
         Cdist->super.super.data_of_key = NULL;
 
-        if( PlasmaNoTrans == transA ) {
-            if( PlasmaNoTrans == transB ) {
+        if( dplasmaNoTrans == transA ) {
+            if( dplasmaNoTrans == transB ) {
                 parsec_zgemm_NN_summa_taskpool_t* tp;
                 tp = parsec_zgemm_NN_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
@@ -149,7 +150,7 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
-            if( PlasmaNoTrans == transB ) {
+            if( dplasmaNoTrans == transB ) {
                 parsec_zgemm_TN_summa_taskpool_t* tp;
                 tp = parsec_zgemm_TN_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
@@ -169,8 +170,8 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
     }
     /* C is NOT 2D block-cyclic distributed */
     else {
-        if( PlasmaNoTrans == transA ) {
-            if( PlasmaNoTrans == transB ) {
+        if( dplasmaNoTrans == transA ) {
+            if( dplasmaNoTrans == transB ) {
                 parsec_zgemm_NN_taskpool_t* tp;
                 tp = parsec_zgemm_NN_new(transA, transB, alpha, beta,
                                          A, B, C);
@@ -184,7 +185,7 @@ dplasma_zgemm_New( PLASMA_enum transA, PLASMA_enum transB,
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
-            if( PlasmaNoTrans == transB ) {
+            if( dplasmaNoTrans == transB ) {
                 parsec_zgemm_TN_taskpool_t* tp;
                 tp = parsec_zgemm_TN_new(transA, transB, alpha, beta,
                                          A, B, C);
@@ -265,15 +266,15 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] transA
  *          Specifies whether the matrix A is transposed, not transposed or conjugate transposed:
- *          = PlasmaNoTrans:   A is not transposed;
- *          = PlasmaTrans:     A is transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is not transposed;
+ *          = dplasmaTrans:     A is transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] transB
  *          Specifies whether the matrix B is transposed, not transposed or conjugate transposed:
- *          = PlasmaNoTrans:   B is not transposed;
- *          = PlasmaTrans:     B is transposed;
- *          = PlasmaConjTrans: B is conjugate transposed.
+ *          = dplasmaNoTrans:   B is not transposed;
+ *          = dplasmaTrans:     B is transposed;
+ *          = dplasmaConjTrans: B is conjugate transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha
@@ -309,7 +310,7 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgemm( parsec_context_t *parsec,
-               PLASMA_enum transA, PLASMA_enum transB,
+               dplasma_enum_t transA, dplasma_enum_t transB,
                dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
                                         const parsec_tiled_matrix_dc_t *B,
                dplasma_complex64_t beta,        parsec_tiled_matrix_dc_t *C)
@@ -320,16 +321,16 @@ dplasma_zgemm( parsec_context_t *parsec,
     int Bm, Bn, Bi, Bj, Bmb, Bnb;
 
     /* Check input arguments */
-    if ((transA != PlasmaNoTrans) && (transA != PlasmaTrans) && (transA != PlasmaConjTrans)) {
+    if ((transA != dplasmaNoTrans) && (transA != dplasmaTrans) && (transA != dplasmaConjTrans)) {
         dplasma_error("dplasma_zgemm", "illegal value of transA");
         return -1;
     }
-    if ((transB != PlasmaNoTrans) && (transB != PlasmaTrans) && (transB != PlasmaConjTrans)) {
+    if ((transB != dplasmaNoTrans) && (transB != dplasmaTrans) && (transB != dplasmaConjTrans)) {
         dplasma_error("dplasma_zgemm", "illegal value of transB");
         return -2;
     }
 
-    if ( transA == PlasmaNoTrans ) {
+    if ( transA == dplasmaNoTrans ) {
         Am  = A->m;
         An  = A->n;
         Amb = A->mb;
@@ -345,7 +346,7 @@ dplasma_zgemm( parsec_context_t *parsec,
         Aj  = A->i;
     }
 
-    if ( transB == PlasmaNoTrans ) {
+    if ( transB == dplasmaNoTrans ) {
         Bm  = B->m;
         Bn  = B->n;
         Bmb = B->mb;

@@ -48,8 +48,8 @@ extern "C" {
  /** ****************************************************************************
   *  LAPACK Constants
   **/
-extern char *plasma_lapack_constants[];
-#define lapack_const(plasma_const) plasma_lapack_constants[plasma_const][0]
+extern char *dplasma_lapack_constants[];
+#define lapack_const(plasma_const) dplasma_lapack_constants[plasma_const][0]
 
 /* CBLAS requires for scalar arguments to be passed by address rather than by value */
 #ifndef CBLAS_SADDR

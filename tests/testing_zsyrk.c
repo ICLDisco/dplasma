@@ -12,7 +12,7 @@
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum trans,
+                           dplasma_enum_t uplo, dplasma_enum_t trans,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal );
@@ -41,10 +41,10 @@ int main(int argc, char ** argv)
 
     if(!check)
     {
-        PLASMA_enum uplo  = PlasmaLower;
-        PLASMA_enum trans = PlasmaNoTrans;
-        int Am = ( trans == PlasmaNoTrans ? N : K );
-        int An = ( trans == PlasmaNoTrans ? K : N );
+        dplasma_enum_t uplo  = dplasmaLower;
+        dplasma_enum_t trans = dplasmaNoTrans;
+        int Am = ( trans == dplasmaNoTrans ? N : K );
+        int An = ( trans == dplasmaNoTrans ? K : N );
         LDA = max(LDA, Am);
 
         PASTE_CODE_FLOPS(FLOPS_ZSYRK, ((DagDouble_t)K, (DagDouble_t)N));
@@ -103,8 +103,8 @@ int main(int argc, char ** argv)
             for (t=0; t<2; t++) {
 
                 /* initializing matrix structure */
-                int Am = ( trans[t] == PlasmaNoTrans ? N : K );
-                int An = ( trans[t] == PlasmaNoTrans ? K : N );
+                int Am = ( trans[t] == dplasmaNoTrans ? N : K );
+                int An = ( trans[t] == dplasmaNoTrans ? K : N );
                 LDA = max(LDA, Am);
 
                 PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
@@ -170,7 +170,7 @@ int main(int argc, char ** argv)
  *  Check the accuracy of the solution
  */
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum trans,
+                           dplasma_enum_t uplo, dplasma_enum_t trans,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal )
@@ -198,25 +198,25 @@ static int check_solution( parsec_context_t *parsec, int loud,
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );
 
-    Anorm        = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
-    Cinitnorm    = dplasma_zlansy( parsec, PlasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC     );
-    Cdplasmanorm = dplasma_zlansy( parsec, PlasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)dcCfinal );
+    Anorm        = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
+    Cinitnorm    = dplasma_zlansy( parsec, dplasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC     );
+    Cdplasmanorm = dplasma_zlansy( parsec, dplasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)dcCfinal );
 
     if ( rank == 0 ) {
         cblas_zsyrk(CblasColMajor,
                     (CBLAS_UPLO)uplo, (CBLAS_TRANSPOSE)trans,
-                    N, (trans == PlasmaNoTrans) ? An : Am,
+                    N, (trans == dplasmaNoTrans) ? An : Am,
                     CBLAS_SADDR(alpha), dcA.mat, LDA,
                     CBLAS_SADDR(beta),  dcC.mat, LDC);
     }
 
-    Clapacknorm = dplasma_zlansy( parsec, PlasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
+    Clapacknorm = dplasma_zlansy( parsec, dplasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    dplasma_ztradd( parsec, uplo, PlasmaNoTrans,
+    dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
                     -1.0, (parsec_tiled_matrix_dc_t*)dcCfinal,
                      1.0, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    Rnorm = dplasma_zlansy( parsec, PlasmaMaxNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
+    Rnorm = dplasma_zlansy( parsec, dplasmaMaxNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
 
     result = Rnorm / (Clapacknorm * max(M,N) * eps);
 

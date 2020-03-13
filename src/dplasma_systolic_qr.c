@@ -11,7 +11,8 @@
  *
  */
 #include "dplasma.h"
-#include "dplasma_qr_param.h"
+#include "dplasmaaux.h"
+#include "dplasma/qr_param.h"
 
 #include <math.h>
 #if defined(PARSEC_HAVE_STRING_H)
@@ -321,9 +322,9 @@ static int systolic_prevpiv(const dplasma_qrtree_t *qrtree, int k, int pivot, in
  *          On exit, the structure initialized according to the parameter given.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   Structure is initialized for QR factorization.
- *          @arg PlasmaTrans:     Structure is initialized for LQ factorization.
- *          @arg PlasmaConjTrans: Structure is initialized for LQ factorization.
+ *          @arg dplasmaNoTrans:   Structure is initialized for QR factorization.
+ *          @arg dplasmaTrans:     Structure is initialized for LQ factorization.
+ *          @arg dplasmaConjTrans: Structure is initialized for LQ factorization.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to be factorized, on which
@@ -354,16 +355,16 @@ static int systolic_prevpiv(const dplasma_qrtree_t *qrtree, int k, int pivot, in
  ******************************************************************************/
 int
 dplasma_systolic_init( dplasma_qrtree_t *qrtree,
-                       PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                       dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                        int p, int q )
 {
     if (qrtree == NULL) {
         dplasma_error("dplasma_systolic_init", "illegal value of qrtree");
         return -1;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_systolic_init", "illegal value of trans");
         return -2;
     }
@@ -388,8 +389,8 @@ dplasma_systolic_init( dplasma_qrtree_t *qrtree,
     qrtree->nextpiv    = systolic_nextpiv;
     qrtree->prevpiv    = systolic_prevpiv;
 
-    qrtree->mt   = (trans == PlasmaNoTrans) ? A->mt : A->nt;
-    qrtree->nt   = (trans == PlasmaNoTrans) ? A->nt : A->mt;
+    qrtree->mt   = (trans == dplasmaNoTrans) ? A->mt : A->nt;
+    qrtree->nt   = (trans == dplasmaNoTrans) ? A->nt : A->mt;
 
     qrtree->a    = dplasma_imax( q, 1 );
     qrtree->p    = dplasma_imax( p, 1 );

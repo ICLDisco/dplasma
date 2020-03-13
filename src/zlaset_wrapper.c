@@ -11,13 +11,14 @@
 #include <lapacke.h>
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 
 static int
 dplasma_zlaset_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *args )
 {
     int tempmm, tempnn, ldam;
@@ -31,7 +32,7 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
 
     if (m == n) {
         LAPACKE_zlaset_work(
-            LAPACK_COL_MAJOR, lapack_const( uplo ), tempmm, tempnn,
+            LAPACK_COL_MAJOR, dplasma_lapack_const( uplo ), tempmm, tempnn,
             alpha[0], alpha[1], A, ldam);
     } else {
         LAPACKE_zlaset_work(
@@ -56,9 +57,9 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is set:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is referenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is referenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] alpha
  *         The constant to which the off-diagonal elements are to be set.
@@ -89,7 +90,7 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlaset_New( PLASMA_enum uplo,
+dplasma_zlaset_New( dplasma_enum_t uplo,
                     dplasma_complex64_t alpha,
                     dplasma_complex64_t beta,
                     parsec_tiled_matrix_dc_t *A )
@@ -144,9 +145,9 @@ dplasma_zlaset_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is set:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is refrenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is refrenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] alpha
  *         The constant to which the off-diagonal elements are to be set.
@@ -176,7 +177,7 @@ dplasma_zlaset_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zlaset( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 dplasma_complex64_t alpha,
                 dplasma_complex64_t beta,
                 parsec_tiled_matrix_dc_t *A )
@@ -184,9 +185,9 @@ dplasma_zlaset( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zlaset = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) &&
-        (uplo != PlasmaUpper) &&
-        (uplo != PlasmaUpperLower))
+    if ((uplo != dplasmaLower) &&
+        (uplo != dplasmaUpper) &&
+        (uplo != dplasmaUpperLower))
     {
         dplasma_error("dplasma_zlaset", "illegal value of type");
         return -1;

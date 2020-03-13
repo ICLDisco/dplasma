@@ -14,10 +14,10 @@ extern "C" %{
 
 %}
 
-side      [type = "PLASMA_enum"]
-uplo      [type = "PLASMA_enum"]
-trans     [type = "PLASMA_enum"]
-diag      [type = "PLASMA_enum"]
+side      [type = "dplasma_enum_t"]
+uplo      [type = "dplasma_enum_t"]
+trans     [type = "dplasma_enum_t"]
+diag      [type = "dplasma_enum_t"]
 alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
 descB     [type = "parsec_tiled_matrix_dc_t*"]
@@ -131,13 +131,13 @@ BODY
     int ldbm = BLKLDD( descB, (descB->mt-1)-m );
     int ldb  = BLKLDD( descB, (descB->mt-1)-k );
 
-        CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans, descB->mb,
+        CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans, descB->mb,
                    tempnn, tempkm,
                    -1.0,   C /* descA((descB->mt-1)-m,(descB->mt-1)-k) */, ldam,
                            D /* descB((descB->mt-1)-k,n) */,              ldb,
                    lalpha, E /* descB((descB->mt-1)-m,n) */,              ldbm );
     printlog("CORE_zgemm(%d, %d, %d)\n"
-             "\t(PlasmaNoTrans, PlasmaNoTrans, descB->mb, tempnn, tempkm, mzone, descA(%d,%d)[%p], descA->mb, descB(%d,%d)[%p], ldb, lalpha, descB(%d,%d)[%p], descB->mb)\n",
+             "\t(dplasmaNoTrans, dplasmaNoTrans, descB->mb, tempnn, tempkm, mzone, descA(%d,%d)[%p], descA->mb, descB(%d,%d)[%p], ldb, lalpha, descB(%d,%d)[%p], descB->mb)\n",
              k, m, n, (descB->mt-1)-m, (descB->mt-1)-k, C, (descB->mt-1)-k, n, D, (descB->mt-1)-m, n, E);
 }
 END

@@ -8,7 +8,8 @@
  */
 #include "dplasma.h"
 #include "dplasma/types.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
@@ -22,7 +23,7 @@
  */
 int
 dplasma_zhetrd( parsec_context_t* parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 int ib,
                 parsec_tiled_matrix_dc_t* A,
                 parsec_tiled_matrix_dc_t* DE,
@@ -34,7 +35,7 @@ dplasma_zhetrd( parsec_context_t* parsec,
     parsec_zhetrd_b2s_taskpool_t * b2s = NULL;
     parsec_memory_pool_t pool[4];
 
-    if( uplo != PlasmaLower && uplo != PlasmaUpper ) {
+    if( uplo != dplasmaLower && uplo != dplasmaUpper ) {
         dplasma_error("DPLASMA_zhetrd", "illegal value of uplo");
         *info = -1;
         return *info;
@@ -45,7 +46,7 @@ dplasma_zhetrd( parsec_context_t* parsec,
     parsec_private_memory_init( &pool[2], (sizeof(dplasma_complex64_t)*T->nb*2 *T->nb) ); /* work for HERFB1 */
     parsec_private_memory_init( &pool[3], (sizeof(dplasma_complex64_t)*T->nb*4 *T->nb) ); /* work for the TSMQRLR */
 
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
         h2b = parsec_zhetrd_h2b_L_new( ib, A, T, &pool[3], &pool[2], &pool[1], &pool[0] );
         dplasma_add2arena_rectangle( h2b->arenas[PARSEC_zhetrd_h2b_L_DEFAULT_ARENA],
                                  A->mb*A->nb*sizeof(dplasma_complex64_t),

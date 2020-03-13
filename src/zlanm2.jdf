@@ -78,7 +78,7 @@ BODY
         memset(W, 0, tempnn*sizeof(double) );
     }
 
-    CORE_dzasum(PlasmaColumnwise, PlasmaUpperLower,
+    CORE_dzasum(dplasmaColumnwise, dplasmaUpperLower,
                 tempmm, tempnn,
                 A, ldam, W);
 }
@@ -335,11 +335,11 @@ BODY
 #if defined(PRECISION_z) || defined(PRECISION_c)
         CORE_dlag2z( 1, tempnn, DX, 1, ZXO, 1 );
 #else
-        CORE_zlacpy( PlasmaUpperLower, 1, tempnn, DX, 1, ZXO, 1 );
+        CORE_zlacpy( dplasmaUpperLower, 1, tempnn, DX, 1, ZXO, 1 );
 #endif
     }
     else {
-        CORE_zlacpy( PlasmaUpperLower, 1, tempnn, ZX, 1, ZXO, 1 );
+        CORE_zlacpy( dplasmaUpperLower, 1, tempnn, ZX, 1, ZXO, 1 );
     }
     cblas_zscal(tempnn, CBLAS_SADDR(scl), ZXO, 1);
 }
@@ -388,7 +388,7 @@ BODY
     printlog("gemv_sx_partial(%d, %d, %d)\n", i, m, k);
 
     CORE_zgemv(
-        PlasmaNoTrans,
+        dplasmaNoTrans,
         tempmm, tempkn,
         1.,    A, ldam,
                B, 1,
@@ -475,7 +475,7 @@ BODY
     printlog("gemv_x_partial(%d, %d, %d)\n", i, n, k);
 
     CORE_zgemv(
-        PlasmaConjTrans,
+        dplasmaConjTrans,
         tempkm, tempnn,
         1.,    A, ldan,
                B, 1,

@@ -69,8 +69,8 @@ subs = {
     ('#undef DOUBLE',       '#undef SINGLE',       '#undef DOUBLE',       '#undef SINGLE'       ),
     ('float',               'double',              'dplasma_complex32_t',  'dplasma_complex64_t'  ),
     ('matrix_RealFloat',    'matrix_RealDouble',   'matrix_ComplexFloat', 'matrix_ComplexDouble'),
-    ('dplasma_float',       'dplasma_double',      'dplasma_complex32',   'dplasma_complex64'   ),
-    ('dplasma_cores_float', 'dplasma_cores_double','dplasma_cores_complex32', 'dplasma_cores_complex64'),
+    ('dplasma_float',       'dplasma_double',      'dplasma_complex32',   'dplasma_complex64'   ), ## for doxygen categories
+    ('dplasma_cores_float', 'dplasma_cores_double','dplasma_cores_complex32', 'dplasma_cores_complex64'), ## for doxygen categories
     ('float_t'  ,           'double_t',            'complex_t',           'double_complex_t'    ),
     ('float',               'double',              'float',               'double'              ),
     ('matrix_RealFloat',    'matrix_RealDouble',   'matrix_RealFloat',    'matrix_RealDouble'   ),
@@ -247,7 +247,9 @@ subs = {
     ('float','double','PLASMA_voidComplex32_t','PLASMA_voidComplex64_t'),
     ('PLASMA_sor','PLASMA_dor','PLASMA_cun','PLASMA_zun'),
     ('PlasmaRealFloat','PlasmaRealDouble','PlasmaComplexFloat','PlasmaComplexDouble'),
+    ('dplasmaRealFloat','dplasmaRealDouble','dplasmaComplexFloat','dplasmaComplexDouble'),
     ('PlasmaTrans','PlasmaTrans','PlasmaConjTrans','PlasmaConjTrans'),
+    ('dplasmaTrans','dplasmaTrans','dplasmaConjTrans','dplasmaConjTrans'),
     ('BFT_s','BFT_d','BFT_c','BFT_z'),
     ('RBMM_s','RBMM_d','RBMM_c','RBMM_z'),
     ('stesting','dtesting','ctesting','ztesting'),

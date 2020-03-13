@@ -52,7 +52,7 @@ BODY
 
     void *p_elem_W = parsec_private_memory_pop( p_work );
 
-    CORE_zunmqr( PlasmaLeft, PlasmaConjTrans,
+    CORE_zunmqr( dplasmaLeft, dplasmaConjTrans,
                  tempm, tempnn, tempkk, ib,
                  lV + k * descA->nb, ldv,
                  T,                 descT->mb,
@@ -108,31 +108,31 @@ extern "C" %{
  *
  *        Q = H(1) H(2) . . . H(k)
  *
- *  as returned by dplasma_zgeqrf(). Q is of order M if side = PlasmaLeft
- *  and of order N if side = PlasmaRight.
+ *  as returned by dplasma_zgeqrf(). Q is of order M if side = dplasmaLeft
+ *  and of order N if side = dplasmaRight.
  *
  * WARNING: The computations are not done by this call.
  *
  *******************************************************************************
  *
  * @param[in] side
- *          @arg PlasmaLeft:  apply Q or Q**H from the left;
- *          @arg PlasmaRight: apply Q or Q**H from the right.
+ *          @arg dplasmaLeft:  apply Q or Q**H from the left;
+ *          @arg dplasmaRight: apply Q or Q**H from the right.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   no transpose, apply Q;
- *          @arg PlasmaConjTrans: conjugate transpose, apply Q**H.
+ *          @arg dplasmaNoTrans:   no transpose, apply Q;
+ *          @arg dplasmaConjTrans: conjugate transpose, apply Q**H.
  *
  * @param[in] A
- *          Descriptor of the matrix A of size M-by-K if side == PlasmaLeft, or
- *          N-by-K if side == PlasmaRight factorized with the
+ *          Descriptor of the matrix A of size M-by-K if side == dplasmaLeft, or
+ *          N-by-K if side == dplasmaRight factorized with the
  *          dplasma_zgeqrf_New() routine.
  *          On entry, the i-th column must contain the vector which
  *          defines the elementary reflector H(i), for i = 1,2,...,k, as
  *          returned by dplasma_zgeqrf_New() in the first k columns of its array
  *          argument A.
- *          If side == PlasmaLeft,  M >= K >= 0.
- *          If side == PlasmaRight, N >= K >= 0.
+ *          If side == dplasmaLeft,  M >= K >= 0.
+ *          If side == dplasmaRight, N >= K >= 0.
  *
  * @param[in] T
  *          Descriptor of the matrix T distributed exactly as the A matrix. T.mb

@@ -44,8 +44,8 @@
 #define FMULS_GEMM(__m, __n, __k) ((double)(__m) * (double)(__n) * (double)(__k))
 #define FADDS_GEMM(__m, __n, __k) ((double)(__m) * (double)(__n) * (double)(__k))
 
-#define FMULS_SYMM(__side, __m, __n) ( ( (__side) == PlasmaLeft ) ? FMULS_GEMM((__m), (__m), (__n)) : FMULS_GEMM((__m), (__n), (__n)) )
-#define FADDS_SYMM(__side, __m, __n) ( ( (__side) == PlasmaLeft ) ? FADDS_GEMM((__m), (__m), (__n)) : FADDS_GEMM((__m), (__n), (__n)) )
+#define FMULS_SYMM(__side, __m, __n) ( ( (__side) == dplasmaLeft ) ? FMULS_GEMM((__m), (__m), (__n)) : FMULS_GEMM((__m), (__n), (__n)) )
+#define FADDS_SYMM(__side, __m, __n) ( ( (__side) == dplasmaLeft ) ? FADDS_GEMM((__m), (__m), (__n)) : FADDS_GEMM((__m), (__n), (__n)) )
 #define FMULS_HEMM FMULS_SYMM
 #define FADDS_HEMM FADDS_SYMM
 
@@ -63,8 +63,8 @@
 #define FADDS_TRMM_2(__m, __n) (0.5 * (double)(__n) * (double)(__m) * ((double)(__m)-1.))
 
 
-#define FMULS_TRMM(__side, __m, __n) ( ( (__side) == PlasmaLeft ) ? FMULS_TRMM_2((__m), (__n)) : FMULS_TRMM_2((__n), (__m)) )
-#define FADDS_TRMM(__side, __m, __n) ( ( (__side) == PlasmaLeft ) ? FADDS_TRMM_2((__m), (__n)) : FADDS_TRMM_2((__n), (__m)) )
+#define FMULS_TRMM(__side, __m, __n) ( ( (__side) == dplasmaLeft ) ? FMULS_TRMM_2((__m), (__n)) : FMULS_TRMM_2((__n), (__m)) )
+#define FADDS_TRMM(__side, __m, __n) ( ( (__side) == dplasmaLeft ) ? FADDS_TRMM_2((__m), (__n)) : FADDS_TRMM_2((__n), (__m)) )
 
 #define FMULS_TRSM FMULS_TRMM
 #define FADDS_TRSM FMULS_TRMM
@@ -139,10 +139,10 @@
 #define FMULS_GEQRS(__m, __n, __nrhs) ((double)(__nrhs) * ((double)(__n) * ( 2.* (double)(__m) - 0.5 * (double)(__n) + 2.5)))
 #define FADDS_GEQRS(__m, __n, __nrhs) ((double)(__nrhs) * ((double)(__n) * ( 2.* (double)(__m) - 0.5 * (double)(__n) + 0.5)))
 
-#define FMULS_UNMQR(m_, n_, k_, side_) (( (side_) == PlasmaLeft ) \
+#define FMULS_UNMQR(m_, n_, k_, side_) (( (side_) == dplasmaLeft ) \
     ?  (2.*(n_)*(m_)*(k_) - (n_)*(k_)*(k_) + 2.*(n_)*(k_)) \
     :  (2.*(n_)*(m_)*(k_) - (m_)*(k_)*(k_) + (m_)*(k_) + (n_)*(k_) - 0.5*(k_)*(k_) + 0.5*(k_)))
-#define FADDS_UNMQR(m_, n_, k_, side_) (( ((side_)) == PlasmaLeft ) \
+#define FADDS_UNMQR(m_, n_, k_, side_) (( ((side_)) == dplasmaLeft ) \
     ?  (2.*(n_)*(m_)*(k_) - (n_)*(k_)*(k_) + (n_)*(k_)) \
     :  (2.*(n_)*(m_)*(k_) - (m_)*(k_)*(k_) + (m_)*(k_)))
 #define FMULS_ORMQR FMULS_UNMQR

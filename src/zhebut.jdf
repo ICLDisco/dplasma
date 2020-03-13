@@ -90,7 +90,7 @@ BODY
   void *p_elem_tl, *p_elem_bl, *p_elem_br;
 
   printlog("HEBUT_Diag(%d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, i, i, Atl);
 
   type = segment_to_type_index(&descA->seg_info, i, i);
@@ -192,7 +192,7 @@ BODY
   void *p_elem_tl, *p_elem_bl, *p_elem_tr, *p_elem_br;
 
   printlog("HEBUT_Lower(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i, j, Atl);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -297,7 +297,7 @@ BODY
 #endif
 
   printlog("HEBUT_Reader_TL(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -353,7 +353,7 @@ BODY
 #endif
 
   printlog("HEBUT_Reader_BL(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i+mt/2, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -407,7 +407,7 @@ BODY
 #endif
 
   printlog("HEBUT_Reader_BR(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i+mt/2, j+nt/2, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -458,7 +458,7 @@ BODY
 #endif
 
   printlog("HEBUT_Writer_TL(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -511,7 +511,7 @@ BODY
 #endif
 
   printlog("HEBUT_Writer_BL(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i+mt/2, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -562,7 +562,7 @@ BODY
 #endif
 
   printlog("HEBUT_Writer_BR(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
   i, j, i+mt/2, j+nt/2, A);
 
 #if defined(DEBUG_BUTTERFLY)

@@ -14,8 +14,8 @@ extern "C" %{
 
 %}
 
-uplo      [type = "PLASMA_enum"]
-trans     [type = "PLASMA_enum"]
+uplo      [type = "dplasma_enum_t"]
+trans     [type = "dplasma_enum_t"]
 alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
 beta      [type = "dplasma_complex64_t"]
@@ -96,9 +96,9 @@ BODY
     int ldcn = BLKLDD( descC, n );
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
-             "\t(trans, PlasmaNoTrans, tempnn, tempmm, tempkm, zalpha, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, zbeta, C(%d,%d)[%p], ldcn)\n",
+             "\t(trans, dplasmaNoTrans, tempnn, tempmm, tempkm, zalpha, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, zbeta, C(%d,%d)[%p], ldcn)\n",
              n, m, k, k, n, A, k, m, B, n, m, C);
-    CORE_zgemm(trans, PlasmaNoTrans, tempnn, tempmm, tempkm,
+    CORE_zgemm(trans, dplasmaNoTrans, tempnn, tempmm, tempkm,
                alpha,  A /* descA(k,n) */, ldak,
                        B /* descA(k,m) */, ldak,
                zbeta,  C /* descC(n,m) */, ldcn );

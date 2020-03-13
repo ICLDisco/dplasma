@@ -87,18 +87,18 @@ int main(int argc, char ** argv)
                 }
 
                 switch(norms[i]) {
-                case PlasmaMaxNorm:
+                case dplasmaMaxNorm:
                     /* result should be perfectly equal */
                     break;
-                case PlasmaInfNorm:
+                case dplasmaInfNorm:
                     /* Sum order on the line can differ */
                     result = result / (double)N;
                     break;
-                case PlasmaOneNorm:
+                case dplasmaOneNorm:
                     /* Sum order on the column can differ */
                     result = result / (double)M;
                     break;
-                case PlasmaFrobeniusNorm:
+                case dplasmaFrobeniusNorm:
                     /* Sum order on every element can differ */
                     result = result / ((double)M * (double)N);
                     break;
@@ -168,18 +168,18 @@ int main(int argc, char ** argv)
                         }
 
                         switch(norms[i]) {
-                        case PlasmaMaxNorm:
+                        case dplasmaMaxNorm:
                             /* result should be perfectly equal */
                             break;
-                        case PlasmaInfNorm:
+                        case dplasmaInfNorm:
                             /* Sum order on the line can differ */
                             result = result / (double)N;
                             break;
-                        case PlasmaOneNorm:
+                        case dplasmaOneNorm:
                             /* Sum order on the column can differ */
                             result = result / (double)M;
                             break;
-                        case PlasmaFrobeniusNorm:
+                        case dplasmaFrobeniusNorm:
                             /* Sum oreder on every element can differ */
                             result = result / ((double)M * (double)N);
                             break;
@@ -211,7 +211,7 @@ int main(int argc, char ** argv)
     {
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplgsy( parsec, 0., PlasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+        dplasma_zplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
         if(loud > 2) printf("Done\n");
 
         for(u=0; u<2; u++) {
@@ -252,18 +252,18 @@ int main(int argc, char ** argv)
                     }
 
                     switch(norms[i]) {
-                    case PlasmaMaxNorm:
+                    case dplasmaMaxNorm:
                         /* result should be perfectly equal */
                         break;
-                    case PlasmaInfNorm:
+                    case dplasmaInfNorm:
                         /* Sum order on the line can differ */
                         result = result / (double)N;
                         break;
-                    case PlasmaOneNorm:
+                    case dplasmaOneNorm:
                         /* Sum order on the column can differ */
                         result = result / (double)M;
                         break;
-                    case PlasmaFrobeniusNorm:
+                    case dplasmaFrobeniusNorm:
                         /* Sum oreder on every element can differ */
                         result = result / ((double)M * (double)N);
                         break;
@@ -291,7 +291,7 @@ int main(int argc, char ** argv)
     {
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplghe( parsec, 0., PlasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+        dplasma_zplghe( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
         if(loud > 2) printf("Done\n");
 
         for(u=0; u<2; u++) {
@@ -331,18 +331,18 @@ int main(int argc, char ** argv)
                                 rank, normsstr[i], normlap);
                     }
                     switch(norms[i]) {
-                    case PlasmaMaxNorm:
+                    case dplasmaMaxNorm:
                         /* result should be perfectly equal */
                         break;
-                    case PlasmaInfNorm:
+                    case dplasmaInfNorm:
                         /* Sum order on the line can differ */
                         result = result / (double)N;
                         break;
-                    case PlasmaOneNorm:
+                    case dplasmaOneNorm:
                         /* Sum order on the column can differ */
                         result = result / (double)M;
                         break;
-                    case PlasmaFrobeniusNorm:
+                    case dplasmaFrobeniusNorm:
                         /* Sum oreder on every element can differ */
                         result = result / ((double)M * (double)N);
                         break;

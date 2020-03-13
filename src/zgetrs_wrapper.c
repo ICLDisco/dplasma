@@ -8,7 +8,8 @@
  */
 
 #include "dplasma.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 /**
  *******************************************************************************
@@ -27,9 +28,9 @@
  * @param[in] trans
  *          Specifies whether the matrix A is transposed, not transposed or
  *          conjugate transposed:
- *          = PlasmaNoTrans:   A is transposed;
- *          = PlasmaTrans:     A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is transposed;
+ *          = dplasmaTrans:     A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] A
  *          Descriptor of the distributed factorized matrix A.
@@ -63,15 +64,15 @@
  ******************************************************************************/
 int
 dplasma_zgetrs(parsec_context_t *parsec,
-               PLASMA_enum trans,
+               dplasma_enum_t trans,
                parsec_tiled_matrix_dc_t *A,
                parsec_tiled_matrix_dc_t *IPIV,
                parsec_tiled_matrix_dc_t *B)
 {
     /* Check input arguments */
-    if ( trans != PlasmaNoTrans &&
-         trans != PlasmaTrans   &&
-         trans != PlasmaConjTrans ) {
+    if ( trans != dplasmaNoTrans &&
+         trans != dplasmaTrans   &&
+         trans != dplasmaConjTrans ) {
         dplasma_error("dplasma_zgetrs", "illegal value of trans");
         return -1;
     }
@@ -81,11 +82,11 @@ dplasma_zgetrs(parsec_context_t *parsec,
     parsec_taskpool_t *parsec_ztrsm1 = NULL;
     parsec_taskpool_t *parsec_ztrsm2 = NULL;
 
-    if ( trans == PlasmaNoTrans )
+    if ( trans == dplasmaNoTrans )
     {
         parsec_zlaswp = dplasma_zlaswp_New(B, IPIV, 1);
-        parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit, 1.0, A, B);
-        parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, A, B);
+        parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit, 1.0, A, B);
+        parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
 
         parsec_context_add_taskpool( parsec, parsec_zlaswp );
         parsec_context_add_taskpool( parsec, parsec_ztrsm1 );
@@ -99,8 +100,8 @@ dplasma_zgetrs(parsec_context_t *parsec,
     }
     else
     {
-        parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, PlasmaUpper, trans, PlasmaNonUnit, 1.0, A, B);
-        parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, PlasmaLower, trans, PlasmaUnit, 1.0, A, B);
+        parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, trans, dplasmaNonUnit, 1.0, A, B);
+        parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, dplasmaLower, trans, dplasmaUnit, 1.0, A, B);
         parsec_zlaswp = dplasma_zlaswp_New(B, IPIV, -1);
 
         parsec_context_add_taskpool( parsec, parsec_ztrsm1 );
@@ -114,16 +115,16 @@ dplasma_zgetrs(parsec_context_t *parsec,
         dplasma_ztrsm_Destruct( parsec_zlaswp );
     }
 #else
-    if ( trans == PlasmaNoTrans )
+    if ( trans == dplasmaNoTrans )
     {
         dplasma_zlaswp(parsec, B, IPIV, 1);
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,    1.0, A, B);
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, A, B);
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,    1.0, A, B);
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
     }
     else
     {
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, trans, PlasmaNonUnit, 1.0, A, B);
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaLower, trans, PlasmaUnit,    1.0, A, B);
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, trans, dplasmaNonUnit, 1.0, A, B);
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaLower, trans, dplasmaUnit,    1.0, A, B);
         dplasma_zlaswp(parsec, B, IPIV, -1);
     }
 #endif

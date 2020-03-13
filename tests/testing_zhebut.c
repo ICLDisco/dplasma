@@ -13,13 +13,13 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #if defined(CHECK_B)
-static int check_solution( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
+static int check_solution( parsec_context_t *parsec, int loud, dplasma_enum_t uplo,
                            parsec_tiled_matrix_dc_t *dcA,
                            parsec_tiled_matrix_dc_t *dcB,
                            parsec_tiled_matrix_dc_t *dcX );
 #endif
 
-static int check_inverse( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
+static int check_inverse( parsec_context_t *parsec, int loud, dplasma_enum_t uplo,
                           parsec_tiled_matrix_dc_t *dcA,
                           parsec_tiled_matrix_dc_t *dcInvA,
                           parsec_tiled_matrix_dc_t *dcI );
@@ -29,7 +29,7 @@ int main(int argc, char ** argv)
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
     int ret = 0;
-    int uplo = PlasmaLower;
+    dplasma_enum_t uplo = dplasmaLower;
     dplasma_complex64_t *U_but_vec;
     DagDouble_t time_butterfly, time_facto, time_total;
 
@@ -94,13 +94,13 @@ int main(int argc, char ** argv)
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_dc_t *)&dcB, 3872);
 
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
                         (parsec_tiled_matrix_dc_t *)&dcX);
 #endif
         if (check_inv) {
-            dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
-            dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
         }
     }
     if(loud > 2) printf("Done\n");
@@ -196,7 +196,7 @@ int main(int argc, char ** argv)
 /*
  * This function destroys B
  */
-static int check_solution( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
+static int check_solution( parsec_context_t *parsec, int loud, dplasma_enum_t uplo,
                            parsec_tiled_matrix_dc_t *dcA,
                            parsec_tiled_matrix_dc_t *dcB,
                            parsec_tiled_matrix_dc_t *dcX )
@@ -209,14 +209,14 @@ static int check_solution( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
     int N = dcB->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlanhe(parsec, PlasmaInfNorm, uplo, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute A*x */
-    dplasma_zhemm( parsec, PlasmaLeft, uplo, -1.0, dcA, dcX, 1.0, dcB);
+    dplasma_zhemm( parsec, dplasmaLeft, uplo, -1.0, dcA, dcX, 1.0, dcB);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * N * eps ) ;
 
@@ -243,7 +243,7 @@ static int check_solution( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
 }
 #endif
 
-static int check_inverse( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
+static int check_inverse( parsec_context_t *parsec, int loud, dplasma_enum_t uplo,
                           parsec_tiled_matrix_dc_t *dcA,
                           parsec_tiled_matrix_dc_t *dcInvA,
                           parsec_tiled_matrix_dc_t *dcI )
@@ -255,13 +255,13 @@ static int check_inverse( parsec_context_t *parsec, int loud, PLASMA_enum uplo,
     int m = dcA->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm    = dplasma_zlanhe(parsec, PlasmaInfNorm, uplo, dcA);
-    InvAnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcInvA);
+    Anorm    = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, dcA);
+    InvAnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcInvA);
 
     /* Compute I - A*A^{-1} */
-    dplasma_zhemm( parsec, PlasmaLeft, uplo, -1.0, dcA, dcInvA, 1.0, dcI);
+    dplasma_zhemm( parsec, dplasmaLeft, uplo, -1.0, dcA, dcInvA, 1.0, dcI);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcI);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcI);
 
     result = Rnorm / ( ( Anorm * InvAnorm ) * m * eps ) ;
 

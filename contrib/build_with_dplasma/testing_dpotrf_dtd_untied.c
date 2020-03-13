@@ -130,15 +130,15 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
     sym_two_dim_block_cyclic_t *__dcA = dcA;
 
     PLASMA_enum uplo = uplo_enum;
-    side = PlasmaRight;
-    transA_p = PlasmaConjTrans;
-    diag = PlasmaNonUnit;
+    side = dplasmaRight;
+    transA_p = dplasmaConjTrans;
+    diag = dplasmaNonUnit;
     alpha_trsm = 1.0;
-    trans = PlasmaNoTrans;
+    trans = dplasmaNoTrans;
     alpha_herk = -1.0;
     beta = 1.0;
-    transB = PlasmaConjTrans;
-    transA_g = PlasmaNoTrans;
+    transB = dplasmaConjTrans;
+    transA_g = dplasmaNoTrans;
 
     /* Testing Insert Function */
     for( k = *iteration; k < total; k++, *iteration += 1, count++ ) {
@@ -239,15 +239,15 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
     PLASMA_enum uplo = uplo_enum;
 
-    side = PlasmaLeft;
-    transA_p = PlasmaConjTrans;
-    diag = PlasmaNonUnit;
+    side = dplasmaLeft;
+    transA_p = dplasmaConjTrans;
+    diag = dplasmaNonUnit;
     alpha_trsm = 1.0;
-    trans = PlasmaConjTrans;
+    trans = dplasmaConjTrans;
     alpha_herk = -1.0;
     beta = 1.0;
-    transB = PlasmaNoTrans;
-    transA_g = PlasmaConjTrans;
+    transB = dplasmaNoTrans;
+    transA_g = dplasmaConjTrans;
 
     /* Testing Insert Function */
     for( k = *iteration; k < total; k++, *iteration += 1, count++ ) {
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    PLASMA_enum uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
     int *iteration = malloc(sizeof(int));
     *iteration = 0;
     int total;
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
         total = dcA.super.mt;
         parsec_dtd_taskpool_insert_task( dtd_tp,       insert_task_lower, 0, "insert_task_lower",
                            sizeof(int),           &total,              VALUE,
@@ -452,7 +452,7 @@ int main(int argc, char **argv)
             two_dim_block_cyclic, (&dcX, matrix_RealDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, SMB, SNB, P));
-        dplasma_dlacpy( parsec, PlasmaUpperLower,
+        dplasma_dlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
         dplasma_dpotrs(parsec, uplo,

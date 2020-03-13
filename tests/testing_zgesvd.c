@@ -88,7 +88,7 @@ int main(int argc, char ** argv)
             }
         }
 
-        dplasma_zlatms( parsec, PlasmaGeneral, (double)N, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+        dplasma_zlatms( parsec, dplasmaGeneral, (double)N, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
     }
     else {
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);

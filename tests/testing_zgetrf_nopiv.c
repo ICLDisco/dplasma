@@ -81,17 +81,17 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("+++ Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
     if ( check ) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcA0 );
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
                         (parsec_tiled_matrix_dc_t *)&dcX );
     }
     if ( check_inv ) {
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
     }
     if(loud > 2) printf("Done\n");
 
@@ -110,10 +110,10 @@ int main(int argc, char ** argv)
         ret |= 1;
     }
     else if ( check ) {
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,    1.0,
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,    1.0,
                        (parsec_tiled_matrix_dc_t*)&dcA,
                        (parsec_tiled_matrix_dc_t*)&dcX);
-        dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0,
+        dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0,
                        (parsec_tiled_matrix_dc_t*)&dcA,
                        (parsec_tiled_matrix_dc_t*)&dcX);
 
@@ -127,10 +127,10 @@ int main(int argc, char ** argv)
          * Second check with inverse
          */
         if ( check_inv ) {
-            dplasma_ztrsm( parsec, PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,    1.0,
+            dplasma_ztrsm( parsec, dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,    1.0,
                            (parsec_tiled_matrix_dc_t*)&dcA,
                            (parsec_tiled_matrix_dc_t*)&dcInvA);
-            dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0,
+            dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0,
                            (parsec_tiled_matrix_dc_t*)&dcA,
                            (parsec_tiled_matrix_dc_t*)&dcInvA);
 
@@ -178,14 +178,14 @@ static int check_solution( parsec_context_t *parsec, int loud,
     int m = dcB->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute b - A*x */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * m * eps ) ;
 
@@ -222,13 +222,13 @@ static int check_inverse( parsec_context_t *parsec, int loud,
     int m = dcA->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm    = dplasma_zlange(parsec, PlasmaInfNorm, dcA   );
-    InvAnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcInvA);
+    Anorm    = dplasma_zlange(parsec, dplasmaInfNorm, dcA   );
+    InvAnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcInvA);
 
     /* Compute I - A*A^{-1} */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcI);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcI);
 
     result = Rnorm / ( ( Anorm * InvAnorm ) * m * eps ) ;
 

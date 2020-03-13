@@ -212,13 +212,13 @@ BODY
 
 
     printlog("CORE_zunmqr(%d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, tempkm, tempnn, tempkm, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, p_elem_A, descT->nb)\n",
+             "\t(dplasmaLeft, dplasmaConjTrans, tempkm, tempnn, tempkm, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, p_elem_A, descT->nb)\n",
              k, n, k, k, A, k, k, T, k, n, C);
 
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_zunmqr(PlasmaLeft, PlasmaConjTrans,
+    CORE_zunmqr(dplasmaLeft, dplasmaConjTrans,
                 tempkm, tempnn, tempkm, ib,
                 A /* descA(k,k) */, ldak,
                 T /* descT(k,k) */, descT->mb,
@@ -399,7 +399,7 @@ BODY [type=CUDA device=%{ return n; %}]
     WORK  = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
     WORKC = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
 
-    dplasma_cuda_ztsmqr( PlasmaLeft, PlasmaConjTrans,
+    dplasma_cuda_ztsmqr( dplasmaLeft, dplasmaConjTrans,
                          descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
                          A1 /* descA(k,n) */, ldak,
                          A2 /* descA(m,n) */, ldam,
@@ -473,12 +473,12 @@ BODY
 
 
     printlog("CORE_ztsmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+             "\t(dplasmaLeft, dplasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, m, n, k, n, A1, m, n, A2, m, k, V, m, k, T);
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_ztsmqr(PlasmaLeft, PlasmaConjTrans,
+    CORE_ztsmqr(dplasmaLeft, dplasmaConjTrans,
                 descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
                 A1 /* descA(k,n) */, ldak,
                 A2 /* descA(m,n) */, ldam,

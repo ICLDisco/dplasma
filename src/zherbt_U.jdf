@@ -11,8 +11,8 @@ extern "C" %{
  */
 #define PRECISION_z
 
-#include <core_blas.h>
-#include <core_blas.h>
+#include "cores/core_blas.h"
+#include "cores/core_blas.h"
 
 #include "parsec/runtime.h"
 #include "parsec/data_distribution.h"
@@ -23,7 +23,7 @@ extern "C" %{
 
 %}
 
-uplo   [type = "PLASMA_enum"]
+uplo   [type = "dplasma_enum_t"]
 ib     [type = "int"]
 descA-> [type = "parsec_tiled_matrix_dc_t"]
 A      [type = "parsec_data_collection_t *"]
@@ -122,7 +122,7 @@ BODY
 
   void *p_elem_A = parsec_private_memory_pop( pool_2 );
 
-  CORE_zherfb(PlasmaUpper, tempkn, tempkn,
+  CORE_zherfb(dplasmaUpper, tempkn, tempkn,
         ib, descT->nb, C /* A(k,k+1) */,
         descA->nb, D /* T(k,k+1) */, descT->mb,
         E /* A(k+1,k+1) */, ldak, p_elem_A,
@@ -131,7 +131,7 @@ BODY
   parsec_private_memory_push( pool_2, p_elem_A );
 
 
-  printlog("CORE_zherfb(%d)\n\t(PlasmaUpper, tempkn, tempkn, ib, descT->nb, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, p_elem_A, descT->nb)\n",
+  printlog("CORE_zherfb(%d)\n\t(dplasmaUpper, tempkn, tempkn, ib, descT->nb, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, p_elem_A, descT->nb)\n",
   k, k, k+1, C, k, k+1, D, k+1, k+1, E);
 
 END
@@ -173,7 +173,7 @@ BODY
 
   void *p_elem_A = parsec_private_memory_pop( pool_1 );
 
-  CORE_zunmlq(PlasmaLeft, PlasmaNoTrans, descA->nb,
+  CORE_zunmlq(dplasmaLeft, dplasmaNoTrans, descA->nb,
         tempnn, tempkn, ib,
         F /* A(k,k+1) */, descA->nb, G /* T(k,k+1) */,
         descT->mb, H /* A(k+1,n) */, ldak,
@@ -182,7 +182,7 @@ BODY
   parsec_private_memory_push( pool_1, p_elem_A );
 
 
-  printlog("CORE_zunmlq(%d, %d)\n\t(PlasmaLeft, PlasmaNoTrans, descA->nb, tempnn, tempkn, ib, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, pool_A, descT->nb)\n",
+  printlog("CORE_zunmlq(%d, %d)\n\t(dplasmaLeft, dplasmaNoTrans, descA->nb, tempnn, tempkn, ib, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, A(%d,%d)[%p], ldak, pool_A, descT->nb)\n",
   k, n, k, k+1, F, k, k+1, G, k+1, n, H);
 
 END
@@ -293,11 +293,11 @@ BODY
   int tempnn = ((n1)==((descA->nt)-1)) ? ((descA->n)-(n1*(descA->nb))) : (descA->nb);
   int ldak = BLKLDD( A, k+1 );
   int ldai = BLKLDD( A, i );
-  int ldwork = ((PlasmaRight)==(PlasmaLeft)) ? (ib) : (descT->nb);
+  int ldwork = ((dplasmaRight)==(dplasmaLeft)) ? (ib) : (descT->nb);
 
   void *p_elem_A = parsec_private_memory_pop( pool_1 );
 
-  CORE_ztsmlq_hetra1(PlasmaRight, PlasmaConjTrans, descA->mb,
+  CORE_ztsmlq_hetra1(dplasmaRight, dplasmaConjTrans, descA->mb,
         descA->nb, descA->nb, tempnn,
         descA->nb, ib, M /* A(k+1,i) */,
         ldak, N /* A(i,n1) */, ldai,
@@ -306,7 +306,7 @@ BODY
 
   parsec_private_memory_push( pool_1, p_elem_A );
 
-  printlog("CORE_ztsmlq_hetra1(%d, %d, %d)\n\t(PlasmaRight, PlasmaConjTrans, descA->mb, descA->nb, descA->nb, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldai, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+  printlog("CORE_ztsmlq_hetra1(%d, %d, %d)\n\t(dplasmaRight, dplasmaConjTrans, descA->mb, descA->nb, descA->nb, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldai, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
   k, n1, i, k+1, i, M, i, n1, N, k, n1, O, k, n1, P);
 
 END
@@ -352,11 +352,11 @@ BODY
   int tempnn = ((n1)==((descA->nt)-1)) ? ((descA->n)-(n1*(descA->nb))) : (descA->nb);
   int ldak = BLKLDD( A, k+1 );
   int ldan = BLKLDD( A, n1 );
-  int ldwork = ((PlasmaLeft)==(PlasmaLeft)) ? (ib) : (descT->nb);
+  int ldwork = ((dplasmaLeft)==(dplasmaLeft)) ? (ib) : (descT->nb);
 
   void *p_elem_A = parsec_private_memory_pop( pool_1 );
 
-  CORE_ztsmlq(PlasmaLeft, PlasmaNoTrans, descA->nb,
+  CORE_ztsmlq(dplasmaLeft, dplasmaNoTrans, descA->nb,
         tempjj, tempnn, tempjj,
         descA->nb, ib, Q /* A(k+1,j) */,
         ldak, R /* A(n1,j) */, ldan,
@@ -365,7 +365,7 @@ BODY
 
   parsec_private_memory_push( pool_1, p_elem_A );
 
-  printlog("thread %d VP % CORE_ztsmlq(%d, %d, %d)\n\t(PlasmaLeft, PlasmaNoTrans, descA->nb, tempjj, tempnn, tempjj, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldan, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+  printlog("thread %d VP % CORE_ztsmlq(%d, %d, %d)\n\t(dplasmaLeft, dplasmaNoTrans, descA->nb, tempjj, tempnn, tempjj, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldan, A(%d,%d)[%p], descA->nb, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
   k, n1, j, k+1, j, Q, n1, j, R, k, n1, S, k, n1, T);
 
 END

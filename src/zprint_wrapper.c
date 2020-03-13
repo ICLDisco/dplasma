@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zprint.h"
 
@@ -27,9 +28,9 @@
  *
  * @param[in] uplo
  *          Specifies which part of the matrix is printed
- *          = PlasmaUpper: Upper part of A;
- *          = PlasmaLower: Lower part of A;
- *          = PlasmaUpperLower: ALL elements of A.
+ *          = dplasmaUpper: Upper part of A;
+ *          = dplasmaLower: Lower part of A;
+ *          = dplasmaUpperLower: ALL elements of A.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A to generate. Any tiled matrix
@@ -49,15 +50,15 @@
  *
  ******************************************************************************/
 int dplasma_zprint( parsec_context_t *parsec,
-                    PLASMA_enum uplo,
+                    dplasma_enum_t uplo,
                     const parsec_tiled_matrix_dc_t *A)
 {
     parsec_zprint_taskpool_t* tp;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) &&
-        (uplo != PlasmaUpper) &&
-        (uplo != PlasmaUpperLower))
+    if ((uplo != dplasmaLower) &&
+        (uplo != dplasmaUpper) &&
+        (uplo != dplasmaUpperLower))
     {
         dplasma_error("dplasma_zplghe", "illegal value of type");
         return -3;

@@ -34,9 +34,9 @@ extern "C" %{
 P            [type = "int"]
 Q            [type = "int"]
 PQ           [type = "int" hidden=on default="P*Q"]
-ntype        [type = "PLASMA_enum"]
-uplo         [type = "PLASMA_enum"]
-trans        [type = "PLASMA_enum"]
+ntype        [type = "dplasma_enum_t"]
+uplo         [type = "dplasma_enum_t"]
+trans        [type = "dplasma_enum_t"]
 descA        [type = "const parsec_tiled_matrix_dc_t*"]
 Tdist        [type = "parsec_data_collection_t *"]
 norm         [type = "double *"]
@@ -55,15 +55,15 @@ STEP1(m,n)
     m = 0 .. descA->mt-1
     n = 0 .. descA->nt-1
     m1 = %{
-    if ( (uplo == PlasmaLower && m < n) ||
-         (uplo == PlasmaUpper && n < m) )
+    if ( (uplo == dplasmaLower && m < n) ||
+         (uplo == dplasmaUpper && n < m) )
         return n;
     else
         return m;
     %}
     n1 = %{
-    if ( (uplo == PlasmaLower && m < n) ||
-         (uplo == PlasmaUpper && n < m) )
+    if ( (uplo == dplasmaLower && m < n) ||
+         (uplo == dplasmaUpper && n < m) )
         return m;
     else
         return n;
@@ -73,8 +73,8 @@ STEP1(m,n)
         int nn = n-1;
         int r;
         while (nn > -1) {
-            if ( (uplo == PlasmaLower && m  < nn) ||
-                 (uplo == PlasmaUpper && nn < m ) )
+            if ( (uplo == dplasmaLower && m  < nn) ||
+                 (uplo == dplasmaUpper && nn < m ) )
                 r = my_rank_of( nn, m );
             else
                 r = my_rank_of( m, nn );
@@ -90,8 +90,8 @@ STEP1(m,n)
         int nn = n+1;
         int r;
         while (nn < descA->nt) {
-            if ( (uplo == PlasmaLower && m  < nn) ||
-                 (uplo == PlasmaUpper && nn < m ) )
+            if ( (uplo == dplasmaLower && m  < nn) ||
+                 (uplo == dplasmaUpper && nn < m ) )
                 r = my_rank_of( nn, m );
             else
                 r = my_rank_of( m, nn );
@@ -126,21 +126,21 @@ BODY
     /*
      * Max norm
      */
-    if (ntype == PlasmaMaxNorm) {
+    if (ntype == dplasmaMaxNorm) {
         double lnorm = 0.;
         if (!(prevn+1 > 0)) {
             *dW = 0.;
         }
         if ( n == m ) {
-            if (trans == PlasmaConjTrans) {
-                CORE_zlanhe(PlasmaMaxNorm, uplo, tempmm,
+            if (trans == dplasmaConjTrans) {
+                CORE_zlanhe(dplasmaMaxNorm, uplo, tempmm,
                             A, ldam, NULL, &lnorm);
             } else {
-                CORE_zlansy(PlasmaMaxNorm, uplo, tempmm,
+                CORE_zlansy(dplasmaMaxNorm, uplo, tempmm,
                             A, ldam, NULL, &lnorm);
             }
         } else {
-            CORE_zlange(PlasmaMaxNorm, tempmm, tempnn,
+            CORE_zlange(dplasmaMaxNorm, tempmm, tempnn,
                         A, ldam, NULL, &lnorm);
         }
         *dW = ( lnorm > *dW ) ? lnorm : *dW;
@@ -148,13 +148,13 @@ BODY
     /*
      * Frobenius Norm
      */
-    else if (ntype == PlasmaFrobeniusNorm) {
+    else if (ntype == dplasmaFrobeniusNorm) {
         if (!(prevn+1 > 0)) {
             dW[0] = 0.;
             dW[1] = 1.;
         }
         if ( n == m ) {
-            if (trans == PlasmaConjTrans) {
+            if (trans == dplasmaConjTrans) {
                 CORE_zhessq( uplo, tempmm, A, ldam, dW, dW+1);
             }
             else {
@@ -173,20 +173,20 @@ BODY
             memset( W, 0, descA->mb * sizeof(double) );
         }
         if ( m == n ) {
-            CORE_dzasum(PlasmaRowwise, uplo,
+            CORE_dzasum(dplasmaRowwise, uplo,
                         tempmm, tempnn,
                         A, ldam, W);
         } else {
 
             /* !uplo side */
-            if ( (uplo == PlasmaLower && m < n) ||
-                 (uplo == PlasmaUpper && n < m) ) {
-                CORE_dzasum(PlasmaColumnwise, PlasmaUpperLower,
+            if ( (uplo == dplasmaLower && m < n) ||
+                 (uplo == dplasmaUpper && n < m) ) {
+                CORE_dzasum(dplasmaColumnwise, dplasmaUpperLower,
                             tempmm, tempnn,
                             A, ldam, W);
                 /* uplo side */
             } else {
-                CORE_dzasum(PlasmaRowwise, PlasmaUpperLower,
+                CORE_dzasum(dplasmaRowwise, dplasmaUpperLower,
                             tempmm, tempnn,
                             A, ldam, W);
             }
@@ -210,8 +210,8 @@ STEP2(m, n)
         int nn = descA->nt-1;
         int r;
         while (nn > -1) {
-            if ( (uplo == PlasmaLower && m  < nn) ||
-                 (uplo == PlasmaUpper && nn < m ) )
+            if ( (uplo == dplasmaLower && m  < nn) ||
+                 (uplo == dplasmaUpper && nn < m ) )
                 r = my_rank_of( nn, m );
             else
                 r = my_rank_of( m, nn );
@@ -242,7 +242,7 @@ BODY
     double *dA = (double*)A;
     double *dW = (double*)W;
 
-    if (ntype == PlasmaMaxNorm) {
+    if (ntype == dplasmaMaxNorm) {
         if ((hadtile+1) == 0) {
             *dW = 0.;
         }
@@ -251,7 +251,7 @@ BODY
             *dW = ( *dA > *dW ) ? *dA : *dW;
         }
     }
-    else if (ntype == PlasmaFrobeniusNorm) {
+    else if (ntype == dplasmaFrobeniusNorm) {
         if ((hadtile+1) == 0) {
             dW[0] = 0.;
             dW[1] = 1.;
@@ -311,10 +311,10 @@ BODY
         double *dA = (double*)A;
         double *dW = (double*)W;
 
-        if (ntype == PlasmaMaxNorm) {
+        if (ntype == dplasmaMaxNorm) {
             *dW = ( *dA > *dW ) ? *dA : *dW;
         }
-        else if (ntype == PlasmaFrobeniusNorm) {
+        else if (ntype == dplasmaFrobeniusNorm) {
             if ( dA[0] > 0. ){
                 if( dW[0] < dA[0] ) {
                     dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
@@ -361,14 +361,14 @@ BODY
     double *dA = (double*)A;
     double *dW = (double*)W;
 
-    if (ntype == PlasmaMaxNorm){
+    if (ntype == dplasmaMaxNorm){
         if ( m < (descA->mt-P) ) {
             *dW = ( *dA > *dW ) ? *dA : *dW;
         } else {
             *dW = *dA;
         }
     }
-    else if (ntype == PlasmaFrobeniusNorm) {
+    else if (ntype == dplasmaFrobeniusNorm) {
         if ( m >= (descA->mt-P) ) {
             dW[0] = 0.;
             dW[1] = 1.;
@@ -422,7 +422,7 @@ BODY
 
     double *dA = (double*)A;
     double *dW = (double*)W;
-    if (ntype == PlasmaFrobeniusNorm) {
+    if (ntype == dplasmaFrobeniusNorm) {
         double  sqr;
 
         if ( m > (descA->mt-1)) {
@@ -473,7 +473,7 @@ BODY
 
     double *dW = (double*)W;
 
-    if (ntype == PlasmaFrobeniusNorm) {
+    if (ntype == dplasmaFrobeniusNorm) {
         *norm = dW[0] * dplasma_dsqrt( dW[1] );
     } else {
         *norm = *dW;

@@ -11,7 +11,7 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum diag, int N,
+                           dplasma_enum_t uplo, dplasma_enum_t diag, int N,
                            parsec_tiled_matrix_dc_t *A,
                            parsec_tiled_matrix_dc_t *Ainv );
 
@@ -50,16 +50,16 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("+++ Generate matrices ... ");
     /* Generate matrix A with diagonal dominance to keep stability during computation */
     dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
-    /* Scale down the full matrix to keep stability in diag = PlasmaUnit case */
-    dplasma_zlascal( parsec, PlasmaUpperLower,
+    /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+    dplasma_zlascal( parsec, dplasmaUpperLower,
                      1. / (dplasma_complex64_t)Am,
                      (parsec_tiled_matrix_dc_t *)&dcA );
     if(loud > 2) printf("Done\n");
 
     if(!check)
     {
-        PLASMA_enum uplo  = PlasmaLower;
-        PLASMA_enum diag  = PlasmaUnit;
+        dplasma_enum_t uplo  = dplasmaLower;
+        dplasma_enum_t diag  = dplasmaUnit;
         int info = 0;
 
         PASTE_CODE_FLOPS(FLOPS_ZTRTRI, ((DagDouble_t)Am));
@@ -88,7 +88,7 @@ int main(int argc, char ** argv)
 
                 /* matrix generation */
                 printf("Generate matrices ... ");
-                dplasma_zlacpy( parsec, PlasmaUpperLower,
+                dplasma_zlacpy( parsec, dplasmaUpperLower,
                                 (parsec_tiled_matrix_dc_t *)&dcA,
                                 (parsec_tiled_matrix_dc_t *)&dcAinv );
                 printf("Done\n");
@@ -145,7 +145,7 @@ int main(int argc, char ** argv)
  *  Check the accuracy of the solution
  */
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum diag, int N,
+                           dplasma_enum_t uplo, dplasma_enum_t diag, int N,
                            parsec_tiled_matrix_dc_t *A,
                            parsec_tiled_matrix_dc_t *Ainv )
 {
@@ -169,26 +169,26 @@ static int check_solution( parsec_context_t *parsec, int loud,
                                A->mb, A->nb, N, N, 0, 0,
                                N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
-    if ( diag == PlasmaNonUnit ) {
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&A0);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
+    if ( diag == dplasmaNonUnit ) {
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&A0);
         dplasma_zlacpy( parsec, uplo, Ainv, (parsec_tiled_matrix_dc_t *)&A0 );
     } else {
-        PLASMA_enum nuplo = (uplo == PlasmaLower) ? PlasmaUpper : PlasmaLower ;
+        dplasma_enum_t nuplo = (uplo == dplasmaLower) ? dplasmaUpper : dplasmaLower ;
 
         dplasma_zlacpy( parsec, uplo,  Ainv,   (parsec_tiled_matrix_dc_t *)&A0 );
         dplasma_zlaset( parsec, nuplo, 0., 1., (parsec_tiled_matrix_dc_t *)&A0 );
     }
-    dplasma_ztrmm(parsec, PlasmaLeft, uplo, PlasmaNoTrans, diag,
+    dplasma_ztrmm(parsec, dplasmaLeft, uplo, dplasmaNoTrans, diag,
                   1., A, (parsec_tiled_matrix_dc_t *)&A0 );
 
-    dplasma_zgeadd( parsec, PlasmaNoTrans,
+    dplasma_zgeadd( parsec, dplasmaNoTrans,
                     -1.0, (parsec_tiled_matrix_dc_t*)&A0,
                      1.0, (parsec_tiled_matrix_dc_t*)&Id );
 
-    Anorm    = dplasma_zlantr( parsec, PlasmaOneNorm, uplo, diag, A );
-    Ainvnorm = dplasma_zlantr( parsec, PlasmaOneNorm, uplo, diag, Ainv );
-    Rnorm    = dplasma_zlantr( parsec, PlasmaOneNorm, uplo, PlasmaNonUnit, (parsec_tiled_matrix_dc_t*)&Id );
+    Anorm    = dplasma_zlantr( parsec, dplasmaOneNorm, uplo, diag, A );
+    Ainvnorm = dplasma_zlantr( parsec, dplasmaOneNorm, uplo, diag, Ainv );
+    Rnorm    = dplasma_zlantr( parsec, dplasmaOneNorm, uplo, dplasmaNonUnit, (parsec_tiled_matrix_dc_t*)&Id );
 
     Rcond  = ( 1. / Anorm ) / Ainvnorm;
     result = (Rnorm * Rcond) / (eps * N);

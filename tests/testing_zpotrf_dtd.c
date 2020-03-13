@@ -22,7 +22,7 @@ int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo;
+    dplasma_enum_t uplo;
     int m, lda, *info;
     dplasma_complex64_t *A;
 
@@ -37,7 +37,7 @@ int
 parsec_core_trsm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum side, uplo, trans, diag;
+    dplasma_enum_t side, uplo, trans, diag;
     int  m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t *A, *C;
@@ -57,7 +57,7 @@ int
 parsec_core_herk(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo, trans;
+    dplasma_enum_t uplo, trans;
     int m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t beta;
@@ -78,7 +78,7 @@ int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum transA, transB;
+    dplasma_enum_t transA, transB;
     int m, n, k, lda, ldb, ldc;
     dplasma_complex64_t alpha, beta;
     dplasma_complex64_t *A;
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    dplasma_enum_t uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 
@@ -162,17 +162,17 @@ int main(int argc, char **argv)
     /* start parsec context */
     parsec_context_start( parsec );
 
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
 
-        side = PlasmaRight;
-        transA_p = PlasmaConjTrans;
-        diag = PlasmaNonUnit;
+        side = dplasmaRight;
+        transA_p = dplasmaConjTrans;
+        diag = dplasmaNonUnit;
         alpha_trsm = 1.0;
-        trans = PlasmaNoTrans;
+        trans = dplasmaNoTrans;
         alpha_herk = -1.0;
         beta = 1.0;
-        transB = PlasmaConjTrans;
-        transA_g = PlasmaNoTrans;
+        transB = dplasmaConjTrans;
+        transA_g = dplasmaNoTrans;
 
         total = dcA.super.mt;
         /* Testing Insert Function */
@@ -249,15 +249,15 @@ int main(int argc, char **argv)
             }
         }
     } else {
-        side = PlasmaLeft;
-        transA_p = PlasmaConjTrans;
-        diag = PlasmaNonUnit;
+        side = dplasmaLeft;
+        transA_p = dplasmaConjTrans;
+        diag = dplasmaNonUnit;
         alpha_trsm = 1.0;
-        trans = PlasmaConjTrans;
+        trans = dplasmaConjTrans;
         alpha_herk = -1.0;
         beta = 1.0;
-        transB = PlasmaNoTrans;
-        transA_g = PlasmaConjTrans;
+        transB = dplasmaNoTrans;
+        transA_g = dplasmaConjTrans;
 
         total = dcA.super.nt;
 
@@ -378,7 +378,7 @@ int main(int argc, char **argv)
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, KP, KQ, P));
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
         dplasma_zpotrs(parsec, uplo,

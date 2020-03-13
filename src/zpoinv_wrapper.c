@@ -28,8 +28,8 @@
  *******************************************************************************
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A.
@@ -67,7 +67,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zpoinv_New( PLASMA_enum uplo,
+dplasma_zpoinv_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A,
                     int *info )
 {
@@ -75,13 +75,13 @@ dplasma_zpoinv_New( PLASMA_enum uplo,
     parsec_taskpool_t *tp = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaUpper) && (uplo != PlasmaLower)) {
+    if ((uplo != dplasmaUpper) && (uplo != dplasmaLower)) {
         dplasma_error("dplasma_zpoinv_New", "illegal value of uplo");
         return NULL /*-1*/;
     }
 
     *info = 0;
-    if ( uplo == PlasmaUpper ) {
+    if ( uplo == dplasmaUpper ) {
         tp = (parsec_taskpool_t*)parsec_zpoinv_U_new( A /*, info */);
 
         /* Upper part of A with diagonal part */
@@ -153,8 +153,8 @@ dplasma_zpoinv_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A.
@@ -182,7 +182,7 @@ dplasma_zpoinv_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zpoinv( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_zpoinv = NULL;
@@ -224,8 +224,8 @@ dplasma_zpoinv( parsec_context_t *parsec,
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A.
@@ -253,18 +253,18 @@ dplasma_zpoinv( parsec_context_t *parsec,
  ******************************************************************************/
 int
 dplasma_zpoinv_sync( parsec_context_t *parsec,
-                     PLASMA_enum uplo,
+                     dplasma_enum_t uplo,
                      parsec_tiled_matrix_dc_t* A )
 {
     int info = 0;
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_zpoinv_sync", "illegal value of uplo");
         return -1;
     }
 
     info = dplasma_zpotrf( parsec, uplo, A );
-    info = dplasma_ztrtri( parsec, uplo, PlasmaNonUnit, A );
+    info = dplasma_ztrtri( parsec, uplo, dplasmaNonUnit, A );
     dplasma_zlauum( parsec, uplo, A );
 
     return info;

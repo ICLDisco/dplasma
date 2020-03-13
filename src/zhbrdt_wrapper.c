@@ -10,7 +10,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
-#include <core_blas.h>
+#include "cores/core_blas.h"
 
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/private_mempool.h"

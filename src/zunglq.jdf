@@ -46,10 +46,10 @@ BODY
     int ldqm = BLKLDD( descQ, m );
 
     printlog("CORE_zlaset(%d, %d)\n"
-             "\t(PlasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
+             "\t(dplasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
              m, n, m, n, A);
 
-    CORE_zlaset(PlasmaUpperLower, tempmm, tempnn,
+    CORE_zlaset(dplasmaUpperLower, tempmm, tempnn,
                 0., (m == n) ? 1.: 0.,
                 A /* descQ->m,n) */, ldqm );
 }
@@ -83,7 +83,7 @@ BODY
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_zunmlq(PlasmaRight, PlasmaNoTrans,
+    CORE_zunmlq(dplasmaRight, dplasmaNoTrans,
                 tempmm, tempkn, tempkmin, ib,
                 A /* descA->k, k) */, ldak,
                 T /* descT->k, k) */, descT->mb,
@@ -165,7 +165,7 @@ BODY
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
-    CORE_ztsmlq( PlasmaRight, PlasmaNoTrans,
+    CORE_ztsmlq( dplasmaRight, dplasmaNoTrans,
                  tempmm, descQ->nb, tempmm, tempnn, tempkmin, ib,
                  A1 /* descQ->m, k) */, ldqm,
                  A2 /* descQ->m, n) */, ldqm,

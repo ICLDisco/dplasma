@@ -70,7 +70,7 @@ BODY
     int ldam = BLKLDD(descA, m);
 
     CORE_zpltmg_hankel(
-        PlasmaUpperLower, tempmm, tempnn, A, ldam,
+        dplasmaUpperLower, tempmm, tempnn, A, ldam,
         m * descA->mb, n * descA->nb, descA->mb, R1, R2 );
 }
 END

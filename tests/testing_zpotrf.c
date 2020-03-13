@@ -16,7 +16,7 @@ int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    dplasma_enum_t uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 
@@ -101,7 +101,7 @@ int main(int argc, char ** argv)
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, KP, KQ, P));
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
         dplasma_zpotrs(parsec, uplo,

@@ -12,7 +12,7 @@
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum trans,
+                           dplasma_enum_t uplo, dplasma_enum_t trans,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal );
@@ -47,12 +47,12 @@ int main(int argc, char ** argv)
 
     if(!check)
     {
-        PLASMA_enum uplo  = PlasmaLower;
-        PLASMA_enum trans = PlasmaNoTrans;
+        dplasma_enum_t uplo  = dplasmaLower;
+        dplasma_enum_t trans = dplasmaNoTrans;
         int Am, An;
 
-        Am = (trans == PlasmaNoTrans) ? N : K;
-        An = (trans == PlasmaNoTrans) ? K : N;
+        Am = (trans == dplasmaNoTrans) ? N : K;
+        An = (trans == dplasmaNoTrans) ? K : N;
 
         PASTE_CODE_FLOPS(FLOPS_ZSYR2K, ((DagDouble_t)K, (DagDouble_t)N));
 
@@ -111,8 +111,8 @@ int main(int argc, char ** argv)
 
             for (t=0; t<2; t++) {
                 /* initializing matrix structure */
-                int Am = ( trans[t] == PlasmaNoTrans ? N : K );
-                int An = ( trans[t] == PlasmaNoTrans ? K : N );
+                int Am = ( trans[t] == dplasmaNoTrans ? N : K );
+                int An = ( trans[t] == dplasmaNoTrans ? K : N );
                 LDA = max(LDA, Am);
 
                 PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
@@ -183,7 +183,7 @@ int main(int argc, char ** argv)
  *  Check the accuracy of the solution
  */
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum uplo, PLASMA_enum trans,
+                           dplasma_enum_t uplo, dplasma_enum_t trans,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed, int Bseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            sym_two_dim_block_cyclic_t *dcCfinal )
@@ -214,29 +214,29 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, Bseed);
-    dplasma_zplgsy( parsec, 0., PlasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );
+    dplasma_zplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );
 
-    Anorm        = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
-    Bnorm        = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcB );
-    Cinitnorm    = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
-    Cdplasmanorm = dplasma_zlansy( parsec, PlasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)dcCfinal );
+    Anorm        = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
+    Bnorm        = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcB );
+    Cinitnorm    = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
+    Cdplasmanorm = dplasma_zlansy( parsec, dplasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)dcCfinal );
 
     if ( rank == 0 ) {
         cblas_zsyr2k(CblasColMajor,
                      (CBLAS_UPLO)uplo, (CBLAS_TRANSPOSE)trans,
-                     N, (trans == PlasmaNoTrans) ? An : Am,
+                     N, (trans == dplasmaNoTrans) ? An : Am,
                      CBLAS_SADDR(alpha), dcA.mat, LDA,
                                          dcB.mat, LDA,
                      CBLAS_SADDR(beta),  dcC.mat, LDC);
     }
 
-    Clapacknorm = dplasma_zlansy( parsec, PlasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
+    Clapacknorm = dplasma_zlansy( parsec, dplasmaInfNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    dplasma_ztradd( parsec, uplo, PlasmaNoTrans,
+    dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
                     -1.0, (parsec_tiled_matrix_dc_t*)dcCfinal,
                      1.0, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    Rnorm = dplasma_zlansy( parsec, PlasmaMaxNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
+    Rnorm = dplasma_zlansy( parsec, dplasmaMaxNorm, uplo, (parsec_tiled_matrix_dc_t*)&dcC );
 
     result = Rnorm / (Clapacknorm * max(M,N) * eps);
 

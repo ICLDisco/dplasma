@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -27,8 +28,8 @@
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in,out] A
  *          Descriptor of the distributed factorized matrix A.
@@ -53,12 +54,12 @@
  ******************************************************************************/
 int
 dplasma_zpotri( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 parsec_tiled_matrix_dc_t* A )
 {
     int info = 0;
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_zpotri", "illegal value of uplo");
         return -1;
     }
@@ -67,7 +68,7 @@ dplasma_zpotri( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_ztrtri = NULL;
     parsec_taskpool_t *parsec_zlauum = NULL;
 
-    parsec_ztrtri = dplasma_ztrtri_New(uplo, PlasmaNonUnit, A, &info );
+    parsec_ztrtri = dplasma_ztrtri_New(uplo, dplasmaNonUnit, A, &info );
     parsec_zlauum = dplasma_zlauum_New(uplo, A );
 
     parsec_context_add_taskpool( parsec, parsec_ztrtri );
@@ -78,7 +79,7 @@ dplasma_zpotri( parsec_context_t *parsec,
     dplasma_ztrtri_Destruct( parsec_ztrtri );
     dplasma_zlauum_Destruct( parsec_zlauum );
 #else
-    info = dplasma_ztrtri( parsec, uplo, PlasmaNonUnit, A );
+    info = dplasma_ztrtri( parsec, uplo, dplasmaNonUnit, A );
     dplasma_zlauum( parsec, uplo, A );
 #endif
     return info;
