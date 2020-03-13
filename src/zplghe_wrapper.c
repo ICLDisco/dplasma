@@ -10,6 +10,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "cores/core_blas.h"
 
 
 struct zplghe_args_s {
@@ -86,7 +87,7 @@ dplasma_zplghe_operator( parsec_execution_stream_t *es,
  *
  * @sa dplasma_zplghe
  * @sa dplasma_zplghe_Destruct
- * @sa dplasma_cplghe_New
+ * @sa dplasma_zplghe_New
  *
  ******************************************************************************/
 parsec_taskpool_t*
@@ -169,7 +170,7 @@ dplasma_zplghe_Destruct( parsec_taskpool_t *tp )
  *
  * @sa dplasma_zplghe_New
  * @sa dplasma_zplghe_Destruct
- * @sa dplasma_cplghe
+ * @sa dplasma_zplghe
  *
  ******************************************************************************/
 int

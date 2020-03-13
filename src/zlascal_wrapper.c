@@ -11,6 +11,7 @@
 #include <cblas.h>
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "cores/core_blas.h"
 
 
 static int

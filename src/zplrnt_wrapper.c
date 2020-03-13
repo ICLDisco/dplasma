@@ -11,6 +11,8 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 
+#include "cores/core_blas.h"
+
 
 struct zplrnt_args_s {
     int                    diagdom;

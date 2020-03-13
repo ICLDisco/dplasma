@@ -11,6 +11,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 
+#include "cores/core_blas.h"
 
 struct zplgsy_args_s {
     parsec_complex64_t      bump;
