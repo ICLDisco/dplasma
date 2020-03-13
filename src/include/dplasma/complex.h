@@ -1,7 +1,23 @@
 /*
- * Copyright (c) 2010-2017 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ *
+ * expanded from:
+ *
+ * @file plasmatypes.h
+ *
+ *  PLASMA types header
+ *  PLASMA is a software package provided by Univ. of Tennessee,
+ *  Univ. of California Berkeley and Univ. of Colorado Denver
+ *
+ * @version 2.8.0
+ * @author Jakub Kurzak
+ * @author Mathieu Faverge
+ * @date 2010-11-15
+ *
+ * Contains all common types to libcoreblas and libplasma.
+ *
  */
 
 #ifndef _DPLASMA_COMPLEX_H_
@@ -13,9 +29,16 @@
 
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 /* Windows and non-Intel compiler */
+#include <float.h>
 #include <complex>
 typedef std::complex<float>  dplasma_complex32_t;
 typedef std::complex<double> dplasma_complex64_t;
+/* For LAPACKE lapacke.h force usage of Windows C++ Complex types */
+#define LAPACK_COMPLEX_CUSTOM
+#define lapack_complex_float std::complex<float>
+#define lapack_complex_double std::complex<double>
+#define isnan _isnan
+#define isinf !_finite
 #else
 typedef float  _Complex dplasma_complex32_t;
 typedef double _Complex dplasma_complex64_t;

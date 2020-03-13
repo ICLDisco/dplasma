@@ -17,10 +17,12 @@
  *
  **/
 
+#include "core_blas.h"
+
 /***************************************************************************//**
  *  LAPACK Constants
  **/
-char *dplasma_lapack_constants[] =
+char *plasma_lapack_constants[] =
 {
     "", "", "", "", "", "", "", "", "", "",
     "", "", "", "", "", "", "", "", "", "",

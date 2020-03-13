@@ -47,8 +47,8 @@ install(FILES
   dplasma/qr_param.h
   dplasma/lu_qr.h
   dplasma/types.h
-  dplasma/enum.h
+  dplasma/constants.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dplasma)
 
 add_documented_files(PROJECT "DPLASMA" DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_headers} "dplasma.h")
-add_documented_files(PROJECT "DPLASMA" FILES "dplasma/complex.h" "dplasma/qr_param.h" "dplasma/lu_qr.h" "dplasma/types.h" "dplasma/enum.h")
+add_documented_files(PROJECT "DPLASMA" FILES "dplasma/complex.h" "dplasma/qr_param.h" "dplasma/lu_qr.h" "dplasma/types.h" "dplasma/constants.h")

@@ -45,12 +45,6 @@ extern "C" {
    */
 #define coreblas_error(k, str) fprintf(stderr, "%s: Parameter %d / %s\n", __func__, k, str);
 
- /** ****************************************************************************
-  *  LAPACK Constants
-  **/
-extern char *dplasma_lapack_constants[];
-#define lapack_const(plasma_const) dplasma_lapack_constants[plasma_const][0]
-
 /* CBLAS requires for scalar arguments to be passed by address rather than by value */
 #ifndef CBLAS_SADDR
 #define CBLAS_SADDR( _val_ ) &(_val_)

@@ -27,8 +27,8 @@ static inline int dplasma_imax(int a, int b) { return (a > b) ? a : b; };
 static inline int dplasma_imin(int a, int b) { return (a < b) ? a : b; };
 static inline int dplasma_iceil(int a, int b) { return (a + b - 1) / b; };
 
-/* Enumerated types exposed at the API level (often similar to LAPACK enumerated values) */
-#include "dplasma/enum.h"
+/* Constants and enumerated types exposed at the API level (often similar to LAPACK enumerated values) */
+#include "dplasma/constants.h"
 
 /* Replacement for malformed or incomplete math/complex.h */
 #include "dplasma/complex.h"
