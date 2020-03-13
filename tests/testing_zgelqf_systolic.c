@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011      The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -31,8 +31,8 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 32, 200, 200);
-    iparam[IPARAM_SMB] = 1;
-    iparam[IPARAM_SNB] = 1;
+    iparam[IPARAM_KP] = 1;
+    iparam[IPARAM_KQ] = 1;
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'n';
 
@@ -40,8 +40,8 @@ int main(int argc, char ** argv)
     parsec = setup_parsec(argc, argv, iparam);
 
     /* Make sure SMB and SNB are set to 1, since it conflicts with HQR */
-    iparam[IPARAM_SMB] = 1;
-    iparam[IPARAM_SNB] = 1;
+    iparam[IPARAM_KP] = 1;
+    iparam[IPARAM_KQ] = 1;
 
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZGELQF, ((DagDouble_t)M, (DagDouble_t)N));
@@ -232,7 +232,7 @@ static int check_orthogonality(parsec_context_t *parsec, int loud, parsec_tiled_
         two_dim_block_cyclic, (&Id, matrix_ComplexDouble, matrix_Tile,
                                Q->super.nodes, twodQ->grid.rank,
                                Q->mb, Q->nb, minMN, minMN, 0, 0,
-                               minMN, minMN, twodQ->grid.strows, twodQ->grid.stcols, twodQ->grid.rows));
+                               minMN, minMN, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.rows));
 
     dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
@@ -291,13 +291,13 @@ check_factorization(parsec_context_t *parsec, int loud,
         two_dim_block_cyclic, (&Residual, matrix_ComplexDouble, matrix_Tile,
                                A->super.nodes, twodA->grid.rank,
                                A->mb, A->nb, M, N, 0, 0,
-                               M, N, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows));
+                               M, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     PASTE_CODE_ALLOCATE_MATRIX(L, 1,
         two_dim_block_cyclic, (&L, matrix_ComplexDouble, matrix_Tile,
                                A->super.nodes, twodA->grid.rank,
                                A->mb, A->nb, M, M, 0, 0,
-                               M, M, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows));
+                               M, M, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     /* Copy the original A in Residual */
     dplasma_zlacpy( parsec, PlasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );

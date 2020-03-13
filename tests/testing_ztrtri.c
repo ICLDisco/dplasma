@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -161,13 +161,13 @@ static int check_solution( parsec_context_t *parsec, int loud,
         two_dim_block_cyclic, (&Id, matrix_ComplexDouble, matrix_Tile,
                                A->super.nodes, twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows));
+                               N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     PASTE_CODE_ALLOCATE_MATRIX(A0, 1,
         two_dim_block_cyclic, (&A0, matrix_ComplexDouble, matrix_Tile,
                                A->super.nodes, twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.strows, twodA->grid.stcols, twodA->grid.rows));
+                               N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
 
     dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
     if ( diag == PlasmaNonUnit ) {

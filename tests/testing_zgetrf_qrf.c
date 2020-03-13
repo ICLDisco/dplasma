@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2012 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 40, 200, 200);
-    iparam[IPARAM_SMB] = 1;
-    iparam[IPARAM_SNB] = 1;
+    iparam[IPARAM_KP] = 1;
+    iparam[IPARAM_KQ] = 1;
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
 
@@ -42,8 +42,8 @@ int main(int argc, char ** argv)
     parsec = setup_parsec(argc, argv, iparam);
 
     /* Make sure SMB and SNB are set to 1, since it conflicts with HQR */
-    iparam[IPARAM_SMB] = 1;
-    iparam[IPARAM_SNB] = 1;
+    iparam[IPARAM_KP] = 1;
+    iparam[IPARAM_KQ] = 1;
 
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZGETRF, ((DagDouble_t)M,(DagDouble_t)N));
