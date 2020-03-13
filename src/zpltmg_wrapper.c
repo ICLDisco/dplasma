@@ -408,7 +408,7 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
     vector_two_dim_cyclic_t V;
     parsec_complex64_t *Vmat, tau;
 
-    vector_two_dim_cyclic_init( &V, matrix_ComplexDouble, PlasmaVectorDiag,
+    vector_two_dim_cyclic_init( &V, matrix_ComplexDouble, matrix_VectorDiag,
                                 1, A->super.myrank,
                                 A->mb, A->m, 0, A->m, 1 );
     V.mat = parsec_data_allocate((size_t)V.super.nb_local_tiles *
