@@ -27,8 +27,8 @@ static int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t transA;
-    dplasma_enum_t transB;
+    int transA;
+    int transB;
     int m;
     int n;
     int k;
@@ -165,8 +165,8 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
-                                     sizeof(dplasma_enum_t),   &tA,                           VALUE,
-                                     sizeof(dplasma_enum_t),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
@@ -191,8 +191,8 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
-                                     sizeof(dplasma_enum_t),   &tA,                           VALUE,
-                                     sizeof(dplasma_enum_t),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
@@ -219,8 +219,8 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                     sizeof(dplasma_enum_t),   &tA,                           VALUE,
-                                     sizeof(dplasma_enum_t),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
@@ -245,8 +245,8 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                     sizeof(dplasma_enum_t),   &tA,                           VALUE,
-                                     sizeof(dplasma_enum_t),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
@@ -404,8 +404,8 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(dplasma_enum_t),   &trans[tA],                    VALUE,
-                                             sizeof(dplasma_enum_t),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
@@ -431,8 +431,8 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(dplasma_enum_t),   &trans[tA],                    VALUE,
-                                             sizeof(dplasma_enum_t),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
@@ -460,8 +460,8 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(dplasma_enum_t),   &trans[tA],                    VALUE,
-                                             sizeof(dplasma_enum_t),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
@@ -488,8 +488,8 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(dplasma_enum_t),   &trans[tA],                    VALUE,
-                                             sizeof(dplasma_enum_t),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,

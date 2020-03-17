@@ -34,7 +34,7 @@ int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t uplo;
+    int uplo;
     int m, lda, *info;
     dplasma_complex64_t *A;
 
@@ -49,7 +49,7 @@ int
 parsec_core_trsm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t side, uplo, trans, diag;
+    int side, uplo, trans, diag;
     int  m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t *A, *C;
@@ -69,7 +69,7 @@ int
 parsec_core_herk(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t uplo, trans;
+    int uplo, trans;
     int m, n, lda, ldc;
     dplasma_complex64_t alpha;
     dplasma_complex64_t beta;
@@ -90,7 +90,7 @@ int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t transA, transB;
+    int transA, transB;
     int m, n, k, lda, ldb, ldc;
     dplasma_complex64_t alpha, beta;
     dplasma_complex64_t *A;
@@ -118,16 +118,15 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
     dplasma_complex64_t alpha_trsm, alpha_herk, beta;
     sym_two_dim_block_cyclic_t *dcA;
 
-    int total, *iteration, uplo_enum, *info, m, n, k, count = 0;
+    int total, *iteration, uplo, *info, m, n, k, count = 0;
 
     parsec_taskpool_t *dtd_tp = (parsec_taskpool_t *)this_task->taskpool;
 
-    parsec_dtd_unpack_args(this_task, &total, &iteration, &uplo_enum,
+    parsec_dtd_unpack_args(this_task, &total, &iteration, &uplo,
                            &info, &dcA);
 
     sym_two_dim_block_cyclic_t *__dcA = dcA;
 
-    dplasma_enum_t uplo = uplo_enum;
     side = dplasmaRight;
     transA_p = dplasmaConjTrans;
     diag = dplasmaNonUnit;
@@ -227,15 +226,13 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
     dplasma_complex64_t alpha_trsm, alpha_herk, beta;
     sym_two_dim_block_cyclic_t *dcA;
 
-    int total, *iteration, uplo_enum, *info, m, n, k, count = 0;
+    int total, *iteration, uplo, *info, m, n, k, count = 0;
 
     parsec_taskpool_t *dtd_tp = (parsec_taskpool_t *)this_task->taskpool;
 
-    parsec_dtd_unpack_args(this_task, &total, &iteration, &uplo_enum, &info, &dcA);
+    parsec_dtd_unpack_args(this_task, &total, &iteration, &uplo, &info, &dcA);
 
     sym_two_dim_block_cyclic_t *__dcA = dcA;
-
-    dplasma_enum_t uplo = uplo_enum;
 
     side = dplasmaLeft;
     transA_p = dplasmaConjTrans;
@@ -329,7 +326,7 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    dplasma_enum_t uplo = dplasmaUpper;
+    int uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 

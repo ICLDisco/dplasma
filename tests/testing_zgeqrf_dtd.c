@@ -42,8 +42,8 @@ int
 parsec_core_unmqr(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t side;
-    dplasma_enum_t trans;
+    int side;
+    int trans;
     int m;
     int n;
     int k;
@@ -93,8 +93,8 @@ int
 parsec_core_tsmqr(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    dplasma_enum_t side;
-    dplasma_enum_t trans;
+    int side;
+    int trans;
     int m1;
     int n1;
     int m2;
@@ -211,8 +211,8 @@ int main(int argc, char **argv)
     int tempkm, tempkn, tempnn, tempmm;
     int ib = dcT.super.mb;
     int minMNT = min(dcA.super.mt, dcA.super.nt);
-    dplasma_enum_t side = dplasmaLeft;
-    dplasma_enum_t trans = dplasmaConjTrans;
+    int side = dplasmaLeft,
+        trans = dplasmaConjTrans;
 
     /* Allocating data arrays to be used by comm engine */
     /* Default type */
@@ -256,8 +256,8 @@ int main(int argc, char **argv)
             tempnn = n == dcA.super.nt-1 ? dcA.super.n-(n*dcA.super.nb) : dcA.super.nb;
 
             parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_unmqr,          0,    "unmqr",
-                               sizeof(dplasma_enum_t),   &side,                              VALUE,
-                               sizeof(dplasma_enum_t),   &trans,                             VALUE,
+                               sizeof(int),           &side,                              VALUE,
+                               sizeof(int),           &trans,                             VALUE,
                                sizeof(int),           &tempkm,                            VALUE,
                                sizeof(int),           &tempnn,                            VALUE,
                                sizeof(int),           &tempkm,                            VALUE,
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 
             parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_tsqrt,
                               (dcA.super.mt-k)*(dcA.super.mt-k)*(dcA.super.mt-k),  "tsqrt",
-                               sizeof(dplasma_enum_t),   &tempmm,                            VALUE,
+                               sizeof(int),           &tempmm,                            VALUE,
                                sizeof(int),           &tempkn,                            VALUE,
                                sizeof(int),           &ib,                                VALUE,
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     INOUT | TILE_FULL,
@@ -299,8 +299,8 @@ int main(int argc, char **argv)
 
                 parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_tsmqr,
                                   (dcA.super.mt-k)*(dcA.super.mt-n)*(dcA.super.mt-n),        "tsmqr",
-                                   sizeof(dplasma_enum_t),   &side,                             VALUE,
-                                   sizeof(dplasma_enum_t),   &trans,                            VALUE,
+                                   sizeof(int),           &side,                             VALUE,
+                                   sizeof(int),           &trans,                            VALUE,
                                    sizeof(int),           &dcA.super.mb,                     VALUE,
                                    sizeof(int),           &tempnn,                           VALUE,
                                    sizeof(int),           &tempmm,                           VALUE,
