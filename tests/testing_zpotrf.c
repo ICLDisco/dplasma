@@ -12,11 +12,13 @@
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
+#define SCALAPACK_TIMING
+
 int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    PLASMA_enum uplo = PlasmaUpper;//PlasmaLower;
     int info = 0;
     int ret = 0;
 
@@ -42,36 +44,89 @@ int main(int argc, char ** argv)
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
                                    nodes, rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, uplo));
-
     /* matrix generation */
     if(loud > 3) printf("+++ Generate matrices ... ");
     dplasma_zplghe( parsec, (double)(N), uplo,
                     (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
     if(loud > 3) printf("Done\n");
 
-    if((iparam[IPARAM_HNB] != iparam[IPARAM_NB]) || (iparam[IPARAM_HMB] != iparam[IPARAM_MB]))
-    {
 
-        SYNC_TIME_START();
-        parsec_taskpool_t* PARSEC_zpotrf = dplasma_zpotrf_New( uplo, (parsec_tiled_matrix_dc_t*)&dcA, &info );
-        /* Set the recursive size */
-        dplasma_zpotrf_setrecursive( PARSEC_zpotrf, iparam[IPARAM_HMB] );
-        parsec_context_add_taskpool(parsec, PARSEC_zpotrf);
-        if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+    PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
+       sym_two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble,
+                                  nodes, rank, MB, NB, LDA, N, 0, 0,
+                                  N, N, P, uplo));
+    int t;
+    for(t = 1; t < 5; t++) {
+        dplasma_zlacpy( parsec, uplo,
+                       (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA2 );
+        parsec_devices_release_memory();
+#ifdef SCALAPACK_TIMING
+        double t1, t2;
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+#endif
 
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
-        dplasma_zpotrf_Destruct( PARSEC_zpotrf );
+        if((iparam[IPARAM_HNB] != iparam[IPARAM_NB]) || (iparam[IPARAM_HMB] != iparam[IPARAM_MB]))
+        {
 
-        parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+            SYNC_TIME_START();
+            parsec_taskpool_t* PARSEC_zpotrf = dplasma_zpotrf_New( uplo, (parsec_tiled_matrix_dc_t*)&dcA, &info );
+            /* Set the recursive size */
+            dplasma_zpotrf_setrecursive( PARSEC_zpotrf, iparam[IPARAM_HMB] );
+            parsec_context_add_taskpool(parsec, PARSEC_zpotrf);
+            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
+            dplasma_zpotrf_Destruct( PARSEC_zpotrf );
+
+            parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+
+        }
+        else
+        {
+    //        int t;
+    //        PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
+    //            sym_two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble,
+    //                                       nodes, rank, MB, NB, LDA, N, 0, 0,
+    //                                       N, N, P, uplo));
+    //        for(t = 1; t < 5; t++) {
+    //            parsec_devices_release_memory();
+    //            dplasma_zlacpy( parsec, uplo,
+    //                            (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA2 );
+            
+    //            PASTE_CODE_ENQUEUE_KERNEL(parsec, zpotrf,
+    //                                      (parsec, uplo, (parsec_tiled_matrix_dc_t*)&dcA2, &info));
+    //            PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
+
+    //            dplasma_zpotrf_Destruct( PARSEC_zpotrf );
+    //            parsec_devices_reset_load(parsec);
+    //        }
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, zpotrf,
+                                      (uplo, (parsec_tiled_matrix_dc_t*)&dcA2, &info));
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
+
+            dplasma_zpotrf_Destruct( PARSEC_zpotrf );
+        }
+    #ifdef SCALAPACK_TIMING
+        t2 = MPI_Wtime();
+        double telapsed = t2-t1;
+        if( 0 != rank ) {
+            MPI_Reduce( &telapsed, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+        }
+        else {
+            MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+            double gflops = FLOPS_DPOTRF((double)M)/1e+9/telapsed;
+            double pgflops = gflops/(((double)P)*((double)Q));
+            printf( "### PDPOTRF ###\n"
+                    "#%4sx%-4s %7s %7s %4s %4s # %10s %10s %10s %11s\n", "P", "Q", "M", "N", "NB", "NRHS", "resid", "time(s)", "gflops", "gflops/PxQ" );
+            printf( " %4d %-4d %7d %7d %4d %4d   %10.3e %10.3g %10.3g %11.3g\n", P, Q, M, N, NB, NRHS, -1.0, telapsed, gflops, pgflops );
+        }
+    #endif
+        parsec_devices_reset_load(parsec);
+
     }
-    else
-    {
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, zpotrf,
-                                  (uplo, (parsec_tiled_matrix_dc_t*)&dcA, &info));
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
-
-        dplasma_zpotrf_Destruct( PARSEC_zpotrf );
-    }
+    dplasma_zlacpy( parsec, uplo,
+                       (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
 
     if( 0 == rank && info != 0 ) {
         printf("-- Factorization is suspicious (info = %d) ! \n", info);
@@ -124,6 +179,8 @@ int main(int argc, char ** argv)
 
     parsec_data_free(dcA.mat); dcA.mat = NULL;
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+    parsec_data_free(dcA2.mat); dcA2.mat = NULL;
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA2);
 
     cleanup_parsec(parsec, iparam);
     return ret;
