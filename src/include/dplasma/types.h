@@ -2,7 +2,7 @@
 #define DPLASMA_DATATYPE_H_HAS_BEEN_INCLUDED
 
 /*
- * Copyright (c) 2010-2017 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  */
