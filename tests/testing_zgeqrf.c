@@ -26,6 +26,7 @@ int main(int argc, char ** argv)
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
     int ret = 0;
+    PLASMA_enum uplo = PlasmaUpperLower;
 
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
@@ -82,30 +83,58 @@ int main(int argc, char ** argv)
     if(loud > 3) printf("Done\n");
 
 
-    if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
-    {
-        SYNC_TIME_START();
-        parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_dc_t*)&dcA,
-                                                               (parsec_tiled_matrix_dc_t*)&dcT );
-        /* Set the recursive size */
-        dplasma_zgeqrf_setrecursive( PARSEC_zgeqrf, iparam[IPARAM_HNB] );
-        parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
-        if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgeqrf\tDAG created\n"));
+   PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
+        two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble, matrix_Tile,
+                               nodes, rank, MB, NB, LDA, N, 0, 0,
+                               M, N, SMB, SNB, P));
+    PASTE_CODE_ALLOCATE_MATRIX(dcT2, 1,
+        two_dim_block_cyclic, (&dcT2, matrix_ComplexDouble, matrix_Tile,
+                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, SMB, SNB, P));
 
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
-        dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
 
-        parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+    int t;
+    for(t = 0; t < nruns; t++) {
+        dplasma_zlacpy( parsec, uplo,
+                        (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA2 );
+        dplasma_zlacpy( parsec, uplo,
+                        (parsec_tiled_matrix_dc_t *)&dcT, (parsec_tiled_matrix_dc_t *)&dcT2 );
+
+        parsec_devices_release_memory();
+
+        if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
+        {
+            SYNC_TIME_START();
+            parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_dc_t*)&dcA2,
+                                                                   (parsec_tiled_matrix_dc_t*)&dcT2 );
+            /* Set the recursive size */
+            dplasma_zgeqrf_setrecursive( PARSEC_zgeqrf, iparam[IPARAM_HNB] );
+            parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
+            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgeqrf\tDAG created\n"));
+
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
+            dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
+
+            parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+        }
+        else
+        {
+            PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
+                                      ((parsec_tiled_matrix_dc_t*)&dcA,
+                                      (parsec_tiled_matrix_dc_t*)&dcT),
+                                      dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ));
+        }
+        parsec_devices_reset_load(parsec);
+
     }
-    else
-    {
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, zgeqrf,
-                                  ((parsec_tiled_matrix_dc_t*)&dcA,
-                                   (parsec_tiled_matrix_dc_t*)&dcT));
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
+    dplasma_zlacpy( parsec, uplo,
+                       (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
+    dplasma_zlacpy( parsec, uplo,
+                       (parsec_tiled_matrix_dc_t *)&dcT2, (parsec_tiled_matrix_dc_t *)&dcT );
 
-        dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
-    }
+#ifdef VERBOSE
+    PRINT(parsec,MPI_Barrier(MPI_COMM_WORLD));
+#endif
 
 #if defined(PARSEC_SIM)
     {
@@ -171,6 +200,11 @@ int main(int argc, char ** argv)
     parsec_data_free(dcT.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT);
+
+    parsec_data_free(dcA2.mat);
+    parsec_data_free(dcT2.mat);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA2);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT2);
 
     cleanup_parsec(parsec, iparam);
 

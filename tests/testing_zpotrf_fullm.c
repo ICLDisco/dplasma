@@ -16,7 +16,7 @@ int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;//PlasmaLower;
+    PLASMA_enum uplo = PlasmaUpper;
     int info = 0;
     int ret = 0;
 
@@ -39,20 +39,24 @@ int main(int argc, char ** argv)
     SNB = 1;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-        sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
+        two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   N, N, P, uplo));
+                                   M, N,
+                                   SMB, SNB,
+                                   P));
+
     /* matrix generation */
     if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zplghe( parsec, (double)(N), uplo,
+    dplasma_zplghe( parsec, (double)(N), PlasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
     if(loud > 3) printf("Done\n");
 
-
     PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
-       sym_two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble,
-                                  nodes, rank, MB, NB, LDA, N, 0, 0,
-                                  N, N, P, uplo));
+        two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble, matrix_Tile,
+                                   nodes, rank, MB, NB, LDA, N, 0, 0,
+                                   M, N,
+                                   SMB, SNB,
+                                   P));
     int t;
     for(t = 0; t < nruns; t++) {
         dplasma_zlacpy( parsec, uplo,
@@ -82,10 +86,12 @@ int main(int argc, char ** argv)
                                       dplasma_zpotrf_Destruct( PARSEC_zpotrf ));
         }
         parsec_devices_reset_load(parsec);
-
     }
+
     dplasma_zlacpy( parsec, uplo,
                        (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
+
+
 
     if( 0 == rank && info != 0 ) {
         printf("-- Factorization is suspicious (info = %d) ! \n", info);

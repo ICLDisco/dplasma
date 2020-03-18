@@ -71,6 +71,7 @@ enum iparam_t {
   IPARAM_QR_TSRR,      /* Enable/disable the round-robin on TS domain */
   IPARAM_BUT_LEVEL,    /* Butterfly level */
   IPARAM_SCHEDULER,    /* User-selected scheduler */
+  IPARAM_NRUNS,        /* Number of times to run the kernel */
   IPARAM_SIZEOF
 };
 
@@ -110,6 +111,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int SNB   = iparam[IPARAM_SNB];                                     \
     int HMB   = iparam[IPARAM_HMB];                                     \
     int HNB   = iparam[IPARAM_HNB];                                     \
+    int nruns = iparam[IPARAM_NRUNS];                                   \
     int MT    = (M%MB==0) ? (M/MB) : (M/MB+1);                          \
     int NT    = (N%NB==0) ? (N/NB) : (N/NB+1);                          \
     int KT    = (K%MB==0) ? (K/MB) : (K/MB+1);                          \
@@ -185,10 +187,10 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     }
 
 #define PASTE_CODE_ENQUEUE_KERNEL(PARSEC, KERNEL, PARAMS)               \
-    SYNC_TIME_START();                                                  \
+    SYNC_TIME_START();                                                   \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS;   \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");      \
-    if( loud > 2 ) SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
+    /*if( loud > 2 )*/ SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
 
 
 #define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
@@ -240,5 +242,72 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     }                                                                   \
     (void)gflops;
 
+
+#define PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(PARSEC, KERNEL, PARAMS, DESTRUCT)\
+    SYNC_TIME_START();                                                  \
+    parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS; \
+    PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");\
+    SYNC_TIME_STOP();                                                   \
+    double stime_A = sync_time_elapsed;                                 \
+    SYNC_TIME_START();                                                  \
+    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start");\
+    TIME_START();                                                       \
+    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait");\
+    SYNC_TIME_STOP();                                                   \
+    double stime_B = sync_time_elapsed;                                 \
+    SYNC_TIME_START();                                                  \
+    DESTRUCT;                                                           \
+    SYNC_TIME_STOP();                                                   \
+    double stime_C = sync_time_elapsed;                                 \
+    if(rank==0){                                                        \
+        printf("[****] TIME(s) %12.5f : " #KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"\
+                  " - ENQ&PROG&DEST %12.5f : %14f gflops"               \
+                  " - ENQ %12.5f - DEST %12.5f\n",                      \
+                          stime_B, P, Q, NB, N,                         \
+                          gflops=(flops/1e9)/stime_B,                   \
+                          (stime_A+stime_B+stime_C),                    \
+                          (flops/1e9)/(stime_A+stime_B+stime_C),        \
+                          stime_A,stime_C);                             \
+    }                                                                   \
+    PROFILING_SAVE_dINFO("TIME_ELAPSED", time_elapsed);                 \
+    PROFILING_SAVE_dINFO("SYNC_TIME_ELAPSED", stime_B);                 \
+    PROFILING_SAVE_dINFO("GFLOPS", gflops);                             \
+    PROFILING_SAVE_iINFO("PARAM_RANK", iparam[IPARAM_RANK]);            \
+    PROFILING_SAVE_iINFO("PARAM_NNODES", iparam[IPARAM_NNODES]);        \
+    PROFILING_SAVE_iINFO("PARAM_NCORES", iparam[IPARAM_NCORES]);        \
+    PROFILING_SAVE_iINFO("PARAM_NGPUS", iparam[IPARAM_NGPUS]);          \
+    PROFILING_SAVE_iINFO("PARAM_P", iparam[IPARAM_P]);                  \
+    PROFILING_SAVE_iINFO("PARAM_Q", iparam[IPARAM_Q]);                  \
+    PROFILING_SAVE_iINFO("PARAM_M", iparam[IPARAM_M]);                  \
+    PROFILING_SAVE_iINFO("PARAM_N", iparam[IPARAM_N]);                  \
+    PROFILING_SAVE_iINFO("PARAM_K", iparam[IPARAM_K]);                  \
+    PROFILING_SAVE_iINFO("PARAM_LDA", iparam[IPARAM_LDA]);              \
+    PROFILING_SAVE_iINFO("PARAM_LDB", iparam[IPARAM_LDB]);              \
+    PROFILING_SAVE_iINFO("PARAM_LDC", iparam[IPARAM_LDC]);              \
+    PROFILING_SAVE_iINFO("PARAM_IB", iparam[IPARAM_IB]);                \
+    PROFILING_SAVE_iINFO("PARAM_NB", iparam[IPARAM_NB]);                \
+    PROFILING_SAVE_iINFO("PARAM_MB", iparam[IPARAM_MB]);                \
+    PROFILING_SAVE_iINFO("PARAM_SNB", iparam[IPARAM_SNB]);              \
+    PROFILING_SAVE_iINFO("PARAM_SMB", iparam[IPARAM_SMB]);              \
+    PROFILING_SAVE_iINFO("PARAM_HNB", iparam[IPARAM_HNB]);              \
+    PROFILING_SAVE_iINFO("PARAM_CHECK", iparam[IPARAM_CHECK]);          \
+    PROFILING_SAVE_iINFO("PARAM_CHECKINV", iparam[IPARAM_CHECKINV]);    \
+    PROFILING_SAVE_iINFO("PARAM_VERBOSE", iparam[IPARAM_VERBOSE]);      \
+    PROFILING_SAVE_iINFO("PARAM_LOWLVL_TREE", iparam[IPARAM_LOWLVL_TREE]); \
+    PROFILING_SAVE_iINFO("PARAM_HIGHLVL_TREE", iparam[IPARAM_HIGHLVL_TREE]); \
+    PROFILING_SAVE_iINFO("PARAM_QR_TS_SZE", iparam[IPARAM_QR_TS_SZE]);  \
+    PROFILING_SAVE_iINFO("PARAM_QR_HLVL_SZE", iparam[IPARAM_QR_HLVL_SZE]); \
+    PROFILING_SAVE_iINFO("PARAM_QR_DOMINO", iparam[IPARAM_QR_DOMINO]);  \
+    PROFILING_SAVE_iINFO("PARAM_QR_TSRR", iparam[IPARAM_QR_TSRR]);      \
+    PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
+    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  \
+    if(loud >= 5 && rank == 0) {                                        \
+        printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
+               "                 encoding=\"none\" compression=\"none\">\n" \
+               "%g\n"                                                   \
+               "</DartMeasurement>\n",                                  \
+               gflops);                                                 \
+    }                                                                   \
+    (void)gflops;
 
 #endif /* _TESTSCOMMON_H */
