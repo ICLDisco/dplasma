@@ -9,13 +9,8 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasma/lib/dplasmajdf.h"
+#include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
-#include "dplasma/cores/dplasma_zcores.h"
-
-#include <lapacke.h>
-#include <core_blas.h>
-#include <math.h>
 
 #define get_diag( _buf_ )  (((parsec_complex64_t*)(_buf_)))
 #define get_rmax( _buf_ )  (((parsec_complex64_t*)(_buf_)) + descA->nb)

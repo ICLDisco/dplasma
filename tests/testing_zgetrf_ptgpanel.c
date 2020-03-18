@@ -99,9 +99,9 @@ int main(int argc, char ** argv)
         int t, e;
 
         for(t = 0; t < minmnt; t++ ) {
-          if(((parsec_dc_t*) &dcA)->rank_of(((parsec_dc_t*) &dcA), t, t)  == ((parsec_dc_t*) &dcA)->myrank)
+          if(dcA->super.rank_of(&dcA->super, t, t) == dcA->super.myrank)
             {
-              parsec_data_t* data = ((parsec_dc_t*) &dcA)->data_of(((parsec_dc_t*) &dcA), t, t);
+              parsec_data_t* data = dcA->super.data_of(&dcA->super, t, t);
               parsec_data_copy_t* copy = parsec_data_get_copy(data, 0);
               parsec_complex64_t *tab = (parsec_complex64_t*)parsec_data_copy_get_ptr(copy);
               for(e = 0; e < dcA->mb; e++)

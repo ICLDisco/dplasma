@@ -76,9 +76,9 @@ int main(int argc, char ** argv)
         int t, e;
 
         for(t = 0; t < minmnt; t++ ) {
-          if(((parsec_dc_t*) &dcA)->rank_of(((parsec_dc_t*) &dcA), t, t)  == ((parsec_dc_t*) &dcA)->myrank)
+          if(dcA->super.rank_of(&dcA->super, t, t)  == dcA->super.myrank)
             {
-              parsec_data_t* data = ((parsec_dc_t*) &dcA)->data_of(((parsec_dc_t*) &dcA), t, t);
+              parsec_data_t* data = dcA->super.data_of(&dcA->super, t, t);
               parsec_data_copy_t* copy = parsec_data_get_copy(data, 0);
               parsec_complex64_t *tab = (parsec_complex64_t*)parsec_data_copy_get_ptr(copy);
               for(e = 0; e < dcA->mb; e++)
@@ -130,7 +130,7 @@ int main(int argc, char ** argv)
     }
     else if ( check ) {
         int ipivok = 1;
-        double eps, Anorm, Rnorm, result;
+        double eps, Anorm = NAN, Rnorm = NAN, result = NAN;
 
         eps = LAPACKE_dlamch_work('e');
 
@@ -174,7 +174,7 @@ int main(int argc, char ** argv)
                              1.0, (parsec_tiled_matrix_dc_t*)&dcAl );
 
             Rnorm = dplasma_zlange( parsec, PlasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcAl );
-            result = Rnorm / (Anorm * max(M,N) * eps);
+            result = Rnorm / (Anorm * dplasma_imax(M,N) * eps);
 
             if ( rank == 0 && loud > 2 ) {
                 printf("  ||A||_inf = %e, ||lA - dA||_max = %e, ||lA-dA||/(||A|| * M * eps) = %e\n",

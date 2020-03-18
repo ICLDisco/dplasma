@@ -7,11 +7,11 @@
  *
  */
 #include "parsec.h"
-#include <core_blas.h>
 #include "dplasma.h"
 #include "dplasmatypes.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
+#include <core_blas.h>
 
 #include "ztrsmpl_ptgpanel.h"
 
