@@ -42,7 +42,13 @@ set(CTEST_GPU_LAUNCHER_OPTIONS
       "" CACHE STRING
       "Options to pass to the CTEST_MPI_LAUNCHER to select GPU nodes")
 
-# DPLASMA specific option.
+option(BUILD_64bits
+  "Build 64 bits mode" ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build, options are None, Debug, Release, RelWithDebInfo and MinSizeRel." FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
 option(BUILD_SHARED_LIBS
        "Enable building shared DPLASMA lib (default ON)" ON)
 
@@ -83,21 +89,22 @@ option(DPLASMA_DEBUG_QR_PIVGEN
   "Enable the QR pivgen testings" OFF)
 
 STRING(COMPARE EQUAL ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} DPLASMA_BUILD_INPLACE)
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
+
 #
 # Find packages to decide if we compile DPLASMA support or not
 #
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/")
 
 include(AddDocumentedFiles)
 
 if (CMAKE_Fortran_COMPILER_WORKS)
 include(FortranCInterface)
-FortranCInterface_HEADER(include/dplasma_f2c.h
+FortranCInterface_HEADER(src/include/dplasma_f2c.h
                          MACRO_NAMESPACE "DPLASMA_F2C_"
                          SYMBOL_NAMESPACE "dplasma_f2c_")
 else()
 # No Fortran compiler to test mangling. So assume trailing_ and hope for the best.
-file(WRITE include/dplasma_f2c.h
+file(WRITE src/include/dplasma_f2c.h
 "
 #ifndef DPLASMA_F2C_HEADER_INCLUDED
 #define DPLASMA_F2C_HEADER_INCLUDED
@@ -181,13 +188,26 @@ if( APPLE )
   endif( PARSEC_OSX_VECLIB )
 endif( APPLE )
 
-set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/dplasma"
+set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
                            CACHE STRING "DPLASMA Installation Prefix")
 #
 # Find or Build PaRSEC package
 option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
+if(NOT DPLASMA_FORCE_INTERNAL_PARSEC AND EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
+    # We were not instructed to ignore external PaRSEC during the fist configuration, but we did 
+    # use the submodule in the past. Keep doing so now, except if a PaRSEC_ROOT has been supplied
+    # explicit, in which case we will be noisy about this being unusual.
+    if(PaRSEC_ROOT)
+      message(WARNING "This source directory contains the PaRSEC submodule, but PaRSEC_ROOT=${PaRSEC_ROOT} has been supplied.\n  This build will now ignore the submodule and use the external PaRSEC in ${PaRSEC_ROOT}.")
+    else()
+      # PaRSEC set to autodetect, and we used the submodule in the past, keep doing so.
+      # Not in the cache, we want to do the check for PaRSEC_ROOT again next time.
+      set(DPLASMA_FORCE_INTERNAL_PARSEC ON)
+    endif()
+endif()
+# Find external PaRSEC if not disallowed by submodule
 if(NOT DPLASMA_FORCE_INTERNAL_PARSEC)
-  find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
+    find_package(PaRSEC HINTS "${PaRSEC_ROOT}" QUIET)
 endif()
 
 if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
@@ -227,7 +247,7 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
     # Import targets and load dependent libraries
-    find_package(PaRSEC NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
+    find_package(parsec-submodule NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
     set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
     message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
     message(STATUS "########################################################################")
@@ -244,21 +264,16 @@ endif(PARSEC_HAVE_CUDA)
 include (CheckIncludeFiles)
 check_include_files(complex.h DPLASMA_HAVE_COMPLEX_H)
 
-if(BLAS_FOUND)
-  set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
-  Add_Subdirectory(include)
-  Add_Subdirectory(cores)
-  Add_Subdirectory(lib)
-  IF( BUILD_TESTING )
-    Add_Subdirectory(tests)
-  ENDIF( BUILD_TESTING )
-  Add_Subdirectory(examples)
-endif(BLAS_FOUND)
-
+set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
+Add_Subdirectory(src)
+IF( BUILD_TESTING )
+  Add_Subdirectory(tests)
+ENDIF( BUILD_TESTING )
+Add_Subdirectory(examples)
 Add_Subdirectory(docs)
 
 configure_file (
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/dplasma.pc.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/include/dplasma.pc.in"
   "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc"
         DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib/pkgconfig)

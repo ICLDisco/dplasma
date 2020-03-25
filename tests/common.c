@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -82,8 +82,8 @@ void print_usage(void)
             " -i --IB           : inner blocking     (default: autotuned)\n"
             " -t --MB           : rows in a tile     (default: autotuned)\n"
             " -T --NB           : columns in a tile  (default: autotuned)\n"
-            " -s --SMB          : rows of tiles in a supertile (default: 1)\n"
-            " -S --SNB          : columns of tiles in a supertile (default: 1)\n"
+            " -s --SMB --kp     : repetitions in the process grid row cyclicity (formerly supertiles) (default: 1)\n"
+            " -S --SNB --kq     : repetitions in the process grid column cyclicity (formerly supertiles) (default: 1)\n"
             " -z --HNB --HMB    : Inner NB/MB used for recursive algorithms (default: MB)\n"
             " -x --check        : verify the results\n"
             " -X --check_inv    : verify the results against the inverse\n"
@@ -198,8 +198,10 @@ static struct option long_options[] =
     {"t",           required_argument,  0, 't'},
     {"NB",          required_argument,  0, 'T'},
     {"T",           required_argument,  0, 'T'},
+    {"kp",          required_argument,  0, 's'},
     {"SMB",         required_argument,  0, 's'},
     {"s",           required_argument,  0, 's'},
+    {"kq",          required_argument,  0, 'S'},
     {"SNB",         required_argument,  0, 'S'},
     {"S",           required_argument,  0, 'S'},
     {"check",       no_argument,        0, 'x'},
@@ -327,8 +329,8 @@ static void parse_arguments(int *_argc, char*** _argv, int* iparam)
             case 'i': iparam[IPARAM_IB] = atoi(optarg); break;
             case 't': iparam[IPARAM_MB] = atoi(optarg); break;
             case 'T': iparam[IPARAM_NB] = atoi(optarg); break;
-            case 's': iparam[IPARAM_SMB] = atoi(optarg); break;
-            case 'S': iparam[IPARAM_SNB] = atoi(optarg); break;
+            case 's': iparam[IPARAM_KP] = atoi(optarg); break;
+            case 'S': iparam[IPARAM_KQ] = atoi(optarg); break;
 
             case 'X': iparam[IPARAM_CHECKINV] = 1;
                       /* Fall through */
@@ -492,10 +494,10 @@ static void parse_arguments(int *_argc, char*** _argv, int* iparam)
     if(iparam[IPARAM_NB] < 0) iparam[IPARAM_NB] = -iparam[IPARAM_NB];
 
     /* No supertiling by default */
-    if(-'p' == iparam[IPARAM_SMB]) iparam[IPARAM_SMB] = (iparam[IPARAM_M]/iparam[IPARAM_MB])/iparam[IPARAM_P];
-    if(-'q' == iparam[IPARAM_SNB]) iparam[IPARAM_SNB] = (iparam[IPARAM_N]/iparam[IPARAM_NB])/iparam[IPARAM_Q];
-    if(0 == iparam[IPARAM_SMB]) iparam[IPARAM_SMB] = 1;
-    if(0 == iparam[IPARAM_SNB]) iparam[IPARAM_SNB] = 1;
+    if(-'p' == iparam[IPARAM_KP]) iparam[IPARAM_KP] = (iparam[IPARAM_M]/iparam[IPARAM_MB])/iparam[IPARAM_P];
+    if(-'q' == iparam[IPARAM_KQ]) iparam[IPARAM_KQ] = (iparam[IPARAM_N]/iparam[IPARAM_NB])/iparam[IPARAM_Q];
+    if(0 == iparam[IPARAM_KP]) iparam[IPARAM_KP] = 1;
+    if(0 == iparam[IPARAM_KQ]) iparam[IPARAM_KQ] = 1;
     if(0 == iparam[IPARAM_HMB]) iparam[IPARAM_HMB] = iparam[IPARAM_MB];
     if(0 == iparam[IPARAM_HNB]) iparam[IPARAM_HNB] = iparam[IPARAM_NB];
 
@@ -547,8 +549,8 @@ static void print_arguments(int* iparam)
         else
             fprintf(stderr, "#+++++ MB x NB              : %d x %d\n",
                     iparam[IPARAM_MB], iparam[IPARAM_NB]);
-        if(iparam[IPARAM_SNB] * iparam[IPARAM_SMB] != 1)
-            fprintf(stderr, "#+++++ SMB x SNB            : %d x %d\n", iparam[IPARAM_SMB], iparam[IPARAM_SNB]);
+        if(iparam[IPARAM_KQ] * iparam[IPARAM_KP] != 1)
+            fprintf(stderr, "#+++++ KP x KQ              : %d x %d\n", iparam[IPARAM_KP], iparam[IPARAM_KQ]);
         if((iparam[IPARAM_HNB] != iparam[IPARAM_NB]) || (iparam[IPARAM_HMB] != iparam[IPARAM_MB]))
             fprintf(stderr, "#+++++ HMB x HNB            : %d x %d\n", iparam[IPARAM_HMB], iparam[IPARAM_HNB]);
     }

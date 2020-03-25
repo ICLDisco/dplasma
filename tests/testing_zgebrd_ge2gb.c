@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011      The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2015-2016 Inria, CNRS (LaBRI - UMR 5800), University of
@@ -386,8 +386,8 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 32, 200, 200);
-    iparam[IPARAM_SMB] = 1;
-    iparam[IPARAM_SNB] = 1;
+    iparam[IPARAM_KP] = 1;
+    iparam[IPARAM_KQ] = 1;
     iparam[IPARAM_HMB] = 2;
     iparam[IPARAM_HNB] = 1;
     iparam[IPARAM_LDA] = -'m';

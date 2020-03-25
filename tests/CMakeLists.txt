@@ -1,4 +1,4 @@
-
+include(DplasmaCompilerFlags)
 if(NOT TARGET dplasma_tests_common)
   add_library(dplasma_tests_common OBJECT common.c)
   target_include_directories(dplasma_tests_common
