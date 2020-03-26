@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -14,13 +14,12 @@
 #include "myscalapack.h"
 #include "common.h"
 
-static double check_solution( int params[], double *Alu, double *tau );
 
 int main( int argc, char **argv ) {
     int params[8];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
-    int m, n, nb, s, mloc, nloc, verif, iseed;
+    int m, n, nb, s, mloc, nloc, iseed;
     double *A=NULL, *B=NULL, *C=NULL; int descA[9];
     double resid = NAN;
     double telapsed, gflops, pgflops;
@@ -33,7 +32,6 @@ int main( int argc, char **argv ) {
     nb    = params[PARAM_NB];
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
-    verif = params[PARAM_VALIDATE];
 
     Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
     mloc = numroc_( &m, &nb, &myrow, &i0, &nprow );
