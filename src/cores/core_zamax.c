@@ -15,9 +15,9 @@
  * @precisions normal z -> c d s
  */
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
-#define A(m) PLASMA_BLKADDR(descA, PLASMA_Complex64_t, m, 0)
+#define A(m) BLKADDR(descA, PLASMA_Complex64_t, m, 0)
 
 /***************************************************************************//**
  *
@@ -130,7 +130,7 @@ int CORE_zamax_tile( PLASMA_enum storev,
 
     for( m = 0; m < descA.mt; m++)
     {
-        lda    = PLASMA_BLKLDD( descA, m );
+        lda    = BLKLDD( descA, m );
         A      = A( m );
         tempmm = (m == (descA.mt-1)) ? (descA.m - m * descA.mb) : descA.mb;
 

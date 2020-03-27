@@ -12,7 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -97,7 +97,7 @@ int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, PLASMA_Complex64_t *A, i
         coreblas_error(3, "Illegal value of N");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }

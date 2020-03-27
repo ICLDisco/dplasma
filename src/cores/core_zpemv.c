@@ -12,7 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -149,11 +149,11 @@ int CORE_zpemv(PLASMA_enum trans, int storev,
         coreblas_error(4, "Illegal value of N");
         return -4;
     }
-    if (L > coreblas_imin(M ,N)) {
+    if (L > min(M ,N)) {
         coreblas_error(5, "Illegal value of L");
         return -5;
     }
-    if (LDA < coreblas_imax(1,M)) {
+    if (LDA < max(1,M)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }

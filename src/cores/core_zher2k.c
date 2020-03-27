@@ -14,7 +14,7 @@
  * @precisions normal z -> c
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 #undef REAL
 #define COMPLEX

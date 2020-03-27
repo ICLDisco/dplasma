@@ -17,7 +17,7 @@
 
 #include <math.h>
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 #include "core_zblas.h"
 
 #define pi (3.1415926535897932384626433832795028841971693992)
@@ -95,7 +95,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         coreblas_error(3, "Illegal value of N");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }
@@ -294,7 +294,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
                 if ( ii == jj ) {
                     A[j*LDA+i] = (PLASMA_Complex64_t)( ii + 1. );
                 } else {
-                    A[j*LDA+i] = (PLASMA_Complex64_t)( coreblas_imin( ii, jj ) - 1. );
+                    A[j*LDA+i] = (PLASMA_Complex64_t)( min( ii, jj ) - 1. );
                 }
             }
         }
@@ -432,7 +432,7 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
         int ii, jj;
         for (j=0,jj=n0+1; j<N; j++,jj++) {
             for (i=0,ii=m0+1; i<M; i++,ii++) {
-                A[j*LDA+i] = (PLASMA_Complex64_t) coreblas_imin( ii, jj );
+                A[j*LDA+i] = (PLASMA_Complex64_t) min( ii, jj );
             }
         }
     }
@@ -800,18 +800,18 @@ int CORE_zpltmg( PLASMA_enum mtxtype,
          CORE_zplrnt( M, N, A, LDA, gM, m0, n0, seed );
 
          /* Scale down the columns gN/4 to gN/2 below the diagonal */
-         minMN = coreblas_imin( gM, gN );
+         minMN = min( gM, gN );
          firstcol = minMN / 4;
          lastcol  = minMN / 2;
 
          if ( (m0 >= n0) && ((n0+N) >= firstcol ) && (n0 < lastcol) ) {
 
-             jj = coreblas_imax( n0, firstcol );
+             jj = max( n0, firstcol );
              j = jj - n0;
 
              for (; j<N && jj < lastcol; j++,jj++) {
 
-                 ii = coreblas_imax( m0, jj );
+                 ii = max( m0, jj );
                  i  = ii - m0;
                  mm = M - i;
                  cblas_zscal( mm, CBLAS_SADDR(eps), A + j*LDA + i, 1);

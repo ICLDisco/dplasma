@@ -14,7 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -125,19 +125,19 @@ int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
         coreblas_error(6, "Illegal value of IB");
         return -6;
     }
-    if (LDA1 < coreblas_imax(1,M1)) {
+    if (LDA1 < max(1,M1)) {
         coreblas_error(8, "Illegal value of LDA1");
         return -8;
     }
-    if (LDA2 < coreblas_imax(1,M2)) {
+    if (LDA2 < max(1,M2)) {
         coreblas_error(10, "Illegal value of LDA2");
         return -10;
     }
-    if (LDL1 < coreblas_imax(1,IB)) {
+    if (LDL1 < max(1,IB)) {
         coreblas_error(12, "Illegal value of LDL1");
         return -12;
     }
-    if (LDL2 < coreblas_imax(1,M2)) {
+    if (LDL2 < max(1,M2)) {
         coreblas_error(14, "Illegal value of LDL2");
         return -14;
     }
@@ -149,7 +149,7 @@ int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
     ip = 0;
 
     for(ii = 0; ii < K; ii += IB) {
-        sb = coreblas_imin(K-ii, IB);
+        sb = min(K-ii, IB);
 
         for(i = 0; i < sb; i++) {
             im = IPIV[ip]-1;

@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 #include "primes.h"
 
 /**

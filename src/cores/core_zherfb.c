@@ -14,7 +14,7 @@
  **/
 
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 #undef REAL
 #define COMPLEX
@@ -122,15 +122,15 @@ int CORE_zherfb( PLASMA_enum uplo, int n,
         coreblas_error(5, "Illegal value of nb");
         return -5;
     }
-    if ( (lda < coreblas_imax(1,n)) && (n > 0) ) {
+    if ( (lda < max(1,n)) && (n > 0) ) {
         coreblas_error(7, "Illegal value of lda");
         return -7;
     }
-    if ( (ldt < coreblas_imax(1,ib)) && (ib > 0) ) {
+    if ( (ldt < max(1,ib)) && (ib > 0) ) {
         coreblas_error(9, "Illegal value of ldt");
         return -9;
     }
-    if ( (ldc < coreblas_imax(1,n)) && (n > 0) ) {
+    if ( (ldc < max(1,n)) && (n > 0) ) {
         coreblas_error(11, "Illegal value of ldc");
         return -11;
     }

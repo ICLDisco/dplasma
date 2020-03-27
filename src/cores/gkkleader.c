@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "core_blas.h"
+#include "common.h"
 #include "primes.h"
 #include "gkkleader.h"
 

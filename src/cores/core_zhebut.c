@@ -7,13 +7,15 @@
  *
  */
 #include <math.h>
-#include <stdlib.h>
 #include <assert.h>
-#include "core_blas.h"
+#include "common.h"
 
 /*
 #define DEBUG_BUTTERFLY
 */
+#ifdef DEBUG_BUTTERFLY
+#include <stdio.h>
+#endif
 
 /* Forward declaration of kernels for the butterfly transformation */
 void BFT_zQTL( int mb, int nb, int lda, int i_seg, int j_seg, int lvl, int N,

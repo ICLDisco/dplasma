@@ -13,7 +13,7 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "core_blas.h"
+#include "common.h"
 
 /**
  ******************************************************************************
@@ -90,13 +90,13 @@ int CORE_zgeadd(PLASMA_enum trans, int M, int N,
         coreblas_error(3, "Illegal value of N");
         return -3;
     }
-    if ( ((trans == PlasmaNoTrans) && (LDA < coreblas_imax(1,M)) && (M > 0)) ||
-         ((trans != PlasmaNoTrans) && (LDA < coreblas_imax(1,N)) && (N > 0)) )
+    if ( ((trans == PlasmaNoTrans) && (LDA < max(1,M)) && (M > 0)) ||
+         ((trans != PlasmaNoTrans) && (LDA < max(1,N)) && (N > 0)) )
     {
         coreblas_error(6, "Illegal value of LDA");
         return -6;
     }
-    if ( (LDB < coreblas_imax(1,M)) && (M > 0) ) {
+    if ( (LDB < max(1,M)) && (M > 0) ) {
         coreblas_error(8, "Illegal value of LDB");
         return -8;
     }

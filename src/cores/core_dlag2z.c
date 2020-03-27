@@ -13,7 +13,7 @@
  *
  **/
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -65,11 +65,11 @@ int CORE_dlag2z( int m, int n,
         coreblas_error(2, "Illegal value of n");
         return -2;
     }
-    if ( (ldr < coreblas_imax(1,m)) && (m > 0) ) {
+    if ( (ldr < max(1,m)) && (m > 0) ) {
         coreblas_error(4, "Illegal value of ldr");
         return -4;
     }
-    if ( (ldz < coreblas_imax(1,m)) && (m > 0) ) {
+    if ( (ldz < max(1,m)) && (m > 0) ) {
         coreblas_error(7, "Illegal value of ldz");
         return -7;
     }

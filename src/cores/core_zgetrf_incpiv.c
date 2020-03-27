@@ -15,7 +15,7 @@
  *
  **/
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 #include "core_zblas.h"
 
 /***************************************************************************//**
@@ -93,7 +93,7 @@ int CORE_zgetrf_incpiv(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }
@@ -102,10 +102,10 @@ int CORE_zgetrf_incpiv(int M, int N, int IB,
     if ((M == 0) || (N == 0) || (IB == 0))
         return PLASMA_SUCCESS;
 
-    k = coreblas_imin(M, N);
+    k = min(M, N);
 
     for(i =0 ; i < k; i += IB) {
-        sb = coreblas_imin(IB, k-i);
+        sb = min(IB, k-i);
         /*
          * Factor diagonal and subdiagonal blocks and test for exact singularity.
          */

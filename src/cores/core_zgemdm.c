@@ -14,21 +14,7 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "core_blas.h"
-
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include "common.h"
 
 int CORE_zgemdm(int transA, int transB,
                 int M, int N, int K,
@@ -174,7 +160,7 @@ int CORE_zgemdm(int transA, int transB,
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_zgemdm = PCORE_zgemdm
 #define CORE_zgemdm PCORE_zgemdm
 #endif

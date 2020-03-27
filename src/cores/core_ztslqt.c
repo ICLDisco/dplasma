@@ -14,7 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 #undef REAL
 #define COMPLEX
@@ -117,7 +117,7 @@ int CORE_ztslqt(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA2 < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA2 < max(1,M)) && (M > 0)) {
         coreblas_error(8, "Illegal value of LDA2");
         return -8;
     }
@@ -127,7 +127,7 @@ int CORE_ztslqt(int M, int N, int IB,
         return PLASMA_SUCCESS;
 
     for(ii = 0; ii < M; ii += IB) {
-        sb = coreblas_imin(M-ii, IB);
+        sb = min(M-ii, IB);
         for(i = 0; i < sb; i++) {
             /*
              * Generate elementary reflector H( II*IB+I ) to annihilate A( II*IB+I, II*IB+I:N ).

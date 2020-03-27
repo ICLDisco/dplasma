@@ -16,7 +16,7 @@
  **/
 
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -92,11 +92,11 @@ int CORE_zgessm(int M, int N, int K, int IB,
         coreblas_error(4, "Illegal value of IB");
         return -4;
     }
-    if ((LDL < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDL < max(1,M)) && (M > 0)) {
         coreblas_error(7, "Illegal value of LDL");
         return -7;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(9, "Illegal value of LDA");
         return -9;
     }
@@ -106,7 +106,7 @@ int CORE_zgessm(int M, int N, int K, int IB,
         return PLASMA_SUCCESS;
 
     for(i = 0; i < K; i += IB) {
-        sb = coreblas_imin(IB, K-i);
+        sb = min(IB, K-i);
         /*
          * Apply interchanges to columns I*IB+1:IB*( I+1 )+1.
          */

@@ -15,7 +15,7 @@
 #include <string.h>
 #include <lapacke.h>
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *

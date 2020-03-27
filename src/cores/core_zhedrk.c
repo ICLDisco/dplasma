@@ -15,18 +15,7 @@
  * @precisions normal z -> c d s
  */
 
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#include "core_blas.h"
+#include "common.h"
 
 int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
@@ -171,11 +160,11 @@ int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
         coreblas_error(4, "Illegal value of K");
         return -4;
     }
-    if ((LDA < coreblas_imax(1,Am)) && (Am > 0)) {
+    if ((LDA < max(1,Am)) && (Am > 0)) {
         coreblas_error(7, "Illegal value of LDA");
         return -7;
     }
-    if ((LDC < coreblas_imax(1,N)) && (N > 0)) {
+    if ((LDC < max(1,N)) && (N > 0)) {
         coreblas_error(10, "Illegal value of LDC");
         return -10;
     }
@@ -277,7 +266,7 @@ int CORE_zhedr2(PLASMA_enum uplo, PLASMA_enum trans,
     return 0;
 }
 
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_zhedrk = PCORE_zhedrk
 #define CORE_zhedrk PCORE_zhedrk
 #endif
@@ -318,11 +307,11 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         coreblas_error(5, "Illegal value of ib");
         return -5;
     }
-    if ((LDA < coreblas_imax(1,Am)) && (Am > 0)) {
+    if ((LDA < max(1,Am)) && (Am > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDC < coreblas_imax(1,N)) && (N > 0)) {
+    if ((LDC < max(1,N)) && (N > 0)) {
         coreblas_error(11, "Illegal value of LDC");
         return -11;
     }
@@ -374,7 +363,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = coreblas_imin(N-ii, ib);
+                sb = min(N-ii, ib);
 
                 /* W = alpha * (A * D) * A' */
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasConjTrans,
@@ -410,7 +399,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         else {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = coreblas_imin(N-ii, ib);
+                sb = min(N-ii, ib);
 
                 /* W = alpha * A' * (D * A) */
                 cblas_zgemm(CblasColMajor, CblasConjTrans, CblasTrans,
@@ -450,7 +439,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = coreblas_imin(N-ii, ib);
+                sb = min(N-ii, ib);
 
                 /* W = alpha * (A * D) * A' */
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasConjTrans,
@@ -464,7 +453,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                     X = wDC;
                     Y = C + LDC*ii + ii;
                     for (j=0; j<sb; j++) {
-                        int mm = coreblas_imin( j+1, sb );
+                        int mm = min( j+1, sb );
                         for(i=0; i<mm; i++, Y++, X++) {
                             *Y = zbeta * (*Y) + (*X);
                         }
@@ -487,7 +476,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
         else {
             for( ii=0; ii<N; ii+=ib )
             {
-                sb = coreblas_imin(N-ii, ib);
+                sb = min(N-ii, ib);
 
                 /* W = alpha * A' * (D * A) */
                 cblas_zgemm(CblasColMajor, CblasConjTrans, CblasTrans,
@@ -501,7 +490,7 @@ int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                     X = wDC;
                     Y = C + LDC*ii + ii;
                     for (j=0; j<sb; j++) {
-                        int mm = coreblas_imin( j+1, sb );
+                        int mm = min( j+1, sb );
                         for(i=0; i<mm; i++, Y++, X++) {
                             *Y = zbeta * (*Y) + (*X);
                         }

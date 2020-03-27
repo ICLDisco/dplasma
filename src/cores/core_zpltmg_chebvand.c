@@ -14,7 +14,7 @@
  **/
 
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -92,7 +92,7 @@ int CORE_zpltmg_chebvand( int M, int N, PLASMA_Complex64_t *A, int LDA,
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(4, "Illegal value of LDA");
         return -4;
     }

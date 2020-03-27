@@ -13,18 +13,7 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "core_blas.h"
-
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
+#include "common.h"
 
 int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
 
@@ -97,13 +86,13 @@ int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA)
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if (LDA < coreblas_imax(1, N)) {
+    if (LDA < max(1, N)) {
         coreblas_error(1, "Illegal value of LDA");
         return -4;
     }
 
     /* Quick return */
-    if (coreblas_imax(N, 0) == 0)
+    if (max(N, 0) == 0)
         return PLASMA_SUCCESS;
 
     /**/

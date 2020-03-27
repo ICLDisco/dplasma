@@ -1,6 +1,6 @@
 /**
  *
- * @file cores/descriptor.h
+ * @file descriptor.h
  *
  *  PLASMA auxiliary routines
  *  PLASMA is a software package provided by Univ. of Tennessee,
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /** ****************************************************************************
- *  Tile matrix cores/descriptor
+ *  Tile matrix descriptor
  *
  *  Matrices are stored in a contiguous data chunk containing in order
  *  A11, A21, A12, A22 with :
@@ -61,9 +61,6 @@ typedef struct plasma_desc_t {
     int nt;             /**< number of tile columns of the submatrix - derived parameter      */
 } PLASMA_desc;
 
-
-#define PLASMA_BLKADDR(A, type, m, n) (type *)plasma_getaddr(A, m, n)
-#define PLASMA_BLKLDD(A, k) ( ( (k) + (A).i/(A).mb) < (A).lm1 ? (A).mb : (A).lm%(A).mb )
 
 /***************************************************************************//**
  *  Internal routines used by coreblas library

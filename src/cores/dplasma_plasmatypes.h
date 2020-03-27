@@ -4,6 +4,8 @@
  *                         reserved.
  *
  * Type correspondance between PLASMA Cores and DPLASMA
+ * This file remaps the constants defined in plasmatypes.h
+ *
  * The original PLASMA plasmatypes.h is split between the DPLASMA API
  * include/dplasma/constants.h and include/dplasma/complex.h
  *

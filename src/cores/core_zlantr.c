@@ -14,7 +14,7 @@
  **/
 
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 #define LAPACKE_CORRECT_DLANTR
 
@@ -97,7 +97,7 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
     int i, j, imax;
     int idiag = (diag == PlasmaUnit) ? 1 : 0;
 
-    if ( coreblas_imin(M, N) == 0 ) {
+    if ( min(M, N) == 0 ) {
         *normA = 0;
         return;
     }
@@ -111,10 +111,10 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
         }
 
         if ( uplo == PlasmaUpper ) {
-            M = coreblas_imin(M, N);
+            M = min(M, N);
             for (j = 0; j < N; j++) {
                 tmpA = A+(j*LDA);
-                imax = coreblas_imin(j+1-idiag, M);
+                imax = min(j+1-idiag, M);
 
                 for (i = 0; i < imax; i++) {
                     value = cabs( *tmpA );
@@ -123,7 +123,7 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
                 }
             }
         } else {
-            N = coreblas_imin(M, N);
+            N = min(M, N);
             for (j = 0; j < N; j++) {
                 tmpA = A + j * (LDA+1) + idiag;
 
@@ -140,7 +140,7 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
         CORE_ztrasm( PlasmaColumnwise, uplo, diag, M, N,
                      A, LDA, work );
         if ( uplo == PlasmaLower )
-            N = coreblas_imin(M,N);
+            N = min(M,N);
 
         *normA = 0;
         for (i = 0; i < N; i++) {
@@ -152,7 +152,7 @@ void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
         CORE_ztrasm( PlasmaRowwise, uplo, diag, M, N,
                      A, LDA, work );
         if ( uplo == PlasmaUpper )
-            M = coreblas_imin(M,N);
+            M = min(M,N);
 
         *normA = 0;
         for (i = 0; i < M; i++) {

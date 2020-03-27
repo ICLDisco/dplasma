@@ -14,7 +14,7 @@
  **/
 #include <math.h>
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 #define COMPLEX
 

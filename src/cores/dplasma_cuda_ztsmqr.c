@@ -14,13 +14,10 @@
  * @precisions normal z -> c d s
  */
 #include <cublas.h>
-#include "core_blas.h"
+#include "common.h"
 
 #include <stdio.h>
 
-
-#define max( _a_, _b_ ) (((_a_) < (_b_)) ? (_b_) : (_a_))
-#define min( _a_, _b_ ) (((_a_) > (_b_)) ? (_b_) : (_a_))
 
 int
 dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,

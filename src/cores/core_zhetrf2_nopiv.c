@@ -14,21 +14,7 @@
  * @precisions normal z -> c d s
  */
 
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#include <core_blas.h>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include <common.h>
 
 extern void CORE_zhetrf_nopiv(int uplo, int N, int ib,
                          PLASMA_Complex64_t *A, int LDA,

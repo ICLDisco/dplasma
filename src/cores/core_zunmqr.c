@@ -16,7 +16,7 @@
  **/
 
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -154,15 +154,15 @@ int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
         coreblas_error(6, "Illegal value of IB");
         return -6;
     }
-    if ((LDA < coreblas_imax(1,nq)) && (nq > 0)) {
+    if ((LDA < max(1,nq)) && (nq > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDC < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDC < max(1,M)) && (M > 0)) {
         coreblas_error(12, "Illegal value of LDC");
         return -12;
     }
-    if ((LDWORK < coreblas_imax(1,nw)) && (nw > 0)) {
+    if ((LDWORK < max(1,nw)) && (nw > 0)) {
         coreblas_error(14, "Illegal value of LDWORK");
         return -14;
     }
@@ -182,7 +182,7 @@ int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
     }
 
     for(i = i1; (i >- 1) && (i < K); i+=i3 ) {
-        kb = coreblas_imin(IB, K-i);
+        kb = min(IB, K-i);
 
         if (side == PlasmaLeft) {
             /*

@@ -16,7 +16,7 @@
  **/
 #include <string.h>
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -114,15 +114,15 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDU < coreblas_imax(1,NB)) && (NB > 0)) {
+    if ((LDU < max(1,NB)) && (NB > 0)) {
         coreblas_error(6, "Illegal value of LDU");
         return -6;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDL < coreblas_imax(1,IB)) && (IB > 0)) {
+    if ((LDL < max(1,IB)) && (IB > 0)) {
         coreblas_error(10, "Illegal value of LDL");
         return -10;
     }
@@ -136,7 +136,7 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
 
     ip = 0;
     for (ii = 0; ii < N; ii += IB) {
-        sb = coreblas_imin(N-ii, IB);
+        sb = min(N-ii, IB);
 
         for (i = 0; i < sb; i++) {
             im = cblas_izamax(M, &A[LDA*(ii+i)], 1);

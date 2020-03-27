@@ -13,7 +13,7 @@
  *
  **/
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 #define COMPLEX
 
@@ -91,16 +91,16 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
     double *ptr;
 
     if ( diag == PlasmaUnit ){
-        tmp = sqrt( coreblas_imin(M, N) );
+        tmp = sqrt( min(M, N) );
         UPDATE( 1., tmp );
     }
 
     if  (uplo == PlasmaUpper ) {
-        M = coreblas_imin(M, N);
+        M = min(M, N);
 
         for(j=0; j<N; j++) {
             ptr = (double*) ( A + j * LDA );
-            imax = coreblas_imin(j+1-idiag, M);
+            imax = min(j+1-idiag, M);
 
             for(i=0; i<imax; i++, ptr++) {
                 tmp = fabs(*ptr);
@@ -115,7 +115,7 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
         }
     }
     else {
-        N = coreblas_imin(M, N);
+        N = min(M, N);
 
         for(j=0; j<N; j++) {
             ptr = (double*) ( A + j * (LDA+1) + idiag );

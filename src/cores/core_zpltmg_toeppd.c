@@ -13,7 +13,7 @@
  *
  **/
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 #include "core_zblas.h"
 
 #undef REAL

@@ -12,7 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *

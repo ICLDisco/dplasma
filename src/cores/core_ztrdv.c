@@ -7,22 +7,9 @@
  *
  */
 
-#if defined(PARSEC_HAVE_STRING_H)
+#include "common.h"
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
 #include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-#include <stdlib.h>
-
-#include <core_blas.h>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
 
 //static void band_to_trd_vmpi1(int N, int NB, PLASMA_Complex64_t *A, int LDA);
 //static void band_to_trd_vmpi2(int N, int NB, PLASMA_Complex64_t *A, int LDA);

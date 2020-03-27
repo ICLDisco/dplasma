@@ -23,8 +23,8 @@
 #include "parsec/parsec_config.h"
 
 #include <cblas.h>
+#include "cores/dplasma_plasmatypes.h"
 #include <lapacke.h>
-#include "cores/plasmatypes.h"
 #include "cores/descriptor.h"
 
 #include "cores/core_zblas.h"
@@ -38,8 +38,6 @@
 extern "C" {
 #endif
 
-  static inline int coreblas_imin(int a, int b) { return (a < b) ? a : b; };
-  static inline int coreblas_imax(int a, int b) { return (a > b) ? a : b; };
   /*
    * Coreblas Error
    */

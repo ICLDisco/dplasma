@@ -13,7 +13,7 @@
  *
  **/
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -70,12 +70,12 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
      * PlasmaUpper / PlasmaColumnwise
      */
     if  (uplo == PlasmaUpper ) {
-        M = coreblas_imin(M, N);
+        M = min(M, N);
 
         if (storev == PlasmaColumnwise) {
             for (j = 0; j < N; j++) {
                 tmpA = A+(j*lda);
-                imax = coreblas_imin(j+1-idiag, M);
+                imax = min(j+1-idiag, M);
 
                 if ( j < M )
                     work[j] += idiag;
@@ -97,7 +97,7 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
             }
             for (j = 0; j < N; j++) {
                 tmpA = A+(j*lda);
-                imax = coreblas_imin(j+1-idiag, M);
+                imax = min(j+1-idiag, M);
 
                 for (i = 0; i < imax; i++) {
                     work[i] += cabs(*tmpA);
@@ -106,7 +106,7 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
             }
         }
     } else {
-        N = coreblas_imin(M, N);
+        N = min(M, N);
 
         /*
          * PlasmaLower / PlasmaColumnwise

@@ -15,18 +15,8 @@
  */
 
 #include <math.h>
-#include "core_blas.h"
-
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
+#include "common.h"
 #include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #define COMPLEX
 #undef REAL
@@ -77,7 +67,7 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
 
     if ( uplo == PlasmaLower ) {
         for(i = 0; i < N; i += ib) {
-            sb = coreblas_imin(N-i, ib);
+            sb = min(N-i, ib);
 
             /* Factorize the diagonal block */
             *INFO = CORE_zhetf3_nopiv(uplo, sb, &A[LDA*i+i], LDA);
@@ -109,7 +99,7 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
         }
     } else {
         for(i = ((N-1) / ib)*ib; i > -1; i -= ib) {
-            sb = coreblas_imin(N-i, ib);
+            sb = min(N-i, ib);
 
             /* Factorize the diagonal block */
             *INFO = CORE_zhetf3_nopiv(uplo, sb, &A[LDA*i+i], LDA);

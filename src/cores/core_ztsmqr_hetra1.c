@@ -16,7 +16,7 @@
  *
  **/
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
 #undef REAL
 #define COMPLEX

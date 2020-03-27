@@ -13,9 +13,9 @@
  *
  **/
 #include <lapacke.h>
-#include "core_blas.h"
+#include "common.h"
 
-#define A(m, n) PLASMA_BLKADDR(descA, PLASMA_Complex64_t, m, n)
+#define A(m, n) BLKADDR(descA, PLASMA_Complex64_t, m, n)
 
 /***************************************************************************//**
  *
@@ -126,7 +126,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
     if (inc > 0) {
         it = i1 / descA.mb;
         A1 = A(it, 0);
-        lda1 = PLASMA_BLKLDD(descA, 0);
+        lda1 = BLKLDD(descA, 0);
 
         for (j = i1; j < i2; ++j, ipiv+=inc) {
             ip = (*ipiv) - descA.i - 1;
@@ -134,7 +134,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
             {
                 it = ip / descA.mb;
                 i  = ip % descA.mb;
-                lda2 = PLASMA_BLKLDD(descA, it);
+                lda2 = BLKLDD(descA, it);
                 cblas_zswap(descA.n, A1       + j, lda1,
                                      A(it, 0) + i, lda2 );
             }
@@ -144,7 +144,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
     {
         it = (i2-1) / descA.mb;
         A1 = A(it, 0);
-        lda1 = PLASMA_BLKLDD(descA, it);
+        lda1 = BLKLDD(descA, it);
 
         i1--;
         ipiv = &ipiv[(1-i2)*inc];
@@ -154,7 +154,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
             {
                 it = ip / descA.mb;
                 i  = ip % descA.mb;
-                lda2 = PLASMA_BLKLDD(descA, it);
+                lda2 = BLKLDD(descA, it);
                 cblas_zswap(descA.n, A1       + j, lda1,
                                      A(it, 0) + i, lda2 );
             }
@@ -231,7 +231,7 @@ int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
 
     CORE_zlaswp_ontile(descA, i1, i2, ipiv, inc);
 
-    lda = PLASMA_BLKLDD(descA, 0);
+    lda = BLKLDD(descA, 0);
     cblas_ztrsm( CblasColMajor, CblasLeft, CblasLower,
                  CblasNoTrans, CblasUnit,
                  m, descA.n, CBLAS_SADDR(zone),
@@ -304,7 +304,7 @@ int CORE_zlaswpc_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int 
         return -3;
     }
 
-    lda = PLASMA_BLKLDD(descA, 0);
+    lda = BLKLDD(descA, 0);
 
     if (inc > 0) {
         it = i1 / descA.nb;

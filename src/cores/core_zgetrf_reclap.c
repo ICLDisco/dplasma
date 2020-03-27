@@ -17,7 +17,7 @@
  **/
 
 #include <math.h>
-#include "core_blas.h"
+#include "common.h"
 
 struct CORE_zgetrf_data_s {
     volatile PLASMA_Complex64_t *CORE_zamax;
@@ -120,8 +120,8 @@ int CORE_zgetrf_reclap(CORE_zgetrf_data_t *data,
                        int *IPIV, int *info)
 {
     int thidx = info[1];
-    int thcnt = coreblas_imin( info[2], M / N );
-    int minMN = coreblas_imin(M, N);
+    int thcnt = min( info[2], M / N );
+    int minMN = min(M, N);
 
     info[0] = 0;
     info[2] = thcnt;
@@ -134,7 +134,7 @@ int CORE_zgetrf_reclap(CORE_zgetrf_data_t *data,
         coreblas_error(2, "illegal value of N");
         return -2;
     }
-    if( LDA < coreblas_imax(1, M) ) {
+    if( LDA < max(1, M) ) {
         coreblas_error(5, "illegal value of LDA");
         return -5;
     }

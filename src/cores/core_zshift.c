@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "core_blas.h"
+#include "common.h"
 
 /** ****************************************************************************
  *

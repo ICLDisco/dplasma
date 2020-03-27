@@ -14,7 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "core_blas.h"
+#include "common.h"
 #undef REAL
 #define COMPLEX
 
@@ -118,7 +118,7 @@ int CORE_zttqrt(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA2 < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA2 < max(1,M)) && (M > 0)) {
         coreblas_error(7, "Illegal value of LDA2");
         return -7;
     }
@@ -133,10 +133,10 @@ int CORE_zttqrt(int M, int N, int IB,
                  0., 0., T, LDT);
 
     for (ii = 0; ii < N; ii += IB) {
-        sb = coreblas_imin(N-ii, IB);
+        sb = min(N-ii, IB);
         for (i = 0; i < sb; i++) {
             j  = ii + i;
-            mi = coreblas_imin( j + 1, M );
+            mi = min( j + 1, M );
             ni = sb-i-1;
 
             /*
@@ -190,12 +190,12 @@ int CORE_zttqrt(int M, int N, int IB,
 
             if ( i > 0 ) {
 
-                l = coreblas_imin(i, coreblas_imax(0, M-ii));
+                l = min(i, max(0, M-ii));
                 alpha = -(TAU[j]);
 
                 CORE_zpemv(
                         PlasmaConjTrans, PlasmaColumnwise,
-                        coreblas_imin(j, M), i, l,
+                        min(j, M), i, l,
                         alpha, &A2[LDA2*ii], LDA2,
                                &A2[LDA2*j],  1,
                         zzero, &T[LDT*j],    1,
@@ -216,9 +216,9 @@ int CORE_zttqrt(int M, int N, int IB,
 
         /* Apply Q' to the rest of the matrix to the left  */
         if (N > ii+sb) {
-            mi = coreblas_imin(ii+sb, M);
+            mi = min(ii+sb, M);
             ni = N-(ii+sb);
-            l  = coreblas_imin(sb, coreblas_imax(0, mi-ii));
+            l  = min(sb, max(0, mi-ii));
             CORE_zparfb(
                 PlasmaLeft, PlasmaConjTrans,
                 PlasmaForward, PlasmaColumnwise,
