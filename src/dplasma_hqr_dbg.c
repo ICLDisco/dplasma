@@ -75,9 +75,7 @@
 #include "dplasmaaux.h"
 
 #include <math.h>
-#if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
 
 /* static int dplasma_qrtree_getinon0( const qr_piv_t *arg,  */
 /*                                 const int k, int i, int mt ); */

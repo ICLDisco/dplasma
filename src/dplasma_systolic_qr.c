@@ -15,9 +15,7 @@
 #include "dplasma/qr_param.h"
 
 #include <math.h>
-#if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
 
 #define PRINT_PIVGEN 0
 #ifdef PRINT_PIVGEN
