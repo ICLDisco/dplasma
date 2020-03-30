@@ -1,0 +1,31 @@
+*~
+tools/PrecisionGenerator/Conversion.pyc
+tools/PrecisionGenerator/subs.pyc
+
+# Cmake and configure generated files
+config.log
+config.status
+CMakeFiles/
+cmake_install.cmake
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+DartConfiguration.tcl
+ImportExecutables.cmake
+
+# Exclude the Ctest helpers
+CTestTestfile.cmake
+
+# Other temporary files
+
+# And all Makefiles
+^Makefile$
+src/Makefile
+src/cores/Makefile
+src/include/Makefile
+src/tests/Makefile
+docs/Makefile
+docs/doxygen/Doxyfile
+
+# cscalapack testers
+tools/cscalapack/*[^ch]
