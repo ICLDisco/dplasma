@@ -12,9 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <math.h>
 #include <string.h>
 #include <lapacke.h>
-#include <math.h>
 #include "common.h"
 
 /***************************************************************************//**
@@ -47,6 +47,10 @@
  *         The leading dimension of the matrix Q. LDQ >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_condexq = PCORE_zpltmg_condexq
+#define CORE_zpltmg_condexq PCORE_zpltmg_condexq
+#endif
 void CORE_zpltmg_condexq( int M, int N, PLASMA_Complex64_t *Q, int LDQ )
 {
     PLASMA_Complex64_t tau[3];

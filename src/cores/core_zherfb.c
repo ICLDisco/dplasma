@@ -12,10 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
 #include "common.h"
-
 #undef REAL
 #define COMPLEX
 
@@ -91,6 +89,24 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zherfb = PCORE_zherfb
+#define CORE_zherfb PCORE_zherfb
+#define CORE_zunmlq PCORE_zunmlq
+#define CORE_zunmqr PCORE_zunmqr
+int  CORE_zunmlq(PLASMA_enum side, PLASMA_enum trans,
+                 int M, int N, int IB, int K,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *C, int LDC,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+int  CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
+                 int M, int N, int K, int IB,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *C, int LDC,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+#endif
 int CORE_zherfb( PLASMA_enum uplo, int n,
                  int k, int ib, int nb,
                  const PLASMA_Complex64_t *A, int lda,

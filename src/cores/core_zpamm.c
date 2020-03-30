@@ -12,10 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
-
+#include <cblas.h>
 #include <lapacke.h>
 #include "common.h"
-#include <stdio.h>
 
 static inline int CORE_zpamm_a2(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum uplo,
                                 int M, int N, int K, int L,

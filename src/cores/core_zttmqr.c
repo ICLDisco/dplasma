@@ -15,7 +15,6 @@
  *
  **/
 #include "common.h"
-#include "core_zblas.h"
 
 /***************************************************************************//**
  *
@@ -110,6 +109,10 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zttmqr = PCORE_zttmqr
+#define CORE_zttmqr PCORE_zttmqr
+#endif
 int CORE_zttmqr(PLASMA_enum side, PLASMA_enum trans,
                 int M1, int N1, int M2, int N2, int K, int IB,
                 PLASMA_Complex64_t *A1, int LDA1,

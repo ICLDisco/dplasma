@@ -78,6 +78,10 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgelqt = PCORE_zgelqt
+#define CORE_zgelqt PCORE_zgelqt
+#endif
 int CORE_zgelqt(int M, int N, int IB,
                 PLASMA_Complex64_t *A, int LDA,
                 PLASMA_Complex64_t *T, int LDT,

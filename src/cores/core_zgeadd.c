@@ -1,18 +1,17 @@
 /**
  *
- * @file
+ * @file core_zgeadd.c
  *
  *  PLASMA core_blas kernel
  *  PLASMA is a software package provided by Univ. of Tennessee,
  *  Univ. of California Berkeley and Univ. of Colorado Denver
  *
- * @version 2.7.1
+ * @version 2.8.0
  * @author Mathieu Faverge
  * @date 2010-11-15
- **/
-/*
  * @precisions normal z -> c d s
- */
+ *
+ **/
 #include "common.h"
 
 /**
@@ -20,9 +19,11 @@
  *
  * @ingroup dplasma_cores_complex64
  *
- *  CORE_zgeadd adds to matrices together as in PBLAS pzgeadd.
+ *  CORE_zgeadd adds two matrices together as in PBLAS pzgeadd.
  *
- *       B <- alpha * op(A)  + beta * B
+ *       B <- alpha * op(A)  + beta * B,
+ *
+ * where op(X) = X, X', or conj(X')
  *
  *******************************************************************************
  *
@@ -34,19 +35,21 @@
  *          = PlasmaConjTrans: op(A) = conj(A')
  *
  * @param[in] M
- *          Number of rows of the matrices A and B.
+ *          Number of rows of the matrices op(A) and B.
  *
  * @param[in] N
- *          Number of columns of the matrices A and B.
+ *          Number of columns of the matrices op(A) and B.
  *
  * @param[in] alpha
  *          Scalar factor of A.
  *
  * @param[in] A
- *          Matrix of size LDA-by-N.
+ *          Matrix of size LDA-by-N, if trans = PlasmaNoTrans, LDA-by-M
+ *          otherwise.
  *
  * @param[in] LDA
- *          Leading dimension of the array A. LDA >= max(1,M)
+ *          Leading dimension of the array A. LDA >= max(1,k), with k=M, if
+ *          trans = PlasmaNoTrans, and k=N otherwise.
  *
  * @param[in] beta
  *          Scalar factor of B.
@@ -65,14 +68,17 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgeadd = PCORE_zgeadd
+#define CORE_zgeadd PCORE_zgeadd
+#endif
 int CORE_zgeadd(PLASMA_enum trans, int M, int N,
-                              PLASMA_Complex64_t  alpha,
-                        const PLASMA_Complex64_t *A, int LDA,
-                              PLASMA_Complex64_t  beta,
-                              PLASMA_Complex64_t *B, int LDB)
+                      PLASMA_Complex64_t  alpha,
+                const PLASMA_Complex64_t *A, int LDA,
+                      PLASMA_Complex64_t  beta,
+                      PLASMA_Complex64_t *B, int LDB)
 {
-    static PLASMA_Complex64_t zone = (PLASMA_Complex64_t)1.;
-    int j;
+    int i, j;
 
     if ((trans != PlasmaNoTrans) &&
         (trans != PlasmaTrans)   &&
@@ -104,39 +110,33 @@ int CORE_zgeadd(PLASMA_enum trans, int M, int N,
     switch( trans ) {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     case PlasmaConjTrans:
-        for (j=0; j<N; j++, A++, B+=LDB) {
-            for(int i=0; i<M; i++) {
-                B[i] = beta * B[i] + alpha * conj(A[LDA*i]);
+        for (j=0; j<N; j++, A++) {
+            for(i=0; i<M; i++, B++) {
+                *B = beta * (*B) + alpha * conj(A[LDA*i]);
             }
+            B += LDB-M;
         }
         break;
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */
 
     case PlasmaTrans:
-        for (j=0; j<N; j++, A++, B+=LDB) {
-            if (beta != zone) {
-                cblas_zscal(M, CBLAS_SADDR(beta), B, 1);
+        for (j=0; j<N; j++, A++) {
+            for(i=0; i<M; i++, B++) {
+                *B = beta * (*B) + alpha * A[LDA*i];
             }
-            cblas_zaxpy(M, CBLAS_SADDR(alpha), A, LDA, B, 1);
+            B += LDB-M;
         }
         break;
 
     case PlasmaNoTrans:
     default:
-        if (M == LDA && M == LDB) {
-            if (beta != zone) {
-                cblas_zscal(M*N, CBLAS_SADDR(beta), B, 1);
+        for (j=0; j<N; j++) {
+            for(i=0; i<M; i++, B++, A++) {
+                *B = beta * (*B) + alpha * (*A);
             }
-            cblas_zaxpy(M*N, CBLAS_SADDR(alpha), A, 1, B, 1);
-        }
-        else {
-            for (j=0; j<N; j++, A+=LDA, B+=LDB) {
-                if (beta != zone) {
-                    cblas_zscal(M, CBLAS_SADDR(beta), B, 1);
-                }
-                cblas_zaxpy(M, CBLAS_SADDR(alpha), A, 1, B, 1);
-            }
+            A += LDA-M;
+            B += LDB-M;
         }
     }
-    return 0;
+    return PLASMA_SUCCESS;
 }

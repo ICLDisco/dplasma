@@ -17,6 +17,8 @@
  **/
 
 #include <math.h>
+#include <cblas.h>
+#include <lapacke.h>
 #include "common.h"
 
 #define A(m, n) BLKADDR(A, PLASMA_Complex64_t, m, n)
@@ -111,6 +113,10 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
  *                  to solve a system of equations.
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_rectil = PCORE_zgetrf_rectil
+#define CORE_zgetrf_rectil PCORE_zgetrf_rectil
+#endif
 int CORE_zgetrf_rectil(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info)
 {

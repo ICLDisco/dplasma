@@ -61,6 +61,10 @@
  *         all tiles initialized with this routine.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zplrnt = PCORE_zplrnt
+#define CORE_zplrnt PCORE_zplrnt
+#endif
 void CORE_zplrnt( int m, int n, PLASMA_Complex64_t *A, int lda,
                   int gM, int m0, int n0, unsigned long long int seed )
 {

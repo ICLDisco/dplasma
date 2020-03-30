@@ -62,6 +62,10 @@
  *              to solve a system of equations.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_nopiv = PCORE_zgetrf_nopiv
+#define CORE_zgetrf_nopiv PCORE_zgetrf_nopiv
+#endif
 int CORE_zgetrf_nopiv(int M, int N, int IB,
                       PLASMA_Complex64_t *A, int LDA)
 {

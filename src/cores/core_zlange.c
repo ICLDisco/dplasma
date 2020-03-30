@@ -65,7 +65,10 @@
  *          On exit, normA is the norm of matrix A.
  *
  ******************************************************************************/
-
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlange = PCORE_zlange
+#define CORE_zlange PCORE_zlange
+#endif
 void CORE_zlange(int norm, int M, int N,
                  const PLASMA_Complex64_t *A, int LDA,
                  double *work, double *normA)

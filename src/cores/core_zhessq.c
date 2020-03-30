@@ -13,6 +13,7 @@
  *
  **/
 #include <math.h>
+#include <lapacke.h>
 #include "common.h"
 
 #define COMPLEX
@@ -87,6 +88,10 @@
  *          \retval -k, the k-th argument had an illegal value
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zhessq = PCORE_zhessq
+#define CORE_zhessq PCORE_zhessq
+#endif
 int CORE_zhessq(PLASMA_enum uplo, int N,
                 const PLASMA_Complex64_t *A, int LDA,
                 double *scale, double *sumsq)

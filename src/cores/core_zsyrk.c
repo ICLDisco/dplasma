@@ -14,7 +14,6 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include "common.h"
 
 /***************************************************************************//**
@@ -74,6 +73,10 @@
  *          The leading dimension of the array C. LDC >= max( 1, N ).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zsyrk = PCORE_zsyrk
+#define CORE_zsyrk PCORE_zsyrk
+#endif
 void CORE_zsyrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
                 PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int LDA,

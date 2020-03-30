@@ -69,6 +69,10 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_circul = PCORE_zpltmg_circul
+#define CORE_zpltmg_circul PCORE_zpltmg_circul
+#endif
 int CORE_zpltmg_circul( int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int gM, int m0, int n0,
                         const PLASMA_Complex64_t *V )

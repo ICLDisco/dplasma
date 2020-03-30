@@ -14,9 +14,10 @@
  * @precisions normal z -> c d s
  *
  **/
-#include <string.h>
-#include <math.h>
 #include "common.h"
+#include <string.h>
+#include <cblas.h>
+#include <math.h>
 
 /***************************************************************************//**
  *
@@ -85,6 +86,17 @@
  *
  ******************************************************************************/
 
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztstrf = PCORE_ztstrf
+#define CORE_ztstrf PCORE_ztstrf
+#define CORE_zssssm PCORE_zssssm
+int  CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
+                 PLASMA_Complex64_t *A1, int LDA1,
+                 PLASMA_Complex64_t *A2, int LDA2,
+                 const PLASMA_Complex64_t *L1, int LDL1,
+                 const PLASMA_Complex64_t *L2, int LDL2,
+                 const int *IPIV);
+#endif
 int CORE_ztstrf(int M, int N, int IB, int NB,
                 PLASMA_Complex64_t *U, int LDU,
                 PLASMA_Complex64_t *A, int LDA,

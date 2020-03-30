@@ -12,8 +12,8 @@
  * @precisions normal z -> c
  *
  **/
-#include <math.h>
 #include "common.h"
+#include <math.h>
 
 /***************************************************************************//**
  *
@@ -51,6 +51,10 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_dlag2z = PCORE_dlag2z
+#define CORE_dlag2z PCORE_dlag2z
+#endif
 int CORE_dlag2z( int m, int n,
                  const double *R, int ldr,
                  PLASMA_Complex64_t *Z, int ldz )

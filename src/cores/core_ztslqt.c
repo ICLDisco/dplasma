@@ -14,8 +14,8 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <lapacke.h>
 #include "common.h"
-
 #undef REAL
 #define COMPLEX
 
@@ -92,6 +92,18 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztslqt = PCORE_ztslqt
+#define CORE_ztslqt PCORE_ztslqt
+#define CORE_ztsmlq PCORE_ztsmlq
+int  CORE_ztsmlq(PLASMA_enum side, PLASMA_enum trans,
+                 int M1, int N1, int M2, int N2, int K, int IB,
+                 PLASMA_Complex64_t *A1, int LDA1,
+                 PLASMA_Complex64_t *A2, int LDA2,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+#endif
 int CORE_ztslqt(int M, int N, int IB,
                 PLASMA_Complex64_t *A1, int LDA1,
                 PLASMA_Complex64_t *A2, int LDA2,

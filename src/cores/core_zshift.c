@@ -59,7 +59,10 @@
  *         W(:) = A(s*L:s*L+L-1)
  *
  ******************************************************************************/
-
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zshiftw = PCORE_zshiftw
+#define CORE_zshiftw PCORE_zshiftw
+#endif
 void CORE_zshiftw(int s, int cl, int m, int n, int L, PLASMA_Complex64_t *A, PLASMA_Complex64_t *W) {
     int64_t k, k1;
     int     i, q, kL, k1L;
@@ -124,8 +127,10 @@ void CORE_zshiftw(int s, int cl, int m, int n, int L, PLASMA_Complex64_t *A, PLA
  *         On exit, A = A', where A' contains the permutations
  *
  ******************************************************************************/
-
-#if 0
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zshift = PCORE_zshift
+#define CORE_zshift PCORE_zshift
+#endif
 void CORE_zshift(int s, int m, int n, int L, PLASMA_Complex64_t *A) {
     PLASMA_Complex64_t *W;
 
@@ -134,4 +139,3 @@ void CORE_zshift(int s, int m, int n, int L, PLASMA_Complex64_t *A) {
     CORE_zshiftw(s, 0, m, n, L, A, W);
     free(W);
 }
-#endif

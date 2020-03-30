@@ -16,8 +16,6 @@
  **/
 #include <lapacke.h>
 #include "common.h"
-#include "core_zblas.h"
-
 #undef REAL
 #define COMPLEX
 
@@ -95,6 +93,26 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zttlqt = PCORE_zttlqt
+#define CORE_zttlqt PCORE_zttlqt
+/* Trick to call the version without tracing */
+#define CORE_zlaset PCORE_zlaset
+void
+CORE_zlaset(PLASMA_enum uplo, int n1, int n2,
+            PLASMA_Complex64_t alpha, PLASMA_Complex64_t beta,
+            PLASMA_Complex64_t *tileA, int ldtilea);
+#define CORE_zpemv PCORE_zpemv
+int
+CORE_zpemv(PLASMA_enum trans, int storev,
+           int M, int N, int L,
+           PLASMA_Complex64_t ALPHA,
+           const PLASMA_Complex64_t *A, int LDA,
+           const PLASMA_Complex64_t *X, int INCX,
+           PLASMA_Complex64_t BETA,
+           PLASMA_Complex64_t *Y, int INCY,
+           PLASMA_Complex64_t *WORK);
+#endif
 int CORE_zttlqt(int M, int N, int IB,
                 PLASMA_Complex64_t *A1, int LDA1,
                 PLASMA_Complex64_t *A2, int LDA2,

@@ -14,7 +14,6 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
 #include "common.h"
 
@@ -53,6 +52,10 @@
  *          The leading dimension of the array B. LDB >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlacpy = PCORE_zlacpy
+#define CORE_zlacpy PCORE_zlacpy
+#endif
 void CORE_zlacpy(PLASMA_enum uplo, int M, int N,
                  const PLASMA_Complex64_t *A, int LDA,
                  PLASMA_Complex64_t *B, int LDB)

@@ -14,7 +14,6 @@
  **/
 #include <math.h>
 #include "common.h"
-#include "core_zblas.h"
 
 #undef REAL
 #define COMPLEX
@@ -64,6 +63,10 @@
  *         all call to this routines generating the w and theta vectors.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_toeppd1 = PCORE_zpltmg_toeppd1
+#define CORE_zpltmg_toeppd1 PCORE_zpltmg_toeppd1
+#endif
 void CORE_zpltmg_toeppd1( int gM, int m0, int M, PLASMA_Complex64_t *W,
                           unsigned long long int seed )
 {
@@ -139,6 +142,10 @@ void CORE_zpltmg_toeppd1( int gM, int m0, int M, PLASMA_Complex64_t *W,
  *         The leading dimension of the tile A. LDA >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_toeppd2 = PCORE_zpltmg_toeppd2
+#define CORE_zpltmg_toeppd2 PCORE_zpltmg_toeppd2
+#endif
 void CORE_zpltmg_toeppd2( int M, int N, int K, int m0, int n0,
                           const PLASMA_Complex64_t *W,
                                 PLASMA_Complex64_t *A, int LDA )

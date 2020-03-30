@@ -28,13 +28,13 @@
  *  Hermann Hankel, is a square matrix with constant skew-diagonals (positive
  *  sloping diagonals), e.g.:
  *
- *  \f[ \left\|\begin{array}{lllll}
+ *  \f[ \begin{bmatrix}
  *  a & b & c & d & e \\
  *  b & c & d & e & f \\
  *  c & d & e & f & g \\
  *  d & e & f & g & h \\
  *  e & f & g & h & i \\
- *  \end{array}\right\|
+ *  \end{bmatrix}
  *  \f].
  *
  *  A(i,j) = A(i-1,j+1)
@@ -81,6 +81,10 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_hankel = PCORE_zpltmg_hankel
+#define CORE_zpltmg_hankel PCORE_zpltmg_hankel
+#endif
 int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int m0, int n0, int nb,
                         const PLASMA_Complex64_t *V1,

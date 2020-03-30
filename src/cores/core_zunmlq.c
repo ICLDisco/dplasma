@@ -15,7 +15,6 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
 #include "common.h"
 
@@ -102,6 +101,10 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zunmlq = PCORE_zunmlq
+#define CORE_zunmlq PCORE_zunmlq
+#endif
 int CORE_zunmlq(PLASMA_enum side, PLASMA_enum trans,
                 int M, int N, int K, int IB,
                 const PLASMA_Complex64_t *A, int LDA,

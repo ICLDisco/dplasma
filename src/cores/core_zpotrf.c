@@ -61,6 +61,10 @@
  *               solution has not been computed.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpotrf = PCORE_zpotrf
+#define CORE_zpotrf PCORE_zpotrf
+#endif
 void CORE_zpotrf(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA, int *info)
 {
     *info = LAPACKE_zpotrf_work(

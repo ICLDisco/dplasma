@@ -1,18 +1,17 @@
 /**
  *
- * @file
+ * @file core_ztradd.c
  *
  *  PLASMA core_blas kernel
  *  PLASMA is a software package provided by Univ. of Tennessee,
  *  Univ. of California Berkeley and Univ. of Colorado Denver
  *
- * @version 2.7.1
+ * @version 2.8.0
  * @author Mathieu Faverge
  * @date 2010-11-15
- **/
-/*
  * @precisions normal z -> c d s
- */
+ *
+ **/
 #include "common.h"
 
 /**
@@ -20,9 +19,11 @@
  *
  * @ingroup dplasma_cores_complex64
  *
- *  CORE_ztradd adds to matrices together as in PBLAS pztradd.
+ *  CORE_ztradd adds two matrices together as in PBLAS pztradd.
  *
- *       B <- alpha * op(A)  + beta * B
+ *       B <- alpha * op(A)  + beta * B,
+ *
+ * where op(X) = X, X', or conj(X')
  *
  *******************************************************************************
  *
@@ -71,17 +72,31 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztradd = PCORE_ztradd
+#define CORE_ztradd PCORE_ztradd
+#define CORE_zgeadd PCORE_zgeadd
+int
+CORE_zgeadd(PLASMA_enum trans, int M, int N,
+                  PLASMA_Complex64_t alpha,
+            const PLASMA_Complex64_t *A, int LDA,
+                  PLASMA_Complex64_t beta,
+                  PLASMA_Complex64_t *B, int LDB);
+#endif
 int CORE_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
-                              PLASMA_Complex64_t  alpha,
-                        const PLASMA_Complex64_t *A, int LDA,
-                              PLASMA_Complex64_t  beta,
-                              PLASMA_Complex64_t *B, int LDB)
+                      PLASMA_Complex64_t  alpha,
+                const PLASMA_Complex64_t *A, int LDA,
+                      PLASMA_Complex64_t  beta,
+                      PLASMA_Complex64_t *B, int LDB)
 {
-    static PLASMA_Complex64_t zone = (PLASMA_Complex64_t)1.;
-    int j;
+    int i, j;
 
     if (uplo == PlasmaUpperLower){
-        return CORE_zgeadd( trans, M, N, alpha, A, LDA, beta, B, LDB );
+        int rc = CORE_zgeadd( trans, M, N, alpha, A, LDA, beta, B, LDB );
+        if (rc != PLASMA_SUCCESS)
+            return rc-1;
+        else
+            return rc;
     }
 
     if ((uplo != PlasmaUpper) &&
@@ -118,68 +133,80 @@ int CORE_ztradd(PLASMA_enum uplo, PLASMA_enum trans, int M, int N,
         return -9;
     }
 
+    /**
+     * PlasmaLower
+     */
     if (uplo == PlasmaLower) {
         switch( trans ) {
 #if defined(PRECISION_z) || defined(PRECISION_c)
         case PlasmaConjTrans:
-            for (j=0; j<N; j++, M--, A+=LDA+1, B+=LDB+1) {
-                for(int i=0; i<M; i++) {
-                    B[i] = beta * B[i] + alpha * conj(A[LDA*i]);
+            for (j=0; j<N; j++, A++) {
+                for(i=j; i<M; i++, B++) {
+                    *B = beta * (*B) + alpha * conj(A[LDA*i]);
                 }
+                B += LDB-M+j+1;
             }
             break;
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */
 
         case PlasmaTrans:
-            for (j=0; j<N; j++, M--, A+=LDA+1, B+=LDB+1) {
-                if (beta != zone) {
-                    cblas_zscal(M, CBLAS_SADDR(beta), B, 1);
+            for (j=0; j<N; j++, A++) {
+                for(i=j; i<M; i++, B++) {
+                    *B = beta * (*B) + alpha * A[LDA*i];
                 }
-                cblas_zaxpy(M, CBLAS_SADDR(alpha), A, LDA, B, 1);
+                B += LDB-M+j+1;
             }
             break;
 
         case PlasmaNoTrans:
         default:
-            for (j=0; j<N; j++, M--, A+=LDA+1, B+=LDB+1) {
-                if (beta != zone) {
-                    cblas_zscal(M, CBLAS_SADDR(beta), B, 1);
+            for (j=0; j<N; j++) {
+                for(i=j; i<M; i++, B++, A++) {
+                    *B = beta * (*B) + alpha * (*A);
                 }
-                cblas_zaxpy(M, CBLAS_SADDR(alpha), A, 1, B, 1);
+                B += LDB-M+j+1;
+                A += LDA-M+j+1;
             }
         }
     }
+    /**
+     * PlasmaUpper
+     */
     else {
         switch( trans ) {
 #if defined(PRECISION_z) || defined(PRECISION_c)
         case PlasmaConjTrans:
-            for (j=0; j<N; j++, A++, B+=LDB) {
-                for(int i=0; i<=j; i++) {
-                    B[i] = beta * B[i] + alpha * conj(A[LDA*i]);
+            for (j=0; j<N; j++, A++) {
+                int mm = min( j+1, M );
+                for(i=0; i<mm; i++, B++) {
+                    *B = beta * (*B) + alpha * conj(A[LDA*i]);
                 }
+                B += LDB-mm;
             }
             break;
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */
 
         case PlasmaTrans:
-            for (j=0; j<N; j++, A++, B+=LDB) {
-                if (beta != zone) {
-                    cblas_zscal(j+1, CBLAS_SADDR(beta), B, 1);
+            for (j=0; j<N; j++, A++) {
+                int mm = min( j+1, M );
+                for(i=0; i<mm; i++, B++) {
+                    *B = beta * (*B) + alpha * (A[LDA*i]);
                 }
-                cblas_zaxpy(j+1, CBLAS_SADDR(alpha), A, LDA, B, 1);
+                B += LDB-mm;
             }
             break;
 
         case PlasmaNoTrans:
         default:
-            for (j=0; j<N; j++, A+=LDA, B+=LDB) {
-                if (beta != zone) {
-                    cblas_zscal(j+1, CBLAS_SADDR(beta), B, 1);
+            for (j=0; j<N; j++) {
+                int mm = min( j+1, M );
+                for(i=0; i<mm; i++, B++, A++) {
+                    *B = beta * (*B) + alpha * (*A);
                 }
-                cblas_zaxpy(j+1, CBLAS_SADDR(alpha), A, 1, B, 1);
+                B += LDB-mm;
+                A += LDA-mm;
             }
         }
     }
-
-    return 0;
+    return PLASMA_SUCCESS;
 }

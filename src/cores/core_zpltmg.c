@@ -18,7 +18,6 @@
 #include <math.h>
 #include <lapacke.h>
 #include "common.h"
-#include "core_zblas.h"
 
 #define pi (3.1415926535897932384626433832795028841971693992)
 
@@ -79,6 +78,15 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg = PCORE_zpltmg
+#define CORE_zpltmg PCORE_zpltmg
+#define CORE_zplrnt  PCORE_zplrnt
+void
+CORE_zplrnt( int M, int N, PLASMA_Complex64_t *A, int LDA,
+             int gM, int m0, int n0,
+             unsigned long long int seed );
+#endif
 int CORE_zpltmg( PLASMA_enum mtxtype,
                   int M, int N, PLASMA_Complex64_t *A, int LDA,
                   int gM, int gN, int m0, int n0,

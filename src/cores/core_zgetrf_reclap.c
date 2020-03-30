@@ -17,6 +17,8 @@
  **/
 
 #include <math.h>
+#include <cblas.h>
+#include <lapacke.h>
 #include "common.h"
 
 struct CORE_zgetrf_data_s {
@@ -114,6 +116,10 @@ CORE_zgetrf_reclap_rec(CORE_zgetrf_data_t *data,
  *                  to solve a system of equations.
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_reclap = PCORE_zgetrf_reclap
+#define CORE_zgetrf_reclap PCORE_zgetrf_reclap
+#endif
 int CORE_zgetrf_reclap(CORE_zgetrf_data_t *data,
                        int M, int N,
                        PLASMA_Complex64_t *A, int LDA,

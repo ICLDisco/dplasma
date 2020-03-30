@@ -77,6 +77,10 @@
  *          The leading dimension of the array C. LDC >= max( 1, N ).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zherk = PCORE_zherk
+#define CORE_zherk PCORE_zherk
+#endif
 void CORE_zherk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
                 double alpha, const PLASMA_Complex64_t *A, int LDA,

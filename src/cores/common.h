@@ -12,6 +12,8 @@
  * of the macro definitions that are in control/xyz.h in PLASMA that we did not
  * import straight.
  */
+#include "cores/dplasma_plasmatypes.h"
+#include "cores/descriptor.h"
 #include "core_blas.h"
 
 #define ELTADDR(A, type, m, n)  (type *)plasma_geteltaddr(A, m, n)

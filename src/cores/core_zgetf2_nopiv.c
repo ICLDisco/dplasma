@@ -13,8 +13,9 @@
  * @precisions normal z -> c d s
  *
  **/
-#include <math.h>
 #include "common.h"
+#include <math.h>
+#include <lapacke.h>
 
 /***************************************************************************//**
  *

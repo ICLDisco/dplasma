@@ -12,6 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <cblas.h>
+#include <lapacke.h>
 #include "common.h"
 
 /***************************************************************************//**

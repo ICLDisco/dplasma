@@ -12,6 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <cblas.h>
 #include <math.h>
 #include "common.h"
 
@@ -53,6 +54,10 @@
  *          On exit, contains the sums of the absolute values per column or row.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_dzasum = PCORE_dzasum
+#define CORE_dzasum PCORE_dzasum
+#endif
 void CORE_dzasum(PLASMA_enum storev, PLASMA_enum uplo, int M, int N,
                  const PLASMA_Complex64_t *A, int lda, double *work)
 {

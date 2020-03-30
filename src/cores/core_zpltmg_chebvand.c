@@ -12,8 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
+#include <math.h>
 #include "common.h"
 
 /***************************************************************************//**
@@ -76,6 +76,10 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_chebvand = PCORE_zpltmg_chebvand
+#define CORE_zpltmg_chebvand PCORE_zpltmg_chebvand
+#endif
 int CORE_zpltmg_chebvand( int M, int N, PLASMA_Complex64_t *A, int LDA,
                           int gN, int m0, int n0,
                           PLASMA_Complex64_t *W )

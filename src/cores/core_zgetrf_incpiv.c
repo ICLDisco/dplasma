@@ -16,7 +16,6 @@
  **/
 #include <lapacke.h>
 #include "common.h"
-#include "core_zblas.h"
 
 /***************************************************************************//**
  *
@@ -72,6 +71,15 @@
  *              to solve a system of equations.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_incpiv = PCORE_zgetrf_incpiv
+#define CORE_zgetrf_incpiv PCORE_zgetrf_incpiv
+#define CORE_zgessm PCORE_zgessm
+int  CORE_zgessm(int M, int N, int K, int IB,
+                 int *IPIV,
+                 const PLASMA_Complex64_t *L, int LDL,
+                 PLASMA_Complex64_t *A, int LDA);
+#endif
 int CORE_zgetrf_incpiv(int M, int N, int IB,
                        PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *INFO)

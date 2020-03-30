@@ -50,6 +50,10 @@
  *          The leading dimension of the array A. LDA >= max(1,N).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlauum = PCORE_zlauum
+#define CORE_zlauum PCORE_zlauum
+#endif
 void CORE_zlauum(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA)
 {
     LAPACKE_zlauum_work(LAPACK_COL_MAJOR, lapack_const(uplo), N, A, LDA );

@@ -59,6 +59,10 @@
  *          matrix is singular and its inverse can not be computed.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrtri = PCORE_ztrtri
+#define CORE_ztrtri PCORE_ztrtri
+#endif
 void CORE_ztrtri(PLASMA_enum uplo, PLASMA_enum diag, int N, PLASMA_Complex64_t *A, int LDA, int *info)
 {
     *info = LAPACKE_ztrtri_work(

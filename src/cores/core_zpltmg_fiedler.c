@@ -68,6 +68,10 @@
  *         The leading dimension of the tile A. LDA >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_fiedler = PCORE_zpltmg_fiedler
+#define CORE_zpltmg_fiedler PCORE_zpltmg_fiedler
+#endif
 void CORE_zpltmg_fiedler( int M, int N,
                           const PLASMA_Complex64_t *X, int incX,
                           const PLASMA_Complex64_t *Y, int incY,

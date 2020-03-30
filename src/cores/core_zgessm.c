@@ -14,7 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-
+#include <cblas.h>
 #include <lapacke.h>
 #include "common.h"
 
@@ -63,6 +63,10 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgessm = PCORE_zgessm
+#define CORE_zgessm PCORE_zgessm
+#endif
 int CORE_zgessm(int M, int N, int K, int IB,
                 const int *IPIV,
                 const PLASMA_Complex64_t *L, int LDL,

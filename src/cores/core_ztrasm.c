@@ -12,6 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <cblas.h>
 #include <math.h>
 #include "common.h"
 
@@ -58,6 +59,10 @@
  *          added to the input values.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrasm = PCORE_ztrasm
+#define CORE_ztrasm PCORE_ztrasm
+#endif
 void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
                  const PLASMA_Complex64_t *A, int lda, double *work)

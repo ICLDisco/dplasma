@@ -12,8 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
+#include <math.h>
 #include "common.h"
 
 #define LAPACKE_CORRECT_DLANTR
@@ -79,6 +79,10 @@
  *          On exit, normA is the norm of matrix A.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlantr = PCORE_zlantr
+#define CORE_zlantr PCORE_zlantr
+#endif
 void CORE_zlantr(PLASMA_enum norm, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
                  const PLASMA_Complex64_t *A, int LDA,

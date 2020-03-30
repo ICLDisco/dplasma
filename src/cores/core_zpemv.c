@@ -12,6 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <cblas.h>
+#include <lapacke.h>
 #include "common.h"
 
 /***************************************************************************//**
@@ -109,6 +111,10 @@
  *
  ******************************************************************************/
 
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpemv = PCORE_zpemv
+#define CORE_zpemv PCORE_zpemv
+#endif
 int CORE_zpemv(PLASMA_enum trans, int storev,
                int M, int N, int L,
                PLASMA_Complex64_t ALPHA,

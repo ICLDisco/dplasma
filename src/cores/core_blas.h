@@ -19,13 +19,11 @@
 #ifndef _PLASMA_CORE_BLAS_H_
 #define _PLASMA_CORE_BLAS_H_
 
-/* TODO: Include the dplasma configuration instead */
-#include "parsec/parsec_config.h"
 
-#include <cblas.h>
 #include "cores/dplasma_plasmatypes.h"
-#include <lapacke.h>
 #include "cores/descriptor.h"
+#include <cblas.h>
+#include <lapacke.h>
 
 #include "cores/core_zblas.h"
 #include "cores/core_dblas.h"

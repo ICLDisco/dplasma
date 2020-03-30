@@ -77,6 +77,10 @@
  *          The leading dimension of the array B. LDB >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrmm = PCORE_ztrmm
+#define CORE_ztrmm PCORE_ztrmm
+#endif
 void CORE_ztrmm(PLASMA_enum side, PLASMA_enum uplo,
                 PLASMA_enum transA, PLASMA_enum diag,
                 int M, int N,

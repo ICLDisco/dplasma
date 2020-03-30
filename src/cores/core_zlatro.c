@@ -13,10 +13,7 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -82,8 +79,8 @@
 #endif
 int CORE_zlatro(PLASMA_enum uplo, PLASMA_enum trans,
                 int M, int N,
-                const parsec_complex64_t *A, int LDA,
-                      parsec_complex64_t *B, int LDB)
+                const PLASMA_Complex64_t *A, int LDA,
+                      PLASMA_Complex64_t *B, int LDB)
 {
     int i, j;
 
@@ -104,11 +101,11 @@ int CORE_zlatro(PLASMA_enum uplo, PLASMA_enum trans,
         coreblas_error(4, "Illegal value of N");
         return -4;
     }
-    if ( (LDA < coreblas_imax(1,M)) && (M > 0) ) {
+    if ( (LDA < max(1,M)) && (M > 0) ) {
         coreblas_error(6, "Illegal value of LDA");
         return -6;
     }
-    if ( (LDB < coreblas_imax(1,N)) && (N > 0) ) {
+    if ( (LDB < max(1,N)) && (N > 0) ) {
         coreblas_error(8, "Illegal value of LDB");
         return -8;
     }
@@ -120,7 +117,7 @@ int CORE_zlatro(PLASMA_enum uplo, PLASMA_enum trans,
         if (trans == PlasmaConjTrans) {
             if(uplo == PlasmaUpper) {
                 for(j=0; j<N; j++)
-                    for(i=0; i<coreblas_imin(j+1,M); i++)
+                    for(i=0; i<min(j+1,M); i++)
                         B[j+i*LDB] = conj(A[i+j*LDA]);
             }
             else if(uplo == PlasmaLower) {
@@ -137,7 +134,7 @@ int CORE_zlatro(PLASMA_enum uplo, PLASMA_enum trans,
         else {
             if(uplo==PlasmaUpper) {
                 for(j=0;j<N;j++)
-                    for(i=0;i<coreblas_imin(j+1,M);i++)
+                    for(i=0;i<min(j+1,M);i++)
                         B[j+i*LDB] = A[i+j*LDA];
             }
             else if(uplo==PlasmaLower) {

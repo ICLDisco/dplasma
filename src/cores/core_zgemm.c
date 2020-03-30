@@ -83,6 +83,10 @@
  *          The leading dimension of the array C. LDC >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgemm = PCORE_zgemm
+#define CORE_zgemm PCORE_zgemm
+#endif
 void CORE_zgemm(PLASMA_enum transA, int transB,
                 int M, int N, int K,
                 PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int LDA,
