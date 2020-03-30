@@ -692,12 +692,15 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @CMAKE_SOURCE_DIR@/examples
+EXCLUDE               += @CMAKE_SOURCE_DIR@/parsec
 EXCLUDE               += @CMAKE_SOURCE_DIR@/tools/cscalapack
 EXCLUDE               += @CMAKE_SOURCE_DIR@/tools/PrecisionGenerator
+EXCLUDE               += @CMAKE_SOURCE_DIR@/tools/gemmpeak
 EXCLUDE               += @CMAKE_BINARY_DIR@/CMakeFiles
 EXCLUDE               += @CMAKE_BINARY_DIR@/examples
 EXCLUDE               += @CMAKE_BINARY_DIR@/tests
 EXCLUDE               += @CMAKE_BINARY_DIR@/docs
+EXCLUDE               += @CMAKE_BINARY_DIR@/parsec
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1334,7 +1337,7 @@ PAPER_TYPE             = a4wide
 # The EXTRA_PACKAGES tag can be to specify one or more names of LaTeX
 # packages that should be included in the LaTeX output.
 
-EXTRA_PACKAGES         =
+EXTRA_PACKAGES         = amsmath
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for
 # the generated latex document. The header should contain everything until
@@ -1585,10 +1588,10 @@ SEARCH_INCLUDES        = YES
 
 # NB: Do not add the PARSEC INCLUDE_PATHS here, or the entire PARSEC
 #     documentation gets included...
-INCLUDE_PATH           = @CMAKE_SOURCE_DIR@/include
-INCLUDE_PATH          += @CMAKE_SOURCE_DIR@
-INCLUDE_PATH          += @CMAKE_BINARY_DIR@/include
-INCLUDE_PATH          += @CMAKE_BINARY_DIR@
+INCLUDE_PATH           = @CMAKE_SOURCE_DIR@/src/include
+INCLUDE_PATH          += @CMAKE_SOURCE_DIR@/src
+INCLUDE_PATH          += @CMAKE_BINARY_DIR@/src/include
+INCLUDE_PATH          += @CMAKE_BINARY_DIR@/src
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
