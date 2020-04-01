@@ -91,7 +91,6 @@ BODY
              "\t( tempmm=%d, tempnn=%d, A(%d, %d)[%p], lda=%d, W(%d,%d)[%p])\n",
              m, n, tempmm, tempnn, m, n, A, ldam, m, n%Q, W);
 
-#if !defined(PARSEC_DRY_RUN)
     /*
      * Max norm
      */
@@ -156,7 +155,6 @@ BODY
     default:
         fprintf(stderr, "Unknown norm %d\n", ntype );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -196,7 +194,6 @@ BODY
               "\t( W(%d, %d) || W(%d, %d) )\n",
               m, n, nmax, col, m, n-1, m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     switch( ntype ) {
     case PlasmaMaxNorm:
     {
@@ -249,7 +246,6 @@ BODY
     default:
         fprintf(stderr, "Unknown norm %d\n", ntype );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -281,7 +277,6 @@ BODY
 
     printlog( "zlange STEP3(%d, %d)\n", m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     switch( ntype ) {
     case PlasmaMaxNorm:
     {
@@ -328,7 +323,6 @@ BODY
     default:
         fprintf(stderr, "Unknown norm %d\n", ntype );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -356,7 +350,6 @@ BODY
 {
     printlog("zlange STEP4(%d, %d)\n", m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     double *dA = (double*)A;
     double *dW = (double*)W;
     if(m > 0) {
@@ -396,7 +389,6 @@ BODY
             fprintf(stderr, "Unknown norm %d\n", ntype );
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -419,7 +411,6 @@ BODY
 {
     printlog("zlange STORE RESULT(%d, %d)\n", m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     double *dW = (double*)W;
 
     switch( ntype ) {
@@ -439,6 +430,5 @@ BODY
     default:
         fprintf(stderr, "Unknown norm %d\n", ntype );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END

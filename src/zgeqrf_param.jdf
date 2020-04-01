@@ -96,7 +96,6 @@ BODY
              "\t(tempmm, tempkn, ib, dataA(%d,%d)[%p], ldam, dataTS(%d,%d)[%p], TS.mb, p_elem_A, p_elem_B)\n",
              k, m, m, k, A, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -107,7 +106,6 @@ BODY
 
     parsec_private_memory_push( p_tau, p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -173,7 +171,6 @@ BODY
              "\t dataA(%d,%d)[%p], ldam, dataTS(%d,%d)[%p], descTT->mb, dataA(%d,%d)[%p], ldam, p_elem_A, descTT->nb)\n",
              k, m, n, m, k, A, m, k, T, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmqr(
@@ -185,7 +182,6 @@ BODY
         p_elem_A, descTT->nb );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -251,7 +247,6 @@ BODY
              "\t(tempmm, tempkn, ib, dataA(%d,%d)[%p], A.mb, dataA(%d,%d)[%p], ldam, dataTT(%d,%d)[%p], descTT->mb, p_elem_A, p_elem_B)\n",
              k, m, p, k, A1, m, k, A2, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -272,7 +267,6 @@ BODY
     }
     parsec_private_memory_push( p_tau , p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -355,7 +349,6 @@ BODY
              "\t dataA(%d,%d)[%p], A.mb, dataA(%d,%d)[%p], ldam, dataA(%d,%d)[%p], ldam, dataTT(%d,%d)[%p], descTT->mb, p_elem_A, ldwork)\n",
              k, m, n, p, n, A1, m, n, A2, m, k, V, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
@@ -378,7 +371,6 @@ BODY
             p_elem_A, ldwork );
     }
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

@@ -50,12 +50,10 @@ BODY
     printlog("CORE_zsyr2k(%d, %d)\n"
              "\t(uplo, trans, tempnn, tempkn, alpha, A(%d,%d)[%p], ldan, B(%d,%d)[%p], ldbn, zbeta, C(%d,%d)[%p], ldcn)\n",
              n, k, n, k, A, n, k, B, n, n, C);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zsyr2k(uplo, trans, tempnn, tempkn,
                 alpha, A /* descA(n,k) */, ldan,
                        B /* descB(n,k) */, ldbn,
                 zbeta, C /* descC(n,n) */, ldcn );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -89,13 +87,11 @@ BODY
              m, n, k, tempmm, tempnn, tempkn,
              creal(alpha), cimag(alpha), m, k, A, ldam, n, k, B, ldbn,
              creal(zbeta), cimag(zbeta), m, n, C, ldcm);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaTrans,
                tempmm, tempnn, tempkn,
                alpha, A /* descA(m,k) */, ldam,
                       B /* descB(n,k) */, ldbn,
                zbeta, C /* descC(m,n) */, ldcm );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -129,13 +125,11 @@ BODY
              creal(alpha), cimag(alpha), m, k, A, ldbm, n, k, B, ldan,
              creal(1.),    cimag(1.),    m, n, C, ldcm);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaTrans,
                tempmm, tempnn, tempkn,
                alpha, A /* descB(m,k) */, ldbm,
                       B /* descA(n,k) */, ldan,
                1.,    C /* descC(m,n) */, ldcm );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

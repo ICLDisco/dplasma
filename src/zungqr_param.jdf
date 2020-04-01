@@ -52,11 +52,9 @@ BODY
              "\t(PlasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
              m, n, m, n, A);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zlaset(PlasmaUpperLower, tempmm, tempnn,
                 0., (m == n) ? 1.: 0.,
                 A /* descQ(m,n) */, ldqm );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -104,14 +102,12 @@ BODY
              "\tdescA(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, descQ(%d,%d)[%p], ldqk, p_elem_A, descT->nb)\n",
              k, n, k, k, A, k, k, T, k, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zunmqr(PlasmaLeft, PlasmaNoTrans,
                 tempmm, tempnn, tempkmin, ib,
                 A /* descA(m, k) */, ldam,
                 T /* descT(m, k) */, descTT->mb,
                 C /* descQ(m, n) */, ldqm,
                 p_elem_A, descTT->nb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     parsec_private_memory_push( p_work, p_elem_A );
 }
@@ -222,7 +218,6 @@ BODY
              k, n, A1, m, n, A2,
              m, k, V,  m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
         CORE_ztsmqr(
             PlasmaLeft, PlasmaNoTrans,
@@ -242,7 +237,6 @@ BODY
             T  /* descTT(m, k) */, descTT->mb,
             p_elem_A, ldwork );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     parsec_private_memory_push( p_work, p_elem_A );
 }

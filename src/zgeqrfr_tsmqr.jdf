@@ -54,7 +54,6 @@ BODY
 
     printlog("CORE_ztsmqr(%d, %d)\n", k, n);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_W = parsec_private_memory_pop( p_work );
 
     CORE_ztsmqr(
@@ -68,7 +67,6 @@ BODY
 
     parsec_private_memory_push( p_work, p_elem_W );
 
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

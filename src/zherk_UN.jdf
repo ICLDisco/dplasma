@@ -47,12 +47,10 @@ BODY
     printlog("CORE_zherk(%d, %d)\n"
              "\t(uplo, trans, tempnn, tempkn, alpha, A(%d,%d)[%p], ldan, dbeta, C(%d,%d)[%p], ldcn)\n",
              n, k, n, k, A, n, n, C);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zherk(uplo, trans, tempnn,
                tempkn, alpha, A /* descA(n,k) */,
                ldan, dbeta, C /* descC(n,n) */,
                ldcn );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -103,13 +101,11 @@ BODY
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(trans, PlasmaConjTrans, tempnn, tempmm, tempkn, zalpha, A(%d,%d)[%p], ldan, A(%d,%d)[%p], ldam, zbeta, C(%d,%d)[%p], ldcn)\n",
              n, m, k, n, k, A, m, k, B, n, m, C);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(trans, PlasmaConjTrans, tempnn,
                tempmm, tempkn, zalpha,
                A /* descA(n,k) */, ldan, B /* descA(m,k) */,
                ldam, zbeta, C /* descC(n,m) */,
                ldcn );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

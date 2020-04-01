@@ -49,11 +49,9 @@ BODY
              "\t(PlasmaUpperLower, tempmm, tempnn, alpha, (m == n) ? (beta) : (alpha), Q(%d,%d)[%p], ldqm)\n",
              m, n, m, n, A);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zlaset(PlasmaUpperLower, tempmm, tempnn,
                 0., (m == n) ? 1.: 0.,
                 A /* descQ->m,n) */, ldqm );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -83,7 +81,6 @@ BODY
     int ldak = BLKLDD( descA, k );
     int ldqk = BLKLDD( descQ, k );
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmqr(PlasmaLeft, PlasmaNoTrans,
@@ -94,7 +91,6 @@ BODY
                 p_elem_A, descT->nb );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -168,7 +164,6 @@ BODY
              "\t(side, trans, descQ->mb, tempnn, tempmm, tempnn, tempkmin, ib, Q(%d,%d)[%p], ldbk, Q(%d,%d)[%p], ldbm, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, m, n, k, n, A1, m, n, A2, m, k, V, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_ztsmqr(PlasmaLeft, PlasmaNoTrans,
@@ -180,7 +175,6 @@ BODY
                 p_elem_A, ib );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

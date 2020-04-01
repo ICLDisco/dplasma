@@ -80,12 +80,10 @@ BODY
     printlog("CORE_ztrmm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              n, m, n, n, A, m, n, B);
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA(n,n) */, lda,
                       B /* descB(m,n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -117,11 +115,9 @@ BODY
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(PlasmaNoTrans, trans, tempmm, tempnn, tempkn, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], ldak, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, k, n, B, m, n, C);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, trans, tempmm, tempnn, tempkn,
                alpha, A /* descB(m,k) */, ldb,
                       B /* descA(k,n) */, ldak,
                1.0,   C /* descB(m,n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END

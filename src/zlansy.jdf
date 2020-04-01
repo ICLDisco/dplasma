@@ -121,7 +121,6 @@ BODY
              "\t( tempmm=%d, tempnn=%d, A(%d, %d)[%p], lda=%d, W(%d,%d)[%p])\n",
              m, n, tempmm, tempnn, m, n, A, ldam, m, n%Q, W);
 
-#if !defined(PARSEC_DRY_RUN)
     double *dW = (double*)W;
 
     /*
@@ -193,7 +192,6 @@ BODY
             }
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -241,7 +239,6 @@ BODY
              "\t( tempmm=%d, W(%d, %d) + W(%d, %d)\n",
              m, n, tempmm, m, n-1, m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     double *dA = (double*)A;
     double *dW = (double*)W;
 
@@ -278,7 +275,6 @@ BODY
             cblas_daxpy( tempmm, 1., dA, 1, dW, 1);
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -310,7 +306,6 @@ BODY
              "\t( tempmm=%d, W(%d, %d) + W(%d, %d)\n",
              m, n, tempmm, m, n-1, m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     if(n > 0)
     {
         double *dA = (double*)A;
@@ -333,7 +328,6 @@ BODY
             cblas_daxpy( tempmm, 1., dA, 1, dW, 1);
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -364,7 +358,6 @@ BODY
 
     printlog("zlange STEP3(%d, %d)\n", m, n);
 
-#if !defined(PARSEC_DRY_RUN)
     double *dA = (double*)A;
     double *dW = (double*)W;
 
@@ -400,7 +393,6 @@ BODY
             *dW = maxval;
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
