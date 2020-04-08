@@ -34,12 +34,6 @@ typedef void * CORE_sgetrf_data_t;
 #   define OUTPUT(ARG)
 #endif
 
-#ifdef PARSEC_DRY_RUN
-#define DRYRUN( body )
-#else
-#define DRYRUN( body ) body
-#endif
-
 #ifndef PARSEC_HAVE_MPI
 #define TEMP_TYPE MPITYPE
 #undef MPITYPE

@@ -184,13 +184,11 @@ BODY
     int ldbk = BLKLDD(descB, k);
     int ldcm = BLKLDD(descC, m);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(transA, transB,
                tempmm, tempnn, tempkk,
                alpha, A /*A(k, m)*/, ldak,
                       B /*B(k, n)*/, ldbk,
                lbeta, C /*C(m, n)*/, ldcm);
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
     printlog("gemm( %d, %d, %d )\n"
              "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",

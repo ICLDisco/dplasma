@@ -66,7 +66,6 @@ BODY
     int tempkm = (k == descA->mt-1) ? descA->m - k * descA->nb : descA->mb;
     int ldam = BLKLDD(descA, m);
 
-#if !defined(PARSEC_DRY_RUN)
     /* This is the first one */
     if (m == k) {
         CORE_zlaset( PlasmaUpperLower, tempmm, tempnn, 0., 0., A, ldam );
@@ -76,6 +75,5 @@ BODY
         tempmm, tempnn, tempkm,
         m * descA->mb, n*descA->nb, R,
         A, ldam );
-#endif
 }
 END

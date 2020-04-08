@@ -36,10 +36,8 @@ MAP_L(m, n)  [profile = off]
 
 BODY
 {
-#if !defined(PARSEC_DRY_RUN)
     operator( es, descA, A,
               PlasmaUpperLower, m, n, op_args );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("map_l( %d, %d )\n", m, n );
 }
@@ -59,10 +57,8 @@ MAP_U(m, n)  [profile = off]
 
 BODY
 {
-#if !defined(PARSEC_DRY_RUN)
     operator( es, descA, A,
               PlasmaUpperLower, m, n, op_args );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("map_u( %d, %d )\n", m, n );
 }
@@ -81,10 +77,8 @@ MAP_DIAG(k) [profile = off]
 
 BODY
 {
-#if !defined(PARSEC_DRY_RUN)
     operator( es, descA, A,
               uplo, k, k, op_args );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("map_diag( %d, %d )\n", k, k );
 }

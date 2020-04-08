@@ -69,7 +69,6 @@ BODY
              k, i, m, p, nextp, plasma_const( side ), plasma_const( trans ), tempmm, temppn, tempmin, ib,
              k, p, A, ldak, k, p, T, descTS->mb, m, p, C, ldbm, W, descTS->nb );
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zunmlq(
         side, trans,
         tempmm, temppn, tempmin, ib,
@@ -77,7 +76,6 @@ BODY
         T /* T(k, p) */, descTS->mb,
         C /* B(m, p) */, ldbm,
         W, descTS->nb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     parsec_private_memory_push( p_work, W );
 }
@@ -160,7 +158,6 @@ BODY
              tempmm, descB->nb, tempmm, tempnn, tempkm, ib,
              m, p, A1, ldbm, m, n, A2, ldbm, k, n, V, ldak, k, n, T, descTS->mb, W, ldwork );
 
-#if !defined(PARSEC_DRY_RUN)
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
         CORE_ztsmlq(
             side, trans,
@@ -180,7 +177,6 @@ BODY
             T  /* T(k, n) */, descTT->mb,
             W, ldwork );
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     parsec_private_memory_push( p_work, W );
 }

@@ -45,12 +45,10 @@ BODY
     int lda = BLKLDD( descA, (descB->mt-1)-k );
     int ldb = BLKLDD( descB, (descB->mt-1)-k );
 
-#if !defined(PARSEC_DRY_RUN)
         CORE_ztrsm(side, uplo, trans, diag,
                    tempkm, tempnn, lalpha,
                    A /* descA((descB->mt-1)-k,(descB->mt-1)-k) */, lda,
                    B /* descB((descB->mt-1)-k,n)              */, ldb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_ztrsm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempkm, tempnn, lalpha, descA(%d,%d)[%p], lda, descB(%d,%d)[%p], ldb)\n",
@@ -133,13 +131,11 @@ BODY
     int ldbm = BLKLDD( descB, (descB->mt-1)-m );
     int ldb  = BLKLDD( descB, (descB->mt-1)-k );
 
-#if !defined(PARSEC_DRY_RUN)
         CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans, descB->mb,
                    tempnn, tempkm,
                    -1.0,   C /* descA((descB->mt-1)-m,(descB->mt-1)-k) */, ldam,
                            D /* descB((descB->mt-1)-k,n) */,              ldb,
                    lalpha, E /* descB((descB->mt-1)-m,n) */,              ldbm );
-#endif /* !defined(PARSEC_DRY_RUN) */
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(PlasmaNoTrans, PlasmaNoTrans, descB->mb, tempnn, tempkm, mzone, descA(%d,%d)[%p], descA->mb, descB(%d,%d)[%p], ldb, lalpha, descB(%d,%d)[%p], descB->mb)\n",
              k, m, n, (descB->mt-1)-m, (descB->mt-1)-k, C, (descB->mt-1)-k, n, D, (descB->mt-1)-m, n, E);

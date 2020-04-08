@@ -94,7 +94,6 @@ BODY
              "\t(tempmm, tempkn, ib, descA(%d,%d)[%p], ldam, descTS0(%d,%d)[%p], TS0.mb, p_elem_A, p_elem_B)\n",
              k, m, m, k, A, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -105,7 +104,6 @@ BODY
 
     parsec_private_memory_push( p_tau, p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -176,7 +174,6 @@ BODY
              "\t descA(%d,%d)[%p], ldam, descTS0(%d,%d)[%p], descTS0->mb, descA(%d,%d)[%p], ldam, p_elem_A, descTS0->nb)\n",
              k, m, n, m, k, A, m, k, T, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmqr(
@@ -188,7 +185,6 @@ BODY
         p_elem_A, descA->nb );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -255,7 +251,6 @@ BODY
              "\t(tempmm, tempkn, ib, descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descTT0(%d,%d)[%p], descTT0->mb, p_elem_A, p_elem_B)\n",
              k, m, p, k, A1, m, k, A2, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -276,7 +271,6 @@ BODY
     }
     parsec_private_memory_push( p_tau , p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -346,7 +340,6 @@ BODY
              "\t descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descA(%d,%d)[%p], ldam, descTT0(%d,%d)[%p], descTT0->mb, p_elem_A, ldwork)\n",
              k, m, n, p, n, A1, m, n, A2, m, k, V, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
@@ -369,7 +362,6 @@ BODY
             p_elem_A, ldwork );
     }
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -422,7 +414,6 @@ inq   = %{ return rbidiag & (n > 0) & (m >= n); %}
 
 BODY
 {
-#if !defined(PARSEC_DRY_RUN)
     int tempmm = (m ==(descA->mt-1)) ? (descA->m - m * descA->mb) : descA->mb;
     int tempnn = (n ==(descA->nt-1)) ? (descA->n - n * descA->nb) : descA->nb;
     int ldam = BLKLDD( descA, m );
@@ -441,7 +432,6 @@ BODY
                                  A, ldam, C, ldam );
         }
     }
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -506,7 +496,6 @@ BODY
              "\t(tempmm, tempkn, ib, descA(%d,%d)[%p], ldam, descTS(%d,%d)[%p], TS.mb, p_elem_A, p_elem_B)\n",
              k, m, m, k, A, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -517,7 +506,6 @@ BODY
 
     parsec_private_memory_push( p_tau, p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -586,7 +574,6 @@ BODY
              "\t descA(%d,%d)[%p], ldam, descTS(%d,%d)[%p], descTS->mb, descA(%d,%d)[%p], ldam, p_elem_A, descTS->nb)\n",
              k, m, n, m, k, A, m, k, T, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmqr(
@@ -598,7 +585,6 @@ BODY
         p_elem_A, descA->nb );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -670,7 +656,6 @@ BODY
              "\t(tempmm, tempkn, ib, descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descTT(%d,%d)[%p], descTT->mb, p_elem_A, p_elem_B)\n",
              k, m, p, k, A1, m, k, A2, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -691,7 +676,6 @@ BODY
     }
     parsec_private_memory_push( p_tau , p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -762,7 +746,6 @@ BODY
              "\t descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descA(%d,%d)[%p], ldam, descTT(%d,%d)[%p], descTT->mb, p_elem_A, ldwork)\n",
              k, m, n, p, n, A1, m, n, A2, m, k, V, m, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     if ( typem == DPLASMA_QR_KILLED_BY_TS ) {
@@ -785,7 +768,6 @@ BODY
             p_elem_A, ldwork );
     }
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -839,7 +821,6 @@ BODY
              "\t(tempkm, tempnn, ib, descA(%d,%d)[%p], ldam, descTS(%d,%d)[%p], TS.mb, p_elem_A, p_elem_B)\n",
              es->virtual_process->vp_id, k, n, k, n, A, k, n, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -850,7 +831,6 @@ BODY
 
     parsec_private_memory_push( p_tau, p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -929,7 +909,6 @@ BODY
              "\t descA(%d,%d)[%p], ldam, descTS(%d,%d)[%p], descTS->mb, descA(%d,%d)[%p], ldam, p_elem_A, descTS->nb)\n",
              k, m, n, k, n, A, k, n, T, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmlq(
@@ -941,7 +920,6 @@ BODY
         p_elem_A, descA->nb );
 
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -1013,7 +991,6 @@ BODY
              "\t(tempkm, tempnn, ib, descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descTT(%d,%d)[%p], descTT->mb, p_elem_A, p_elem_B)\n",
              k, n, k, p, A1, k, n, A2, k, n, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_tau  );
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
@@ -1034,7 +1011,6 @@ BODY
     }
     parsec_private_memory_push( p_tau , p_elem_A );
     parsec_private_memory_push( p_work, p_elem_B );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
@@ -1108,7 +1084,6 @@ BODY
              "\t descA(%d,%d)[%p], A.mb, descA(%d,%d)[%p], ldam, descA(%d,%d)[%p], ldam, descTT(%d,%d)[%p], descTT->mb, p_elem_A, ldwork)\n",
              k, m, n, p, n, A1, m, n, A2, k, n, V, k, n, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     if ( typen == DPLASMA_QR_KILLED_BY_TS ) {
@@ -1131,7 +1106,6 @@ BODY
             p_elem_A, ldwork );
     }
     parsec_private_memory_push( p_work, p_elem_A );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
