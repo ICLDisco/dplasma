@@ -120,8 +120,8 @@ int main(int argc, char ** argv)
         else
         {
             PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
-                                      ((parsec_tiled_matrix_dc_t*)&dcA,
-                                      (parsec_tiled_matrix_dc_t*)&dcT),
+                                      ((parsec_tiled_matrix_dc_t*)&dcA2,
+                                      (parsec_tiled_matrix_dc_t*)&dcT2),
                                       dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ));
         }
         parsec_devices_reset_load(parsec);

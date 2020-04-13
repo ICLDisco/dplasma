@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
         {
 
             SYNC_TIME_START();
-            parsec_taskpool_t* PARSEC_zpotrf = dplasma_zpotrf_New( uplo, (parsec_tiled_matrix_dc_t*)&dcA, &info );
+            parsec_taskpool_t* PARSEC_zpotrf = dplasma_zpotrf_New( uplo, (parsec_tiled_matrix_dc_t*)&dcA2, &info );
             /* Set the recursive size */
             dplasma_zpotrf_setrecursive( PARSEC_zpotrf, iparam[IPARAM_HMB] );
             parsec_context_add_taskpool(parsec, PARSEC_zpotrf);

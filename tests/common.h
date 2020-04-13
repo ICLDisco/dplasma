@@ -126,7 +126,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     (void)rank;(void)nodes;(void)cores;(void)gpus;(void)P;(void)Q;(void)M;(void)N;(void)K;(void)NRHS; \
     (void)LDA;(void)LDB;(void)LDC;(void)IB;(void)MB;(void)NB;(void)MT;(void)NT;(void)KT; \
     (void)SMB;(void)SNB;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
-    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;
+    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
 
 /* Define a double type which not pass through the precision generation process */
 typedef double DagDouble_t;
