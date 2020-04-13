@@ -19,7 +19,7 @@ class Dplasma(CMakePackage):
     version('master', branch='master')
     version('2.0.0', '')
 
-    depends_on('cmake@3.12.0:', type='build')
+    depends_on('cmake@3.16.0:', type='build')
     depends_on('parsec')
     depends_on('mpi')
 
