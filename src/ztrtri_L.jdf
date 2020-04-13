@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -21,7 +21,7 @@ descA     [type = "parsec_tiled_matrix_dc_t*"]
 INFO      [type = "int*"]
 
 
-trtri_ztrsmR(k, m)
+trtri_ztrsmR(k, m) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_MB(descA, m), descA->nb); %}]
   /* Execution Space */
   k = 0     .. (descA->mt-2)
   m = (k+1) .. (descA->mt-1)
@@ -60,7 +60,7 @@ BODY
 }
 END
 
-trtri_zgemm(k, m, n)
+trtri_zgemm(k, m, n)  [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), descA->nb, descA->mb); %} ]
   /* Execution Space */
   k = 1     .. (descA->mt-2)
   m = (k+1) .. (descA->mt-1)
@@ -112,7 +112,8 @@ BODY
 }
 END
 
-trtri_ztrsmL(k, n)
+
+trtri_ztrsmL(k, n) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(descA, k), descA->nb); %}]
   /* Execution Space */
   k = 1 .. (descA->nt-1)
   n = 0 .. (k-1)
@@ -167,7 +168,7 @@ BODY
 }
 END
 
-trtri_ztrtri(k)
+trtri_ztrtri(k) [ flops = inline_c %{ return FLOPS_ZTRTRI(CLEAN_NB(descA, k)); %} ]
   /* Execution Space */
   k = 0 .. (descA->nt-1)
 

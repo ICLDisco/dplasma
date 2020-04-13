@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -87,7 +87,7 @@ END
 /*
  * WARNING: This task is not pure and requires all data of the panel k to be stored in place locally
  */
-getrf(k, t) [high_priority = on]
+getrf(k, t) [high_priority = on flops = inline_c%{ return t == 0 ? FLOPS_ZGETRF(descA->m - k*descA->mb, CLEAN_NB(descA, k)) : 0; %}]
   /* Execution space */
   k  = 0 .. KT
   t  = 0 .. %{ return nbthreads( k ); %}
@@ -170,7 +170,7 @@ END
  *                              SWAP + TRSM                                         *
  ************************************************************************************/
 
-swptrsm(k, n)
+swptrsm(k, n)   [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(descA, k), CLEAN_NB(descA, n)); %}]
   /* Execution space */
   k = 0   .. KT
   n = k+1 .. descA->nt-1
@@ -245,7 +245,7 @@ BODY
 END
 
 
-gemm(k, m, n)
+gemm(k, m, n) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), CLEAN_NB(descA, n),descA->mb); %}]
   /* Execution space */
   k = 0   .. KT
   m = k+1 .. descA->mt-1

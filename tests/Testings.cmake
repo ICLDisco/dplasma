@@ -139,6 +139,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     # LU
     add_test(shm_${prec}getrf_incpiv${test} ${SHM_TEST_CMD_LIST} ./testing_${prec}getrf_incpiv -N 378 -t 93 -i 17 ${OPTIONS})
     add_test(shm_${prec}getrf_nopiv${test}  ${SHM_TEST_CMD_LIST} ./testing_${prec}getrf_nopiv  -N 378 -t 93       ${OPTIONS})
+    add_test(shm_${prec}getrf_ptgpanel${test} ${SHM_TEST_CMD_LIST} ./testing_${prec}getrf      -N 378 -t 93       ${OPTIONS})
 
     # LU
     add_test(shm_${prec}getrf${test}        ${SHM_TEST_CMD_LIST} ./testing_${prec}getrf        -N 378 -t 93       ${OPTIONS})
@@ -253,6 +254,7 @@ if( MPI_C_FOUND )
     dplasma_add_test(getrf               "" mpi:${PROCS} -N 378 -t 19 -P 1 ${OPTIONS})
     dplasma_add_test(getrf_incpiv        "" mpi:${PROCS} -N 378 -t 19 -i 7 ${OPTIONS})
     dplasma_add_test(getrf_incpiv_dtd    "" mpi:${PROCS} -N 378 -t 19 -i 7 ${OPTIONS})
+    dplasma_add_test(getrf_ptgpanel      "" mpi:${PROCS} -N 378 -t 19      ${OPTIONS})
     dplasma_add_test(getrf_nopiv         "" mpi:${PROCS} -N 378 -t 19      ${OPTIONS})
     dplasma_add_test(getrf_qrf           "" mpi:${PROCS} -N 378 -t 19 -i 7 ${OPTIONS})
 
