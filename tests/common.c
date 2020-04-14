@@ -247,9 +247,10 @@ static struct option long_options[] =
 };
 #endif  /* defined(PARSEC_HAVE_GETOPT_LONG) */
 
+extern char **environ;
+
 static void read_arguments(int *_argc, char*** _argv, int* iparam)
 {
-    extern char **environ;
     int opt = 0;
     int rc, c;
     int argc = *_argc;
