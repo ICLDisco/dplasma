@@ -23,7 +23,7 @@ descA     [type = "const parsec_tiled_matrix_dc_t*"]
 descB     [type = "parsec_tiled_matrix_dc_t*"]
 
 
-ztrsm(k,m)
+ztrsm(k,m) [ flops = inline_c %{ return FLOPS_ZTRSM(side, CLEAN_MB(descB, m), CLEAN_NB(descB, k)); %}]
   /* Execution space */
   k = 0 .. (descB->nt-1)
   m = 0 .. (descB->mt-1)
@@ -45,12 +45,10 @@ BODY
     int lda = BLKLDD( descA, (descB->nt-1)-k );
     int ldb = BLKLDD( descB, m );
 
-#if !defined(PARSEC_DRY_RUN)
         CORE_ztrsm(side, uplo, trans, diag,
                    tempmm, tempkn, lalpha,
                    A /* descA((descB->nt-1)-k,(descB->nt-1)-k) */, lda,
                    B /* descB(m,(descB->nt-1)-k) */, ldb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_ztrsm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempkn, lalpha, descA(%d,%d)[%p], lda, descB(%d,%d)[%p], ldb)\n",
@@ -75,7 +73,7 @@ BODY
 END
 
 
-zgemm(k,m,n)
+zgemm(k,m,n) [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), descB->nb, CLEAN_NB(descB, k)); %} ]
   /* Execution space */
   k = 0     .. (descB->nt-2)
   m = 0     .. (descB->mt-1)
@@ -131,13 +129,11 @@ BODY
     int lda = BLKLDD( descA, (descB->nt-1)-k );
     parsec_complex64_t lalpha = (k==0) ? alpha : (parsec_complex64_t)1.0;
 
-#if !defined(PARSEC_DRY_RUN)
         CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
                    tempmm, descB->nb, tempkn,
                    -1.0,   C /* descB(m,             (descB->nt-1)-k) */, ldb,
                            D /* descA((descB->nt-1)-k,(descB->nt-1)-n) */, lda,
                    lalpha, E /* descB(m,             (descB->nt-1)-n) */, ldb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(PlasmaNoTrans, PlasmaNoTrans, tempmm, descB->nb, tempkn, mzone, descB(%d,%d)[%p], ldb, descA(%d,%d)[%p], lda, lalpha, descB(%d,%d)[%p], ldb)\n",

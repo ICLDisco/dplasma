@@ -51,7 +51,6 @@ BODY
              "\t(side, trans, tempmm, tempkn, tempkmin, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, B(%d,%d)[%p], ldbm, p_elem_A, descT->nb)\n",
              k, m, k, k, A, k, k, T, m, k, C);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( pool_0 );
 
     CORE_zunmlq(side, trans,
@@ -62,7 +61,6 @@ BODY
                 p_elem_A, descT->nb );
 
     parsec_private_memory_push( pool_0, p_elem_A );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -132,7 +130,6 @@ BODY
              "\t(side, trans, tempmm, descB->nb, tempmm, tempnn, tempkmin, ib, B(%d,%d)[%p], ldbm, B(%d,%d)[%p], ldbm, A(%d,%d)[%p], ldan, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, n, m, m, k, A1, m, n, A2, n, k, V, n, k, T);
 
-#if !defined(PARSEC_DRY_RUN)
     void *p_elem_A = parsec_private_memory_pop( pool_0 );
 
     CORE_ztsmlq(side, trans,
@@ -144,7 +141,6 @@ BODY
                 p_elem_A, ldwork );
 
     parsec_private_memory_push( pool_0, p_elem_A );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

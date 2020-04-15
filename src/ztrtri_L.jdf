@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -21,7 +21,7 @@ descA     [type = "parsec_tiled_matrix_dc_t*"]
 INFO      [type = "int*"]
 
 
-trtri_ztrsmR(k, m)
+trtri_ztrsmR(k, m) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_MB(descA, m), descA->nb); %}]
   /* Execution Space */
   k = 0     .. (descA->mt-2)
   m = (k+1) .. (descA->mt-1)
@@ -53,16 +53,14 @@ BODY
              "\t(PlasmaRight, uplo, PlasmaNoTrans, diag, tempmm, tempkn, -1, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
              k, m, k, k, A, m, k, B);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrsm(PlasmaRight, uplo, PlasmaNoTrans, diag,
                tempmm, tempkn,
                -1.0, A /* descA(k,k) */, ldak,
                      B /* descA(m,k) */, ldam );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-trtri_zgemm(k, m, n)
+trtri_zgemm(k, m, n)  [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), descA->nb, descA->mb); %} ]
   /* Execution Space */
   k = 1     .. (descA->mt-2)
   m = (k+1) .. (descA->mt-1)
@@ -106,17 +104,16 @@ BODY
              "\t(PlasmaNoTrans, PlasmaNoTrans, tempmm, tempnn, tempkn, 1.000000, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, 1.000000, A(%d,%d)[%p], ldam)\n",
              k, m, n, m, k, A, k, n, B, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
                tempmm, tempnn, tempkn,
                1.0, A /* descA(m,k) */, ldam,
                     B /* descA(k,n) */, ldak,
                1.0, C /* descA(m,n) */, ldam );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-trtri_ztrsmL(k, n)
+
+trtri_ztrsmL(k, n) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(descA, k), descA->nb); %}]
   /* Execution Space */
   k = 1 .. (descA->nt-1)
   n = 0 .. (k-1)
@@ -147,12 +144,10 @@ BODY
              "\t(PlasmaLeft, uplo, PlasmaNoTrans, diag, tempkn, descA->mb, 1.000000, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
              k, n, k, k, A, k, n, B);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrsm(PlasmaLeft, uplo, PlasmaNoTrans, diag,
                tempkn, descA->mb,
                1.0, A /* descA(k,k) */, ldak,
                     B /* descA(k,n) */, ldak );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -173,7 +168,7 @@ BODY
 }
 END
 
-trtri_ztrtri(k)
+trtri_ztrtri(k) [ flops = inline_c %{ return FLOPS_ZTRTRI(CLEAN_NB(descA, k)); %} ]
   /* Execution Space */
   k = 0 .. (descA->nt-1)
 
@@ -196,7 +191,6 @@ BODY
              "\t(uplo, diag, tempkn, A(%d,%d)[%p], ldan, sequence, request, descA->nb*k)\n",
              k, k, k, A);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrtri(uplo, diag, tempkn,
                 A /* descA(k,k) */, ldak, &info );
 
@@ -204,7 +198,6 @@ BODY
         *INFO = k*descA->mb + info; /* Should return if enter here */
         fprintf(stderr, "ztrtri(%d) failed => %d\n", k, *INFO );
     }
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
 }
 END

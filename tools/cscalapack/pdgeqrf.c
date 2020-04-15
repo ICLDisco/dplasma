@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -50,7 +50,7 @@ int main( int argc, char **argv ) {
                        nprow, npcol,
                        mloc,
                        iseed );
-    tau = malloc( sizeof(double)*min(m,n) );
+    tau = malloc( sizeof(double)*imin(m,n) );
 
     {
         double *work=NULL; int lwork=-1; double getlwork;

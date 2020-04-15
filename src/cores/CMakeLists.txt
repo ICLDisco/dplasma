@@ -33,6 +33,7 @@ set(ZSOURCES
   core_zlantr.c
   core_zlaset.c
   core_zlaswp.c
+  core_zlatro.c
   core_zlauum.c
   core_zpamm.c
   core_zparfb.c

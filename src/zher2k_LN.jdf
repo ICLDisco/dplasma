@@ -23,7 +23,7 @@ beta      [type = "double"]
 descC     [type = "parsec_tiled_matrix_dc_t*"]
 
 
-zher2k(n, k)
+zher2k(n, k) [flops = inline_c %{ return FLOPS_ZHER2K(CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   n = 0 .. descC->nt-1
   k = 0 .. descA->nt-1
@@ -50,16 +50,14 @@ BODY
     printlog("CORE_zher2k(%d, %d)\n"
              "\t(uplo, trans, tempnn, tempkn, alpha, A(%d,%d)[%p], ldan, B(%d,%d)[%p], ldbn, dbeta, C(%d,%d)[%p], ldcn)\n",
              n, k, n, k, A, n, k, B, n, n, C);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zher2k(uplo, trans, tempnn, tempkn,
                 alpha, A /* descA(n,k) */, ldan,
                        B /* descB(n,k) */, ldbn,
                 dbeta, C /* descC(n,n) */, ldcn );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-zgemm_AB(m, n, k)
+zgemm_AB(m, n, k) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   m = 1   .. descC->mt-1
   n = 0   .. m-1
@@ -89,17 +87,15 @@ BODY
              m, n, k, tempmm, tempnn, tempkn,
              creal(alpha), cimag(alpha), m, k, A, ldam, n, k, B, ldbn,
              creal(zbeta), cimag(zbeta), m, n, C, ldcm);
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaConjTrans,
                tempmm, tempnn, tempkn,
                alpha, A /* descA(m,k) */, ldam,
                       B /* descB(n,k) */, ldbn,
                zbeta, C /* descC(m,n) */, ldcm );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-zgemm_BA(m, n, k)
+zgemm_BA(m, n, k) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   m = 1   .. descC->mt-1
   n = 0   .. m-1
@@ -129,13 +125,11 @@ BODY
              creal(alpha), cimag(alpha), m, k, A, ldbm, n, k, B, ldan,
              creal(1.),    cimag(1.),    m, n, C, ldcm);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaConjTrans,
                tempmm, tempnn, tempkn,
                conj(alpha), A /* descB(m,k) */, ldbm,
                             B /* descA(n,k) */, ldan,
                1.,          C /* descC(m,n) */, ldcm );
-#endif /* !defined(PARSEC_DRY_RUN) */
 }
 END
 

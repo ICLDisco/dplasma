@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2014 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013-2014 Inria. All rights reserved.
@@ -39,7 +39,7 @@ BODY
 }
 END
 
-zherk(k, m)
+zherk(k, m) [flops = inline_c %{ return FLOPS_ZHERK(descA->mb, CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   k = 1 .. (descA->mt-1)
   m = 0 .. (k-1)
@@ -65,16 +65,14 @@ BODY
              "\t(uplo, PlasmaNoTrans, descA->mb, tempkn, 1.000000, A(%d,%d)[%p], ldam, 1.000000, A(%d,%d)[%p], ldam)\n",
              k, m, m, k, A, m, m, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zherk(uplo, PlasmaNoTrans, descA->mb, tempkn,
                1.0, A /* descA(m,k) */, ldam,
                1.0, C /* descA(m,m) */, ldam );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
 }
 END
 
-zgemm(k, m, n)
+zgemm(k, m, n) [flops = inline_c%{ return FLOPS_ZGEMM(descA->mb, descA->nb, CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   k = 2     .. (descA->mt-1)
   m = 0     .. (k-2)
@@ -103,17 +101,15 @@ BODY
              "\t(PlasmaNoTrans, PlasmaConjTrans, descA->mb, descA->nb, tempkn, 1.0, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldan, 1.0, A(%d,%d)[%p], ldam)\n",
              k, m, n, m, k, A, n, k, B, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, PlasmaConjTrans,
                descA->mb, descA->nb, tempkn,
                1.0, A /* descA(m,k) */, ldam,
                     B /* descA(n,k) */, ldan,
                1.0, C /* descA(m,n) */, ldam );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-ztrmm(k, m)
+ztrmm(k, m) [ flops = inline_c %{ return FLOPS_ZTRMM(PlasmaRight, descA->mb, CLEAN_NB(descA, k)); %}]
   /* Execution Space */
   k = 1 .. (descA->mt-1)
   m = 0 .. (k-1)
@@ -141,12 +137,10 @@ BODY
              "\t(PlasmaRight, uplo, PlasmaConjTrans, PlasmaNonUnit, descA->mb, tempkn, 1.0, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
              k, m, k, k, A, m, k, B);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrmm(PlasmaRight, uplo, PlasmaConjTrans, PlasmaNonUnit,
                descA->mb, tempkn,
                1.0, A /* descA(k,k) */, ldak,
                     B /* descA(m,k) */, ldam );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
@@ -172,9 +166,7 @@ BODY
              "\t(uplo, tempkn, A(%d,%d)[%p], ldak)\n",
              k, k, k, A);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zlauum(uplo, tempkn,
                 A /* descA(k,k) */, ldak );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END

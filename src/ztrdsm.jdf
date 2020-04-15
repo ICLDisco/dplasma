@@ -90,9 +90,7 @@ BODY
   int lda = BLKLDD( desc_A, k );
   int ldb = BLKLDD( desc_B, k );
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrdsm(tempkm, tempkn, A, lda, B, ldb );
-#endif /* !defined(PARSEC_DRY_RUN) */
 
   printlog("CORE_ztrdsm(%d, %d)\n"
            "\t(tempkm, tempkn, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",

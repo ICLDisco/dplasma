@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -57,7 +57,7 @@ BODY
 }
 END
 
-ztrmm(n, m)
+ztrmm(n, m) [ flops = inline_c %{ return FLOPS_ZTRMM(side, CLEAN_MB(descB, m), CLEAN_NB(descB, n)); %} ]
   /* Execution Space */
   n = 0 .. (descB->nt-1)
   m = 0 .. (descB->mt-1)
@@ -81,16 +81,14 @@ BODY
     printlog("CORE_ztrmm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              n, m, (descB->nt-1)-n, (descB->nt-1)-n, A, m, (descB->nt-1)-n, B);
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-zgemm(n, m, k)
+zgemm(n, m, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEAN_NB(descB, n), descB->mb); %} ]
   /* Execution Space */
   n = 0 .. (descB->nt-2)
   m = 0 .. (descB->mt-1)
@@ -117,11 +115,9 @@ BODY
              "\t(PlasmaNoTrans, trans, tempmm, tempnn, descB->mb, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], descA->mb, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, k, (descB->nt-1)-n, B, m, (descB->nt-1)-n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, ldb,
                       B /* descA(k,(descB->nt-1)-n) */, descA->mb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END

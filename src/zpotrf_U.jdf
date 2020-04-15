@@ -1,7 +1,7 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
- *                         of Tennessee Research Foundation.  All rights
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
@@ -48,7 +48,7 @@ smallnb    [type = "int" hidden = on default = "descA->mb" ]
 /**************************************************
  *               potrf_zpotrf                     *
  **************************************************/
-potrf_zpotrf(k) [high_priority = on]
+potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLEAN_NB(descA, k) ); %}]
 
 // Execution space
 k = 0 .. descA->nt-1
@@ -97,12 +97,10 @@ BODY
     int iinfo = 0;
     int ldak = BLKLDD( descA, k );
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zpotrf(uplo, tempkn, T, ldak, &iinfo );
 
     if( iinfo != 0 && *INFO == 0 )
         *INFO = k*descA->nb+iinfo; /* Should return here */
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_zpotrf( %d )\n\t( %s, %d, A(%d,%d)[%p], %d) return info = %d\n",
              k,
@@ -114,7 +112,7 @@ END
 /**************************************************
  *               potrf_ztrsm                      *
  **************************************************/
-potrf_ztrsm(k, n) [high_priority = on]
+potrf_ztrsm(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, descA->mb, CLEAN_NB(descA, n)); %}]
 
 // Execution space
 k = 0   .. descA->nt-2
@@ -176,12 +174,10 @@ BODY
     int ldak = BLKLDD( descA, k );
 
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrsm(PlasmaLeft, PlasmaUpper, PlasmaConjTrans, PlasmaNonUnit,
                descA->mb, tempnn,
                (parsec_complex64_t)1.0, T /*A(k, k)*/, ldak,
                                        C /*A(k, n)*/, ldak);
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_ztrsm( %d, %d )\n\t( %s, %s, %s, %s, %d, %d, %f, A(%d,%d)[%p], %d,  A(%d,%d)[%p], %d)\n",
              k, n,
@@ -197,7 +193,7 @@ END
 /**************************************************
  *               potrf_zherk                      *
  **************************************************/
-potrf_zherk(k, n) [high_priority = on]
+potrf_zherk(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZHERK(CLEAN_NB(descA, n), descA->mb); %}]
 
 // Execution space
 k = 0   .. descA->nt-2
@@ -252,12 +248,10 @@ BODY
     int ldak = BLKLDD( descA, k );
     int ldan = BLKLDD( descA, n );
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zherk(PlasmaUpper, PlasmaConjTrans,
                tempnn, descA->mb,
                (double)-1.0, A /*A(k, n)*/, ldak,
                (double) 1.0, T /*A(n, n)*/, ldan);
-#endif /* !defined(PARSEC_DRY_RUN) */
     printlog(
              "CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              k, n,
@@ -272,7 +266,7 @@ END
  *               potrf_zgemm                      *
  **************************************************/
 // Name
-potrf_zgemm(m, n, k)
+potrf_zgemm(m, n, k) [ flops = inline_c %{ return FLOPS_ZGEMM(descA->mb, CLEAN_NB(descA, n), descA->nb); %}]
 
 // Execution space
 k = 0   .. descA->mt-3
@@ -378,13 +372,11 @@ BODY
     int ldak = BLKLDD( descA, k );
     int ldam = BLKLDD( descA, m );
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(PlasmaConjTrans, PlasmaNoTrans,
                descA->mb, tempnn, descA->nb,
                (parsec_complex64_t)-1.0, A /*A(k, m)*/, ldak,
                                         B /*A(k, n)*/, ldak,
                (parsec_complex64_t) 1.0, C /*A(m, n)*/, ldam);
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
     printlog("CORE_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              m, n, k,

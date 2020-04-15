@@ -104,7 +104,7 @@ FortranCInterface_HEADER(src/include/dplasma_f2c.h
                          SYMBOL_NAMESPACE "dplasma_f2c_")
 else()
 # No Fortran compiler to test mangling. So assume trailing_ and hope for the best.
-file(WRITE src/include/dplasma_f2c.h
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/include/dplasma_f2c.h
 "
 #ifndef DPLASMA_F2C_HEADER_INCLUDED
 #define DPLASMA_F2C_HEADER_INCLUDED

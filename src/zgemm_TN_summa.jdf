@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -123,7 +123,7 @@ END
 /**************************************************
  *                       GEMM                     *
  **************************************************/
-GEMM(m, n, k)
+GEMM(m, n, k) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_MB(descA, k)); %}]
 
 // Execution space
 m = 0 .. descC->mt-1
@@ -184,13 +184,11 @@ BODY
     int ldbk = BLKLDD(descB, k);
     int ldcm = BLKLDD(descC, m);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(transA, transB,
                tempmm, tempnn, tempkk,
                alpha, A /*A(k, m)*/, ldak,
                       B /*B(k, n)*/, ldbk,
                lbeta, C /*C(m, n)*/, ldcm);
-#endif  /* !defined(PARSEC_DRY_RUN) */
 
     printlog("gemm( %d, %d, %d )\n"
              "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",

@@ -20,7 +20,6 @@ set(EXTRA_SOURCES
   dplasma_hqr.c
   dplasma_hqr_dbg.c
   dplasma_systolic_qr.c
-  map_wrapper.c
   map2_wrapper.c
   butterfly_map.c
 )
@@ -78,11 +77,13 @@ set(JDF
   zgeqrfr_tsmqr.jdf
   # LU
   zgetrf.jdf
+  zgetrf_ptgpanel.jdf
   zgetrf_incpiv.jdf
   zgetrf_incpiv_sd.jdf
   zgetrf_nopiv.jdf
   zgetrf_qrf.jdf
   ztrsmpl.jdf
+  ztrsmpl_ptgpanel.jdf
   ztrsmpl_sd.jdf
   ztrsmpl_qrf.jdf
   # Other
@@ -103,7 +104,6 @@ precisions_rules_py(generated_jdf
   PRECISIONS "${DPLASMA_PRECISIONS}")
 
 list(APPEND generated_jdf
-  ${CMAKE_CURRENT_SOURCE_DIR}/map.jdf
   ${CMAKE_CURRENT_SOURCE_DIR}/map2.jdf
 )
 
@@ -174,11 +174,13 @@ set(SOURCES
   zgetrf_incpiv_wrapper.c
   zgetrf_nopiv_wrapper.c
   zgetrf_qrf_wrapper.c
+  zgetrf_ptgpanel_wrapper.c
   zgetrf_wrapper.c
   zgetrs_wrapper.c
   zgetrs_incpiv_wrapper.c
   ztrsmpl_wrapper.c
   ztrsmpl_qrf_wrapper.c
+  ztrsmpl_ptgpanel_wrapper.c
   #
   dplasma_zcheck.c
   #

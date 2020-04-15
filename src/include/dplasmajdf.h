@@ -4,6 +4,7 @@
 #include "dplasma.h"
 #include <core_blas.h>
 #include "parsec/private_mempool.h"
+#include "floputils.h"
 
 /* Check for LU recursive kernel version */
 #if (PLASMA_VERSION_MAJOR < 2) || ((PLASMA_VERSION_MAJOR == 2) && (PLASMA_VERSION_MINOR < 8))
@@ -32,12 +33,6 @@ typedef void * CORE_sgetrf_data_t;
 #   define printlog(...) do {} while(0)
 #   define printlogcuda(...) do {} while(0)
 #   define OUTPUT(ARG)
-#endif
-
-#ifdef PARSEC_DRY_RUN
-#define DRYRUN( body )
-#else
-#define DRYRUN( body ) body
 #endif
 
 #ifndef PARSEC_HAVE_MPI

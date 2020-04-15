@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 The University of Tennessee and The University
+ * Copyright (c) 2013-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  */
@@ -37,7 +37,7 @@ int main( int argc, char **argv ) {
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
     verif = params[PARAM_VALIDATE];
-    minmn = min(m, n);
+    minmn = imin(m, n);
 
     Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
     mloc = numroc_( &m, &nb, &myrow, &i0, &nprow );

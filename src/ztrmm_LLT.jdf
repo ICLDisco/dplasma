@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2018 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -57,7 +57,7 @@ BODY
 }
 END
 
-ztrmm(m, n)
+ztrmm(m, n) [ flops = inline_c %{ return FLOPS_ZTRMM(side, CLEAN_MB(descB, m), CLEAN_NB(descB, n)); %} ]
   /* Execution Space */
   m = 0..(descB->mt-1)
   n = 0..(descB->nt-1)
@@ -82,16 +82,14 @@ BODY
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              m, n, m, m, A, m, n, B);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA(m,m) */, lda,
                       B /* descB(m,n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
 
-zgemm(m, n, k)
+zgemm(m, n, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEAN_NB(descB, n), CLEAN_MB(descA, k)); %} ]
   /* Execution Space */
   m = 0..(descB->mt-2)
   n = 0..(descB->nt-1)
@@ -121,11 +119,9 @@ BODY
              "\t(trans, PlasmaNoTrans, tempmm, tempnn, tempkm, alpha, A(%d,%d)[%p], ldak, B(%d,%d)[%p], ldbk, 1.000000, B(%d,%d)[%p], ldb)\n",
              m, n, k, k, m, A, k, n, B, m, n, C);
 
-#if !defined(PARSEC_DRY_RUN)
     CORE_zgemm(trans, PlasmaNoTrans, tempmm, tempnn, tempkm,
                alpha, A /* descA(k,m) */, ldak,
                       B /* descB(k,n) */, ldbk,
                1.0,   C /* descB(m,n) */, ldb );
-#endif  /* !defined(PARSEC_DRY_RUN) */
 }
 END
