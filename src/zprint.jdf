@@ -101,13 +101,7 @@ CTL   ctl <- (k > 0)       ? ctl PRINT_L(k-1)
           -> (k < sizel-1) ? ctl PRINT_L(k+1)
 BODY
 {
-<<<<<<< HEAD
-    dplasma_zprint_tile( m, n, descA, (parsec_complex64_t *)A );
-=======
-#if !defined(PARSEC_DRY_RUN)
     dplasma_zprint_tile( m, n, descA, (dplasma_complex64_t *)A );
-#endif /* !defined(PARSEC_DRY_RUN) */
->>>>>>> dplasma: parsec_complex -> dplasma_complex (parsec_complex does not exist in parsec)
 }
 END
 
@@ -129,12 +123,6 @@ CTL   ctl <- (k > 0)       ? ctl PRINT_U(k-1)
           -> (k < sizeu-1) ? ctl PRINT_U(k+1)
 BODY
 {
-<<<<<<< HEAD
-    dplasma_zprint_tile( m, n, descA, (parsec_complex64_t *)A );
-=======
-#if !defined(PARSEC_DRY_RUN)
     dplasma_zprint_tile( m, n, descA, (dplasma_complex64_t *)A );
-#endif /* !defined(PARSEC_DRY_RUN) */
->>>>>>> dplasma: parsec_complex -> dplasma_complex (parsec_complex does not exist in parsec)
 }
 END
