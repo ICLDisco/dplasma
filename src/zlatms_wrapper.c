@@ -113,18 +113,17 @@ dplasma_zlatms( parsec_context_t *parsec,
 {
     two_dim_block_cyclic_t Q, T;
     int nodes, rank, mb, nb, m, n, mt, nt, P;
-    int rc;
 
     /* Init the diagonal of A */
     {
         parsec_taskpool_t *tp;
         double *condptr = malloc(sizeof( double ));
         *condptr = cond;
-        tp = dplasma_apply_New( dplasmaUpperLower, A, dplasma_zlatms_operator, condptr );
+        tp = parsec_apply_New( dplasmaUpperLower, A, dplasma_zlatms_operator, condptr );
         if ( tp != NULL ) {
-            rc = parsec_context_add_taskpool(parsec, tp);
-            rc = parsec_context_start( parsec );
-            rc = parsec_context_wait( parsec );
+            parsec_context_add_taskpool(parsec, tp);
+            parsec_context_start( parsec );
+            parsec_context_wait( parsec );
             parsec_apply_Destruct(tp);
         }
         else {
