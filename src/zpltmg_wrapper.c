@@ -120,7 +120,7 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
     params->seed    = seed;
     params->W       = W;
 
-    parsec_zpltmg = dplasma_apply_New( dplasmaUpperLower, A, dplasma_zpltmg_generic_operator, params );
+    parsec_zpltmg = parsec_apply_New( dplasmaUpperLower, A, dplasma_zpltmg_generic_operator, params );
     if ( parsec_zpltmg != NULL )
     {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zpltmg);

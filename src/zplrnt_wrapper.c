@@ -117,7 +117,7 @@ dplasma_zplrnt_New( int diagdom,
     params->diagdom = diagdom;
     params->seed    = seed;
 
-    return dplasma_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, params );
+    return parsec_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, params );
 }
 
 /**
