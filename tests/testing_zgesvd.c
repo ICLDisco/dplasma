@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
     /* Initialize Parsec */
     parsec = setup_parsec(argc, argv, iparam);
 
-    /* Make sure SMB and SNB are set to 1, since it conflicts with HQR */
+    /* Make sure KP and KQ are set to 1, since it conflicts with HQR */
     iparam[IPARAM_KP] = 1;
     iparam[IPARAM_KQ] = 1;
 
@@ -62,7 +62,7 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcBand, 1,
         two_dim_block_cyclic, (&dcBand, matrix_ComplexDouble, matrix_Lapack,
                                1, rank, MB+1, NB, MB+1, minMN, 0, 0,

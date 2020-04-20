@@ -35,8 +35,8 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     LDA = dplasma_imax( LDA, N );
     LDB = dplasma_imax( LDB, N );
-    SMB = 1;
-    SNB = 1;
+    KP = 1;
+    KQ = 1;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
@@ -94,13 +94,13 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
             two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, SMB, SNB, P));
+                                   N, NRHS, KP, KQ, P));
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, SMB, SNB, P));
+                                   N, NRHS, KP, KQ, P));
         dplasma_zlacpy( parsec, PlasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 

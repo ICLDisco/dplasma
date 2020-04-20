@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                                two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
-                                                      MB+1, (NB+2)*NT, 1, SNB, 1 /* 1D cyclic */ ));
+                                                      MB+1, (NB+2)*NT, 1, KQ, 1 /* 1D cyclic */ ));
 
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
         PASTE_CODE_ALLOCATE_MATRIX(dcAcpy, 1,
                                    two_dim_block_cyclic, (&dcAcpy, matrix_ComplexDouble, matrix_Tile,
                                                           nodes, rank, MB+1, NB+2, MB+1, (NB+2)*NT,
-                                                          0, 0, MB+1, (NB+2)*NT, 1, SNB, 1));
+                                                          0, 0, MB+1, (NB+2)*NT, 1, KQ, 1));
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcAcpy, 3872);
 
         /* Gather Acpy on rank 0 */

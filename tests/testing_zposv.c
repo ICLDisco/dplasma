@@ -36,23 +36,23 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     LDA = max( LDA, N );
     LDB = max( LDB, N );
-    SMB = 1;
-    SNB = 1;
+    KP = 1;
+    KQ = 1;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               N, N, SMB, SNB, P));
+                               N, N, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, SMB, SNB, P));
+                               N, NRHS, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, 1,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, SMB, SNB, P));
+                               N, NRHS, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

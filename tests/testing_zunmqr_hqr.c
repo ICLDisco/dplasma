@@ -99,19 +99,19 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, K, 0, 0,
-                               M, K, SMB, SNB, P));
+                               M, K, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcTS, 1,
         two_dim_block_cyclic, (&dcTS, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, IB, NB, MT*IB, K, 0, 0,
-                               MT*IB, K, SMB, SNB, P));
+                               MT*IB, K, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcTT, 1,
         two_dim_block_cyclic, (&dcTT, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, IB, NB, MT*IB, K, 0, 0,
-                               MT*IB, K, SMB, SNB, P));
+                               MT*IB, K, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcQ, 1,
         two_dim_block_cyclic, (&dcQ, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, M, 0, 0,
-                               M, M, SMB, SNB, P));
+                               M, M, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 3) printf("+++ Generate matrices ... ");
@@ -155,11 +155,11 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
             two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDC, Cn, 0, 0,
-                                   Cm, Cn, SMB, SNB, P));
+                                   Cm, Cn, KP, KQ, P));
         PASTE_CODE_ALLOCATE_MATRIX(dcC0, 1,
             two_dim_block_cyclic, (&dcC0, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDC, Cn, 0, 0,
-                                   Cm, Cn, SMB, SNB, P));
+                                   Cm, Cn, KP, KQ, P));
 
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC0, 2354);
         Cnorm = dplasma_zlange(parsec, PlasmaOneNorm, (parsec_tiled_matrix_dc_t *)&dcC0);

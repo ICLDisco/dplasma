@@ -52,38 +52,38 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
         two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
                                nodes, rank, 1, NB, P, dplasma_imin(M, N), 0, 0,
-                               P, dplasma_imin(M, N), SMB, SNB, P));
+                               P, dplasma_imin(M, N), KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, SMB, SNB, P));
+                               N, NRHS, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, SMB, SNB, P));
+                               N, NRHS, KP, KQ, P));
 
 #ifdef MYDEBUG
     PASTE_CODE_ALLOCATE_MATRIX(dcAl, check,
                                two_dim_block_cyclic, (&dcAl, matrix_ComplexDouble, matrix_Lapack,
                                                       1, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, SMB, SNB, 1));
+                                                      M, N, KP, KQ, 1));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIVl, check,
                                two_dim_block_cyclic, (&dcIPIVl, matrix_Integer, matrix_Lapack,
                                                       1, rank, 1, NB, 1, dplasma_imin(M, N), 0, 0,
-                                                      1, dplasma_imin(M, N), SMB, SNB, 1));
+                                                      1, dplasma_imin(M, N), KP, KQ, 1));
 #endif
 
     /* matrix generation */

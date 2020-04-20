@@ -38,7 +38,7 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Lapack,
                                1, rank, MB, NB, LDA, An, 0, 0,
-                               M, An, SMB, SNB, 1));
+                               M, An, KP, KQ, 1));
 
     if( rank == 0 ) {
         work = (double *)malloc( max(M,N) * sizeof(double));
@@ -51,7 +51,7 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, SMB, SNB, P));
+                                   M, N, KP, KQ, P));
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
@@ -134,7 +134,7 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, SMB, SNB, P));
+                                   M, N, KP, KQ, P));
 
         for(u=0; u<2; u++) {
             dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_dc_t *)&dcA, 3872);

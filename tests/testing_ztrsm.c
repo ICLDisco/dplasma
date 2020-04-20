@@ -45,15 +45,15 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, SMB, SNB, P));
+                               Am, Am, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcC0, check,
         two_dim_block_cyclic, (&dcC0, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

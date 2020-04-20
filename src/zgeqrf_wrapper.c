@@ -58,12 +58,12 @@ dplasma_zgeqrf_setrecursive( parsec_taskpool_t *tp, int hnb )
  * a complex M-by-N matrix A: A = Q * R.
  *
  * The method used in this algorithm is a tile QR algorithm with a flat
- * reduction tree.  It is recommended to use the super tiling parameter (SMB) to
+ * reduction tree.  It is recommended to use the super tiling parameter (KP) to
  * improve the performance of the factorization.
- * A high SMB parameter reduces the communication volume, but also deteriorates
+ * A high KP parameter reduces the communication volume, but also deteriorates
  * the load balancing if too important. A small one increases the communication
  * volume, but improves load balancing.
- * A good SMB value should provide enough work to all available cores on one
+ * A good KP value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
  * descriptor.
  * For tiling, MB=200, and IB=32 usually give good results.
@@ -214,12 +214,12 @@ dplasma_zgeqrf_Destruct( parsec_taskpool_t *tp)
  * A = Q * R.
  *
  * The method used in this algorithm is a tile QR algorithm with a flat
- * reduction tree. It is recommended to use the super tiling parameter (SMB) to
+ * reduction tree. It is recommended to use the super tiling parameter (KP) to
  * improve the performance of the factorization.
- * A high SMB parameter reduces the communication volume, but also deteriorates
+ * A high KP parameter reduces the communication volume, but also deteriorates
  * the load balancing if too important. A small one increases the communication
  * volume, but improves load balancing.
- * A good SMB value should provide enough work to all available cores on one
+ * A good KP value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
  * descriptor.
  * For tiling, MB=200, and IB=32 usually give good results.
@@ -299,12 +299,12 @@ dplasma_zgeqrf( parsec_context_t *parsec,
  * A = Q * R with recursive DAGs.
  *
  * The method used in this algorithm is a tile QR algorithm with a flat
- * reduction tree. It is recommended to use the super tiling parameter (SMB) to
+ * reduction tree. It is recommended to use the super tiling parameter (KP) to
  * improve the performance of the factorization.
- * A high SMB parameter reduces the communication volume, but also deteriorates
+ * A high KP parameter reduces the communication volume, but also deteriorates
  * the load balancing if too important. A small one increases the communication
  * volume, but improves load balancing.
- * A good SMB value should provide enough work to all available cores on one
+ * A good KP value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
  * descriptor.
  * For tiling, MB=200, and IB=32 usually give good results.
