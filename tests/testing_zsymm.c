@@ -48,17 +48,17 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC2, check,
         two_dim_block_cyclic, (&dcC2, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     if (loud > 2) printf("Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB,  Bseed);

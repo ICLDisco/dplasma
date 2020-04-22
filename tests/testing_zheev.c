@@ -46,11 +46,11 @@ int main(int argc, char *argv[])
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               N, N, SMB, SMB, P));
+                               N, N, KP, KP, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
         two_dim_block_cyclic, (&dcT, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, SMB, SMB, P));
+                               MT*IB, N, KP, KP, P));
 
     /* Fill A with randomness */
     dplasma_zplghe( parsec, (double)N, uplo,
@@ -77,7 +77,7 @@ goto fin;
     PASTE_CODE_ALLOCATE_MATRIX(dcBAND, 1,
         two_dim_block_cyclic, (&dcBAND, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
-                               MB+1, (NB+2)*(NT+1), 1, SNB, 1 /* 1D cyclic */ ));
+                               MB+1, (NB+2)*(NT+1), 1, KQ, 1 /* 1D cyclic */ ));
     SYNC_TIME_START();
     parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)&dcA, &dcBAND,
                                                                                             MT, NT, MB, NB, sizeof(parsec_complex64_t));

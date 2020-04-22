@@ -39,7 +39,7 @@ int main(int argc, char ** argv)
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
 
-    /* Make sure SMB and SNB are set to 1, since it conflicts with HQR */
+    /* Make sure KP and KQ are set to 1, since it conflicts with HQR */
     iparam[IPARAM_KP] = 1;
     iparam[IPARAM_KQ] = 1;
 
@@ -51,34 +51,34 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcTS, 1,
         two_dim_block_cyclic, (&dcTS, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, SMB, SNB, P));
+                               MT*IB, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcTT, 1,
         two_dim_block_cyclic, (&dcTT, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, SMB, SNB, P));
+                               MT*IB, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcQ, check,
         two_dim_block_cyclic, (&dcQ, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     /* Check the solution */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               M, NRHS, SMB, SNB, P));
+                               M, NRHS, KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               M, NRHS, SMB, SNB, P));
+                               M, NRHS, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

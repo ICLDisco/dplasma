@@ -41,7 +41,7 @@
  * to your problem.
  *
  * For tiling, MB=200, and IB=32 usually give good results. Super-tiling
- * parameters SMB and SNB must be set to 1 for this algorithm.
+ * parameters KP and KQ must be set to 1 for this algorithm.
  *
  * WARNING: The computations are not done by this call.
  *
@@ -260,7 +260,7 @@ dplasma_zgebrd_ge2gbx_New( int ib,
  * to your problem.
  *
  * For tiling, MB=200, and IB=32 usually give good results. Super-tiling
- * parameters SMB and SNB must be set to 1 for this algorithm.
+ * parameters KP and KQ must be set to 1 for this algorithm.
  *
  * WARNING: The computations are not done by this call.
  *
@@ -476,7 +476,7 @@ dplasma_zgebrd_ge2gb_Destruct( parsec_taskpool_t *tp )
  * details on what kind of trees are well adapted to your problem.
  *
  * For tiling, MB=200, and IB=32 usually give good results. Super-tiling
- * parameters SMB and SNB must be set to 1 for this algorithm.
+ * parameters KP and KQ must be set to 1 for this algorithm.
  *
  *******************************************************************************
  *
@@ -568,7 +568,7 @@ dplasma_zgebrd_ge2gbx( parsec_context_t *parsec, int ib,
  * details on what kind of trees are well adapted to your problem.
  *
  * For tiling, MB=200, and IB=32 usually give good results. Super-tiling
- * parameters SMB and SNB must be set to 1 for this algorithm.
+ * parameters KP and KQ must be set to 1 for this algorithm.
  *
  *******************************************************************************
  *

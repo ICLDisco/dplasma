@@ -54,7 +54,7 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, SMB, SNB, P));
+                               M, N, KP, KQ, P));
 
     /* initializing matrix structure */
     if(!check)
@@ -62,11 +62,11 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDA, K, 0, 0,
-                                   M, K, SMB, SNB, P));
+                                   M, K, KP, KQ, P));
         PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
             two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, N, 0, 0,
-                                   K, N, SMB, SNB, P));
+                                   K, N, KP, KQ, P));
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
@@ -100,7 +100,7 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcC2, check,
             two_dim_block_cyclic, (&dcC2, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDC, N, 0, 0,
-                                   M, N, SMB, SNB, P));
+                                   M, N, KP, KQ, P));
 
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC2, Cseed);
 
@@ -124,11 +124,11 @@ int main(int argc, char ** argv)
                 PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                     two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                            nodes, rank, MB, NB, LDA, LDA, 0, 0,
-                                           Am, An, SMB, SNB, P));
+                                           Am, An, KP, KQ, P));
                 PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
                     two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                            nodes, rank, MB, NB, LDB, LDB, 0, 0,
-                                           Bm, Bn, SMB, SNB, P));
+                                           Bm, Bn, KP, KQ, P));
 
                 dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
                 dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, Bseed);

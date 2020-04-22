@@ -25,12 +25,12 @@
  * a complex M-by-N matrix A: A = L * Q.
  *
  * The method used in this algorithm is a tile LQ algorithm with a flat
- * reduction tree. It is recommended to use the super tiling parameter (SNB) to
+ * reduction tree. It is recommended to use the super tiling parameter (KQ) to
  * improve the performance of the factorization.
- * A high SNB parameter reduces the communication volume, but also deteriorates
+ * A high KQ parameter reduces the communication volume, but also deteriorates
  * the load balancing if too important. A small one increases the communication
  * volume, but improves load balancing.
- * A good SNB value should provide enough work to all available cores on one
+ * A good KQ value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
  * descriptor.
  * For tiling, MB=200, and IB=32 usually give good results.
@@ -171,12 +171,12 @@ dplasma_zgelqf_Destruct( parsec_taskpool_t *tp )
  * A = L * Q.
  *
  * The method used in this algorithm is a tile LQ algorithm with a flat
- * reduction tree. It is recommended to use the super tiling parameter (SNB) to
+ * reduction tree. It is recommended to use the super tiling parameter (KQ) to
  * improve the performance of the factorization.
- * A high SNB parameter reduces the communication volume, but also deteriorates
+ * A high KQ parameter reduces the communication volume, but also deteriorates
  * the load balancing if too important. A small one increases the communication
  * volume, but improves load balancing.
- * A good SNB value should provide enough work to all available cores on one
+ * A good KQ value should provide enough work to all available cores on one
  * node. It is then recommended to set it to 4 when creating the matrix
  * descriptor.
  *

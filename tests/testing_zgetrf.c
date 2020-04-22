@@ -57,34 +57,34 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                                two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, SMB, SNB, P));
+                                                      M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
         two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
                                nodes, rank, 1, NB, 1, dplasma_imin(M, N), 0, 0,
-                               1, dplasma_imin(M, N), SMB, SNB, P));
+                               1, dplasma_imin(M, N), KP, KQ, P));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
                                two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, SMB, SNB, P));
+                                                      M, N, KP, KQ, P));
     /* Random B check */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
                                two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                                      M, NRHS, SMB, SNB, P));
+                                                      M, NRHS, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
                                two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                                      M, NRHS, SMB, SNB, P));
+                                                      M, NRHS, KP, KQ, P));
     /* Inverse check */
     PASTE_CODE_ALLOCATE_MATRIX(dcInvA, check_inv,
                                two_dim_block_cyclic, (&dcInvA, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, SMB, SNB, P));
+                                                      M, N, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcI, check_inv,
                                two_dim_block_cyclic, (&dcI, matrix_ComplexDouble, matrix_Tile,
                                                       nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, SMB, SNB, P));
+                                                      M, N, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

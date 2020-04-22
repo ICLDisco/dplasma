@@ -35,8 +35,8 @@ int main(int argc, char ** argv)
 
     /* initializing matrix structure */
     LDA = dplasma_imax( LDA, N );
-    SMB = 1;
-    SNB = 1;
+    KP = 1;
+    KQ = 1;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,

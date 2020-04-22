@@ -40,11 +40,11 @@ int main(int argc, char ** argv)
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, SMB, SNB, P));
+                               Am, Am, KP, KQ, P));
     PASTE_CODE_ALLOCATE_MATRIX(dcAinv, check,
         two_dim_block_cyclic, (&dcAinv, matrix_ComplexDouble, matrix_Tile,
                                nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, SMB, SNB, P));
+                               Am, Am, KP, KQ, P));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
