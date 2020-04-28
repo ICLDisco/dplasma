@@ -17,22 +17,21 @@
  **/
 
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <cblas.h>
+#include <lapacke.h>
+#include "common.h"
 
-#define A(m, n) PLASMA_BLKADDR(A, parsec_complex64_t, m, n)
+#define A(m, n) BLKADDR(A, PLASMA_Complex64_t, m, n)
 
 struct CORE_zgetrf_data_s {
-    volatile parsec_complex64_t *CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax;
     volatile int                *CORE_zstep;
 };
 
 static inline void
 CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info,
-                       parsec_complex64_t *pivot,
+                       PLASMA_Complex64_t *pivot,
                        int thidx,  int thcnt,
                        int column, int width,
                        int ft,     int lt);
@@ -114,14 +113,18 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
  *                  to solve a system of equations.
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_rectil = PCORE_zgetrf_rectil
+#define CORE_zgetrf_rectil PCORE_zgetrf_rectil
+#endif
 int CORE_zgetrf_rectil(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info)
 {
     int ft, lt;
     int thidx = info[1];
-    int thcnt = coreblas_imin( info[2], A.mt );
-    int minMN = coreblas_imin( A.m, A.n );
-    parsec_complex64_t pivot;
+    int thcnt = min( info[2], A.mt );
+    int minMN = min( A.m, A.n );
+    PLASMA_Complex64_t pivot;
 
     info[0] = 0;
     info[2] = thcnt;
@@ -145,7 +148,7 @@ int CORE_zgetrf_rectil(CORE_zgetrf_data_t *data,
     } else {
         ft = r * (q + 1) + (thidx - r) * q;
         lt = ft + q;
-        lt = coreblas_imin( lt, A.mt );
+        lt = min( lt, A.mt );
     }
 
     CORE_zgetrf_rectil_rec( data, A, IPIV, info, &pivot,
@@ -172,11 +175,11 @@ CORE_zgetrf_rectil_init(int nbthrd)
     int i;
     CORE_zgetrf_data_t *data;
 
-    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(parsec_complex64_t)+sizeof(int))
+    data = (CORE_zgetrf_data_t*)malloc( nbthrd * (sizeof(PLASMA_Complex64_t)+sizeof(int))
                                         + 2 * sizeof(void*) );
 
-    data->CORE_zamax = (parsec_complex64_t*)((char*)data + 2 * sizeof(void*));
-    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(parsec_complex64_t));
+    data->CORE_zamax = (PLASMA_Complex64_t*)((char*)data + 2 * sizeof(void*));
+    data->CORE_zstep = (int*)((char*)data + 2 * sizeof(void*) + nbthrd * sizeof(PLASMA_Complex64_t));
 
     for (i = 0; i < nbthrd; ++i) {
         data->CORE_zamax[i] = 0.;
@@ -190,18 +193,18 @@ CORE_zgetrf_rectil_init(int nbthrd)
 
 static inline void
 CORE_zamax1_thread(CORE_zgetrf_data_t *data,
-                   parsec_complex64_t localamx,
+                   PLASMA_Complex64_t localamx,
                    int thidx, int thcnt, int *thwinner,
-                   parsec_complex64_t *diagvalue,
-                   parsec_complex64_t *globalamx,
+                   PLASMA_Complex64_t *diagvalue,
+                   PLASMA_Complex64_t *globalamx,
                    int pividx, int *ipiv)
 {
-    volatile parsec_complex64_t *CORE_zamax = data->CORE_zamax;
+    volatile PLASMA_Complex64_t *CORE_zamax = data->CORE_zamax;
     volatile int                *CORE_zstep = data->CORE_zstep;
 
     if (thidx == 0) {
         int i, j = 0;
-        parsec_complex64_t curval = localamx, tmp;
+        PLASMA_Complex64_t curval = localamx, tmp;
         double curamx = cabs(localamx);
 
         /* make sure everybody filled in their value */
@@ -269,8 +272,8 @@ CORE_zbarrier_thread(CORE_zgetrf_data_t *data,
                      int thidx, int thcnt)
 {
     int idum1, idum2;
-    parsec_complex64_t ddum1 = 0.;
-    parsec_complex64_t ddum2 = 0.;
+    PLASMA_Complex64_t ddum1 = 0.;
+    PLASMA_Complex64_t ddum2 = 0.;
     /* it's probably faster to implement a dedicated barrier */
     CORE_zamax1_thread( data, 1.0, thidx, thcnt, &idum1, &ddum1, &ddum2, 0, &idum2 );
 }
@@ -284,12 +287,12 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
 {
     int ld, lm, tmpM;
     int ip, j, it, i, ldft;
-    parsec_complex64_t zone  = 1.0;
-    parsec_complex64_t mzone = -1.0;
-    parsec_complex64_t *Atop, *Atop2, *U, *L;
+    PLASMA_Complex64_t zone  = 1.0;
+    PLASMA_Complex64_t mzone = -1.0;
+    PLASMA_Complex64_t *Atop, *Atop2, *U, *L;
     int offset = A.i;
 
-    ldft = PLASMA_BLKLDD(A, 0);
+    ldft = BLKLDD(A, 0);
     Atop  = A(0, 0) + column * ldft;
     Atop2 = Atop    + n1     * ldft;
 
@@ -304,7 +307,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
             {
                 it = ip / A.mb;
                 i  = ip % A.mb;
-                ld = PLASMA_BLKLDD(A, it);
+                ld = BLKLDD(A, it);
                 cblas_zswap(n2, Atop2                     + j, ldft,
                             A(it, 0) + (column+n1)*ld + i, ld   );
             }
@@ -323,7 +326,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
 
         /* First tile */
         L = Atop + column + n1;
-        tmpM = coreblas_imin(ldft, A.m) - column - n1;
+        tmpM = min(ldft, A.m) - column - n1;
 
         /* Apply the GEMM */
         cblas_zgemm( CblasColMajor, CblasNoTrans, CblasNoTrans,
@@ -335,7 +338,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
     }
     else
     {
-        ld = PLASMA_BLKLDD( A, ft );
+        ld = BLKLDD( A, ft );
         L  = A( ft, 0 ) + column * ld;
         lm = ft == A.mt-1 ? A.m - ft * A.mb : A.mb;
 
@@ -357,7 +360,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
     /* Update the other blocks */
     for( it = ft+1; it < lt; it++)
     {
-        ld = PLASMA_BLKLDD( A, it );
+        ld = BLKLDD( A, it );
         L  = A( it, 0 ) + column * ld;
         lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
 
@@ -373,7 +376,7 @@ CORE_zgetrf_rectil_update(CORE_zgetrf_data_t *data,
 static void
 CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                        const PLASMA_desc A, int *IPIV, int *info,
-                       parsec_complex64_t *pivot,
+                       PLASMA_Complex64_t *pivot,
                        int thidx,  int thcnt,
                        int column, int width,
                        int ft,     int lt)
@@ -381,20 +384,20 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
     int ld, jp, n1, n2, lm, tmpM, piv_sf;
     int ip, j, it, i, ldft;
     int max_i, max_it, thwin;
-    parsec_complex64_t zone  = 1.0;
-    parsec_complex64_t mzone = -1.0;
-    parsec_complex64_t tmp1;
-    parsec_complex64_t tmp2 = 0.;
-    parsec_complex64_t pivval;
-    parsec_complex64_t *Atop, *Atop2, *U, *L;
+    PLASMA_Complex64_t zone  = 1.0;
+    PLASMA_Complex64_t mzone = -1.0;
+    PLASMA_Complex64_t tmp1;
+    PLASMA_Complex64_t tmp2 = 0.;
+    PLASMA_Complex64_t pivval;
+    PLASMA_Complex64_t *Atop, *Atop2, *U, *L;
     double             abstmp1;
     int offset = A.i;
 
-    ldft = PLASMA_BLKLDD(A, 0);
+    ldft = BLKLDD(A, 0);
     Atop = A(0, 0) + column * ldft;
 
     if ( width > 1 ) {
-        /* Assumption: N = coreblas_imin( M, N ); */
+        /* Assumption: N = min( M, N ); */
         n1 = width / 2;
         n2 = width - n1;
 
@@ -434,7 +437,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                 {
                     it = ip / A.mb;
                     i  = ip % A.mb;
-                    ld = PLASMA_BLKLDD(A, it);
+                    ld = BLKLDD(A, it);
                     cblas_zswap(n2, Atop2                     + j, ldft,
                                     A(it, 0) + (column+n1)*ld + i, ld   );
                 }
@@ -453,7 +456,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
             /* First tile */
             {
                 L = Atop + column + n1;
-                tmpM = coreblas_imin(ldft, A.m) - column - n1;
+                tmpM = min(ldft, A.m) - column - n1;
 
                 /* Scale last column of L */
                 if ( piv_sf ) {
@@ -483,7 +486,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
         }
         else
         {
-            ld = PLASMA_BLKLDD( A, ft );
+            ld = BLKLDD( A, ft );
             L  = A( ft, 0 ) + column * ld;
             lm = ft == A.mt-1 ? A.m - ft * A.mb : A.mb;
 
@@ -521,7 +524,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
         /* Update the other blocks */
         for( it = ft+1; it < lt; it++)
         {
-            ld = PLASMA_BLKLDD( A, it );
+            ld = BLKLDD( A, it );
             L  = A( it, 0 ) + column * ld;
             lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
 
@@ -562,7 +565,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
         if (thwin == thidx) { /* the thread that owns the best pivot */
             if ( jp-offset != column+n1 ) /* if there is a need to exchange the pivot */
             {
-                ld = PLASMA_BLKLDD(A, max_it);
+                ld = BLKLDD(A, max_it);
                 Atop2 = A( max_it, 0 ) + (column + n1 )* ld + max_i;
                 *Atop2 = tmp2;
             }
@@ -584,7 +587,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                 {
                     it = ip / A.mb;
                     i  = ip % A.mb;
-                    ld = PLASMA_BLKLDD(A, it);
+                    ld = BLKLDD(A, it);
                     cblas_zswap(n1, Atop + j,                 ldft,
                                     A(it, 0) + column*ld + i, ld  );
                 }
@@ -600,7 +603,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
               tmp2 = Atop[column];
 
             /* First tmp1 */
-            ld = PLASMA_BLKLDD(A, ft);
+            ld = BLKLDD(A, ft);
             Atop2   = A( ft, 0 );
             lm      = ft == A.mt-1 ? A.m - ft * A.mb : A.mb;
             max_it  = ft;
@@ -641,7 +644,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
         CORE_zbarrier_thread( data, thidx, thcnt );
 
         /* If it is the last column, we just scale */
-        if ( column == (coreblas_imin(A.m, A.n))-1 ) {
+        if ( column == (min(A.m, A.n))-1 ) {
 
             pivval = *pivot;
             if ( pivval != 0.0 ) {
@@ -658,7 +661,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
 
                         for( it = ft+1; it < lt; it++)
                         {
-                            ld = PLASMA_BLKLDD(A, it);
+                            ld = BLKLDD(A, it);
                             Atop2 = A( it, 0 ) + column * ld;
                             lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
                             cblas_zscal( lm, CBLAS_SADDR(pivval), Atop2, 1 );
@@ -677,7 +680,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
 
                         for( it = ft+1; it < lt; it++)
                             {
-                                ld = PLASMA_BLKLDD(A, it);
+                                ld = BLKLDD(A, it);
                                 Atop2 = A( it, 0 ) + column * ld;
                                 lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
 
@@ -693,7 +696,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
 
                         for( it = ft; it < lt; it++)
                         {
-                            ld = PLASMA_BLKLDD(A, it);
+                            ld = BLKLDD(A, it);
                             Atop2 = A( it, 0 ) + column * ld;
                             lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
                             cblas_zscal( lm, CBLAS_SADDR(pivval), Atop2, 1 );
@@ -706,7 +709,7 @@ CORE_zgetrf_rectil_rec(CORE_zgetrf_data_t *data,
                         int i;
                         for( it = ft; it < lt; it++)
                         {
-                            ld = PLASMA_BLKLDD(A, it);
+                            ld = BLKLDD(A, it);
                             Atop2 = A( it, 0 ) + column * ld;
                             lm = it == A.mt-1 ? A.m - it * A.mb : A.mb;
 

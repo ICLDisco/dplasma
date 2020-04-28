@@ -11,11 +11,7 @@
 #include "parsec/vpmap.h"
 #include <math.h>
 #include <alloca.h>
-
-#if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-
 #include "dplasmaaux.h"
 
 #if defined(PARSEC_HAVE_MPI)

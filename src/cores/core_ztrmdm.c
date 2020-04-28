@@ -13,22 +13,9 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "parsec/parsec_config.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA);
+int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA);
 
 /***************************************************************************//**
  *
@@ -59,7 +46,7 @@ int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA);
  *         The number of rows and columns of A.  N >= 0.
  *
  * @param[in,out] A
- *         parsec_complex64_t array, dimension (LDA,N)
+ *         PLASMA_Complex64_t array, dimension (LDA,N)
  *
  *         On entry, the triangular matrix A. If uplo = 'U', the leading
  *         N-by-N upper triangular part of A contains the upper
@@ -83,11 +70,11 @@ int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA);
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA)
+int CORE_ztrmdm(int uplo, int N, PLASMA_Complex64_t *A, int LDA)
 {
-    static parsec_complex64_t zone = 1.0;
+    static PLASMA_Complex64_t zone = 1.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int j;
 
     /* Check input arguments */
@@ -99,13 +86,13 @@ int CORE_ztrmdm(int uplo, int N, parsec_complex64_t *A, int LDA)
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if (LDA < coreblas_imax(1, N)) {
+    if (LDA < max(1, N)) {
         coreblas_error(1, "Illegal value of LDA");
         return -4;
     }
 
     /* Quick return */
-    if (coreblas_imax(N, 0) == 0)
+    if (max(N, 0) == 0)
         return PLASMA_SUCCESS;
 
     /**/

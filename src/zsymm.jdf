@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- *  Copyright (c) 2010-2013
+ *  Copyright (c) 2010-2020
  *
  *  The University of Tennessee and The University
  *  of Tennessee Research Foundation.  All rights
@@ -17,21 +17,21 @@ extern "C" %{
 /*
  * Globals
  */
-side   [type = PLASMA_enum]
-uplo   [type = PLASMA_enum]
-alpha  [type = parsec_complex64_t]
-beta   [type = parsec_complex64_t]
+side   [type = dplasma_enum_t]
+uplo   [type = dplasma_enum_t]
+alpha  [type = dplasma_complex64_t]
+beta   [type = dplasma_complex64_t]
 
 descA  [type = "const parsec_tiled_matrix_dc_t*"]
 descB  [type = "const parsec_tiled_matrix_dc_t*"]
 descC  [type = "parsec_tiled_matrix_dc_t*"]
 
-plasma_upper   [type="PLASMA_enum" hidden=on default=PlasmaUpper ]
-plasma_lower   [type="PLASMA_enum" hidden=on default=PlasmaLower ]
-plasma_left    [type="PLASMA_enum" hidden=on default=PlasmaLeft  ]
-plasma_right   [type="PLASMA_enum" hidden=on default=PlasmaRight ]
+plasma_upper   [type="dplasma_enum_t" hidden=on default=dplasmaUpper ]
+plasma_lower   [type="dplasma_enum_t" hidden=on default=dplasmaLower ]
+plasma_left    [type="dplasma_enum_t" hidden=on default=dplasmaLeft  ]
+plasma_right   [type="dplasma_enum_t" hidden=on default=dplasmaRight ]
 
-c [type="int" hidden=on default="( (side == PlasmaLeft) ? ((uplo == PlasmaLower) ? 0 : 1 ) : ((uplo == PlasmaLower) ? 2 : 3) )" ]
+c [type="int" hidden=on default="( (side == dplasmaLeft) ? ((uplo == dplasmaLower) ? 0 : 1 ) : ((uplo == dplasmaLower) ? 2 : 3) )" ]
 
 symm_in_A(m, n) [profile = off]
 // Execution space
@@ -94,12 +94,12 @@ RW    C <- ( k == 0 ) ? descC(m, n) : C SYMM( m, n, k-1 )
         -> ( ( (side == plasma_left) && (k == descC->mt-1) ) || ( (side == plasma_right) && (k == descC->nt-1) ) ) ? descC( m, n ) : C SYMM(m, n, k+1)
 BODY
 {
-    parsec_complex64_t zbeta = (k == 0) ? beta : (parsec_complex64_t)1.0;
+    dplasma_complex64_t zbeta = (k == 0) ? beta : (dplasma_complex64_t)1.0;
     int tempmm = ( m == descC->mt-1 ) ? descC->m - m * descC->mb : descC->mb;
     int tempnn = ( n == descC->nt-1 ) ? descC->n - n * descC->nb : descC->nb;
     int ldcm   = BLKLDD( descC, m );
 
-    if (side == PlasmaLeft && k == m) {
+    if (side == dplasmaLeft && k == m) {
         int ldam = BLKLDD( descA, m );
         int ldbk = BLKLDD( descB, k );
 
@@ -110,7 +110,7 @@ BODY
             B, ldbk,
             zbeta, C, ldcm);
     }
-    else if (side == PlasmaRight && k == n) {
+    else if (side == dplasmaRight && k == n) {
         int ldak = BLKLDD( descA, k );
         int ldbm = BLKLDD( descB, m );
 
@@ -121,14 +121,14 @@ BODY
             A, ldbm,
             zbeta, C, ldcm);
     } else {
-        PLASMA_enum transl = (c == 0 && k > m) || (c == 1 && k < m) ? PlasmaTrans : PlasmaNoTrans;
-        PLASMA_enum transr = (c == 3 && k > n) || (c == 2 && k < n) ? PlasmaTrans : PlasmaNoTrans;
-        int tempk = (side == PlasmaLeft) ? (( k == descC->mt-1 ) ? descC->m - k * descC->mb : descC->mb)
+        dplasma_enum_t transl = (c == 0 && k > m) || (c == 1 && k < m) ? dplasmaTrans : dplasmaNoTrans;
+        dplasma_enum_t transr = (c == 3 && k > n) || (c == 2 && k < n) ? dplasmaTrans : dplasmaNoTrans;
+        int tempk = (side == dplasmaLeft) ? (( k == descC->mt-1 ) ? descC->m - k * descC->mb : descC->mb)
         :                              (( k == descC->nt-1 ) ? descC->n - k * descC->nb : descC->nb);
 
-        int lda = (side == PlasmaRight) ? BLKLDD(descB, m)
+        int lda = (side == dplasmaRight) ? BLKLDD(descB, m)
         : ((c == 0 && k > m) || (c == 1 && k < m) ? BLKLDD(descA, k) : BLKLDD(descA, m) );
-        int ldb = (side == PlasmaLeft) ? BLKLDD(descB, k)
+        int ldb = (side == dplasmaLeft) ? BLKLDD(descB, k)
         : ((c == 3 && k > n) || (c == 2 && k < n) ? BLKLDD(descA, n) : BLKLDD(descA, k) );
 
         CORE_zgemm(

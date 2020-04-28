@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/private_mempool.h"
 
 #include "zgeqrf.h"
@@ -134,32 +135,32 @@ dplasma_zgeqrf_New( parsec_tiled_matrix_dc_t *A,
                             ib, NULL, NULL );
 
     tp->_g_p_tau = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_tau, T->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_tau, T->nb * sizeof(dplasma_complex64_t) );
 
     tp->_g_p_work = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_work, ib * T->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_work, ib * T->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
     dplasma_add2arena_tile( tp->arenas[PARSEC_zgeqrf_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
     dplasma_add2arena_lower( tp->arenas[PARSEC_zgeqrf_LOWER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Upper triangular part of tile with diagonal */
     dplasma_add2arena_upper( tp->arenas[PARSEC_zgeqrf_UPPER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Little T */
     dplasma_add2arena_rectangle( tp->arenas[PARSEC_zgeqrf_LITTLE_T_ARENA],
-                                 T->mb*T->nb*sizeof(parsec_complex64_t),
+                                 T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
 

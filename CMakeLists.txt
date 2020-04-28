@@ -5,6 +5,8 @@ include(CMakeDependentOption)
 include(CMakePushCheckState)
 include(CheckSymbolExists)
 include(CheckCSourceCompiles)
+include(CheckIncludeFiles)
+include(GNUInstallDirs)
 
 # The current version number
 set (DPLASMA_VERSION_MAJOR 2)
@@ -120,6 +122,8 @@ set(BLA_VENDOR CACHE STRING "Possible valid values are: Intel10_64lp_seq, IBMESS
 set_property(CACHE BLA_VENDOR PROPERTY STRINGS Intel10_64lp_seq IBMESSL Apple Goto ATLAS)
 find_package(LAPACKE REQUIRED)
 
+check_include_files(complex.h DPLASMA_HAVE_COMPLEX_H)
+
 check_symbol_exists(timersub "sys/time.h" DPLASMA_TIMERSUB_NEED__GNU_SOURCE)
 if( NOT DPLASMA_TIMERSUB_NEED__GNU_SOURCE )
   unset(DPLASMA_TIMERSUB_NEED__GNU_SOURCE CACHE)
@@ -188,8 +192,6 @@ if( APPLE )
   endif( PARSEC_OSX_VECLIB )
 endif( APPLE )
 
-set(DPLASMA_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
-                           CACHE STRING "DPLASMA Installation Prefix")
 #
 # Find or Build PaRSEC package
 option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
@@ -261,8 +263,6 @@ if(PARSEC_HAVE_CUDA)
   message(STATUS "CUDA support for DPLASMA enabled")
 endif(PARSEC_HAVE_CUDA)
 
-include (CheckIncludeFiles)
-check_include_files(complex.h DPLASMA_HAVE_COMPLEX_H)
 
 set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
 Add_Subdirectory(src)
@@ -276,7 +276,7 @@ configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/src/include/dplasma.pc.in"
   "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dplasma.pc"
-        DESTINATION ${DPLASMA_INSTALL_PREFIX}/lib/pkgconfig)
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 # Prepare the contrib/build_with_dplasma directory
 configure_file (

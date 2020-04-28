@@ -12,10 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <cblas.h>
+#include <lapacke.h>
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -112,14 +111,18 @@
  *
  ******************************************************************************/
 
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpemv = PCORE_zpemv
+#define CORE_zpemv PCORE_zpemv
+#endif
 int CORE_zpemv(PLASMA_enum trans, int storev,
                int M, int N, int L,
-               parsec_complex64_t ALPHA,
-               const parsec_complex64_t *A, int LDA,
-               const parsec_complex64_t *X, int INCX,
-               parsec_complex64_t BETA,
-               parsec_complex64_t *Y, int INCY,
-               parsec_complex64_t *WORK)
+               PLASMA_Complex64_t ALPHA,
+               const PLASMA_Complex64_t *A, int LDA,
+               const PLASMA_Complex64_t *X, int INCX,
+               PLASMA_Complex64_t BETA,
+               PLASMA_Complex64_t *Y, int INCY,
+               PLASMA_Complex64_t *WORK)
 {
 
    /*
@@ -127,7 +130,7 @@ int CORE_zpemv(PLASMA_enum trans, int storev,
     */
 
     int K;
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zzero = 0.0;
 
 
     /* Check input arguments */
@@ -152,11 +155,11 @@ int CORE_zpemv(PLASMA_enum trans, int storev,
         coreblas_error(4, "Illegal value of N");
         return -4;
     }
-    if (L > coreblas_imin(M ,N)) {
+    if (L > min(M ,N)) {
         coreblas_error(5, "Illegal value of L");
         return -5;
     }
-    if (LDA < coreblas_imax(1,M)) {
+    if (LDA < max(1,M)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }

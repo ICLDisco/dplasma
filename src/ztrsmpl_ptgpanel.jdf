@@ -172,7 +172,7 @@ BODY
     printlog("B_SWAP_COPY(k=%d,n=%d)\n", k, n);
 
 #if !defined(NDEBUG)
-    memset(BCOPY, 0, descB->mb*descB->nb*sizeof(parsec_complex64_t));
+    memset(BCOPY, 0, descB->mb*descB->nb*sizeof(dplasma_complex64_t));
 #endif
 
     LAPACKE_zlacpy_work(LAPACK_COL_MAJOR,
@@ -219,8 +219,8 @@ BODY
     int index;
     int i;
 
-    parsec_complex64_t *lU = (parsec_complex64_t*)U;
-    parsec_complex64_t *lT = (parsec_complex64_t*)T;
+    dplasma_complex64_t *lU = (dplasma_complex64_t*)U;
+    dplasma_complex64_t *lT = (dplasma_complex64_t*)T;
 
     for(i = 0; i < minmn; i++) {
         owner_index = *invperm / descB->mb;
@@ -292,16 +292,16 @@ BODY
     int index;
     int j;
 
-    parsec_complex64_t *lT = (parsec_complex64_t*)T;
-    parsec_complex64_t *lM;
+    dplasma_complex64_t *lT = (dplasma_complex64_t*)T;
+    dplasma_complex64_t *lM;
 
     if ( (m-k) < P ) {
-        lM = (parsec_complex64_t*)BUFIN;
+        lM = (dplasma_complex64_t*)BUFIN;
 #if !defined(NDEBUG)
-        memset(BUFIN, 0, descA->mb*descA->nb*sizeof(parsec_complex64_t));
+        memset(BUFIN, 0, descA->mb*descA->nb*sizeof(dplasma_complex64_t));
 #endif
     } else {
-        lM = (parsec_complex64_t*)BUF;
+        lM = (dplasma_complex64_t*)BUF;
     }
 
     for(j = 0; j < minmn; j++) {
@@ -377,8 +377,8 @@ BODY
         int owner_index;
         int j;
 
-        parsec_complex64_t *lT = (parsec_complex64_t*)Rtop;
-        parsec_complex64_t *lB = (parsec_complex64_t*)Rbottom;
+        dplasma_complex64_t *lT = (dplasma_complex64_t*)Rtop;
+        dplasma_complex64_t *lB = (dplasma_complex64_t*)Rbottom;
 
         for(j=0; j<minmn; j++) {
             owner_index = (*perm) / descB->mb;
@@ -485,8 +485,8 @@ BODY
     CORE_zgemm(
         PlasmaNoTrans, PlasmaNoTrans,
         tempmm, tempnn, tempkn,
-        (parsec_complex64_t)-1.0, A /*A(m, k)*/, ldam,
+        (dplasma_complex64_t)-1.0, A /*A(m, k)*/, ldam,
                                   B /*B(k, n)*/, ldbk,
-        (parsec_complex64_t) 1.0, C /*B(m, n)*/, ldbm );
+        (dplasma_complex64_t) 1.0, C /*B(m, n)*/, ldbm );
 }
 END

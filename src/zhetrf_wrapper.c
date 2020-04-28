@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -10,9 +10,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
-#include <core_blas.h>
+#include "cores/core_blas.h"
 #include "parsec/private_mempool.h"
 
 #include "zhetrf.h"
@@ -40,10 +40,10 @@ dplasma_zhetrf_New( parsec_tiled_matrix_dc_t *A, int *INFO)
     pool_1 = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
     parsec_private_memory_init( pool_1, zhetrf_pool_1_SIZE );
 
-    parsec_zhetrf = (parsec_taskpool_t *)parsec_zhetrf_new(PlasmaLower, A, (parsec_data_collection_t *)A, ib, pool_1, pool_0, INFO);
+    parsec_zhetrf = (parsec_taskpool_t *)parsec_zhetrf_new(dplasmaLower, A, (parsec_data_collection_t *)A, ib, pool_1, pool_0, INFO);
 
     dplasma_add2arena_tile(((parsec_zhetrf_taskpool_t*)parsec_zhetrf)->arenas[PARSEC_zhetrf_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 
@@ -73,7 +73,7 @@ dplasma_ztrmdm_New( parsec_tiled_matrix_dc_t *A)
     parsec_ztrmdm = (parsec_taskpool_t *)parsec_ztrmdm_new(A);
 
     dplasma_add2arena_tile(((parsec_ztrmdm_taskpool_t*)parsec_ztrmdm)->arenas[PARSEC_ztrmdm_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 

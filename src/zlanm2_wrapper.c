@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -9,7 +9,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #include "zlanm2.h"
@@ -106,14 +107,14 @@ dplasma_zlanm2_New( const parsec_tiled_matrix_dc_t *A,
 
     /* Set the datatypes */
     dplasma_add2arena_tile(((parsec_zlanm2_taskpool_t*)parsec_zlanm2)->arenas[PARSEC_zlanm2_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
     dplasma_add2arena_rectangle(((parsec_zlanm2_taskpool_t*)parsec_zlanm2)->arenas[PARSEC_zlanm2_ZCOL_ARENA],
-                                mb * sizeof(parsec_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE,
+                                mb * sizeof(dplasma_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, mb, 1, -1);
     dplasma_add2arena_rectangle(((parsec_zlanm2_taskpool_t*)parsec_zlanm2)->arenas[PARSEC_zlanm2_ZROW_ARENA],
-                                nb * sizeof(parsec_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE,
+                                nb * sizeof(dplasma_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, 1, nb, -1);
     dplasma_add2arena_rectangle(((parsec_zlanm2_taskpool_t*)parsec_zlanm2)->arenas[PARSEC_zlanm2_DROW_ARENA],
                                 nb * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,

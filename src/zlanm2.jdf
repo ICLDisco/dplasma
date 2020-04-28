@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- *  Copyright (c) 2011-2016 The University of Tennessee and The University
+ *  Copyright (c) 2011-2020 The University of Tennessee and The University
  *                          of Tennessee Research Foundation.  All rights
  *                          reserved.
  *  Copyright (c) 2013-2016 Inria. All rights reserved.
@@ -78,7 +78,7 @@ BODY
         memset(W, 0, tempnn*sizeof(double) );
     }
 
-    CORE_dzasum(PlasmaColumnwise, PlasmaUpperLower,
+    CORE_dzasum(dplasmaColumnwise, dplasmaUpperLower,
                 tempmm, tempnn,
                 A, ldam, W);
 }
@@ -323,7 +323,7 @@ SCALEX(i, m, n)
 BODY
 {
     int tempnn = ( n == (descA->nt-1) ) ? descA->n - n * descA->nb : descA->nb;
-    parsec_complex64_t scl = (parsec_complex64_t)1.0  / (parsec_complex64_t)normx;
+    dplasma_complex64_t scl = (dplasma_complex64_t)1.0  / (dplasma_complex64_t)normx;
 
     printlog("scalex(%d, %d, %d)\n", i, m, n);
 
@@ -335,11 +335,11 @@ BODY
 #if defined(PRECISION_z) || defined(PRECISION_c)
         CORE_dlag2z( 1, tempnn, DX, 1, ZXO, 1 );
 #else
-        CORE_zlacpy( PlasmaUpperLower, 1, tempnn, DX, 1, ZXO, 1 );
+        CORE_zlacpy( dplasmaUpperLower, 1, tempnn, DX, 1, ZXO, 1 );
 #endif
     }
     else {
-        CORE_zlacpy( PlasmaUpperLower, 1, tempnn, ZX, 1, ZXO, 1 );
+        CORE_zlacpy( dplasmaUpperLower, 1, tempnn, ZX, 1, ZXO, 1 );
     }
     cblas_zscal(tempnn, CBLAS_SADDR(scl), ZXO, 1);
 }
@@ -380,7 +380,7 @@ RW    C  <- (k >= (NT-Q)) ? NEW                                 [type = ZCOL]
          -> (k <  Q) && (k < NT) ? W GEMV_SX_REDUCE( i, m, k  ) [type = ZCOL]
 BODY
 {
-    parsec_complex64_t zbeta = (k >= (NT-Q)) ? 0. : (parsec_complex64_t)1.0;
+    dplasma_complex64_t zbeta = (k >= (NT-Q)) ? 0. : (dplasma_complex64_t)1.0;
     int tempmm = ( m == descA->mt-1 ) ? descA->m - m * descA->mb : descA->mb;
     int tempkn = ( k == descA->nt-1 ) ? descA->n - k * descA->nb : descA->nb;
     int ldam = BLKLDD( descA, m );
@@ -388,7 +388,7 @@ BODY
     printlog("gemv_sx_partial(%d, %d, %d)\n", i, m, k);
 
     CORE_zgemv(
-        PlasmaNoTrans,
+        dplasmaNoTrans,
         tempmm, tempkn,
         1.,    A, ldam,
                B, 1,
@@ -425,7 +425,7 @@ BODY
 
     if(k < kmax)
     {
-        parsec_complex64_t zone = 1.;
+        dplasma_complex64_t zone = 1.;
         cblas_zaxpy(tempmm, CBLAS_SADDR(zone), A, 1, W, 1);
     }
 }
@@ -467,7 +467,7 @@ RW    C <- (k >= (MT-P)) ? NEW                                [type = ZROW]
         -> (k <  P) && (k < MT) ? W GEMV_X_REDUCE( i, n, k)   [type = ZROW]
 BODY
 {
-    parsec_complex64_t zbeta = (k >= (MT-P)) ? 0. : (parsec_complex64_t)1.0;
+    dplasma_complex64_t zbeta = (k >= (MT-P)) ? 0. : (dplasma_complex64_t)1.0;
     int tempkm = ( k == descA->mt-1 ) ? descA->m - k * descA->mb : descA->mb;
     int tempnn = ( n == descA->nt-1 ) ? descA->n - n * descA->nb : descA->nb;
     int ldan = BLKLDD( descA, n );
@@ -475,7 +475,7 @@ BODY
     printlog("gemv_x_partial(%d, %d, %d)\n", i, n, k);
 
     CORE_zgemv(
-        PlasmaConjTrans,
+        dplasmaConjTrans,
         tempkm, tempnn,
         1.,    A, ldan,
                B, 1,
@@ -511,7 +511,7 @@ BODY
 
     if(k < kmax)
     {
-        parsec_complex64_t zone = 1.;
+        dplasma_complex64_t zone = 1.;
         cblas_zaxpy(tempnn, CBLAS_SADDR(zone), A, 1, W, 1);
     }
 }

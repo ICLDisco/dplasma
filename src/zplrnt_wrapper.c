@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -9,7 +9,10 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
+
+#include "cores/core_blas.h"
 
 
 struct zplrnt_args_s {
@@ -22,12 +25,12 @@ static int
 dplasma_zplrnt_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *op_data )
 {
     int tempmm, tempnn, ldam;
     zplrnt_args_t     *args = (zplrnt_args_t*)op_data;
-    parsec_complex64_t *A    = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *A    = (dplasma_complex64_t*)_A;
     (void)es;
     (void)uplo;
 
@@ -41,7 +44,7 @@ dplasma_zplrnt_operator( parsec_execution_stream_t *es,
 
     if (args->diagdom && (m == n))
     {
-        parsec_complex64_t  alpha;
+        dplasma_complex64_t  alpha;
         int maxmn = dplasma_imax( descA->m, descA->n );
         int i;
 
@@ -114,7 +117,7 @@ dplasma_zplrnt_New( int diagdom,
     params->diagdom = diagdom;
     params->seed    = seed;
 
-    return parsec_apply_New( PlasmaUpperLower, A, dplasma_zplrnt_operator, params );
+    return parsec_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, params );
 }
 
 /**

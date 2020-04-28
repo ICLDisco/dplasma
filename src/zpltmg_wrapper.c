@@ -9,10 +9,11 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/vector_two_dim_cyclic.h"
+#include "cores/core_blas.h"
 
 #include "zpltmg_chebvand.h"
 #include "zpltmg_fiedler.h"
@@ -30,9 +31,9 @@
  *******************************************************************************
  */
 struct zpltmg_args_s {
-    PLASMA_enum            mtxtype;
+    dplasma_enum_t            mtxtype;
     unsigned long long int seed;
-    parsec_complex64_t     *W;
+    dplasma_complex64_t     *W;
 };
 typedef struct zpltmg_args_s zpltmg_args_t;
 
@@ -40,12 +41,12 @@ static int
 dplasma_zpltmg_generic_operator( parsec_execution_stream_t *es,
                                  const parsec_tiled_matrix_dc_t *descA,
                                  void *_A,
-                                 PLASMA_enum uplo, int m, int n,
+                                 dplasma_enum_t uplo, int m, int n,
                                  void *op_data )
 {
     int tempmm, tempnn, ldam;
     zpltmg_args_t     *args = (zpltmg_args_t*)op_data;
-    parsec_complex64_t *A    = (parsec_complex64_t*)_A;
+    dplasma_complex64_t *A    = (dplasma_complex64_t*)_A;
     (void)es;
     (void)uplo;
 
@@ -53,7 +54,7 @@ dplasma_zpltmg_generic_operator( parsec_execution_stream_t *es,
     tempnn = (n == (descA->nt-1)) ? (descA->n - n * descA->nb) : descA->nb;
     ldam   = BLKLDD( descA, m );
 
-    if ( args->mtxtype == PlasmaMatrixCircul ) {
+    if ( args->mtxtype == dplasmaMatrixCircul ) {
         return CORE_zpltmg_circul(
             tempmm, tempnn, A, ldam,
             descA->m, m*descA->mb, n*descA->nb, args->W );
@@ -107,9 +108,9 @@ dplasma_zpltmg_generic_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 static inline int
 dplasma_zpltmg_generic( parsec_context_t *parsec,
-                        PLASMA_enum mtxtype,
+                        dplasma_enum_t mtxtype,
                         parsec_tiled_matrix_dc_t *A,
-                        parsec_complex64_t *W,
+                        dplasma_complex64_t *W,
                         unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zpltmg = NULL;
@@ -119,7 +120,7 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
     params->seed    = seed;
     params->W       = W;
 
-    parsec_zpltmg = parsec_apply_New( PlasmaUpperLower, A, dplasma_zpltmg_generic_operator, params );
+    parsec_zpltmg = parsec_apply_New( dplasmaUpperLower, A, dplasma_zpltmg_generic_operator, params );
     if ( parsec_zpltmg != NULL )
     {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zpltmg);
@@ -168,7 +169,7 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
  ******************************************************************************/
 static inline int
 dplasma_zpltmg_genvect( parsec_context_t *parsec,
-                        PLASMA_enum mtxtype,
+                        dplasma_enum_t mtxtype,
                         parsec_tiled_matrix_dc_t *A,
                         unsigned long long int seed )
 {
@@ -176,28 +177,28 @@ dplasma_zpltmg_genvect( parsec_context_t *parsec,
     parsec_taskpool_t* tp;
 
     switch( mtxtype ) {
-    case PlasmaMatrixChebvand:
+    case dplasmaMatrixChebvand:
         tp = (parsec_taskpool_t*)parsec_zpltmg_chebvand_new( seed,
                                                             A );
-        vectorsize = 2 * A->nb * sizeof(parsec_complex64_t);
+        vectorsize = 2 * A->nb * sizeof(dplasma_complex64_t);
         break;
 
-    case PlasmaMatrixFiedler:
+    case dplasmaMatrixFiedler:
         tp = (parsec_taskpool_t*)parsec_zpltmg_fiedler_new( seed,
                                                             A );
-        vectorsize = A->mb * sizeof(parsec_complex64_t);
+        vectorsize = A->mb * sizeof(dplasma_complex64_t);
         break;
 
-    case PlasmaMatrixHankel:
+    case dplasmaMatrixHankel:
         tp = (parsec_taskpool_t*)parsec_zpltmg_hankel_new( seed,
                                                            A );
-        vectorsize = A->mb * sizeof(parsec_complex64_t);
+        vectorsize = A->mb * sizeof(dplasma_complex64_t);
         break;
 
-    case PlasmaMatrixToeppd:
+    case dplasmaMatrixToeppd:
         tp = (parsec_taskpool_t*)parsec_zpltmg_toeppd_new( seed,
                                                            A );
-        vectorsize = 2 * A->mb * sizeof(parsec_complex64_t);
+        vectorsize = 2 * A->mb * sizeof(dplasma_complex64_t);
         break;
 
     default:
@@ -209,7 +210,7 @@ dplasma_zpltmg_genvect( parsec_context_t *parsec,
 
         /* Default type */
         dplasma_add2arena_tile( zpltmg_tp->arenas[PARSEC_zpltmg_hankel_DEFAULT_ARENA],
-                                A->mb*A->nb*sizeof(parsec_complex64_t),
+                                A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb );
 
@@ -268,11 +269,11 @@ dplasma_zpltmg_circul( parsec_context_t *parsec,
                        unsigned long long int seed )
 {
     int info;
-    parsec_complex64_t *V = (parsec_complex64_t*) malloc( A->m * sizeof(parsec_complex64_t) );
+    dplasma_complex64_t *V = (dplasma_complex64_t*) malloc( A->m * sizeof(dplasma_complex64_t) );
 
     CORE_zplrnt( A->m, 1, V, A->m, A->m, 0, 0, seed );
 
-    info = dplasma_zpltmg_generic(parsec, PlasmaMatrixCircul, A, V, seed);
+    info = dplasma_zpltmg_generic(parsec, dplasmaMatrixCircul, A, V, seed);
 
     free(V);
     return info;
@@ -312,7 +313,7 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
                        parsec_tiled_matrix_dc_t *A )
 {
     /* gallery('condex', A->m, 4, 100.) */
-    parsec_complex64_t theta = 100.;
+    dplasma_complex64_t theta = 100.;
     two_dim_block_cyclic_t *twodA = (two_dim_block_cyclic_t *)A;
     two_dim_block_cyclic_t Q;
     two_dim_block_cyclic_init( &Q, matrix_ComplexDouble, matrix_Tile,
@@ -324,9 +325,9 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
     parsec_data_collection_set_key((parsec_data_collection_t*)&Q, "Q");
 
     if (A->super.myrank == 0) {
-        parsec_complex64_t *Qmat;
+        dplasma_complex64_t *Qmat;
 
-        Qmat = (parsec_complex64_t*)(Q.mat);
+        Qmat = (dplasma_complex64_t*)(Q.mat);
 
         /* Initialize the Q matrix */
         CORE_zpltmg_condexq( A->m, A->n, Qmat, Q.super.lm );
@@ -335,7 +336,7 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
          * Conversion to tile layout
          */
         {
-            parsec_complex64_t *W = (parsec_complex64_t*) malloc (A->mb * sizeof(parsec_complex64_t) );
+            dplasma_complex64_t *W = (dplasma_complex64_t*) malloc (A->mb * sizeof(dplasma_complex64_t) );
             int *leaders = NULL;
             int i, nleaders;
 
@@ -347,7 +348,7 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
             for(i=0; i<nleaders; i++) {
 
                 /* cycle #i belongs to this thread, so shift it */
-                memcpy(W, Qmat + leaders[i*3] * A->mb, A->mb * sizeof(parsec_complex64_t) );
+                memcpy(W, Qmat + leaders[i*3] * A->mb, A->mb * sizeof(dplasma_complex64_t) );
                 CORE_zshiftw(leaders[i*3], leaders[i*3+1], A->mt, A->nb, A->mb, Qmat, W);
             }
 
@@ -355,8 +356,8 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
         }
     }
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1. + theta, A );
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaConjTrans,
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1. + theta, A );
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaConjTrans,
                    -theta, (parsec_tiled_matrix_dc_t*)&Q,
                            (parsec_tiled_matrix_dc_t*)&Q,
                    1.,     A );
@@ -405,7 +406,7 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
 {
     /* gallery('house', random, 0 ) */
     vector_two_dim_cyclic_t V;
-    parsec_complex64_t *Vmat, tau;
+    dplasma_complex64_t *Vmat, tau;
 
     vector_two_dim_cyclic_init( &V, matrix_ComplexDouble, matrix_VectorDiag,
                                 1, A->super.myrank,
@@ -414,7 +415,7 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
                                 (size_t)V.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(V.super.mtype));
     parsec_data_collection_set_key((parsec_data_collection_t*)&V, "V");
-    Vmat = (parsec_complex64_t*)(V.mat);
+    Vmat = (dplasma_complex64_t*)(V.mat);
 
     /* Initialize Householder vector */
     if (A->super.myrank == 0) {
@@ -430,7 +431,7 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
 #endif
 
     /* Compute the Householder matrix I - tau v * v' */
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., A);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., A);
     dplasma_zgerc( parsec, -tau,
                    (parsec_tiled_matrix_dc_t*)&V,
                    (parsec_tiled_matrix_dc_t*)&V,
@@ -481,65 +482,65 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
  ******************************************************************************/
 int
 dplasma_zpltmg( parsec_context_t *parsec,
-                PLASMA_enum mtxtype,
+                dplasma_enum_t mtxtype,
                 parsec_tiled_matrix_dc_t *A,
                 unsigned long long int seed)
 {
 
     switch( mtxtype ) {
-    case PlasmaMatrixCircul:
+    case dplasmaMatrixCircul:
         return dplasma_zpltmg_circul(parsec, A, seed);
         break;
 
-    case PlasmaMatrixChebvand:
+    case dplasmaMatrixChebvand:
         return dplasma_zpltmg_genvect(parsec, mtxtype,
                                       A, seed);
         break;
 
-    case PlasmaMatrixCondex:
+    case dplasmaMatrixCondex:
         return dplasma_zpltmg_condex(parsec, A);
         break;
 
-    case PlasmaMatrixFiedler:
+    case dplasmaMatrixFiedler:
         return dplasma_zpltmg_genvect(parsec, mtxtype,
                                       A, seed);
         break;
 
-    case PlasmaMatrixHankel:
+    case dplasmaMatrixHankel:
         return dplasma_zpltmg_genvect(parsec, mtxtype,
                                       A, seed);
         break;
 
-    case PlasmaMatrixHouse:
+    case dplasmaMatrixHouse:
         return dplasma_zpltmg_house(parsec, A, seed);
         break;
 
-    case PlasmaMatrixToeppd:
+    case dplasmaMatrixToeppd:
         return dplasma_zpltmg_genvect(parsec, mtxtype,
                                       A, seed);
         break;
 
-    case PlasmaMatrixCauchy:
-    case PlasmaMatrixCompan:
-    case PlasmaMatrixDemmel:
-    case PlasmaMatrixDorr:
-    case PlasmaMatrixFoster:
-    case PlasmaMatrixHadamard:
-    case PlasmaMatrixHilb:
-    case PlasmaMatrixInvhess:
-    case PlasmaMatrixKms:
-    case PlasmaMatrixLangou:
-    case PlasmaMatrixLehmer:
-    case PlasmaMatrixLotkin:
-    case PlasmaMatrixMinij:
-    case PlasmaMatrixMoler:
-    case PlasmaMatrixOrthog:
-    case PlasmaMatrixParter:
-    case PlasmaMatrixRandom:
-    case PlasmaMatrixRiemann:
-    case PlasmaMatrixRis:
-    case PlasmaMatrixWilkinson:
-    case PlasmaMatrixWright:
+    case dplasmaMatrixCauchy:
+    case dplasmaMatrixCompan:
+    case dplasmaMatrixDemmel:
+    case dplasmaMatrixDorr:
+    case dplasmaMatrixFoster:
+    case dplasmaMatrixHadamard:
+    case dplasmaMatrixHilb:
+    case dplasmaMatrixInvhess:
+    case dplasmaMatrixKms:
+    case dplasmaMatrixLangou:
+    case dplasmaMatrixLehmer:
+    case dplasmaMatrixLotkin:
+    case dplasmaMatrixMinij:
+    case dplasmaMatrixMoler:
+    case dplasmaMatrixOrthog:
+    case dplasmaMatrixParter:
+    case dplasmaMatrixRandom:
+    case dplasmaMatrixRiemann:
+    case dplasmaMatrixRis:
+    case dplasmaMatrixWilkinson:
+    case dplasmaMatrixWright:
         return dplasma_zpltmg_generic(parsec, mtxtype, A, NULL, seed);
         break;
     default:

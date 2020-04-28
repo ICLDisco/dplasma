@@ -20,11 +20,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-#include "core_zblas.h"
+#include "common.h"
 #include "primes.h"
 #include "gkkleader.h"
 

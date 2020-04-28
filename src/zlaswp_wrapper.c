@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -9,7 +9,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zlaswp.h"
 
@@ -68,7 +69,7 @@ dplasma_zlaswp_New(parsec_tiled_matrix_dc_t *A,
 
     /* A */
     dplasma_add2arena_tile( parsec_laswp->arenas[PARSEC_zlaswp_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 

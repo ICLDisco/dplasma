@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,18 +10,20 @@
 
 #include <cblas.h>
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 
 static int
 dplasma_zlascal_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          void *_A,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *args )
 {
-    parsec_complex64_t *A     = (parsec_complex64_t*)_A;
-    parsec_complex64_t  alpha = *((parsec_complex64_t*)args);
+    dplasma_complex64_t *A     = (dplasma_complex64_t*)_A;
+    dplasma_complex64_t  alpha = *((dplasma_complex64_t*)args);
     int i;
     int tempmm, tempnn, ldam;
     (void)es;
@@ -32,17 +34,17 @@ dplasma_zlascal_operator( parsec_execution_stream_t *es,
 
     /* Overwrite uplo when outside the diagonal */
     if (m != n) {
-        uplo = PlasmaUpperLower;
+        uplo = dplasmaUpperLower;
     }
 
     switch ( uplo ) {
-    case PlasmaUpper:
+    case dplasmaUpper:
         for(i=0; i<tempnn; i++) {
             cblas_zscal( dplasma_imin( i+1, tempmm ), CBLAS_SADDR(alpha), A+i*ldam, 1 );
         }
         break;
 
-    case PlasmaLower:
+    case dplasmaLower:
         for(i=0; i<tempnn; i++) {
             cblas_zscal( dplasma_imax( tempmm, tempmm-i ), CBLAS_SADDR(alpha), A+i*ldam, 1 );
         }
@@ -75,10 +77,10 @@ dplasma_zlascal_operator( parsec_execution_stream_t *es,
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is set:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is referenced.
- *          = PlasmaLower:      Only lower part is referenced.
- *          = PlasmaUpperHessenberg: A is an upper Hessenberg matrix (Not
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is referenced.
+ *          = dplasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperHessenberg: A is an upper Hessenberg matrix (Not
  *          supported)
  *
  * @param[in] alpha
@@ -107,11 +109,11 @@ dplasma_zlascal_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlascal_New( PLASMA_enum uplo,
-                     parsec_complex64_t alpha,
+dplasma_zlascal_New( dplasma_enum_t uplo,
+                     dplasma_complex64_t alpha,
                      parsec_tiled_matrix_dc_t *A )
 {
-    parsec_complex64_t *a = (parsec_complex64_t*)malloc(sizeof(parsec_complex64_t));
+    dplasma_complex64_t *a = (dplasma_complex64_t*)malloc(sizeof(dplasma_complex64_t));
     *a = alpha;
 
     return parsec_apply_New( uplo, A, dplasma_zlascal_operator, (void*)a );
@@ -162,10 +164,10 @@ dplasma_zlascal_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is set:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is referenced.
- *          = PlasmaLower:      Only lower part is referenced.
- *          = PlasmaUpperHessenberg: A is an upper Hessenberg matrix (Not
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is referenced.
+ *          = dplasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperHessenberg: A is an upper Hessenberg matrix (Not
  *          supported)
  *
  * @param[in] alpha
@@ -193,16 +195,16 @@ dplasma_zlascal_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zlascal( parsec_context_t     *parsec,
-                 PLASMA_enum          uplo,
-                 parsec_complex64_t    alpha,
+                 dplasma_enum_t          uplo,
+                 dplasma_complex64_t    alpha,
                  parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_zlascal = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) &&
-        (uplo != PlasmaUpper) &&
-        (uplo != PlasmaUpperLower))
+    if ((uplo != dplasmaLower) &&
+        (uplo != dplasmaUpper) &&
+        (uplo != dplasmaUpperLower))
     {
         dplasma_error("dplasma_zlascal", "illegal value of type");
         return -2;

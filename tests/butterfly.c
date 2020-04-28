@@ -1,3 +1,4 @@
+#include "dplasma.h"
 #include <stdint.h>
 
 typedef struct{
@@ -267,13 +268,13 @@ int rank_of(int i, int j){
 }
 
 
-PLASMA_Complex64_t* data_of(int i, int j){
+dplasma_complex64_t* data_of(int i, int j){
     uintptr_t ptr=0;
     btile_info_t Tc;
 
     Tc = map_B_tile_to_A(i, j, Np, mb, nb);
 
     ptr  = (uintptr_t)dcA.super.super.data_of(Tc.ip, Tc.jp);
-    ptr += Tc.offset*sizeof(PLASMA_Complex64_t);
-    return (PLASMA_Complex64_t*)ptr;
+    ptr += Tc.offset*sizeof(dplasma_complex64_t);
+    return (dplasma_complex64_t*)ptr;
 }

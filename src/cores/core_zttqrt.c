@@ -14,10 +14,8 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <lapacke.h>
+#include "common.h"
 #undef REAL
 #define COMPLEX
 
@@ -95,17 +93,37 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zttqrt = PCORE_zttqrt
+#define CORE_zttqrt PCORE_zttqrt
+/* Trick to call the version without tracing */
+#define CORE_zlaset PCORE_zlaset
+void
+CORE_zlaset(PLASMA_enum uplo, int n1, int n2,
+            PLASMA_Complex64_t alpha, PLASMA_Complex64_t beta,
+            PLASMA_Complex64_t *tileA, int ldtilea);
+#define CORE_zpemv PCORE_zpemv
+int
+CORE_zpemv(PLASMA_enum trans, int storev,
+           int M, int N, int L,
+           PLASMA_Complex64_t ALPHA,
+           const PLASMA_Complex64_t *A, int LDA,
+           const PLASMA_Complex64_t *X, int INCX,
+           PLASMA_Complex64_t BETA,
+           PLASMA_Complex64_t *Y, int INCY,
+           PLASMA_Complex64_t *WORK);
+#endif
 int CORE_zttqrt(int M, int N, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *TAU, parsec_complex64_t *WORK)
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *TAU, PLASMA_Complex64_t *WORK)
 {
     static int                ione  = 1;
-    static parsec_complex64_t zone  = 1.0;
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zone  = 1.0;
+    static PLASMA_Complex64_t zzero = 0.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int i, j, l, ii, sb, mi, ni;
 
     /* Check input arguments */
@@ -121,7 +139,7 @@ int CORE_zttqrt(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA2 < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA2 < max(1,M)) && (M > 0)) {
         coreblas_error(7, "Illegal value of LDA2");
         return -7;
     }
@@ -136,10 +154,10 @@ int CORE_zttqrt(int M, int N, int IB,
                  0., 0., T, LDT);
 
     for (ii = 0; ii < N; ii += IB) {
-        sb = coreblas_imin(N-ii, IB);
+        sb = min(N-ii, IB);
         for (i = 0; i < sb; i++) {
             j  = ii + i;
-            mi = coreblas_imin( j + 1, M );
+            mi = min( j + 1, M );
             ni = sb-i-1;
 
             /*
@@ -193,12 +211,12 @@ int CORE_zttqrt(int M, int N, int IB,
 
             if ( i > 0 ) {
 
-                l = coreblas_imin(i, coreblas_imax(0, M-ii));
+                l = min(i, max(0, M-ii));
                 alpha = -(TAU[j]);
 
                 CORE_zpemv(
                         PlasmaConjTrans, PlasmaColumnwise,
-                        coreblas_imin(j, M), i, l,
+                        min(j, M), i, l,
                         alpha, &A2[LDA2*ii], LDA2,
                                &A2[LDA2*j],  1,
                         zzero, &T[LDT*j],    1,
@@ -219,9 +237,9 @@ int CORE_zttqrt(int M, int N, int IB,
 
         /* Apply Q' to the rest of the matrix to the left  */
         if (N > ii+sb) {
-            mi = coreblas_imin(ii+sb, M);
+            mi = min(ii+sb, M);
             ni = N-(ii+sb);
-            l  = coreblas_imin(sb, coreblas_imax(0, mi-ii));
+            l  = min(sb, max(0, mi-ii));
             CORE_zparfb(
                 PlasmaLeft, PlasmaConjTrans,
                 PlasmaForward, PlasmaColumnwise,

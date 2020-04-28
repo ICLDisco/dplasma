@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2013 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -33,19 +33,19 @@ extern "C" %{
  */
 P            [type = "int"]
 Q            [type = "int"]
-ntype        [type = "PLASMA_enum"]
-uplo         [type = "PLASMA_enum"]
-diag         [type = "PLASMA_enum"]
+ntype        [type = "dplasma_enum_t"]
+uplo         [type = "dplasma_enum_t"]
+diag         [type = "dplasma_enum_t"]
 descA        [type = "const parsec_tiled_matrix_dc_t*"]
 Tdist        [type = "parsec_data_collection_t *"]
 norm         [type = "double *"]
 
 minMNT       [type = "int" hidden=on default="dplasma_imin( descA->mt, descA->nt )" ]
 minMN        [type = "int" hidden=on default="dplasma_imin( descA->m,  descA->n )"  ]
-MT           [type = "int" hidden=on default="(uplo == PlasmaUpper) ? minMNT : descA->mt"]
-NT           [type = "int" hidden=on default="(uplo == PlasmaLower) ? minMNT : descA->nt"]
-M            [type = "int" hidden=on default="(uplo == PlasmaUpper) ? minMN  : descA->m"]
-N            [type = "int" hidden=on default="(uplo == PlasmaLower) ? minMN  : descA->n"]
+MT           [type = "int" hidden=on default="(uplo == dplasmaUpper) ? minMNT : descA->mt"]
+NT           [type = "int" hidden=on default="(uplo == dplasmaLower) ? minMNT : descA->nt"]
+M            [type = "int" hidden=on default="(uplo == dplasmaUpper) ? minMN  : descA->m"]
+N            [type = "int" hidden=on default="(uplo == dplasmaLower) ? minMN  : descA->n"]
 
 /**************************************************
  *
@@ -58,12 +58,12 @@ STEP1(m,n)
 
     // Execution space
     m = 0 .. MT-1
-    nmin = %{ if (uplo == PlasmaUpper ) return m; else return 0; %}
-    nmax = %{ if (uplo == PlasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
+    nmin = %{ if (uplo == dplasmaUpper ) return m; else return 0; %}
+    nmax = %{ if (uplo == dplasmaLower ) return dplasma_imin(m, NT-1); else return NT-1; %}
     n = nmin .. nmax
 
-    mmin = %{ if (uplo == PlasmaLower ) return n; else return 0; %}
-    mmax = %{ if (uplo == PlasmaUpper ) return dplasma_imin(n, MT-1); else return MT-1; %}
+    mmin = %{ if (uplo == dplasmaLower ) return n; else return 0; %}
+    mmax = %{ if (uplo == dplasmaUpper ) return dplasma_imin(n, MT-1); else return MT-1; %}
 
     // Parallel partitioning
     :descA(m, n)
@@ -87,13 +87,13 @@ BODY
         memset( W, 0, descA->nb * sizeof(double) );
     }
 
-    if ( (m == n) && (uplo != PlasmaUpperLower) ) {
-        CORE_ztrasm( PlasmaColumnwise, uplo, diag,
+    if ( (m == n) && (uplo != dplasmaUpperLower) ) {
+        CORE_ztrasm( dplasmaColumnwise, uplo, diag,
                      tempmm, tempnn,
                      A, ldam, W);
     }
     else {
-        CORE_dzasum(PlasmaColumnwise, PlasmaUpperLower,
+        CORE_dzasum(dplasmaColumnwise, dplasmaUpperLower,
                     tempmm, tempnn,
                     A, ldam, W);
     }
@@ -112,12 +112,12 @@ STEP2(m, n)
     m = 0 .. P-1
     n = 0 .. NT-1
     row  = %{
-    if ( uplo == PlasmaLower ) {
+    if ( uplo == dplasmaLower ) {
         return (m >= n%P ) ? n + m - n%P : n + m + P - n%P;
     } else {
         return m;
     } %}
-    mmax = %{ if (uplo == PlasmaUpper ) return dplasma_imin(n, MT-1); else return MT-1; %}
+    mmax = %{ if (uplo == dplasmaUpper ) return dplasma_imin(n, MT-1); else return MT-1; %}
 
     // Parallel partitioning
     :Tdist(m, n)

@@ -2,24 +2,21 @@
 #define _DPLASMAJDF_H_
 
 #include "dplasma.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
+#include "cores/dplasma_cores.h"
 #include "parsec/private_mempool.h"
 #include "floputils.h"
 
-/* Check for LU recursive kernel version */
-#if (PLASMA_VERSION_MAJOR < 2) || ((PLASMA_VERSION_MAJOR == 2) && (PLASMA_VERSION_MINOR < 8))
-#warning "Please update your PLASMA library to 2.8.0 or higher"
-#define CORE_GETRF_270
-typedef void * CORE_zgetrf_data_t;
-typedef void * CORE_cgetrf_data_t;
-typedef void * CORE_dgetrf_data_t;
-typedef void * CORE_sgetrf_data_t;
-#endif
+/* sqrt function */
+#define dplasma_zsqrt csqrt
+#define dplasma_csqrt csqrtf
+#define dplasma_dsqrt sqrt
+#define dplasma_ssqrt sqrtf
 
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
 
-#define plasma_const( x )  plasma_lapack_constants[x]
 
 #ifdef PARSEC_CALL_TRACE
 #   include <stdlib.h>

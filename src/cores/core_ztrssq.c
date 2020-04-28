@@ -13,10 +13,8 @@
  *
  **/
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <lapacke.h>
+#include "common.h"
 
 #define COMPLEX
 
@@ -84,8 +82,12 @@
  *          \retval -k, the k-th argument had an illegal value
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrssq = PCORE_ztrssq
+#define CORE_ztrssq PCORE_ztrssq
+#endif
 int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
-                const parsec_complex64_t *A, int LDA,
+                const PLASMA_Complex64_t *A, int LDA,
                 double *scale, double *sumsq)
 {
     int i, j, imax;
@@ -94,16 +96,16 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
     double *ptr;
 
     if ( diag == PlasmaUnit ){
-        tmp = sqrt( coreblas_imin(M, N) );
+        tmp = sqrt( min(M, N) );
         UPDATE( 1., tmp );
     }
 
     if  (uplo == PlasmaUpper ) {
-        M = coreblas_imin(M, N);
+        M = min(M, N);
 
         for(j=0; j<N; j++) {
             ptr = (double*) ( A + j * LDA );
-            imax = coreblas_imin(j+1-idiag, M);
+            imax = min(j+1-idiag, M);
 
             for(i=0; i<imax; i++, ptr++) {
                 tmp = fabs(*ptr);
@@ -118,7 +120,7 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
         }
     }
     else {
-        N = coreblas_imin(M, N);
+        N = min(M, N);
 
         for(j=0; j<N; j++) {
             ptr = (double*) ( A + j * (LDA+1) + idiag );

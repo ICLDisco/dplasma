@@ -15,37 +15,26 @@
  */
 
 #include <math.h>
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
+#include "common.h"
 #include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #define COMPLEX
 #undef REAL
 
 extern int CORE_zhedrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K, int ib,
-                double alpha, parsec_complex64_t *A, int LDA,
-                double beta,  parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *D,    int incD,
-                parsec_complex64_t *WORK, int LWORK);
+                double alpha, PLASMA_Complex64_t *A, int LDA,
+                double beta,  PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *D,    int incD,
+                PLASMA_Complex64_t *WORK, int LWORK);
 
-int CORE_zhetf1_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA);
+int CORE_zhetf1_nopiv(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA);
 
-int CORE_zhetf3_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA);
+int CORE_zhetf3_nopiv(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA);
 
 void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         parsec_complex64_t *A, int LDA,
-                         parsec_complex64_t *WORK, int LDWORK,
+                         PLASMA_Complex64_t *A, int LDA,
+                         PLASMA_Complex64_t *WORK, int LDWORK,
                          int *INFO);
 
 /***************************************************************************//**
@@ -54,13 +43,13 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
  *
  **/
 void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         parsec_complex64_t *A, int LDA,
-                         parsec_complex64_t *WORK, int LDWORK,
+                         PLASMA_Complex64_t *A, int LDA,
+                         PLASMA_Complex64_t *WORK, int LDWORK,
                          int *INFO)
 {
     int i, k, sb;
-    parsec_complex64_t alpha;
-    static parsec_complex64_t zone  = (parsec_complex64_t) 1.0;
+    PLASMA_Complex64_t alpha;
+    static PLASMA_Complex64_t zone  = (PLASMA_Complex64_t) 1.0;
 
     /* Check input arguments */
     if (LDA < N) {
@@ -78,7 +67,7 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
 
     if ( uplo == PlasmaLower ) {
         for(i = 0; i < N; i += ib) {
-            sb = coreblas_imin(N-i, ib);
+            sb = min(N-i, ib);
 
             /* Factorize the diagonal block */
             *INFO = CORE_zhetf3_nopiv(uplo, sb, &A[LDA*i+i], LDA);
@@ -110,7 +99,7 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
         }
     } else {
         for(i = ((N-1) / ib)*ib; i > -1; i -= ib) {
-            sb = coreblas_imin(N-i, ib);
+            sb = min(N-i, ib);
 
             /* Factorize the diagonal block */
             *INFO = CORE_zhetf3_nopiv(uplo, sb, &A[LDA*i+i], LDA);
@@ -153,15 +142,15 @@ void CORE_zhetrf_nopiv(int uplo, int N, int ib,
  *  This is the unblocked version of the algorithm, calling Level 2 BLAS.
  *  Golub & Van Loan, Alg 4.1.2 page 139
  **/
-int CORE_zhetf1_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA)
+int CORE_zhetf1_nopiv(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA)
 {
 
-    static parsec_complex64_t zone = 1.0;
-    static parsec_complex64_t mzone=-1.0;
+    static PLASMA_Complex64_t zone = 1.0;
+    static PLASMA_Complex64_t mzone=-1.0;
 
     int i, j, k, incx, incy, incx2, INFO=0;
-    parsec_complex64_t alpha;
-    parsec_complex64_t *v = (parsec_complex64_t *)malloc(N*sizeof(parsec_complex64_t));
+    PLASMA_Complex64_t alpha;
+    PLASMA_Complex64_t *v = (PLASMA_Complex64_t *)malloc(N*sizeof(PLASMA_Complex64_t));
 
     (void)uplo;
     incx2 = 1;
@@ -225,7 +214,7 @@ int CORE_zhetf1_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA)
  *  A22 (if UPLO = 'L').
  *
  **/
-int CORE_zhetf3_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA)
+int CORE_zhetf3_nopiv(PLASMA_enum uplo, int N, PLASMA_Complex64_t *A, int LDA)
 {
     /* Quick return */
     if (N==1)
@@ -238,7 +227,7 @@ int CORE_zhetf3_nopiv(PLASMA_enum uplo, int N, parsec_complex64_t *A, int LDA)
 
     /**/
     int k, info = 0;
-    parsec_complex64_t *Ak1k, *A1k;
+    PLASMA_Complex64_t *Ak1k, *A1k;
     double Akk, alpha;
     
     if ( uplo == PlasmaLower )

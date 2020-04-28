@@ -39,19 +39,19 @@
  *          The level of verbosity required.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A and A0 are referenced;
- *          = PlasmaLower: Lower triangle of A and A0 are referenced.
+ *          = dplasmaUpper: Upper triangle of A and A0 are referenced;
+ *          = dplasmaLower: Lower triangle of A and A0 are referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A result of the Cholesky
- *          factorization. Holds L or U. If uplo == PlasmaUpper, the only the
- *          upper part is referenced, otherwise if uplo == PlasmaLower, the
+ *          factorization. Holds L or U. If uplo == dplasmaUpper, the only the
+ *          upper part is referenced, otherwise if uplo == dplasmaLower, the
  *          lower part is referenced.
  *
  * @param[in] A0
  *          Descriptor of the original distributed matrix A before
- *          factorization. If uplo == PlasmaUpper, the only the upper part is
- *          referenced, otherwise if uplo == PlasmaLower, the lower part is
+ *          factorization. If uplo == dplasmaUpper, the only the upper part is
+ *          referenced, otherwise if uplo == dplasmaLower, the lower part is
  *          referenced.
  *
  *******************************************************************************
@@ -62,7 +62,7 @@
  *
  ******************************************************************************/
 int check_zpotrf( parsec_context_t *parsec, int loud,
-                  PLASMA_enum uplo,
+                  dplasma_enum_t uplo,
                   parsec_tiled_matrix_dc_t *A,
                   parsec_tiled_matrix_dc_t *A0 )
 {
@@ -75,7 +75,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     int M = A->m;
     int N = A->n;
     double eps = LAPACKE_dlamch_work('e');
-    PLASMA_enum side;
+    dplasma_enum_t side;
 
     two_dim_block_cyclic_init(&LLt, matrix_ComplexDouble, matrix_Tile,
                               A->super.nodes, twodA->grid.rank,
@@ -86,20 +86,20 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                                   (size_t)LLt.super.bsiz *
                                   (size_t)parsec_datadist_getsizeoftype(LLt.super.mtype));
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 0.,(parsec_tiled_matrix_dc_t *)&LLt );
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_dc_t *)&LLt );
     dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_dc_t *)&LLt );
 
     /* Compute LL' or U'U  */
-    side = (uplo == PlasmaUpper ) ? PlasmaLeft : PlasmaRight;
-    dplasma_ztrmm( parsec, side, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0,
+    side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
+    dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
                    A, (parsec_tiled_matrix_dc_t*)&LLt);
 
     /* compute LL' - A or U'U - A */
-    dplasma_ztradd( parsec, uplo, PlasmaNoTrans,
+    dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
                     -1.0, A0, 1., (parsec_tiled_matrix_dc_t*)&LLt);
 
-    Anorm = dplasma_zlanhe(parsec, PlasmaInfNorm, uplo, A0);
-    Rnorm = dplasma_zlanhe(parsec, PlasmaInfNorm, uplo,
+    Anorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, A0);
+    Rnorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo,
                            (parsec_tiled_matrix_dc_t*)&LLt);
 
     result = Rnorm / ( Anorm * N * eps ) ;
@@ -154,13 +154,13 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
  *          The level of verbosity required.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A result of the Cholesky
- *          factorization. Holds L or U. If uplo == PlasmaUpper, the only the
- *          upper part is referenced, otherwise if uplo == PlasmaLower, the
+ *          factorization. Holds L or U. If uplo == dplasmaUpper, the only the
+ *          upper part is referenced, otherwise if uplo == dplasmaLower, the
  *          lower part is referenced.
  *
  * @param[in,out] b
@@ -178,7 +178,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
  *
  ******************************************************************************/
 int check_zaxmb( parsec_context_t *parsec, int loud,
-                 PLASMA_enum uplo,
+                 dplasma_enum_t uplo,
                  parsec_tiled_matrix_dc_t *A,
                  parsec_tiled_matrix_dc_t *b,
                  parsec_tiled_matrix_dc_t *x )
@@ -191,14 +191,14 @@ int check_zaxmb( parsec_context_t *parsec, int loud,
     int N = b->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlanhe(parsec, PlasmaInfNorm, uplo, A);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, b);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, x);
+    Anorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, A);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, b);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, x);
 
     /* Compute b - A*x */
-    dplasma_zhemm( parsec, PlasmaLeft, uplo, -1.0, A, x, 1.0, b);
+    dplasma_zhemm( parsec, dplasmaLeft, uplo, -1.0, A, x, 1.0, b);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, b);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, b);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * N * eps ) ;
 
@@ -245,8 +245,8 @@ int check_zaxmb( parsec_context_t *parsec, int loud,
  *          The level of verbosity required.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed original matrix A.
@@ -263,7 +263,7 @@ int check_zaxmb( parsec_context_t *parsec, int loud,
  *
  ******************************************************************************/
 int check_zpoinv( parsec_context_t *parsec, int loud,
-                  PLASMA_enum uplo,
+                  dplasma_enum_t uplo,
                   parsec_tiled_matrix_dc_t *A,
                   parsec_tiled_matrix_dc_t *Ainv )
 {
@@ -284,16 +284,16 @@ int check_zpoinv( parsec_context_t *parsec, int loud,
                                   (size_t)Id.super.bsiz *
                                   (size_t)parsec_datadist_getsizeoftype(Id.super.mtype));
 
-    dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
     /* Id - A^-1 * A */
-    dplasma_zhemm(parsec, PlasmaLeft, uplo,
+    dplasma_zhemm(parsec, dplasmaLeft, uplo,
                   -1., Ainv, A,
                   1., (parsec_tiled_matrix_dc_t *)&Id );
 
-    Anorm    = dplasma_zlanhe( parsec, PlasmaOneNorm, uplo, A );
-    Ainvnorm = dplasma_zlanhe( parsec, PlasmaOneNorm, uplo, Ainv );
-    Rnorm    = dplasma_zlange( parsec, PlasmaOneNorm, (parsec_tiled_matrix_dc_t*)&Id );
+    Anorm    = dplasma_zlanhe( parsec, dplasmaOneNorm, uplo, A );
+    Ainvnorm = dplasma_zlanhe( parsec, dplasmaOneNorm, uplo, Ainv );
+    Rnorm    = dplasma_zlange( parsec, dplasmaOneNorm, (parsec_tiled_matrix_dc_t*)&Id );
 
     result = Rnorm / ( (Anorm*Ainvnorm)*A->n*eps );
     if ( loud > 2 ) {

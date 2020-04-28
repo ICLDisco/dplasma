@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 The University of Tennessee and The University
+ * Copyright (c) 2013-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -9,7 +9,7 @@
 
 #include "common.h"
 #include "flops.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/superscalar/insert_function.h"
@@ -22,9 +22,9 @@ int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo;
+    int uplo;
     int m, lda, *info;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
 
     parsec_dtd_unpack_args(this_task, &uplo, &m, &A, &lda, &info);
 
@@ -37,10 +37,10 @@ int
 parsec_core_trsm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum side, uplo, trans, diag;
+    int side, uplo, trans, diag;
     int  m, n, lda, ldc;
-    parsec_complex64_t alpha;
-    parsec_complex64_t *A, *C;
+    dplasma_complex64_t alpha;
+    dplasma_complex64_t *A, *C;
 
     parsec_dtd_unpack_args(this_task, &side, &uplo, &trans, &diag, &m, &n,
                            &alpha, &A, &lda, &C, &ldc);
@@ -57,12 +57,12 @@ int
 parsec_core_herk(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum uplo, trans;
+    int uplo, trans;
     int m, n, lda, ldc;
-    parsec_complex64_t alpha;
-    parsec_complex64_t beta;
-    parsec_complex64_t *A;
-    parsec_complex64_t *C;
+    dplasma_complex64_t alpha;
+    dplasma_complex64_t beta;
+    dplasma_complex64_t *A;
+    dplasma_complex64_t *C;
 
     parsec_dtd_unpack_args(this_task, &uplo, &trans, &m, &n, &alpha, &A,
                            &lda, &beta, &C, &ldc);
@@ -78,12 +78,12 @@ int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum transA, transB;
+    int transA, transB;
     int m, n, k, lda, ldb, ldc;
-    parsec_complex64_t alpha, beta;
-    parsec_complex64_t *A;
-    parsec_complex64_t *B;
-    parsec_complex64_t *C;
+    dplasma_complex64_t alpha, beta;
+    dplasma_complex64_t *A;
+    dplasma_complex64_t *B;
+    dplasma_complex64_t *C;
 
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
                            &A, &lda, &B, &ldb, &beta, &C, &ldc);
@@ -101,14 +101,14 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaUpper;
+    int uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 
     int m, n, k, total; /* loop counter */
     /* Parameters passed on to Insert_task() */
     int tempkm, tempmm, ldak, ldam, side, transA_p, transA_g, diag, trans, transB, ldan;
-    parsec_complex64_t alpha_trsm, alpha_herk, beta;
+    dplasma_complex64_t alpha_trsm, alpha_herk, beta;
 
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 
     /* Allocating data arrays to be used by comm engine */
     dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                            dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                            dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -162,17 +162,17 @@ int main(int argc, char **argv)
     /* start parsec context */
     parsec_context_start( parsec );
 
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
 
-        side = PlasmaRight;
-        transA_p = PlasmaConjTrans;
-        diag = PlasmaNonUnit;
+        side = dplasmaRight;
+        transA_p = dplasmaConjTrans;
+        diag = dplasmaNonUnit;
         alpha_trsm = 1.0;
-        trans = PlasmaNoTrans;
+        trans = dplasmaNoTrans;
         alpha_herk = -1.0;
         beta = 1.0;
-        transB = PlasmaConjTrans;
-        transA_g = PlasmaNoTrans;
+        transB = dplasmaConjTrans;
+        transA_g = dplasmaNoTrans;
 
         total = dcA.super.mt;
         /* Testing Insert Function */
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
                                    sizeof(int),      &diag,               VALUE,
                                    sizeof(int),      &tempmm,             VALUE,
                                    sizeof(int),      &dcA.super.nb,    VALUE,
-                                   sizeof(parsec_complex64_t),      &alpha_trsm,         VALUE,
+                                   sizeof(dplasma_complex64_t),      &alpha_trsm,         VALUE,
                                    PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, k), INPUT | TILE_FULL,
                                    sizeof(int),      &ldak,               VALUE,
                                    PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, m, k), INOUT | TILE_FULL | AFFINITY,
@@ -218,10 +218,10 @@ int main(int argc, char **argv)
                                    sizeof(int),       &trans,              VALUE,
                                    sizeof(int),       &tempmm,             VALUE,
                                    sizeof(int),       &dcA.super.mb,    VALUE,
-                                   sizeof(parsec_complex64_t),       &alpha_herk,         VALUE,
+                                   sizeof(dplasma_complex64_t),       &alpha_herk,         VALUE,
                                    PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k), INPUT | TILE_FULL,
                                    sizeof(int),       &ldam,               VALUE,
-                                   sizeof(parsec_complex64_t),       &beta,               VALUE,
+                                   sizeof(dplasma_complex64_t),       &beta,               VALUE,
                                    PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, m), INOUT | TILE_FULL | AFFINITY,
                                    sizeof(int),       &ldam,               VALUE,
                                    PARSEC_DTD_ARG_END );
@@ -235,12 +235,12 @@ int main(int argc, char **argv)
                                        sizeof(int),        &tempmm,             VALUE,
                                        sizeof(int),        &dcA.super.mb,    VALUE,
                                        sizeof(int),        &dcA.super.mb,    VALUE,
-                                       sizeof(parsec_complex64_t),        &alpha_herk,         VALUE,
+                                       sizeof(dplasma_complex64_t),        &alpha_herk,         VALUE,
                                        PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, n, k), INPUT | TILE_FULL,
                                        sizeof(int),        &ldan,               VALUE,
                                        PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, m, k), INPUT | TILE_FULL,
                                        sizeof(int),        &ldam,               VALUE,
-                                       sizeof(parsec_complex64_t),        &beta,               VALUE,
+                                       sizeof(dplasma_complex64_t),        &beta,               VALUE,
                                        PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, n, m), INOUT | TILE_FULL | AFFINITY,
                                        sizeof(int),        &ldan,               VALUE,
                                        PARSEC_DTD_ARG_END );
@@ -249,15 +249,15 @@ int main(int argc, char **argv)
             }
         }
     } else {
-        side = PlasmaLeft;
-        transA_p = PlasmaConjTrans;
-        diag = PlasmaNonUnit;
+        side = dplasmaLeft;
+        transA_p = dplasmaConjTrans;
+        diag = dplasmaNonUnit;
         alpha_trsm = 1.0;
-        trans = PlasmaConjTrans;
+        trans = dplasmaConjTrans;
         alpha_herk = -1.0;
         beta = 1.0;
-        transB = PlasmaNoTrans;
-        transA_g = PlasmaConjTrans;
+        transB = dplasmaNoTrans;
+        transA_g = dplasmaConjTrans;
 
         total = dcA.super.nt;
 
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
                                    sizeof(int),      &diag,               VALUE,
                                    sizeof(int),      &dcA.super.nb,    VALUE,
                                    sizeof(int),      &tempmm,             VALUE,
-                                   sizeof(parsec_complex64_t),      &alpha_trsm,         VALUE,
+                                   sizeof(dplasma_complex64_t),      &alpha_trsm,         VALUE,
                                    PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, k), INPUT | TILE_FULL,
                                    sizeof(int),      &ldak,               VALUE,
                                    PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, m), INOUT | TILE_FULL | AFFINITY,
@@ -301,10 +301,10 @@ int main(int argc, char **argv)
                                    sizeof(int),       &trans,              VALUE,
                                    sizeof(int),       &tempmm,             VALUE,
                                    sizeof(int),       &dcA.super.mb,    VALUE,
-                                   sizeof(parsec_complex64_t),       &alpha_herk,         VALUE,
+                                   sizeof(dplasma_complex64_t),       &alpha_herk,         VALUE,
                                    PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m), INPUT | TILE_FULL,
                                    sizeof(int),       &ldak,               VALUE,
-                                   sizeof(parsec_complex64_t),    &beta,                  VALUE,
+                                   sizeof(dplasma_complex64_t),    &beta,                  VALUE,
                                    PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, m), INOUT | TILE_FULL | AFFINITY,
                                    sizeof(int),       &ldam,               VALUE,
                                    PARSEC_DTD_ARG_END );
@@ -318,12 +318,12 @@ int main(int argc, char **argv)
                                       sizeof(int),        &dcA.super.mb,    VALUE,
                                       sizeof(int),        &tempmm,             VALUE,
                                       sizeof(int),        &dcA.super.mb,    VALUE,
-                                      sizeof(parsec_complex64_t),        &alpha_herk,         VALUE,
+                                      sizeof(dplasma_complex64_t),        &alpha_herk,         VALUE,
                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, k, m), INPUT | TILE_FULL,
                                       sizeof(int),        &ldak,               VALUE,
                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, k, n), INPUT | TILE_FULL,
                                       sizeof(int),        &ldak,               VALUE,
-                                      sizeof(parsec_complex64_t),        &beta,               VALUE,
+                                      sizeof(dplasma_complex64_t),        &beta,               VALUE,
                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, m, n), INOUT | TILE_FULL | AFFINITY,
                                       sizeof(int),        &ldan,               VALUE,
                                       PARSEC_DTD_ARG_END );
@@ -378,7 +378,7 @@ int main(int argc, char **argv)
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
                                    nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, KP, KQ, P));
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
         dplasma_zpotrs(parsec, uplo,

@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2019 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -11,7 +11,7 @@ extern "C" %{
  *
  */
 #include "dplasmajdf.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
 %}
@@ -44,7 +44,7 @@ ztsqrt_ztsqrt(k)
 
 BODY
 {
-    parsec_complex64_t *lA1 = ((parsec_complex64_t*)A1) + k * descA1->nb;
+    dplasma_complex64_t *lA1 = ((dplasma_complex64_t*)A1) + k * descA1->nb;
     int tempkn = (k == (descA2->nt-1)) ? (descA2->n - k * descA2->nb) : descA2->nb;
     int lda1 = BLKLDD( descA1, 0 );
     int lda2 = BLKLDD( descA2, 0 );
@@ -89,18 +89,18 @@ ztsqrt_ztsmqr(k, n)
 
 BODY
 {
-    parsec_complex64_t *lA1 = ((parsec_complex64_t*)A1) + k * descA1->nb;
+    dplasma_complex64_t *lA1 = ((dplasma_complex64_t*)A1) + k * descA1->nb;
     int tempnn = (n == (descA2->nt-1)) ? (descA2->n - n * descA2->nb) : descA2->nb;
     int lda1 = BLKLDD( descA1, 0 );
     int lda2 = BLKLDD( descA2, 0 );
 
     printlog("CORE_ztsmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
+             "\t(dplasmaLeft, dplasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], descT->mb, p_elem_A, ldwork)\n",
              k, k, n, k, n, A1, k, n, A2, k, k, V, k, k, T);
 
     void *p_elem_W = parsec_private_memory_pop( p_work );
 
-    CORE_ztsmqr(PlasmaLeft, PlasmaConjTrans,
+    CORE_ztsmqr(dplasmaLeft, dplasmaConjTrans,
                 descA1->nb, tempnn, descA2->m, tempnn, descA1->nb, ib,
                 lA1 /* descA1(n) */, lda1,
                 A2  /* descA2(n) */, lda2,
@@ -194,13 +194,13 @@ dplasma_zgeqrfr_tsqrt_New( parsec_tiled_matrix_dc_t *A1,
 
     /* Default type */
     dplasma_add2arena_rectangle( tsqrt->arenas[PARSEC_zgeqrfr_tsqrt_DEFAULT_ARENA],
-                                 A1->mb*A1->nb*sizeof(parsec_complex64_t),
+                                 A1->mb*A1->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A1->mb, A1->nb, -1 );
 
     /* Little T */
     dplasma_add2arena_rectangle( tsqrt->arenas[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ARENA],
-                                 T->mb*T->nb*sizeof(parsec_complex64_t),
+                                 T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
 

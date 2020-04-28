@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- *  Copyright (c) 2010-2013
+ *  Copyright (c) 2010-2020
  *
  *  The University of Tennessee and The University
  *  of Tennessee Research Foundation.  All rights
@@ -14,8 +14,8 @@ extern "C" %{
 
 %}
 
-uplo      [type = "PLASMA_enum"]
-trans     [type = "PLASMA_enum"]
+uplo      [type = "dplasma_enum_t"]
+trans     [type = "dplasma_enum_t"]
 alpha     [type = "double"]
 descA     [type = "const parsec_tiled_matrix_dc_t*"]
 beta      [type = "double"]
@@ -92,15 +92,15 @@ BODY
     int tempmm = ((m)==(descC->mt-1)) ? (descC->m-(m*descC->mb)) : descC->mb;
     int tempnn = (n==(descC->nt-1)) ? (descC->n-(n*descC->nb)) : descC->nb;
     int tempkm = (k==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
-    parsec_complex64_t zalpha = (parsec_complex64_t)alpha;
+    dplasma_complex64_t zalpha = (dplasma_complex64_t)alpha;
     int ldak = BLKLDD( descA, k );
-    parsec_complex64_t zbeta = (k==0) ? ((parsec_complex64_t)beta) : ((double)1.);
+    dplasma_complex64_t zbeta = (k==0) ? ((dplasma_complex64_t)beta) : ((double)1.);
     int ldcm = BLKLDD( descC, m );
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
-             "\t(trans, PlasmaNoTrans, tempmm, tempnn, tempkm, zalpha, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, zbeta, C(%d,%d)[%p], ldcm)\n",
+             "\t(trans, dplasmaNoTrans, tempmm, tempnn, tempkm, zalpha, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, zbeta, C(%d,%d)[%p], ldcm)\n",
              n, m, k, k, m, A, k, n, B, m, n, C);
-    CORE_zgemm(trans, PlasmaNoTrans, tempmm,
+    CORE_zgemm(trans, dplasmaNoTrans, tempmm,
                tempnn, tempkm, zalpha,
                A /* descA(k,m) */, ldak, B /* descA(k,n) */,
                ldak, zbeta, C /* descC(m,n) */,

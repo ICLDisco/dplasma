@@ -14,12 +14,9 @@
  * @precisions normal z -> c d s
  *
  **/
-
+#include <cblas.h>
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -66,13 +63,17 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgessm = PCORE_zgessm
+#define CORE_zgessm PCORE_zgessm
+#endif
 int CORE_zgessm(int M, int N, int K, int IB,
                 const int *IPIV,
-                const parsec_complex64_t *L, int LDL,
-                parsec_complex64_t *A, int LDA)
+                const PLASMA_Complex64_t *L, int LDL,
+                PLASMA_Complex64_t *A, int LDA)
 {
-    static parsec_complex64_t zone  =  1.0;
-    static parsec_complex64_t mzone = -1.0;
+    static PLASMA_Complex64_t zone  =  1.0;
+    static PLASMA_Complex64_t mzone = -1.0;
     static int                ione  =  1;
 
     int i, sb;
@@ -95,11 +96,11 @@ int CORE_zgessm(int M, int N, int K, int IB,
         coreblas_error(4, "Illegal value of IB");
         return -4;
     }
-    if ((LDL < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDL < max(1,M)) && (M > 0)) {
         coreblas_error(7, "Illegal value of LDL");
         return -7;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(9, "Illegal value of LDA");
         return -9;
     }
@@ -109,7 +110,7 @@ int CORE_zgessm(int M, int N, int K, int IB,
         return PLASMA_SUCCESS;
 
     for(i = 0; i < K; i += IB) {
-        sb = coreblas_imin(IB, K-i);
+        sb = min(IB, K-i);
         /*
          * Apply interchanges to columns I*IB+1:IB*( I+1 )+1.
          */

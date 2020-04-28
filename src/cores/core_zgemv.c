@@ -13,10 +13,8 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <cblas.h>
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -79,9 +77,9 @@
 #endif
 void CORE_zgemv(PLASMA_enum trans,
                 int m, int n,
-                parsec_complex64_t alpha, const parsec_complex64_t *A, int lda,
-                                          const parsec_complex64_t *x, int incx,
-                parsec_complex64_t beta,        parsec_complex64_t *y, int incy)
+                PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int lda,
+                                          const PLASMA_Complex64_t *x, int incx,
+                PLASMA_Complex64_t beta,        PLASMA_Complex64_t *y, int incy)
 {
     cblas_zgemv(
         CblasColMajor,

@@ -13,12 +13,9 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
-#define A(m, n) PLASMA_BLKADDR(descA, parsec_complex64_t, m, n)
+#define A(m, n) BLKADDR(descA, PLASMA_Complex64_t, m, n)
 
 /***************************************************************************//**
  *
@@ -58,7 +55,11 @@
  *
  *******************************************************************************
  */
-void CORE_zlaswp(int N, parsec_complex64_t *A, int LDA, int I1, int I2, const int *IPIV, int INC)
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlaswp = PCORE_zlaswp
+#define CORE_zlaswp PCORE_zlaswp
+#endif
+void CORE_zlaswp(int N, PLASMA_Complex64_t *A, int LDA, int I1, int I2, const int *IPIV, int INC)
 {
     LAPACKE_zlaswp_work( LAPACK_COL_MAJOR, N, A, LDA, I1, I2, IPIV, INC );
 }
@@ -99,10 +100,14 @@ void CORE_zlaswp(int N, parsec_complex64_t *A, int LDA, int I1, int I2, const in
  *
  *******************************************************************************
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlaswp_ontile = PCORE_zlaswp_ontile
+#define CORE_zlaswp_ontile PCORE_zlaswp_ontile
+#endif
 int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc)
 {
     int i, j, ip, it;
-    parsec_complex64_t *A1;
+    PLASMA_Complex64_t *A1;
     int lda1, lda2;
 
     /* Change i1 to C notation */
@@ -129,7 +134,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
     if (inc > 0) {
         it = i1 / descA.mb;
         A1 = A(it, 0);
-        lda1 = PLASMA_BLKLDD(descA, 0);
+        lda1 = BLKLDD(descA, 0);
 
         for (j = i1; j < i2; ++j, ipiv+=inc) {
             ip = (*ipiv) - descA.i - 1;
@@ -137,7 +142,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
             {
                 it = ip / descA.mb;
                 i  = ip % descA.mb;
-                lda2 = PLASMA_BLKLDD(descA, it);
+                lda2 = BLKLDD(descA, it);
                 cblas_zswap(descA.n, A1       + j, lda1,
                                      A(it, 0) + i, lda2 );
             }
@@ -147,7 +152,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
     {
         it = (i2-1) / descA.mb;
         A1 = A(it, 0);
-        lda1 = PLASMA_BLKLDD(descA, it);
+        lda1 = BLKLDD(descA, it);
 
         i1--;
         ipiv = &ipiv[(1-i2)*inc];
@@ -157,7 +162,7 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
             {
                 it = ip / descA.mb;
                 i  = ip % descA.mb;
-                lda2 = PLASMA_BLKLDD(descA, it);
+                lda2 = BLKLDD(descA, it);
                 cblas_zswap(descA.n, A1       + j, lda1,
                                      A(it, 0) + i, lda2 );
             }
@@ -212,10 +217,14 @@ int CORE_zlaswp_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
  *
  *******************************************************************************
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zswptr_ontile = PCORE_zswptr_ontile
+#define CORE_zswptr_ontile PCORE_zswptr_ontile
+#endif
 int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc,
-                       const parsec_complex64_t *Akk, int ldak)
+                       const PLASMA_Complex64_t *Akk, int ldak)
 {
-    parsec_complex64_t zone  = 1.0;
+    PLASMA_Complex64_t zone  = 1.0;
     int lda;
     int m = descA.mt == 1 ? descA.m : descA.mb;
 
@@ -234,7 +243,7 @@ int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
 
     CORE_zlaswp_ontile(descA, i1, i2, ipiv, inc);
 
-    lda = PLASMA_BLKLDD(descA, 0);
+    lda = BLKLDD(descA, 0);
     cblas_ztrsm( CblasColMajor, CblasLeft, CblasLower,
                  CblasNoTrans, CblasUnit,
                  m, descA.n, CBLAS_SADDR(zone),
@@ -280,10 +289,14 @@ int CORE_zswptr_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int i
  *
  *******************************************************************************
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlaswpc_ontile = PCORE_zlaswpc_ontile
+#define CORE_zlaswpc_ontile PCORE_zlaswpc_ontile
+#endif
 int CORE_zlaswpc_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int inc)
 {
     int i, j, ip, it;
-    parsec_complex64_t *A1;
+    PLASMA_Complex64_t *A1;
     int lda;
 
     /* Change i1 to C notation */
@@ -307,7 +320,7 @@ int CORE_zlaswpc_ontile(PLASMA_desc descA, int i1, int i2, const int *ipiv, int 
         return -3;
     }
 
-    lda = PLASMA_BLKLDD(descA, 0);
+    lda = BLKLDD(descA, 0);
 
     if (inc > 0) {
         it = i1 / descA.nb;

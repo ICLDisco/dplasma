@@ -14,12 +14,10 @@
  * @precisions normal z -> c d s
  *
  **/
+#include "common.h"
 #include <string.h>
+#include <cblas.h>
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
 
 /***************************************************************************//**
  *
@@ -88,18 +86,29 @@
  *
  ******************************************************************************/
 
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztstrf = PCORE_ztstrf
+#define CORE_ztstrf PCORE_ztstrf
+#define CORE_zssssm PCORE_zssssm
+int  CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
+                 PLASMA_Complex64_t *A1, int LDA1,
+                 PLASMA_Complex64_t *A2, int LDA2,
+                 const PLASMA_Complex64_t *L1, int LDL1,
+                 const PLASMA_Complex64_t *L2, int LDL2,
+                 const int *IPIV);
+#endif
 int CORE_ztstrf(int M, int N, int IB, int NB,
-                parsec_complex64_t *U, int LDU,
-                parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *L, int LDL,
+                PLASMA_Complex64_t *U, int LDU,
+                PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *L, int LDL,
                 int *IPIV,
-                parsec_complex64_t *WORK, int LDWORK,
+                PLASMA_Complex64_t *WORK, int LDWORK,
                 int *INFO)
 {
-    static parsec_complex64_t zzero = 0.0;
-    static parsec_complex64_t mzone =-1.0;
+    static PLASMA_Complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t mzone =-1.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int i, j, ii, sb;
     int im, ip;
 
@@ -117,15 +126,15 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDU < coreblas_imax(1,NB)) && (NB > 0)) {
+    if ((LDU < max(1,NB)) && (NB > 0)) {
         coreblas_error(6, "Illegal value of LDU");
         return -6;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDL < coreblas_imax(1,IB)) && (IB > 0)) {
+    if ((LDL < max(1,IB)) && (IB > 0)) {
         coreblas_error(10, "Illegal value of LDL");
         return -10;
     }
@@ -135,11 +144,11 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
         return PLASMA_SUCCESS;
 
     /* Set L to 0 */
-    memset(L, 0, LDL*N*sizeof(parsec_complex64_t));
+    memset(L, 0, LDL*N*sizeof(PLASMA_Complex64_t));
 
     ip = 0;
     for (ii = 0; ii < N; ii += IB) {
-        sb = coreblas_imin(N-ii, IB);
+        sb = min(N-ii, IB);
 
         for (i = 0; i < sb; i++) {
             im = cblas_izamax(M, &A[LDA*(ii+i)], 1);
@@ -169,7 +178,7 @@ int CORE_ztstrf(int M, int N, int IB, int NB,
                 *INFO = ii+i+1;
             }
 
-            alpha = ((parsec_complex64_t)1. / U[LDU*(ii+i)+ii+i]);
+            alpha = ((PLASMA_Complex64_t)1. / U[LDU*(ii+i)+ii+i]);
             cblas_zscal(M, CBLAS_SADDR(alpha), &A[LDA*(ii+i)], 1);
             cblas_zcopy(M, &A[LDA*(ii+i)], 1, &WORK[LDWORK*i], 1);
             cblas_zgeru(

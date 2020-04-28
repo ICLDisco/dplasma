@@ -7,11 +7,9 @@
  *
  */
 #include "parsec.h"
-#include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#include <core_blas.h>
 
 #include "zgetrf_ptgpanel.h"
 
@@ -36,25 +34,25 @@ dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A,
 
     /* A */
     dplasma_add2arena_tile( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* SWAP */
     dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_SWAP_ARENA],
-                                 (2*nb+1)*sizeof(parsec_complex64_t),
+                                 (2*nb+1)*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, 2*nb+1, 1, -1 );
 
     /* MAXL */
     dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_MAXL_ARENA],
-                                 (nb+1)*sizeof(parsec_complex64_t),
+                                 (nb+1)*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, 1, nb+1, -1 );
 
     /* UMES */
     dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_UMES_ARENA],
-                                 IB*nb*sizeof(parsec_complex64_t),
+                                 IB*nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, IB, nb, -1 );
 

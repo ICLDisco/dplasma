@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -8,7 +8,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "map2.h"
 
@@ -37,16 +38,16 @@
  * @param[in] uplo
  *          Specifies on which part of matrices A and B, the operator must be
  *          applied
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is referenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is referenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is non-transposed or transposed when
  *          given to the map function
- *          = PlasmaNoTrans:   map( A(m,n), B(m,n) )
- *          = PlasmaTrans:     map( A(n,m), B(m,n) )
- *          = PlasmaConjTrans: map( A(n,m), B(m,n) ), and conj is forwarded to
+ *          = dplasmaNoTrans:   map( A(m,n), B(m,n) )
+ *          = dplasmaTrans:     map( A(n,m), B(m,n) )
+ *          = dplasmaConjTrans: map( A(n,m), B(m,n) ), and conj is forwarded to
  *          the operator if required.
  *
  * @param[in] A
@@ -87,8 +88,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t *
-dplasma_map2_New( PLASMA_enum uplo,
-                  PLASMA_enum trans,
+dplasma_map2_New( dplasma_enum_t uplo,
+                  dplasma_enum_t trans,
                   const parsec_tiled_matrix_dc_t *A,
                   parsec_tiled_matrix_dc_t *B,
                   tiled_matrix_binary_op_t operator,
@@ -96,25 +97,25 @@ dplasma_map2_New( PLASMA_enum uplo,
 {
     parsec_map2_taskpool_t *parsec_map2 = NULL;
 
-    if ((uplo != PlasmaUpperLower) &&
-        (uplo != PlasmaUpper)      &&
-        (uplo != PlasmaLower))
+    if ((uplo != dplasmaUpperLower) &&
+        (uplo != dplasmaUpper)      &&
+        (uplo != dplasmaLower))
     {
         dplasma_error("dplasma_map2", "illegal value of uplo");
         return NULL;
     }
 
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans))
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans))
     {
         dplasma_error("dplasma_map2", "illegal value of trans");
         return NULL;
     }
 
-    if ( ((trans == PlasmaNoTrans) &&
+    if ( ((trans == dplasmaNoTrans) &&
           ((A->mt != B->mt) || (A->nt != B->nt))) ||
-         ((trans != PlasmaNoTrans) &&
+         ((trans != dplasmaNoTrans) &&
           ((A->nt != B->mt) || (A->mt != B->nt))) )
     {
         dplasma_error("dplasma_map2", "dimension of A and B don't match");
@@ -129,13 +130,13 @@ dplasma_map2_New( PLASMA_enum uplo,
     switch( A->mtype ) {
     case matrix_ComplexDouble :
         dplasma_add2arena_tile( parsec_map2->arenas[PARSEC_map2_DEFAULT_ARENA],
-                                A->mb*A->nb*sizeof(parsec_complex64_t),
+                                A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb);
         break;
     case matrix_ComplexFloat  :
         dplasma_add2arena_tile( parsec_map2->arenas[PARSEC_map2_DEFAULT_ARENA],
-                                A->mb*A->nb*sizeof(parsec_complex32_t),
+                                A->mb*A->nb*sizeof(dplasma_complex32_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_complex_t, A->mb);
         break;
@@ -223,9 +224,9 @@ dplasma_map2_Destruct( parsec_taskpool_t *tp )
  * @param[in] uplo
  *          Specifies on which part of matrices A and B, the operator must be
  *          applied
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is referenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is referenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A. Any tiled matrix descriptor
@@ -263,8 +264,8 @@ dplasma_map2_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_map2( parsec_context_t *parsec,
-              PLASMA_enum uplo,
-              PLASMA_enum trans,
+              dplasma_enum_t uplo,
+              dplasma_enum_t trans,
               const parsec_tiled_matrix_dc_t *A,
               parsec_tiled_matrix_dc_t *B,
               tiled_matrix_binary_op_t operator,
@@ -272,9 +273,9 @@ dplasma_map2( parsec_context_t *parsec,
 {
     parsec_taskpool_t *parsec_map2 = NULL;
 
-    if ((uplo != PlasmaUpperLower) &&
-        (uplo != PlasmaUpper)      &&
-        (uplo != PlasmaLower))
+    if ((uplo != dplasmaUpperLower) &&
+        (uplo != dplasmaUpper)      &&
+        (uplo != dplasmaLower))
     {
         dplasma_error("dplasma_map2", "illegal value of uplo");
         return -2;

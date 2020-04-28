@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,13 +8,14 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
-#include <core_blas.h>
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 #define HIGH_TO_LOW 0
 #define LOW_TO_HIGH 1
 
-static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t* B, PLASMA_Complex64_t *U_but_vec, int level, int trans, int order, int *info){
+static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t* B, dplasma_complex64_t *U_but_vec, int level, int trans, int order, int *info){
     int cur_level, L;
     parsec_taskpool_t **op;
 
@@ -55,15 +56,15 @@ static void multilevel_zgebmm(parsec_context_t *parsec, parsec_tiled_matrix_dc_t
 }
 
 int
-dplasma_zhetrs(parsec_context_t *parsec, int uplo, const parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* B, PLASMA_Complex64_t *U_but_vec, int level)
+dplasma_zhetrs(parsec_context_t *parsec, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* B, dplasma_complex64_t *U_but_vec, int level)
 {
     int info;
 #if defined(DEBUG_BUTTERFLY)
     int i;
 #endif
 
-    if( uplo != PlasmaLower ){
-        dplasma_error("dplasma_zhetrs", "illegal value for \"uplo\".  Only PlasmaLower is currently supported");
+    if( uplo != dplasmaLower ){
+        dplasma_error("dplasma_zhetrs", "illegal value for \"uplo\".  Only dplasmaLower is currently supported");
     }
 
 #if defined(DEBUG_BUTTERFLY)
@@ -72,14 +73,14 @@ dplasma_zhetrs(parsec_context_t *parsec, int uplo, const parsec_tiled_matrix_dc_
     }
 #endif
     // B = U_but_vec^T * B 
-    multilevel_zgebmm(parsec, B, U_but_vec, level, PlasmaConjTrans, HIGH_TO_LOW, &info);
+    multilevel_zgebmm(parsec, B, U_but_vec, level, dplasmaConjTrans, HIGH_TO_LOW, &info);
 
-    dplasma_ztrsm( parsec, PlasmaLeft, uplo, (uplo == PlasmaUpper) ? PlasmaConjTrans : PlasmaNoTrans, PlasmaUnit, 1.0, A, B );
+    dplasma_ztrsm( parsec, dplasmaLeft, uplo, (uplo == dplasmaUpper) ? dplasmaConjTrans : dplasmaNoTrans, dplasmaUnit, 1.0, A, B );
     dplasma_ztrdsm( parsec, A, B );
-    dplasma_ztrsm( parsec, PlasmaLeft, uplo, (uplo == PlasmaUpper) ? PlasmaNoTrans : PlasmaConjTrans, PlasmaUnit, 1.0, A, B );
+    dplasma_ztrsm( parsec, dplasmaLeft, uplo, (uplo == dplasmaUpper) ? dplasmaNoTrans : dplasmaConjTrans, dplasmaUnit, 1.0, A, B );
 
     // X = U_but_vec * X  (here X is B)
-    multilevel_zgebmm(parsec, B, U_but_vec, level, PlasmaNoTrans, LOW_TO_HIGH, &info);
+    multilevel_zgebmm(parsec, B, U_but_vec, level, dplasmaNoTrans, LOW_TO_HIGH, &info);
 
     return 0;
 }

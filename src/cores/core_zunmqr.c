@@ -14,12 +14,8 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -105,12 +101,16 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zunmqr = PCORE_zunmqr
+#define CORE_zunmqr PCORE_zunmqr
+#endif
 int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
                 int M, int N, int K, int IB,
-                const parsec_complex64_t *A, int LDA,
-                const parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *C, int LDC,
-                parsec_complex64_t *WORK, int LDWORK)
+                const PLASMA_Complex64_t *A, int LDA,
+                const PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *C, int LDC,
+                PLASMA_Complex64_t *WORK, int LDWORK)
 {
     int i, kb;
     int i1, i3;
@@ -157,15 +157,15 @@ int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
         coreblas_error(6, "Illegal value of IB");
         return -6;
     }
-    if ((LDA < coreblas_imax(1,nq)) && (nq > 0)) {
+    if ((LDA < max(1,nq)) && (nq > 0)) {
         coreblas_error(8, "Illegal value of LDA");
         return -8;
     }
-    if ((LDC < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDC < max(1,M)) && (M > 0)) {
         coreblas_error(12, "Illegal value of LDC");
         return -12;
     }
-    if ((LDWORK < coreblas_imax(1,nw)) && (nw > 0)) {
+    if ((LDWORK < max(1,nw)) && (nw > 0)) {
         coreblas_error(14, "Illegal value of LDWORK");
         return -14;
     }
@@ -185,7 +185,7 @@ int CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
     }
 
     for(i = i1; (i >- 1) && (i < K); i+=i3 ) {
-        kb = coreblas_imin(IB, K-i);
+        kb = min(IB, K-i);
 
         if (side == PlasmaLeft) {
             /*

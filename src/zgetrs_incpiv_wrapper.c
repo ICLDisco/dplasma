@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,7 +8,8 @@
  */
 
 #include "dplasma.h"
-#include <core_blas.h>
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 /**
  *******************************************************************************
@@ -27,10 +28,10 @@
  * @param[in] trans
  *          Specifies whether the matrix A is transposed, not transposed or
  *          conjugate transposed:
- *          = PlasmaNoTrans:   A is transposed;
- *          = PlasmaTrans:     A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
- *          Currently only PlasmaNoTrans is supported.
+ *          = dplasmaNoTrans:   A is transposed;
+ *          = dplasmaTrans:     A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
+ *          Currently only dplasmaNoTrans is supported.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A to be factorized.
@@ -82,15 +83,15 @@
  ******************************************************************************/
 int
 dplasma_zgetrs_incpiv(parsec_context_t *parsec,
-                      PLASMA_enum trans,
+                      dplasma_enum_t trans,
                       parsec_tiled_matrix_dc_t *A,
                       parsec_tiled_matrix_dc_t *L,
                       parsec_tiled_matrix_dc_t *IPIV,
                       parsec_tiled_matrix_dc_t *B)
 {
     /* Check input arguments */
-    if (trans != PlasmaNoTrans) {
-        dplasma_error("dplasma_zgetrs", "only PlasmaNoTrans supported");
+    if (trans != dplasmaNoTrans) {
+        dplasma_error("dplasma_zgetrs", "only dplasmaNoTrans supported");
         return -1;
     }
 
@@ -99,7 +100,7 @@ dplasma_zgetrs_incpiv(parsec_context_t *parsec,
     parsec_taskpool_t *parsec_ztrsm   = NULL;
 
     parsec_ztrsmpl = dplasma_ztrsmpl_New(A, L, IPIV, B);
-    parsec_ztrsm   = dplasma_ztrsm_New(PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, A, B);
+    parsec_ztrsm   = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
 
     parsec_context_add_taskpool( parsec, parsec_ztrsmpl );
     parsec_context_add_taskpool( parsec, parsec_ztrsm   );
@@ -110,7 +111,7 @@ dplasma_zgetrs_incpiv(parsec_context_t *parsec,
     dplasma_ztrsm_Destruct( parsec_ztrsm   );
 #else
     dplasma_ztrsmpl(parsec, A, L, IPIV, B );
-    dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, A, B );
+    dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B );
 #endif
     return 0;
 }

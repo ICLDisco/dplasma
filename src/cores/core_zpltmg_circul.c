@@ -14,10 +14,7 @@
  **/
 #include <lapacke.h>
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -72,9 +69,13 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_circul( int M, int N, parsec_complex64_t *A, int LDA,
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_circul = PCORE_zpltmg_circul
+#define CORE_zpltmg_circul PCORE_zpltmg_circul
+#endif
+int CORE_zpltmg_circul( int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int gM, int m0, int n0,
-                        const parsec_complex64_t *V )
+                        const PLASMA_Complex64_t *V )
 {
     int i, j, ii, jj;
 
@@ -87,7 +88,7 @@ int CORE_zpltmg_circul( int M, int N, parsec_complex64_t *A, int LDA,
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(4, "Illegal value of LDA");
         return -4;
     }

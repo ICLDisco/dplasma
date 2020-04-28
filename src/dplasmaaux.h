@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -95,5 +95,18 @@ int dplasma_aux_free_comm(void);
  */
 extern void *dplasma_pcomm;
 
-#endif
+#define dplasma_wait_until_completion( object ) \
+    do {                                        \
+        parsec_context_start( object );         \
+        parsec_context_wait( object );          \
+    } while (0)
 
+
+#if defined(DPLASMA_DEBUG)
+#include <stdio.h>
+#define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); *((volatile int*)0) = 42; } while(0)
+#else
+#define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); } while(0)
+#endif /* defined(DPLASMA_DEBUG) */
+
+#endif /* _DPLASMAAUX_H_INCLUDED */

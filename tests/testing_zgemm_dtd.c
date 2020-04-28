@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 The University of Tennessee and The University
+ * Copyright (c) 2015-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,7 +8,7 @@
  */
 
 #include "common.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/superscalar/insert_function.h"
 
@@ -17,28 +17,28 @@ enum regions {
              };
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_enum_t transA, dplasma_enum_t transB,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal );
 
 static int
 parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     (void)es;
-    PLASMA_enum transA;
-    PLASMA_enum transB;
+    int transA;
+    int transB;
     int m;
     int n;
     int k;
-    parsec_complex64_t alpha;
-    parsec_complex64_t *A;
+    dplasma_complex64_t alpha;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *B;
+    dplasma_complex64_t *B;
     int ldb;
-    parsec_complex64_t beta;
-    parsec_complex64_t *C;
+    dplasma_complex64_t beta;
+    dplasma_complex64_t *C;
     int ldc;
 
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha, &A,
@@ -60,10 +60,10 @@ int main(int argc, char ** argv)
     int Aseed = 3872;
     int Bseed = 4674;
     int Cseed = 2873;
-    int tA = PlasmaNoTrans;
-    int tB = PlasmaNoTrans;
-    parsec_complex64_t alpha =  0.51;
-    parsec_complex64_t beta  = -0.42;
+    int tA = dplasmaNoTrans;
+    int tB = dplasmaNoTrans;
+    dplasma_complex64_t alpha =  0.51;
+    dplasma_complex64_t beta  = -0.42;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     alpha -= I * 0.32;
@@ -121,7 +121,7 @@ int main(int argc, char ** argv)
 
         /* Default type */
         dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                                dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                                dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -136,8 +136,8 @@ int main(int argc, char ** argv)
         int ldam, ldak, ldbn, ldbk, ldcm;
         int tempmm, tempnn, tempkn;
 
-        parsec_complex64_t zbeta;
-        parsec_complex64_t zone = (parsec_complex64_t)1.0;
+        dplasma_complex64_t zbeta;
+        dplasma_complex64_t zone = (dplasma_complex64_t)1.0;
 
         parsec_context_add_taskpool( parsec, dtd_tp );
 
@@ -154,35 +154,35 @@ int main(int argc, char ** argv)
             for( n = 0; n < dcC.super.nt; n++ ) {
                 tempnn = n == dcC.super.nt-1 ? dcC.super.n-n*dcC.super.nb : dcC.super.nb;
                 /*
-                 *  A: PlasmaNoTrans / B: PlasmaNoTrans
+                 *  A: dplasmaNoTrans / B: dplasmaNoTrans
                  */
-                if( tA == PlasmaNoTrans ) {
+                if( tA == dplasmaNoTrans ) {
                     ldam = BLKLDD(&dcA.super, m);
-                    if( tB == PlasmaNoTrans ) {
+                    if( tB == dplasmaNoTrans ) {
                         for( k = 0; k < dcA.super.nt; k++ ) {
                             tempkn = k == dcA.super.nt-1 ? dcA.super.n-k*dcA.super.nb : dcA.super.nb;
                             ldbk = BLKLDD(&dcB.super, k);
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
-                                     sizeof(PLASMA_enum),   &tA,                           VALUE,
-                                     sizeof(PLASMA_enum),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
                     }
                     /*
-                     *  A: PlasmaNoTrans / B: Plasma[Conj]Trans
+                     *  A: dplasmaNoTrans / B: dplasma[Conj]Trans
                      */
                     else {
                         ldbn = BLKLDD(&dcB.super, n);
@@ -191,17 +191,17 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
-                                     sizeof(PLASMA_enum),   &tA,                           VALUE,
-                                     sizeof(PLASMA_enum),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldam,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -209,34 +209,34 @@ int main(int argc, char ** argv)
                     }
                 }
                 /*
-                 *  A: Plasma[Conj]Trans / B: PlasmaNoTrans
+                 *  A: dplasma[Conj]Trans / B: dplasmaNoTrans
                  */
                 else {
-                    if( tB == PlasmaNoTrans ) {
+                    if( tB == dplasmaNoTrans ) {
                         for( k = 0; k < dcA.super.mt; k++ ) {
                             ldak = BLKLDD(&dcA.super, k);
                             ldbk = BLKLDD(&dcB.super, k);
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                     sizeof(PLASMA_enum),   &tA,                           VALUE,
-                                     sizeof(PLASMA_enum),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m ),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbk,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
                         }
                     }
                     /*
-                     *  A: Plasma[Conj]Trans / B: Plasma[Conj]Trans
+                     *  A: dplasma[Conj]Trans / B: dplasma[Conj]Trans
                      */
                     else {
                         ldbn = BLKLDD(&dcB.super, n);
@@ -245,17 +245,17 @@ int main(int argc, char ** argv)
                             zbeta = k == 0 ? beta : zone;
 
                             parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                     sizeof(PLASMA_enum),   &tA,                           VALUE,
-                                     sizeof(PLASMA_enum),   &tB,                           VALUE,
+                                     sizeof(int),           &tA,                           VALUE,
+                                     sizeof(int),           &tB,                           VALUE,
                                      sizeof(int),           &tempmm,                       VALUE,
                                      sizeof(int),           &tempnn,                       VALUE,
                                      sizeof(int),           &tempkn,                       VALUE,
-                                     sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldak,                         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                      sizeof(int),           &ldbn,                         VALUE,
-                                     sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                     sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                      PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                      sizeof(int),           &ldcm,                         VALUE,
                                                PARSEC_DTD_ARG_END );
@@ -314,12 +314,12 @@ int main(int argc, char ** argv)
                 /* Getting new parsec handle of dtd type */
                 parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new();
 
-                if ( trans[tA] == PlasmaNoTrans ) {
+                if ( trans[tA] == dplasmaNoTrans ) {
                     Am = M; An = K;
                 } else {
                     Am = K; An = M;
                 }
-                if ( trans[tB] == PlasmaNoTrans ) {
+                if ( trans[tB] == dplasmaNoTrans ) {
                     Bm = K; Bn = N;
                 } else {
                     Bm = N; Bn = K;
@@ -346,7 +346,7 @@ int main(int argc, char ** argv)
                 /* Allocating data arrays to be used by comm engine */
                 /* Default type */
                 dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                                        dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                                        dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                         PARSEC_ARENA_ALIGNMENT_SSE,
                                         parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -361,7 +361,7 @@ int main(int argc, char ** argv)
 
                 /* matrix generation */
                 if(loud) printf("Generate matrices ... ");
-                dplasma_zlacpy( parsec, PlasmaUpperLower,
+                dplasma_zlacpy( parsec, dplasmaUpperLower,
                                 (parsec_tiled_matrix_dc_t *)&dcC2, (parsec_tiled_matrix_dc_t *)&dcC );
                 if(loud) printf("Done\n");
 
@@ -372,8 +372,8 @@ int main(int argc, char ** argv)
                 int ldam, ldak, ldbn, ldbk, ldcm;
                 int tempmm, tempnn, tempkn, tempkm;
 
-                parsec_complex64_t zbeta;
-                parsec_complex64_t zone = (parsec_complex64_t)1.0;
+                dplasma_complex64_t zbeta;
+                dplasma_complex64_t zone = (dplasma_complex64_t)1.0;
 
                 /* Registering the handle with parsec context */
                 parsec_context_add_taskpool( parsec, dtd_tp );
@@ -392,36 +392,36 @@ int main(int argc, char ** argv)
                     for( n = 0; n < dcC.super.nt; n++ ) {
                         tempnn = n == dcC.super.nt-1 ? dcC.super.n-n*dcC.super.nb : dcC.super.nb;
                         /*
-                         *  A: PlasmaNoTrans / B: PlasmaNoTrans
+                         *  A: dplasmaNoTrans / B: dplasmaNoTrans
                          */
-                        if( trans[tA] == PlasmaNoTrans ) {
+                        if( trans[tA] == dplasmaNoTrans ) {
                             ldam = BLKLDD(&dcA.super, m);
 
-                            if( trans[tB] == PlasmaNoTrans ) {
+                            if( trans[tB] == dplasmaNoTrans ) {
                                 for( k = 0; k < dcA.super.nt; k++ ) {
                                     tempkn = k == dcA.super.nt-1 ? dcA.super.n-k*dcA.super.nb : dcA.super.nb;
                                     ldbk = BLKLDD(&dcB.super, k);
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(PLASMA_enum),   &trans[tA],                    VALUE,
-                                             sizeof(PLASMA_enum),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
                             }
                             /*
-                             *  A: PlasmaNoTrans / B: Plasma[Conj]Trans
+                             *  A: dplasmaNoTrans / B: dplasma[Conj]Trans
                              */
                             else {
                                 ldbn = BLKLDD(&dcB.super, n);
@@ -431,17 +431,17 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(PLASMA_enum),   &trans[tA],                    VALUE,
-                                             sizeof(PLASMA_enum),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkn,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, m, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldam,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -449,10 +449,10 @@ int main(int argc, char ** argv)
                             }
                         }
                         /*
-                         *  A: Plasma[Conj]Trans / B: PlasmaNoTrans
+                         *  A: dplasma[Conj]Trans / B: dplasmaNoTrans
                          */
                         else {
-                            if( trans[tB] == PlasmaNoTrans ) {
+                            if( trans[tB] == dplasmaNoTrans ) {
                                 for( k = 0; k < dcA.super.mt; k++ ) {
                                     tempkm = k == dcA.super.mt-1 ? dcA.super.m-k*dcA.super.mb : dcA.super.mb;
                                     ldak = BLKLDD(&dcA.super, k);
@@ -460,24 +460,24 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(PLASMA_enum),   &trans[tA],                    VALUE,
-                                             sizeof(PLASMA_enum),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, k, n),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbk,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
                                 }
                             }
                             /*
-                             *  A: Plasma[Conj]Trans / B: Plasma[Conj]Trans
+                             *  A: dplasma[Conj]Trans / B: dplasma[Conj]Trans
                              */
                             else {
                                 ldbn = BLKLDD(&dcB.super, n);
@@ -488,17 +488,17 @@ int main(int argc, char ** argv)
                                     zbeta = k == 0 ? beta : zone;
 
                                     parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
-                                             sizeof(PLASMA_enum),   &trans[tA],                    VALUE,
-                                             sizeof(PLASMA_enum),   &trans[tB],                    VALUE,
+                                             sizeof(int),           &trans[tA],                    VALUE,
+                                             sizeof(int),           &trans[tB],                    VALUE,
                                              sizeof(int),           &tempmm,                       VALUE,
                                              sizeof(int),           &tempnn,                       VALUE,
                                              sizeof(int),           &tempkm,                       VALUE,
-                                             sizeof(parsec_complex64_t),           &alpha,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &alpha,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(A, k, m),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldak,                         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(B, n, k),     INPUT | TILE_FULL,
                                              sizeof(int),           &ldbn,                         VALUE,
-                                             sizeof(parsec_complex64_t),           &zbeta,         VALUE,
+                                             sizeof(dplasma_complex64_t),           &zbeta,         VALUE,
                                              PASSED_BY_REF,     PARSEC_DTD_TILE_OF(C, m, n),     INOUT | TILE_FULL | AFFINITY,
                                              sizeof(int),           &ldcm,                         VALUE,
                                                        PARSEC_DTD_ARG_END );
@@ -580,16 +580,16 @@ int main(int argc, char ** argv)
  *  Check the accuracy of the solution
  */
 static int check_solution( parsec_context_t *parsec, int loud,
-                           PLASMA_enum transA, PLASMA_enum transB,
-                           parsec_complex64_t alpha, int Am, int An, int Aseed,
+                           dplasma_enum_t transA, dplasma_enum_t transB,
+                           dplasma_complex64_t alpha, int Am, int An, int Aseed,
                                                     int Bm, int Bn, int Bseed,
-                           parsec_complex64_t beta,  int M,  int N,  int Cseed,
+                           dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal )
 {
     int info_solution = 1;
     double Anorm, Bnorm, Cinitnorm, Cdplasmanorm, Clapacknorm, Rnorm;
     double eps, result;
-    int K  = ( transA == PlasmaNoTrans ) ? An : Am ;
+    int K  = ( transA == dplasmaNoTrans ) ? An : Am ;
     int MB = dcCfinal->super.mb;
     int NB = dcCfinal->super.nb;
     int LDA = Am;
@@ -616,10 +616,10 @@ static int check_solution( parsec_context_t *parsec, int loud,
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, Bseed );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );
 
-    Anorm        = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
-    Bnorm        = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcB );
-    Cinitnorm    = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
-    Cdplasmanorm = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)dcCfinal );
+    Anorm        = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA );
+    Bnorm        = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcB );
+    Cinitnorm    = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
+    Cdplasmanorm = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)dcCfinal );
 
     if ( rank == 0 ) {
         cblas_zgemm(CblasColMajor,
@@ -630,12 +630,12 @@ static int check_solution( parsec_context_t *parsec, int loud,
                     CBLAS_SADDR(beta),  dcC.mat, LDC );
     }
 
-    Clapacknorm = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
+    Clapacknorm = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    dplasma_zgeadd( parsec, PlasmaNoTrans, -1.0, (parsec_tiled_matrix_dc_t*)dcCfinal,
+    dplasma_zgeadd( parsec, dplasmaNoTrans, -1.0, (parsec_tiled_matrix_dc_t*)dcCfinal,
                                            1.0, (parsec_tiled_matrix_dc_t*)&dcC );
 
-    Rnorm = dplasma_zlange( parsec, PlasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcC);
+    Rnorm = dplasma_zlange( parsec, dplasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcC);
 
     if ( rank == 0 ) {
         if ( loud > 2 ) {

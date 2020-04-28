@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,6 +10,7 @@
  */
 
 #include "dplasma.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -102,8 +103,8 @@ dplasma_zgeqrs_param(parsec_context_t *parsec,
     subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
     subB = tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
 
-    dplasma_zunmqr_param( parsec, PlasmaLeft, PlasmaConjTrans, qrtree, A, TS, TT, B );
-    dplasma_ztrsm( parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, subA, subB );
+    dplasma_zunmqr_param( parsec, dplasmaLeft, dplasmaConjTrans, qrtree, A, TS, TT, B );
+    dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
 
     free(subA);
     free(subB);

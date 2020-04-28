@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -28,8 +29,8 @@
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed factorized matrix A.
@@ -55,12 +56,12 @@
  ******************************************************************************/
 int
 dplasma_zpotrs( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 const parsec_tiled_matrix_dc_t* A,
                 parsec_tiled_matrix_dc_t* B )
 {
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_zpotrs", "illegal value of uplo");
         return -1;
     }
@@ -69,12 +70,12 @@ dplasma_zpotrs( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_ztrsm1 = NULL;
     parsec_taskpool_t *parsec_ztrsm2 = NULL;
 
-    if ( uplo == PlasmaUpper ) {
-      parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B);
-      parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B);
+    if ( uplo == dplasmaUpper ) {
+      parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B);
     } else {
-      parsec_ztrsm1 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B);
-      parsec_ztrsm2 = dplasma_ztrsm_New(PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm1 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B);
+      parsec_ztrsm2 = dplasma_ztrsm_New(dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B);
     }
 
     parsec_context_add_taskpool( parsec, parsec_ztrsm1 );
@@ -85,12 +86,12 @@ dplasma_zpotrs( parsec_context_t *parsec,
     dplasma_ztrsm_Destruct( parsec_ztrsm1 );
     dplasma_ztrsm_Destruct( parsec_ztrsm2 );
 #else
-    if ( uplo == PlasmaUpper ) {
-      dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B );
-      dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B );
+    if ( uplo == dplasmaUpper ) {
+      dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B );
+      dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B );
     } else {
-      dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaNoTrans,   PlasmaNonUnit, 1.0, A, B );
-      dplasma_ztrsm( parsec, PlasmaLeft, uplo, PlasmaConjTrans, PlasmaNonUnit, 1.0, A, B );
+      dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaNoTrans,   dplasmaNonUnit, 1.0, A, B );
+      dplasma_ztrsm( parsec, dplasmaLeft, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0, A, B );
     }
 #endif
     return 0;

@@ -12,12 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <math.h>
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -79,11 +76,15 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_chebvand( int M, int N, parsec_complex64_t *A, int LDA,
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_chebvand = PCORE_zpltmg_chebvand
+#define CORE_zpltmg_chebvand PCORE_zpltmg_chebvand
+#endif
+int CORE_zpltmg_chebvand( int M, int N, PLASMA_Complex64_t *A, int LDA,
                           int gN, int m0, int n0,
-                          parsec_complex64_t *W )
+                          PLASMA_Complex64_t *W )
 {
-    parsec_complex64_t step;
+    PLASMA_Complex64_t step;
     int i, j, jj;
 
     /* Check input arguments */
@@ -95,7 +96,7 @@ int CORE_zpltmg_chebvand( int M, int N, parsec_complex64_t *A, int LDA,
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(4, "Illegal value of LDA");
         return -4;
     }
@@ -112,7 +113,7 @@ int CORE_zpltmg_chebvand( int M, int N, parsec_complex64_t *A, int LDA,
         return -5;
     }
 
-    step = (parsec_complex64_t)1. / (gN - 1.);
+    step = (PLASMA_Complex64_t)1. / (gN - 1.);
 
     /* Initialize W if required */
     if (m0 == 0) {

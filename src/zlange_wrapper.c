@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -9,7 +9,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #include "zlange_one_cyclic.h"
@@ -22,13 +23,13 @@
  *
  *  dplasma_zlange_New - Generates the taskpool that computes the value
  *
- *     zlange = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlange = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -41,10 +42,10 @@
  *******************************************************************************
  *
  * @param[in] ntype
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] A
  *          The descriptor of the matrix A.
@@ -71,7 +72,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlange_New( PLASMA_enum ntype,
+dplasma_zlange_New( dplasma_enum_t ntype,
                     const parsec_tiled_matrix_dc_t *A,
                     double *result )
 {
@@ -79,8 +80,8 @@ dplasma_zlange_New( PLASMA_enum ntype,
     two_dim_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlange = NULL;
 
-    if ( (ntype != PlasmaMaxNorm) && (ntype != PlasmaOneNorm)
-        && (ntype != PlasmaInfNorm) && (ntype != PlasmaFrobeniusNorm) ) {
+    if ( (ntype != dplasmaMaxNorm) && (ntype != dplasmaOneNorm)
+        && (ntype != dplasmaInfNorm) && (ntype != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlange", "illegal value of ntype");
         return NULL;
     }
@@ -94,28 +95,28 @@ dplasma_zlange_New( PLASMA_enum ntype,
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     switch( ntype ) {
-    case PlasmaFrobeniusNorm:
+    case dplasmaFrobeniusNorm:
         mb = 2;
         nb = 1;
         m  = dplasma_imax(A->mt, P);
         n  = Q;
         elt = 2;
         break;
-    case PlasmaInfNorm:
+    case dplasmaInfNorm:
         mb = A->mb;
         nb = 1;
         m  = dplasma_imax(A->mt, P);
         n  = Q;
         elt = 1;
         break;
-    case PlasmaOneNorm:
+    case dplasmaOneNorm:
         mb = 1;
         nb = A->nb;
         m  = P;
         n  = dplasma_imax(A->nt, Q);
         elt = 1;
         break;
-    case PlasmaMaxNorm:
+    case dplasmaMaxNorm:
     default:
         mb = 1;
         nb = 1;
@@ -143,22 +144,22 @@ dplasma_zlange_New( PLASMA_enum ntype,
 
     /* Create the DAG */
     switch( ntype ) {
-    case PlasmaOneNorm:
+    case dplasmaOneNorm:
         parsec_zlange = (parsec_taskpool_t*)parsec_zlange_one_cyclic_new(
-            P, Q, ntype, PlasmaUpperLower, PlasmaNonUnit, A, (parsec_data_collection_t*)Tdist, result);
+            P, Q, ntype, dplasmaUpperLower, dplasmaNonUnit, A, (parsec_data_collection_t*)Tdist, result);
         break;
 
-    case PlasmaMaxNorm:
-    case PlasmaInfNorm:
-    case PlasmaFrobeniusNorm:
+    case dplasmaMaxNorm:
+    case dplasmaInfNorm:
+    case dplasmaFrobeniusNorm:
     default:
         parsec_zlange = (parsec_taskpool_t*)parsec_zlange_frb_cyclic_new(
-            P, Q, ntype, PlasmaUpperLower, PlasmaNonUnit, A, (parsec_data_collection_t*)Tdist, result);
+            P, Q, ntype, dplasmaUpperLower, dplasmaNonUnit, A, (parsec_data_collection_t*)Tdist, result);
     }
 
     /* Set the datatypes */
     dplasma_add2arena_tile(((parsec_zlange_frb_cyclic_taskpool_t*)parsec_zlange)->arenas[PARSEC_zlange_frb_cyclic_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
     dplasma_add2arena_rectangle(((parsec_zlange_frb_cyclic_taskpool_t*)parsec_zlange)->arenas[PARSEC_zlange_frb_cyclic_COL_ARENA],
@@ -213,13 +214,13 @@ dplasma_zlange_Destruct( parsec_taskpool_t *tp )
  *
  *  dplasma_zlange - Computes the value
  *
- *     zlange = ( max(abs(A(i,j))), NORM = PlasmaMaxNorm
+ *     zlange = ( max(abs(A(i,j))), NORM = dplasmaMaxNorm
  *              (
- *              ( norm1(A),         NORM = PlasmaOneNorm
+ *              ( norm1(A),         NORM = dplasmaOneNorm
  *              (
- *              ( normI(A),         NORM = PlasmaInfNorm
+ *              ( normI(A),         NORM = dplasmaInfNorm
  *              (
- *              ( normF(A),         NORM = PlasmaFrobeniusNorm
+ *              ( normF(A),         NORM = dplasmaFrobeniusNorm
  *
  *  where norm1 denotes the one norm of a matrix (maximum column sum),
  *  normI denotes the infinity norm of a matrix (maximum row sum) and
@@ -233,10 +234,10 @@ dplasma_zlange_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] ntype
- *          = PlasmaMaxNorm: Max norm
- *          = PlasmaOneNorm: One norm
- *          = PlasmaInfNorm: Infinity norm
- *          = PlasmaFrobeniusNorm: Frobenius norm
+ *          = dplasmaMaxNorm: Max norm
+ *          = dplasmaOneNorm: One norm
+ *          = dplasmaInfNorm: Infinity norm
+ *          = dplasmaFrobeniusNorm: Frobenius norm
  *
  * @param[in] A
  *          The descriptor of the matrix A.
@@ -258,14 +259,14 @@ dplasma_zlange_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 double
 dplasma_zlange( parsec_context_t *parsec,
-                PLASMA_enum ntype,
+                dplasma_enum_t ntype,
                 const parsec_tiled_matrix_dc_t *A)
 {
     double result = 0.;
     parsec_taskpool_t *parsec_zlange = NULL;
 
-    if ( (ntype != PlasmaMaxNorm) && (ntype != PlasmaOneNorm)
-        && (ntype != PlasmaInfNorm) && (ntype != PlasmaFrobeniusNorm) ) {
+    if ( (ntype != dplasmaMaxNorm) && (ntype != dplasmaOneNorm)
+        && (ntype != dplasmaInfNorm) && (ntype != dplasmaFrobeniusNorm) ) {
         dplasma_error("dplasma_zlange", "illegal value of ntype");
         return -2.;
     }

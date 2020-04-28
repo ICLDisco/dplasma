@@ -13,10 +13,7 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -58,8 +55,8 @@
 #define CORE_zlaset PCORE_zlaset
 #endif
 void CORE_zlaset(PLASMA_enum uplo, int M, int N,
-                 parsec_complex64_t alpha, parsec_complex64_t beta,
-                 parsec_complex64_t *A, int LDA)
+                 PLASMA_Complex64_t alpha, PLASMA_Complex64_t beta,
+                 PLASMA_Complex64_t *A, int LDA)
 {
     LAPACKE_zlaset_work(
         LAPACK_COL_MAJOR,

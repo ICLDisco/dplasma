@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -46,8 +46,8 @@ ib       [type = "int"]
 criteria [type = "int"]
 alpha    [type = "double"]
 W        [type = "double *"]
-p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*ib*(TS->nb))"]
-p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)   *(TS->nb))"]
+p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*(TS->nb))"]
+p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *(TS->nb))"]
 INFO     [type = "int*"]
 
 param_p   [type = int default="((two_dim_block_cyclic_t*)descA)->grid.rows" hidden=on ]
@@ -162,7 +162,7 @@ BODY
         CORE_zlaswp_ontile( pdescA, 1, tempkm, IP, 1 );
 
         CORE_ztrsm(
-            PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,
+            dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,
             tempkm, tempnn,
             1., A /*A(m, k)*/, ldak,
                 C /*A(m, n)*/, ldak);
@@ -205,7 +205,7 @@ BODY
              /* TRSM already applied by GETRF */
          } else {
             CORE_ztrsm(
-                PlasmaRight, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit,
+                dplasmaRight, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit,
                 tempmm, tempkm,
                 1.0, A /*A(k, k)*/, ldak,
                      C /*A(m, k)*/, ldam );
@@ -250,7 +250,7 @@ BODY
 
     printlog("zgemm( k=%d, m=%d, n=%d )\n", k, m, n);
 
-    CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
+    CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                tempmm, tempnn, descA->mb,
                -1., H /*(m, k)*/, ldam,
                     V /*(k, n)*/, ldak,
@@ -373,14 +373,14 @@ BODY
     int ldam   = BLKLDD( descA, m );
 
     printlog("CORE_zunmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, tempmm=%d, tempnn=%d, min(tempmm, tempnn)=%d, ib=%d, \n"
+             "\t(dplasmaLeft, dplasmaConjTrans, tempmm=%d, tempnn=%d, min(tempmm, tempnn)=%d, ib=%d, \n"
              "\t A(%d,%d)[%p], ldam, T(%d,%d)[%p], TS->mb, A(%d,%d)[%p], ldam, p_elem_A, TS->nb)",
              tempmm, tempnn, tempnn, ib, k, m, n, m, k, A, m, k, T, m, n, C);
 
     void *p_elem_A = parsec_private_memory_pop( p_work );
 
     CORE_zunmqr(
-        PlasmaLeft, PlasmaConjTrans,
+        dplasmaLeft, dplasmaConjTrans,
         tempmm, tempnn, tempmm, ib,
         A /* A(m, k) */, ldam,
         T /* T(m, k) */, TS->mb,
@@ -551,7 +551,7 @@ BODY
     int ldwork = ib;
 
     printlog("zttmqr( k=%d, m=%d, n=%d ) [ type=%d ]\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, \n"
+             "\t(dplasmaLeft, dplasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, \n"
              "\t A(%d,%d)[%p], A.mb, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], TT->mb, p_elem_A, ldwork)",
              k, m, n, type, p, n, A1, m, n, A2, m, k, V, m, k, T);
 
@@ -559,7 +559,7 @@ BODY
 
     if ( type == DPLASMA_QR_KILLED_BY_TS ) {
         CORE_ztsmqr(
-                PlasmaLeft, PlasmaConjTrans,
+                dplasmaLeft, dplasmaConjTrans,
                 descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
                 A1 /* A(p, n) */, ldap,
                 A2 /* A(m, n) */, ldam,
@@ -568,7 +568,7 @@ BODY
                 p_elem_A, ldwork );
     } else {
         CORE_zttmqr(
-                PlasmaLeft, PlasmaConjTrans,
+                dplasmaLeft, dplasmaConjTrans,
                 descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
                 A1 /* A(p, n) */, ldap,
                 A2 /* A(m, n) */, ldam,
@@ -679,12 +679,12 @@ BODY
 
     if (diagdom == 0) {
         /* The tiles of the first node have to be copied */
-        CORE_zlacpy(PlasmaUpperLower, tempmm, tempkn,
+        CORE_zlacpy(dplasmaUpperLower, tempmm, tempkn,
                     A,    ldam,
                     Acpy, descA->mb);
 
         if ( A != B ) {
-            CORE_zlacpy(PlasmaUpperLower, tempmm, tempkn,
+            CORE_zlacpy(dplasmaUpperLower, tempmm, tempkn,
                         A, ldam,
                         B, ldam);
         }
@@ -713,7 +713,7 @@ BODY
              * Search the maximal absolute value per column
              */
             memset( W + descA->nb, 0, descA->nb * sizeof(double));
-            CORE_zamax(PlasmaColumnwise, PlasmaUpperLower, tempmm, tempkn, A, ldam, W + descA->nb );
+            CORE_zamax(dplasmaColumnwise, dplasmaUpperLower, tempmm, tempkn, A, ldam, W + descA->nb );
 
             pthread_mutex_lock( &mumps_mutex );
             if ( !mumps_init ) {
@@ -759,7 +759,7 @@ zlufacto(k, t)
 
 BODY
   {
-      /* parsec_complex64_t *lA  = (parsec_complex64_t*)A; */
+      /* dplasma_complex64_t *lA  = (dplasma_complex64_t*)A; */
       int ks = k + (s-1)*param_p;
       int tempm = (s-1) * descA->mb +
           (( ks == descA->mt-1 ) ? descA->m - ks * descA->mb : descA->mb);
@@ -787,7 +787,7 @@ BODY
       {
           /* Store largest absolut values of each columns */
           memset( W, 0, descA->nb * sizeof(double));
-          CORE_zamax(PlasmaColumnwise, PlasmaUpperLower, tempkn, tempkn, A, ldak, W);
+          CORE_zamax(dplasmaColumnwise, dplasmaUpperLower, tempkn, tempkn, A, ldak, W);
       } else {
           W[0] = 0.;
       }
@@ -1254,7 +1254,7 @@ BODY
         int tempkn = (k==(descA->nt-1)) ? (descA->n - k * descA->nb) : descA->nb;
         int ldam = BLKLDD( descA, m );
 
-        CORE_zlacpy(PlasmaUpperLower, tempmm, tempkn,
+        CORE_zlacpy(dplasmaUpperLower, tempmm, tempkn,
                     Acpy, descA->mb,
                     A,    ldam);
     }
@@ -1267,7 +1267,7 @@ BODY
             int tempnn = (n==(descA->nt-1)) ? (descA->n - n * descA->nb) : descA->nb;
             int ldam = BLKLDD( descA, m );
 
-            CORE_zlacpy(PlasmaUpperLower, tempmm, tempnn,
+            CORE_zlacpy(dplasmaUpperLower, tempmm, tempnn,
                         A,    ldam,
                         Ashm, ldam);
         }

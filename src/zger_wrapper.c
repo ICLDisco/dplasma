@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,7 +8,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zger.h"
 
@@ -26,8 +27,8 @@
  *******************************************************************************
  *
  * @param[in] trans
- *          @arg PlasmaTrans: geru operation is performed
- *          @arg PlasmaConjTrans: gerc operation is performed
+ *          @arg dplasmaTrans: geru operation is performed
+ *          @arg dplasmaConjTrans: gerc operation is performed
  *
  * @param[in] alpha
  *          Specifies the scalar alpha.
@@ -44,7 +45,7 @@
  *
  ******************************************************************************/
 static inline parsec_taskpool_t*
-dplasma_zger_internal_New( int trans, parsec_complex64_t alpha,
+dplasma_zger_internal_New( int trans, dplasma_complex64_t alpha,
                            const parsec_tiled_matrix_dc_t *X,
                            const parsec_tiled_matrix_dc_t *Y,
                            parsec_tiled_matrix_dc_t *A)
@@ -52,7 +53,7 @@ dplasma_zger_internal_New( int trans, parsec_complex64_t alpha,
     parsec_zger_taskpool_t* zger_tp;
 
     /* Check input arguments */
-    if ((trans != PlasmaTrans) && (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaTrans) && (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zger", "illegal value of trans");
         return NULL /*-1*/;
     }
@@ -62,12 +63,12 @@ dplasma_zger_internal_New( int trans, parsec_complex64_t alpha,
                               A);
 
     dplasma_add2arena_tile( zger_tp->arenas[PARSEC_zger_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb);
 
     dplasma_add2arena_rectangle( zger_tp->arenas[PARSEC_zger_VECTOR_ARENA],
-                                 X->mb*sizeof(parsec_complex64_t),
+                                 X->mb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, X->mb, 1, -1);
 
@@ -86,7 +87,7 @@ dplasma_zger_internal_Destruct( parsec_taskpool_t *tp )
 static inline int
 dplasma_zger_internal( parsec_context_t *parsec,
                        const int trans,
-                       const parsec_complex64_t alpha,
+                       const dplasma_complex64_t alpha,
                        const parsec_tiled_matrix_dc_t *X,
                        const parsec_tiled_matrix_dc_t *Y,
                              parsec_tiled_matrix_dc_t *A)
@@ -94,7 +95,7 @@ dplasma_zger_internal( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zger = NULL;
 
     /* Check input arguments */
-    if ((trans != PlasmaTrans) && (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaTrans) && (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zger", "illegal value of trans");
         return -1;
     }
@@ -161,12 +162,12 @@ dplasma_zger_internal( parsec_context_t *parsec,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgeru_New( const parsec_complex64_t alpha,
+dplasma_zgeru_New( const dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal_New( PlasmaTrans, alpha, X, Y, A );
+    return dplasma_zger_internal_New( dplasmaTrans, alpha, X, Y, A );
 }
 
 /**
@@ -242,12 +243,12 @@ dplasma_zgeru_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgeru( parsec_context_t *parsec,
-               const parsec_complex64_t alpha,
+               const dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *X,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal( parsec, PlasmaTrans, alpha, X, Y, A );
+    return dplasma_zger_internal( parsec, dplasmaTrans, alpha, X, Y, A );
 }
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -300,12 +301,12 @@ dplasma_zgeru( parsec_context_t *parsec,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgerc_New( parsec_complex64_t alpha,
+dplasma_zgerc_New( dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X,
                    const parsec_tiled_matrix_dc_t *Y,
                          parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal_New( PlasmaConjTrans, alpha, X, Y, A );
+    return dplasma_zger_internal_New( dplasmaConjTrans, alpha, X, Y, A );
 }
 
 /**
@@ -381,12 +382,12 @@ dplasma_zgerc_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgerc( parsec_context_t *parsec,
-               parsec_complex64_t alpha,
+               dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *X,
                const parsec_tiled_matrix_dc_t *Y,
                      parsec_tiled_matrix_dc_t *A)
 {
-    return dplasma_zger_internal( parsec, PlasmaConjTrans, alpha, X, Y, A );
+    return dplasma_zger_internal( parsec, dplasmaConjTrans, alpha, X, Y, A );
 }
 
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */

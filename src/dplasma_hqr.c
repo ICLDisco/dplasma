@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -71,12 +71,11 @@
  *     These lines are defined by (i-k)/p = 0.
  */
 #include "dplasma.h"
-#include "dplasma_qr_param.h"
+#include "dplasma/qr_param.h"
+#include "dplasmaaux.h"
 
 #include <math.h>
-#if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
 
 #define PRINT_PIVGEN 0
 #ifdef PRINT_PIVGEN
@@ -1700,9 +1699,9 @@ hqr_getinvperm( const dplasma_qrtree_t *qrtree, int k, int m )
  *          On exit, the structure initialized according to the parameter given.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   Structure is initialized for QR factorization.
- *          @arg PlasmaTrans:     Structure is initialized for LQ factorization.
- *          @arg PlasmaConjTrans: Structure is initialized for LQ factorization.
+ *          @arg dplasmaNoTrans:   Structure is initialized for QR factorization.
+ *          @arg dplasmaTrans:     Structure is initialized for LQ factorization.
+ *          @arg dplasmaConjTrans: Structure is initialized for LQ factorization.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to be factorized, on which
@@ -1748,7 +1747,7 @@ hqr_getinvperm( const dplasma_qrtree_t *qrtree, int k, int m )
  *          used. If p == mt, a and type_llvl are ignored since only high level
  *          reduction are performed.
  *          By default, it is recommended to set p to P if trans ==
- *          PlasmaNoTrans, Q otherwise, where P-by-Q is the process grid used to
+ *          dplasmaNoTrans, Q otherwise, where P-by-Q is the process grid used to
  *          distributed the data. (p > 0)
  *
  * @param[in] domino
@@ -1790,7 +1789,7 @@ hqr_getinvperm( const dplasma_qrtree_t *qrtree, int k, int m )
  ******************************************************************************/
 int
 dplasma_hqr_init( dplasma_qrtree_t *qrtree,
-                  PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                  dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                   int type_llvl, int type_hlvl,
                   int a, int p,
                   int domino, int tsrr )
@@ -1803,9 +1802,9 @@ dplasma_hqr_init( dplasma_qrtree_t *qrtree,
         dplasma_error("dplasma_hqr_init", "illegal value of qrtree");
         return -1;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_hqr_init", "illegal value of trans");
         return -2;
     }
@@ -1823,7 +1822,7 @@ dplasma_hqr_init( dplasma_qrtree_t *qrtree,
         domino = domino ? 1 : 0;
     }
     else {
-        if (trans == PlasmaNoTrans) {
+        if (trans == dplasmaNoTrans) {
             ratio = ((double)(A->nt) / (double)(A->mt));
         } else {
             ratio = ((double)(A->mt) / (double)(A->nt));
@@ -1843,8 +1842,8 @@ dplasma_hqr_init( dplasma_qrtree_t *qrtree,
     qrtree->nextpiv    = hqr_nextpiv;
     qrtree->prevpiv    = hqr_prevpiv;
 
-    qrtree->mt   = (trans == PlasmaNoTrans) ? A->mt : A->nt;
-    qrtree->nt   = (trans == PlasmaNoTrans) ? A->nt : A->mt;
+    qrtree->mt   = (trans == dplasmaNoTrans) ? A->mt : A->nt;
+    qrtree->nt   = (trans == dplasmaNoTrans) ? A->nt : A->mt;
 
     a = dplasma_imin( a, qrtree->mt );
 
@@ -2574,9 +2573,9 @@ svd_prevpiv(const dplasma_qrtree_t *qrtree, int k, int pivot, int start)
  *          On exit, the structure initialized according to the given parameters.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   Structure is initialized for the QR steps.
- *          @arg PlasmaTrans:     Structure is initialized for the LQ steps.
- *          @arg PlasmaConjTrans: Structure is initialized for the LQ steps.
+ *          @arg dplasmaNoTrans:   Structure is initialized for the QR steps.
+ *          @arg dplasmaTrans:     Structure is initialized for the LQ steps.
+ *          @arg dplasmaConjTrans: Structure is initialized for the LQ steps.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A to be factorized, on which
@@ -2603,7 +2602,7 @@ svd_prevpiv(const dplasma_qrtree_t *qrtree, int k, int pivot, int start)
  *          used. If p == mt, this enforce the high level reduction tree to be
  *          performed on the full matrix.
  *          By default, it is recommended to set p to P if trans ==
- *          PlasmaNoTrans, and to Q otherwise, where P-by-Q is the process grid
+ *          dplasmaNoTrans, and to Q otherwise, where P-by-Q is the process grid
  *          used to distributed the data. (p > 0)
  *
  * @param[in] nbthread_per_node
@@ -2634,7 +2633,7 @@ svd_prevpiv(const dplasma_qrtree_t *qrtree, int k, int pivot, int start)
  ******************************************************************************/
 int
 dplasma_svd_init( dplasma_qrtree_t *qrtree,
-                  PLASMA_enum trans, parsec_tiled_matrix_dc_t *A,
+                  dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A,
                   int type_hlvl, int p, int nbthread_per_node, int ratio )
 {
     int low_mt, minMN, a = -1;
@@ -2644,9 +2643,9 @@ dplasma_svd_init( dplasma_qrtree_t *qrtree,
         dplasma_error("dplasma_svd_init", "illegal value of qrtree");
         return -1;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_svd_init", "illegal value of trans");
         return -2;
     }
@@ -2666,8 +2665,8 @@ dplasma_svd_init( dplasma_qrtree_t *qrtree,
     qrtree->nextpiv    = svd_nextpiv;
     qrtree->prevpiv    = svd_prevpiv;
 
-    qrtree->mt   = (trans == PlasmaNoTrans) ? A->mt : A->nt;
-    qrtree->nt   = (trans == PlasmaNoTrans) ? A->nt : A->mt;
+    qrtree->mt   = (trans == dplasmaNoTrans) ? A->mt : A->nt;
+    qrtree->nt   = (trans == dplasmaNoTrans) ? A->nt : A->mt;
 
     qrtree->a    = a;
     qrtree->p    = p;

@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -24,8 +24,8 @@ descB   [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
 lu_tab  [type = "int*"]
 qrtree  [type = "dplasma_qrtree_t"]
 ib      [type = "int"]
-p_work  [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*ib*(TS->nb))"]
-p_tau   [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)   *(TS->nb))"]
+p_work  [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*(TS->nb))"]
+p_tau   [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *(TS->nb))"]
 
 param_p [type = int default="((two_dim_block_cyclic_t*)descA)->grid.rows" hidden=on ]
 param_q [type = int default="((two_dim_block_cyclic_t*)descA)->grid.cols" hidden=on ]
@@ -100,7 +100,7 @@ BODY
         }
 
         CORE_ztrsm(
-            PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,
+            dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,
             tempkm, tempnn,
             1., A /*A(k, k)*/, ldak,
                 C /*B(k, n)*/, ldbk);
@@ -165,7 +165,7 @@ BODY
 
     printlog("zgemm( k=%d, m=%d, n=%d)\n", k, m, n);
 
-        CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
+        CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                    tempmm, tempnn, tempkn,
                    -1., H /*(m, k)*/, ldam,
                         V /*(k, n)*/, ldbk,
@@ -225,7 +225,7 @@ zunmqr(k, i, n)
 BODY
 {
     printlog("CORE_zunmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, tempmm, tempnn, min(tempmm, tempnn), ib, \n"
+             "\t(dplasmaLeft, dplasmaConjTrans, tempmm, tempnn, min(tempmm, tempnn), ib, \n"
              "\t A(%d,%d)[%p], ldam, T(%d,%d)[%p], TS->mb, A(%d,%d)[%p], ldam, p_elem_A, TS->nb)",
              k, m, n, m, k, A, m, k, T, m, n, C);
 
@@ -240,7 +240,7 @@ BODY
         int ldbm    = BLKLDD( descB, m );
 
         CORE_zunmqr(
-            PlasmaLeft, PlasmaConjTrans,
+            dplasmaLeft, dplasmaConjTrans,
             tempmm, tempnn, tempmin, ib,
             A /* A(m, k) */, ldam,
             T /* T(m, k) */, TS->mb,
@@ -340,7 +340,7 @@ BODY
 
         if ( type == DPLASMA_QR_KILLED_BY_TS ) {
             CORE_ztsmqr(
-                PlasmaLeft, PlasmaConjTrans,
+                dplasmaLeft, dplasmaConjTrans,
                 descB->mb, tempnn, tempmm, tempnn, tempkn, ib,
                 A1 /* B(p, n) */, ldbp,
                 A2 /* B(m, n) */, ldbm,
@@ -349,7 +349,7 @@ BODY
                 p_elem_B, ldwork );
         } else {
             CORE_zttmqr(
-                PlasmaLeft, PlasmaConjTrans,
+                dplasmaLeft, dplasmaConjTrans,
                 descB->mb, tempnn, tempmm, tempnn, tempkn, ib,
                 A1 /* B(p, n) */, ldbp,
                 A2 /* B(m, n) */, ldbm,
@@ -361,7 +361,7 @@ BODY
 
 
     printlog("CORE_zttmqr(%d, %d, %d)\n"
-             "\t(PlasmaLeft, PlasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, \n"
+             "\t(dplasmaLeft, dplasmaConjTrans, descA->mb, tempnn, tempmm, tempnn, descA->nb, ib, \n"
              "\t A(%d,%d)[%p], A.mb, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldam, T(%d,%d)[%p], TT->mb, p_elem_A, ldwork)",
              k, m, n, p, n, A1, m, n, A2, m, k, V, m, k, T);
 }
@@ -476,7 +476,7 @@ BODY
             int tempnn = (n==(descB->nt-1)) ? (descB->n - n * descB->nb) : descB->nb;
             int ldbm = BLKLDD( descB, m );
 
-            CORE_zlacpy(PlasmaUpperLower, tempmm, tempnn,
+            CORE_zlacpy(dplasmaUpperLower, tempmm, tempnn,
                         A,    ldbm,
                         Bshm, ldbm);
         }

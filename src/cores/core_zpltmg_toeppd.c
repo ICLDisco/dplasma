@@ -13,11 +13,7 @@
  *
  **/
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-#include "core_zblas.h"
+#include "common.h"
 
 #undef REAL
 #define COMPLEX
@@ -67,7 +63,11 @@
  *         all call to this routines generating the w and theta vectors.
  *
  ******************************************************************************/
-void CORE_zpltmg_toeppd1( int gM, int m0, int M, parsec_complex64_t *W,
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_toeppd1 = PCORE_zpltmg_toeppd1
+#define CORE_zpltmg_toeppd1 PCORE_zpltmg_toeppd1
+#endif
+void CORE_zpltmg_toeppd1( int gM, int m0, int M, PLASMA_Complex64_t *W,
                           unsigned long long int seed )
 {
     int i;
@@ -142,11 +142,15 @@ void CORE_zpltmg_toeppd1( int gM, int m0, int M, parsec_complex64_t *W,
  *         The leading dimension of the tile A. LDA >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_toeppd2 = PCORE_zpltmg_toeppd2
+#define CORE_zpltmg_toeppd2 PCORE_zpltmg_toeppd2
+#endif
 void CORE_zpltmg_toeppd2( int M, int N, int K, int m0, int n0,
-                          const parsec_complex64_t *W,
-                                parsec_complex64_t *A, int LDA )
+                          const PLASMA_Complex64_t *W,
+                                PLASMA_Complex64_t *A, int LDA )
 {
-    const parsec_complex64_t *tmpW;
+    const PLASMA_Complex64_t *tmpW;
     int i, j, k, ii, jj;
 
     for (j=0, jj=n0; j<N; j++, jj++) {

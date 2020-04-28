@@ -14,11 +14,8 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-
+#include <lapacke.h>
+#include "common.h"
 #undef REAL
 #define COMPLEX
 
@@ -95,16 +92,28 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztslqt = PCORE_ztslqt
+#define CORE_ztslqt PCORE_ztslqt
+#define CORE_ztsmlq PCORE_ztsmlq
+int  CORE_ztsmlq(PLASMA_enum side, PLASMA_enum trans,
+                 int M1, int N1, int M2, int N2, int K, int IB,
+                 PLASMA_Complex64_t *A1, int LDA1,
+                 PLASMA_Complex64_t *A2, int LDA2,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+#endif
 int CORE_ztslqt(int M, int N, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *TAU, parsec_complex64_t *WORK)
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *TAU, PLASMA_Complex64_t *WORK)
 {
-    static parsec_complex64_t zone  = 1.0;
-    static parsec_complex64_t zzero = 0.0;
+    static PLASMA_Complex64_t zone  = 1.0;
+    static PLASMA_Complex64_t zzero = 0.0;
 
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
     int i, ii, sb;
 
     /* Check input arguments */
@@ -120,7 +129,7 @@ int CORE_ztslqt(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA2 < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA2 < max(1,M)) && (M > 0)) {
         coreblas_error(8, "Illegal value of LDA2");
         return -8;
     }
@@ -130,7 +139,7 @@ int CORE_ztslqt(int M, int N, int IB,
         return PLASMA_SUCCESS;
 
     for(ii = 0; ii < M; ii += IB) {
-        sb = coreblas_imin(M-ii, IB);
+        sb = min(M-ii, IB);
         for(i = 0; i < sb; i++) {
             /*
              * Generate elementary reflector H( II*IB+I ) to annihilate A( II*IB+I, II*IB+I:N ).
