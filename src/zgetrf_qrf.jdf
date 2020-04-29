@@ -799,18 +799,14 @@ BODY
                                                  tempm, tempkn);
           pdescA.mat = A;
           CORE_zgetrf_rectil(
-#if !defined(CORE_GETRF_270)
               getrfdata,
-#endif
               pdescA, IP, info );
 
       } else {
           /* Not implemented */
           assert( 0 );
           CORE_zgetrf_reclap(
- #if !defined(CORE_GETRF_270)
               getrfdata,
-#endif
               tempm, tempkn,
               A/*(k, k)*/, ldak, IP, info );
       }

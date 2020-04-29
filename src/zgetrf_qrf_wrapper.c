@@ -202,25 +202,12 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
                                 NULL, NULL, NULL,
                                 INFO);
 
-#if defined(CORE_GETRF_270)
-
-    if ( A->storage == matrix_Tile ) {
-        CORE_zgetrf_rectil_init();
-    } else {
-        CORE_zgetrf_reclap_init();
-    }
-    tp->_g_nbmaxthrd = dplasma_imin( nbthreads, 48 );
-
-#else
-
     if ( A->storage == matrix_Tile ) {
         tp->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
     } else {
         tp->_g_getrfdata = CORE_zgetrf_reclap_init(nbthreads);
     }
     tp->_g_nbmaxthrd = nbthreads;
-
-#endif
 
     tp->_g_W = (double*)malloc(sizeW * sizeof(double));
 

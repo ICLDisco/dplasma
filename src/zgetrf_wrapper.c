@@ -92,25 +92,12 @@ dplasma_zgetrf_New( parsec_tiled_matrix_dc_t *A,
                                     (parsec_data_collection_t*)IPIV,
                                     INFO );
 
-#if defined(CORE_GETRF_270)
-
-    if ( A->storage == matrix_Tile ) {
-        CORE_zgetrf_rectil_init();
-    } else {
-        CORE_zgetrf_reclap_init();
-    }
-    parsec_getrf->_g_nbmaxthrd = dplasma_imin( nbthreads, 48 );
-
-#else
-
     if ( A->storage == matrix_Tile ) {
         parsec_getrf->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
     } else {
         parsec_getrf->_g_getrfdata = CORE_zgetrf_reclap_init(nbthreads);
     }
     parsec_getrf->_g_nbmaxthrd = nbthreads;
-
-#endif
 
     /* A */
     dplasma_add2arena_tile( parsec_getrf->arenas[PARSEC_zgetrf_DEFAULT_ARENA],
