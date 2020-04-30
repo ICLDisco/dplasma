@@ -144,16 +144,12 @@ BODY
                                                tempm, tempkn);
         pdescA.mat = A;
         CORE_zgetrf_rectil(
-#if !defined(CORE_GETRF_270)
             getrfdata,
-#endif
             pdescA, IPIV, info );
 
     } else {
         CORE_zgetrf_reclap(
-#if !defined(CORE_GETRF_270)
             getrfdata,
-#endif
             tempm, tempkn,
             A/*(k, k)*/, ldak, IPIV, info );
     }
