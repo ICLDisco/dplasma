@@ -32,9 +32,7 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_gemm(iparam);
     iparam_default_ibnbmb(iparam, 0, 200, 200);
-#if 0
-    iparam[IPARAM_NGPUS] = 0;
-#endif
+
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);

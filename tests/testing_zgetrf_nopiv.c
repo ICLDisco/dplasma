@@ -32,7 +32,6 @@ int main(int argc, char ** argv)
     iparam_default_ibnbmb(iparam, 40, 200, 200);
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
-    iparam[IPARAM_NGPUS] = 0;
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);

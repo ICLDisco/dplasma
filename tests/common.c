@@ -7,6 +7,7 @@
 #include "parsec/runtime.h"
 #include "parsec/execution_stream.h"
 #include "parsec/utils/mca_param.h"
+#include "dplasma.h"
 
 #include "common.h"
 
@@ -303,9 +304,9 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
 
             case 'g':
 #if !defined(DPLASMA_HAVE_CUDA)
-                iparam[IPARAM_NGPUS] = -1; /* force an error message */
+                iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED; /* force an error message */
 #endif
-                if(iparam[IPARAM_NGPUS] == -1) {
+                if(iparam[IPARAM_NGPUS] == DPLASMA_ERR_NOT_SUPPORTED) {
                     fprintf(stderr, "#!!!!! This test does not have GPU support. GPU disabled.\n");
                     break;
                 }
@@ -566,10 +567,8 @@ static void iparam_default(int* iparam)
     /* Just in case someone forget to add the initialization :) */
     memset(iparam, 0, IPARAM_SIZEOF * sizeof(int));
     iparam[IPARAM_NNODES] = 1;
-    iparam[IPARAM_NGPUS]  = -1;
     iparam[IPARAM_ASYNC]  = 1;
     iparam[IPARAM_QR_DOMINO]    = -1;
-    iparam[IPARAM_QR_TSRR]      = 0;
     iparam[IPARAM_LOWLVL_TREE]  = DPLASMA_GREEDY_TREE;
     iparam[IPARAM_HIGHLVL_TREE] = -1;
     iparam[IPARAM_QR_TS_SZE]    = -1;

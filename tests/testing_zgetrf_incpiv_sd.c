@@ -28,9 +28,8 @@ int main(int argc, char ** argv)
     iparam[IPARAM_KP] = 2;
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
-#if 0
-    iparam[IPARAM_NGPUS] = 0;
-#endif
+    iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
+
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);

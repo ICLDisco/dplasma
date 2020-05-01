@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 48, 144, 144);
-    iparam[IPARAM_NGPUS] = 0;
+    iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
 
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);
