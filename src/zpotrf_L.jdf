@@ -104,7 +104,7 @@ BODY
 
     printlog("CORE_zpotrf( %d )\n\t( %s, %d, A(%d,%d)[%p], %d) return info = %d\n",
              k,
-             dplasma_lapack_const(uplo), tempkm, k, k, T, descA->mb, iinfo );
+             &dplasma_lapack_const(uplo), tempkm, k, k, T, descA->mb, iinfo );
 }
 END
 
@@ -182,8 +182,8 @@ BODY
 
     printlog("CORE_ztrsm( %d, %d )\n\t( %s, %s, %s, %s, %d, %d, %f, A(%d,%d)[%p], %d,  A(%d,%d)[%p], %d)\n",
              m, k,
-             dplasma_lapack_const( dplasmaRight ), dplasma_lapack_const( dplasmaLower ),
-             dplasma_lapack_const( dplasmaConjTrans ), dplasma_lapack_const( dplasmaNonUnit ),
+             &dplasma_lapack_const( dplasmaRight ), &dplasma_lapack_const( dplasmaLower ),
+             &dplasma_lapack_const( dplasmaConjTrans ), &dplasma_lapack_const( dplasmaNonUnit ),
              tempmm, descA->nb,
              1.0, k, k, T, ldak,
                   m, k, C, ldam);
@@ -255,7 +255,7 @@ BODY
     printlog(
              "CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              k, m,
-             dplasma_lapack_const( dplasmaLower ), dplasma_lapack_const( dplasmaNoTrans ),
+             &dplasma_lapack_const( dplasmaLower ), &dplasma_lapack_const( dplasmaNoTrans ),
              tempmm, descA->mb,
              -1.0, m, k, A, ldam,
               1.0, m, m, T, ldam);
@@ -372,7 +372,7 @@ BODY
 
     printlog("CORE_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              m, n, k,
-             dplasma_lapack_const( dplasmaNoTrans ),  dplasma_lapack_const( dplasmaConjTrans ),
+             &dplasma_lapack_const( dplasmaNoTrans ),  &dplasma_lapack_const( dplasmaConjTrans ),
              tempmm, descA->mb, descA->mb,
              -1.0, m, k, A, ldam,
                    n, k, B, ldan,

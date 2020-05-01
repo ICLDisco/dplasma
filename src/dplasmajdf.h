@@ -25,11 +25,9 @@
                                       es->th_id, es->virtual_process->vp_id, __VA_ARGS__)
 #   define printlogcuda(str, ...) fprintf(stderr, "cuda %d " str "\n", \
                                           gpu_device->cuda_index, __VA_ARGS__)
-#   define OUTPUT(ARG)  printf ARG
 #else
 #   define printlog(...) do {} while(0)
 #   define printlogcuda(...) do {} while(0)
-#   define OUTPUT(ARG)
 #endif
 
 #ifndef PARSEC_HAVE_MPI

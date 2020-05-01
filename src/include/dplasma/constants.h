@@ -206,7 +206,7 @@ enum dplasma_matrix_type_e {
     dplasmaMatrixLangou    = 42
 };
 
-extern char *dplasma_lapack_constants[];
-#define dplasma_lapack_const(plasma_const) dplasma_lapack_constants[plasma_const][0]
+extern char *dplasma_lapack_const_strings[];
+#define dplasma_lapack_const(plasma_const) (dplasma_lapack_const_strings[plasma_const][0])
 
 #endif /* _DPLASMA_CONSTANTS_H_ */
