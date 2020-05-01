@@ -302,6 +302,9 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                 break;
 
             case 'g':
+#if !defined(DPLASMA_HAVE_CUDA)
+                iparam[IPARAM_NGPUS] = -1; /* force an error message */
+#endif
                 if(iparam[IPARAM_NGPUS] == -1) {
                     fprintf(stderr, "#!!!!! This test does not have GPU support. GPU disabled.\n");
                     break;

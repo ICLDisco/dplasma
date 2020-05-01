@@ -7,6 +7,7 @@
 #ifndef _DPLASMA_CORES_H_
 #define _DPLASMA_CORES_H_
 
+#include "dplasma/config.h"
 #include "cores/core_blas.h"
 #include "cores/dplasma_zcores.h"
 #include "cores/dplasma_ccores.h"

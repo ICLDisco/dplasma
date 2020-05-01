@@ -12,14 +12,14 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
-#if defined(PARSEC_HAVE_RECURSIVE)
+#if defined(DPLASMA_WITH_RECURSIVE)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
 #endif
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 /*
  * Priorities used in this jdf:

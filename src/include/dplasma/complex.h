@@ -48,6 +48,7 @@ typedef double _Complex dplasma_complex64_t;
 extern "C" {
 #endif
 
+#include "dplasma/config.h"
 #if !defined(__cplusplus) && defined(DPLASMA_HAVE_COMPLEX_H)
 #include <complex.h>
 #else

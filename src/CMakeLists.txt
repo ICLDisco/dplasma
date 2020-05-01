@@ -220,7 +220,6 @@ target_include_directories(dplasma
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/include>>)
-target_compile_definitions(dplasma PUBLIC $<$<BOOL:${DPLASMA_WITH_RECURSIVE}>:DPLASMA_HAVE_RECURSIVE>)
 
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
@@ -232,9 +231,10 @@ target_link_libraries(dplasma
   LAPACKE::LAPACKE
   $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_CUBLAS_LIBRARIES}>)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
-                                         SOVERSION ${DPLASMA_VERSION_MAJOR})
+                                       SOVERSION ${DPLASMA_VERSION_MAJOR})
 
 install(TARGETS dplasma
+    EXPORT dplasma-targets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

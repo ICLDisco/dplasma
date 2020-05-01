@@ -19,7 +19,7 @@ int blgchase_ztrdv2(int NT, int N, int NB,
 
 
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
@@ -47,6 +47,6 @@ int dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
                          PLASMA_Complex64_t *WORK, int LDWORK,
                          PLASMA_Complex64_t *WORKC, int LDWORKC,
                          cudaStream_t stream);
-#endif /* defined(PARSEC_HAVE_CUDA) */
+#endif /* defined(DPLASMA_HAVE_CUDA) */
 
 #endif /* _DPLASMA_Z_CORES_ */
