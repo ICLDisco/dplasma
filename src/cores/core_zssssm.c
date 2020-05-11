@@ -14,10 +14,8 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <cblas.h>
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -89,16 +87,19 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zssssm = PCORE_zssssm
+#define CORE_zssssm PCORE_zssssm
+#endif
 int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                const parsec_complex64_t *L1, int LDL1,
-                const parsec_complex64_t *L2, int LDL2,
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                const PLASMA_Complex64_t *L1, int LDL1,
+                const PLASMA_Complex64_t *L2, int LDL2,
                 const int *IPIV)
 {
-    static parsec_complex64_t zone  = 1.0;
-    static parsec_complex64_t mzone =-1.0;
+    static PLASMA_Complex64_t zone  = 1.0;
+    static PLASMA_Complex64_t mzone =-1.0;
 
     int i, ii, sb;
     int im, ip;
@@ -128,19 +129,19 @@ int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
         coreblas_error(6, "Illegal value of IB");
         return -6;
     }
-    if (LDA1 < coreblas_imax(1,M1)) {
+    if (LDA1 < max(1,M1)) {
         coreblas_error(8, "Illegal value of LDA1");
         return -8;
     }
-    if (LDA2 < coreblas_imax(1,M2)) {
+    if (LDA2 < max(1,M2)) {
         coreblas_error(10, "Illegal value of LDA2");
         return -10;
     }
-    if (LDL1 < coreblas_imax(1,IB)) {
+    if (LDL1 < max(1,IB)) {
         coreblas_error(12, "Illegal value of LDL1");
         return -12;
     }
-    if (LDL2 < coreblas_imax(1,M2)) {
+    if (LDL2 < max(1,M2)) {
         coreblas_error(14, "Illegal value of LDL2");
         return -14;
     }
@@ -152,7 +153,7 @@ int CORE_zssssm(int M1, int N1, int M2, int N2, int K, int IB,
     ip = 0;
 
     for(ii = 0; ii < K; ii += IB) {
-        sb = coreblas_imin(K-ii, IB);
+        sb = min(K-ii, IB);
 
         for(i = 0; i < sb; i++) {
             im = IPIV[ip]-1;

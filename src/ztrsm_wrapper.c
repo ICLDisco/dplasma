@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "ztrsm_LLN.h"
 #include "ztrsm_LLT.h"
@@ -34,38 +35,38 @@
  *
  * @param[in] side
  *          Specifies whether A appears on the left or on the right of X:
- *          = PlasmaLeft:  op( A ) * X = B
- *          = PlasmaRight: X * op( A ) = B
+ *          = dplasmaLeft:  op( A ) * X = B
+ *          = dplasmaRight: X * op( A ) = B
  *
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed, not transposed or
  *          conjugate transposed:
- *          = PlasmaNoTrans:   A is transposed;
- *          = PlasmaTrans:     A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is transposed;
+ *          = dplasmaTrans:     A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] diag
  *          Specifies whether or not A is unit triangular:
- *          = PlasmaNonUnit: A is non unit;
- *          = PlasmaUnit:    A us unit.
+ *          = dplasmaNonUnit: A is non unit;
+ *          = dplasmaUnit:    A us unit.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha
  *
  * @param[in] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
- *          is not referenced. If diag = PlasmaUnit, the diagonal elements of A
+ *          is not referenced. If diag = dplasmaUnit, the diagonal elements of A
  *          are also not referenced and are assumed to be 1.
  *
  * @param[in,out] B
@@ -91,60 +92,60 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_ztrsm_New( PLASMA_enum side,  PLASMA_enum uplo,
-                   PLASMA_enum trans, PLASMA_enum diag,
-                   parsec_complex64_t alpha,
+dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
+                   dplasma_enum_t trans, dplasma_enum_t diag,
+                   dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *A,
                    parsec_tiled_matrix_dc_t *B )
 {
     parsec_taskpool_t *parsec_trsm = NULL;
 
-    if ( side == PlasmaLeft ) {
-        if ( uplo == PlasmaLower ) {
-            if ( trans == PlasmaNoTrans ) {
+    if ( side == dplasmaLeft ) {
+        if ( uplo == dplasmaLower ) {
+            if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LLN_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
-            } else { /* trans =! PlasmaNoTrans */
+            } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LLT_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
             }
-        } else { /* uplo = PlasmaUpper */
-            if ( trans == PlasmaNoTrans ) {
+        } else { /* uplo = dplasmaUpper */
+            if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LUN_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
-            } else { /* trans =! PlasmaNoTrans */
+            } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LUT_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
             }
         }
-    } else { /* side == PlasmaRight */
-        if ( uplo == PlasmaLower ) {
-            if ( trans == PlasmaNoTrans ) {
+    } else { /* side == dplasmaRight */
+        if ( uplo == dplasmaLower ) {
+            if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RLN_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
-            } else { /* trans =! PlasmaNoTrans */
+            } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RLT_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
             }
-        } else { /* uplo = PlasmaUpper */
-            if ( trans == PlasmaNoTrans ) {
+        } else { /* uplo = dplasmaUpper */
+            if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RUN_new(
                     side, uplo, trans, diag, alpha,
                     A,
                     B);
-            } else { /* trans =! PlasmaNoTrans */
+            } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RUT_new(
                     side, uplo, trans, diag, alpha,
                     A,
@@ -154,7 +155,7 @@ dplasma_ztrsm_New( PLASMA_enum side,  PLASMA_enum uplo,
     }
 
     dplasma_add2arena_tile(((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->arenas[PARSEC_ztrsm_LLN_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 
@@ -205,38 +206,38 @@ dplasma_ztrsm_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] side
  *          Specifies whether A appears on the left or on the right of X:
- *          = PlasmaLeft:  op( A ) * X = B
- *          = PlasmaRight: X * op( A ) = B
+ *          = dplasmaLeft:  op( A ) * X = B
+ *          = dplasmaRight: X * op( A ) = B
  *
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed, not transposed or
  *          conjugate transposed:
- *          = PlasmaNoTrans:   A is transposed;
- *          = PlasmaTrans:     A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is transposed;
+ *          = dplasmaTrans:     A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] diag
  *          Specifies whether or not A is unit triangular:
- *          = PlasmaNonUnit: A is non unit;
- *          = PlasmaUnit:    A us unit.
+ *          = dplasmaNonUnit: A is non unit;
+ *          = dplasmaUnit:    A us unit.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha
  *
  * @param[in] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
- *          is not referenced. If diag = PlasmaUnit, the diagonal elements of A
+ *          is not referenced. If diag = dplasmaUnit, the diagonal elements of A
  *          are also not referenced and are assumed to be 1.
  *
  * @param[in,out] B
@@ -261,35 +262,35 @@ dplasma_ztrsm_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_ztrsm( parsec_context_t *parsec,
-               PLASMA_enum side,  PLASMA_enum uplo,
-               PLASMA_enum trans, PLASMA_enum diag,
-               parsec_complex64_t alpha,
+               dplasma_enum_t side,  dplasma_enum_t uplo,
+               dplasma_enum_t trans, dplasma_enum_t diag,
+               dplasma_complex64_t alpha,
                const parsec_tiled_matrix_dc_t *A,
                parsec_tiled_matrix_dc_t *B)
 {
     parsec_taskpool_t *parsec_ztrsm = NULL;
 
     /* Check input arguments */
-    if (side != PlasmaLeft && side != PlasmaRight) {
+    if (side != dplasmaLeft && side != dplasmaRight) {
         dplasma_error("dplasma_ztrsm", "illegal value of side");
         return -1;
     }
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_ztrsm", "illegal value of uplo");
         return -2;
     }
-    if (trans != PlasmaConjTrans && trans != PlasmaNoTrans && trans != PlasmaTrans ) {
+    if (trans != dplasmaConjTrans && trans != dplasmaNoTrans && trans != dplasmaTrans ) {
         dplasma_error("dplasma_ztrsm", "illegal value of trans");
         return -3;
     }
-    if (diag != PlasmaUnit && diag != PlasmaNonUnit) {
+    if (diag != dplasmaUnit && diag != dplasmaNonUnit) {
         dplasma_error("dplasma_ztrsm", "illegal value of diag");
         return -4;
     }
 
     if ( (A->m != A->n) ||
-         (( side == PlasmaLeft )  && (A->n != B->m)) ||
-         (( side == PlasmaRight ) && (A->n != B->n)) ) {
+         (( side == dplasmaLeft )  && (A->n != B->m)) ||
+         (( side == dplasmaRight ) && (A->n != B->n)) ) {
         dplasma_error("dplasma_ztrsm", "illegal matrix A");
         return -6;
     }

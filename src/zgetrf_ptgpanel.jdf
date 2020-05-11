@@ -13,12 +13,12 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
-#define get_diag( _buf_ )  (((parsec_complex64_t*)(_buf_)))
-#define get_rmax( _buf_ )  (((parsec_complex64_t*)(_buf_)) + descA->nb)
-#define get_pivot( _buf_ ) (*( (int*)( ((parsec_complex64_t*)(_buf_)) + 2*descA->nb ) ))
+#define get_diag( _buf_ )  (((dplasma_complex64_t*)(_buf_)))
+#define get_rmax( _buf_ )  (((dplasma_complex64_t*)(_buf_)) + descA->nb)
+#define get_pivot( _buf_ ) (*( (int*)( ((dplasma_complex64_t*)(_buf_)) + 2*descA->nb ) ))
 
-static parsec_complex64_t zone  = 1.;
-static parsec_complex64_t mzone = -1.;
+static dplasma_complex64_t zone  = 1.;
+static dplasma_complex64_t mzone = -1.;
 
 /*
  * This jdf is composed of two parts: the panel and the update.
@@ -274,10 +274,10 @@ WRITE  M -> (size == 1) ? M GETRF_SVM(k, h, lr)                                 
 
 BODY
 {
-    parsec_complex64_t *lM  = (parsec_complex64_t*)M;
-    parsec_complex64_t *lT  = (parsec_complex64_t*)T;
-    parsec_complex64_t *lU  = (parsec_complex64_t*)U;
-    parsec_complex64_t *A, *L;
+    dplasma_complex64_t *lM  = (dplasma_complex64_t*)M;
+    dplasma_complex64_t *lT  = (dplasma_complex64_t*)T;
+    dplasma_complex64_t *lU  = (dplasma_complex64_t*)U;
+    dplasma_complex64_t *A, *L;
 
     int p = (m == k)? h : 0;
     int tempmm = ( m == (descA->mt-1) ) ? descA->m - m * descA->mb : descA->mb;
@@ -295,8 +295,8 @@ BODY
     A = lT + ldam * h + p;
 
     if(h != 0) {
-        parsec_complex64_t *lmaxi = get_rmax( V );
-        parsec_complex64_t alpha;
+        dplasma_complex64_t *lmaxi = get_rmax( V );
+        dplasma_complex64_t alpha;
         int pivot = get_pivot( V );
         int owner_last_index = pivot / descA->mb;
         int last_index       = pivot % descA->mb;
@@ -327,7 +327,7 @@ BODY
         L = lT + ldam * (h-1) + p;
 
         /* Applying the update */
-        alpha = (parsec_complex64_t)1. / lmaxi[h-1];
+        alpha = (dplasma_complex64_t)1. / lmaxi[h-1];
         cblas_zscal(tempmm, CBLAS_SADDR( alpha ), L, 1 );
 
         if((h%IB) != 0){
@@ -365,7 +365,7 @@ BODY
     (*((int*)M)) = descA->mb * m + index;
 
     /* Save the line */
-    lM = ((parsec_complex64_t*)M) + 1;
+    lM = ((dplasma_complex64_t*)M) + 1;
     cblas_zcopy(tempkn, lT + index, ldam,
                 lM,         1);
 
@@ -419,9 +419,9 @@ READ  Md <- (md <= mmax) ? Mm GETRF_RDC(k, h, r, md )                    [type =
 
 BODY
 {
-    parsec_complex64_t *lMm = (parsec_complex64_t*)Mm;
-    parsec_complex64_t *lMg = (parsec_complex64_t*)Mg;
-    parsec_complex64_t *lMd = (parsec_complex64_t*)Md;
+    dplasma_complex64_t *lMm = (dplasma_complex64_t*)Mm;
+    dplasma_complex64_t *lMg = (dplasma_complex64_t*)Mg;
+    dplasma_complex64_t *lMd = (dplasma_complex64_t*)Md;
     double vm = cabs(lMm[1+h]);
 
     printlog("GETRF_RDC(k=%d, h=%d, r=%d, size=%d, mmax=%d, m=%d, mg=%d, md=%d)\n",
@@ -490,16 +490,16 @@ WRITE V2 -> B  GETRF_SND(k, h, 0, (r+1)%rmax )         [type = SWAP] /* Remote *
 
 BODY
 {
-    parsec_complex64_t *lM = (parsec_complex64_t*)M;
+    dplasma_complex64_t *lM = (dplasma_complex64_t*)M;
 
     printlog("GETRF_SVM(k=%d, h=%d, r=%d)\n", k, h, r );
 
 #if !defined(NDEBUG)
-    memset( V1, 0, (2*descA->nb+1)*sizeof(parsec_complex64_t));
+    memset( V1, 0, (2*descA->nb+1)*sizeof(dplasma_complex64_t));
 #endif
     /* Saving the default swap line */
     if ( r == 0 ) {
-        parsec_complex64_t *lA = (parsec_complex64_t*)A;
+        dplasma_complex64_t *lA = (dplasma_complex64_t*)A;
         int ldam = BLKLDD( descA, m );
 
         cblas_zcopy(tempkn, lA + h,        ldam,
@@ -511,7 +511,7 @@ BODY
                 get_rmax( V1 ), 1);
     get_pivot( V1 ) = *((int*)M);
 
-    memcpy( V2, V1, (2*descA->nb+1)*sizeof(parsec_complex64_t));
+    memcpy( V2, V1, (2*descA->nb+1)*sizeof(dplasma_complex64_t));
 }
 END
 
@@ -563,8 +563,8 @@ RW    B <- (d == 0)    ? V2 GETRF_SVM(k, h,      (rmax+r-1)  %rmax )            
 
 BODY
 {
-    parsec_complex64_t *mT = get_rmax( T );
-    parsec_complex64_t *mB = get_rmax( B );
+    dplasma_complex64_t *mT = get_rmax( T );
+    dplasma_complex64_t *mB = get_rmax( B );
 
     printlog("GETRF_SND( k=%d, d=%d, r=%d, h=%d )\n", k, d, r, h );
 
@@ -630,7 +630,7 @@ RW    U <- U GETRF_MAX(k, k+r, sender)                                          
 
 BODY
 {
-    parsec_complex64_t *lU = (parsec_complex64_t*)U;
+    dplasma_complex64_t *lU = (dplasma_complex64_t*)U;
 
     printlog("GETRF_MDL(k=%d, r=%d, h=%d )\n", k, r, h );
 
@@ -692,12 +692,12 @@ BODY
     int ldam = BLKLDD( descA, m );
     int p = (m == k) ? minmn : 0;
     int owner_last_index, last_index;
-    parsec_complex64_t alpha, *lT;
+    dplasma_complex64_t alpha, *lT;
 
     printlog("GETRF_FNL( k=%d, m=%d )\n", k, m );
 
     /* Applying the previous swap */
-    lT = (parsec_complex64_t*)T;
+    lT = (dplasma_complex64_t*)T;
     if(m == k) {
         cblas_zcopy(tempkn, get_rmax( V ), 1,
                             lT + minmn-1,  ldam);
@@ -711,7 +711,7 @@ BODY
     }
 
     /* Appliying the update */
-    alpha = ((parsec_complex64_t) 1.) / ( get_rmax( V )[minmn-1] );
+    alpha = ((dplasma_complex64_t) 1.) / ( get_rmax( V )[minmn-1] );
     cblas_zscal(tempmm-p, CBLAS_SADDR( alpha ), lT + (minmn-1)*ldam + p, 1 );
 
     if(m - k < P) {
@@ -801,8 +801,8 @@ BODY
     int index;
     int i;
 
-    parsec_complex64_t *lU = (parsec_complex64_t*)U;
-    parsec_complex64_t *lT = (parsec_complex64_t*)T;
+    dplasma_complex64_t *lU = (dplasma_complex64_t*)U;
+    dplasma_complex64_t *lT = (dplasma_complex64_t*)T;
 
     printlog("SWAP_RECV(k=%d,m=%d,n=%d)\n",k,m,n);
 
@@ -874,18 +874,18 @@ BODY
     int index;
     int j;
 
-    parsec_complex64_t *lT = (parsec_complex64_t*)T;
-    parsec_complex64_t *lM;
+    dplasma_complex64_t *lT = (dplasma_complex64_t*)T;
+    dplasma_complex64_t *lM;
 
     printlog("SWAP_COLLECT(k=%d,m=%d,n=%d)\n",k,m,n);
 
     if ( (m-k) < P ) {
-        lM = (parsec_complex64_t*)BUFIN;
+        lM = (dplasma_complex64_t*)BUFIN;
 #if !defined(NDEBUG)
-        memset(BUFIN, 0, descA->mb*descA->nb*sizeof(parsec_complex64_t));
+        memset(BUFIN, 0, descA->mb*descA->nb*sizeof(dplasma_complex64_t));
 #endif
     } else {
-        lM = (parsec_complex64_t*)BUF;
+        lM = (dplasma_complex64_t*)BUF;
     }
 
     for(j = 0; j < minmn; j++) {
@@ -961,8 +961,8 @@ BODY
         int owner_index;
         int j;
 
-        parsec_complex64_t *lT = (parsec_complex64_t*)Rtop;
-        parsec_complex64_t *lB = (parsec_complex64_t*)Rbottom;
+        dplasma_complex64_t *lT = (dplasma_complex64_t*)Rtop;
+        dplasma_complex64_t *lB = (dplasma_complex64_t*)Rbottom;
 
         for(j=0; j<minmn; j++) {
             owner_index = (*perm) / descA->mb;
@@ -1070,8 +1070,8 @@ BODY
     CORE_zgemm(
         PlasmaNoTrans, PlasmaNoTrans,
         tempmm, tempnn, descA->mb,
-        (parsec_complex64_t)-1.0, A /*A(m, k)*/, ldam,
+        (dplasma_complex64_t)-1.0, A /*A(m, k)*/, ldam,
                                   B /*A(k, n)*/, ldak,
-        (parsec_complex64_t) 1.0, C /*A(m, n)*/, ldam );
+        (dplasma_complex64_t) 1.0, C /*A(m, n)*/, ldam );
 }
 END

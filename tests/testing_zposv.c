@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -56,15 +56,15 @@ int main(int argc, char ** argv)
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
-    dplasma_zplghe( parsec, (double)(N), PlasmaUpperLower,
+    dplasma_zplghe( parsec, (double)(N), dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
     if(loud > 2) printf("Done\n");
 
     for ( u=0; u<2; u++) {
-        if ( uplo[u] == PlasmaUpper ) {
-            t1 = PlasmaConjTrans; t2 = PlasmaNoTrans;
+        if ( uplo[u] == dplasmaUpper ) {
+            t1 = dplasmaConjTrans; t2 = dplasmaNoTrans;
         } else {
-            t1 = PlasmaNoTrans; t2 = PlasmaConjTrans;
+            t1 = dplasmaNoTrans; t2 = dplasmaConjTrans;
         }
 
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
@@ -83,7 +83,7 @@ int main(int argc, char ** argv)
                         (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_dc_t *)&dcB, 2354);
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,  (parsec_tiled_matrix_dc_t *)&dcX );
 
         /* Compute */
@@ -128,7 +128,7 @@ int main(int argc, char ** argv)
                         (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_dc_t *)&dcB, 2354);
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,  (parsec_tiled_matrix_dc_t *)&dcX );
 
         /* Compute */
@@ -177,17 +177,17 @@ int main(int argc, char ** argv)
                         (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_dc_t *)&dcB, 2354);
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,  (parsec_tiled_matrix_dc_t *)&dcX );
 
         /* Compute */
         if ( loud > 2 ) printf("Compute ... ... ");
         info = dplasma_zpotrf(parsec, uplo[u], (parsec_tiled_matrix_dc_t *)&dcA );
         if ( info == 0 ) {
-            dplasma_ztrsm(parsec, PlasmaLeft, uplo[u], t1, PlasmaNonUnit, 1.0,
+            dplasma_ztrsm(parsec, dplasmaLeft, uplo[u], t1, dplasmaNonUnit, 1.0,
                           (parsec_tiled_matrix_dc_t *)&dcA,
                           (parsec_tiled_matrix_dc_t *)&dcX);
-            dplasma_ztrsm(parsec, PlasmaLeft, uplo[u], t2, PlasmaNonUnit, 1.0,
+            dplasma_ztrsm(parsec, dplasmaLeft, uplo[u], t2, dplasmaNonUnit, 1.0,
                           (parsec_tiled_matrix_dc_t *)&dcA,
                           (parsec_tiled_matrix_dc_t *)&dcX);
         }

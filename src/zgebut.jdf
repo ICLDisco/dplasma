@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2014 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -27,29 +27,29 @@ extern "C" %{
 
 /* Forward declarations */
 void BFT_zQTL( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal );
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal );
 void BFT_zQBL( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal);
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal);
 void BFT_zQTR( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose);
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose);
 void BFT_zQBR( int mb, int nb, int mb_tile, int i_seg, int j_seg, int lvl, int N,
-          PLASMA_Complex64_t *tl, PLASMA_Complex64_t *bl,
-          PLASMA_Complex64_t *tr, PLASMA_Complex64_t *br,
-          PLASMA_Complex64_t *C, PLASMA_Complex64_t *Ubefore, PLASMA_Complex64_t *Uafter, int is_transpose, int is_diagonal );
+          dplasma_complex64_t *tl, dplasma_complex64_t *bl,
+          dplasma_complex64_t *tr, dplasma_complex64_t *br,
+          dplasma_complex64_t *C, dplasma_complex64_t *Ubefore, dplasma_complex64_t *Uafter, int is_transpose, int is_diagonal );
 %}
 
 descA  [type = "parsec_seg_dc_t*"]
-Ubef   [type = "PLASMA_Complex64_t *"]
-Uaft   [type = "PLASMA_Complex64_t *"]
+Ubef   [type = "dplasma_complex64_t *"]
+Uaft   [type = "dplasma_complex64_t *"]
 nt     [type = "int"]
 mt     [type = "int"]
-pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(PLASMA_Complex64_t)*descA->A_org.mb*descA->A_org.nb)"]
+pool_0 [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*descA->A_org.mb*descA->A_org.nb)"]
 
 %option PARSEC_ARENA_STRUT = 36
 
@@ -87,7 +87,7 @@ BODY
   void *p_elem_tl, *p_elem_bl, *p_elem_tr, *p_elem_br;
 
   printlog("GEBUT(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, Atl);
 
   type = segment_to_type_index(&descA->seg_info, i, j);
@@ -117,8 +117,8 @@ BODY
   BFT_zQBR( mb_seg, nb_seg, mb_tile, i_seg, j_seg, descA->level, N, Atl, Abl, Atr, Abr, p_elem_br, Ubef, Uaft, BL_IS_BL, OFF_DIAG);
 
   for(jj=0; jj<nb_seg; jj++){
-      uintptr_t off = (mb_tile*jj) * sizeof(PLASMA_Complex64_t);
-      sz = mb_seg * sizeof(PLASMA_Complex64_t);
+      uintptr_t off = (mb_tile*jj) * sizeof(dplasma_complex64_t);
+      sz = mb_seg * sizeof(dplasma_complex64_t);
       memcpy((void *)((uintptr_t)Atl+off), (void *)((uintptr_t)p_elem_tl+off), sz);
       memcpy((void *)((uintptr_t)Abl+off), (void *)((uintptr_t)p_elem_bl+off), sz);
       memcpy((void *)((uintptr_t)Atr+off), (void *)((uintptr_t)p_elem_tr+off), sz);
@@ -164,7 +164,7 @@ BODY
 #endif
 
   printlog("GEBUT_Reader(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)
@@ -217,7 +217,7 @@ BODY
 #endif
 
   printlog("GEBUT_Writer(%d, %d)\n"
-           "\t(PlasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
+           "\t(dplasmaLower, tempkn, A(%d,%d)[%p], ldak)\n",
            i, j, i, j, A);
 
 #if defined(DEBUG_BUTTERFLY)

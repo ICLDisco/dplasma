@@ -15,11 +15,7 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-#include "core_zblas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -75,8 +71,17 @@
  *              to solve a system of equations.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgetrf_incpiv = PCORE_zgetrf_incpiv
+#define CORE_zgetrf_incpiv PCORE_zgetrf_incpiv
+#define CORE_zgessm PCORE_zgessm
+int  CORE_zgessm(int M, int N, int K, int IB,
+                 int *IPIV,
+                 const PLASMA_Complex64_t *L, int LDL,
+                 PLASMA_Complex64_t *A, int LDA);
+#endif
 int CORE_zgetrf_incpiv(int M, int N, int IB,
-                       parsec_complex64_t *A, int LDA,
+                       PLASMA_Complex64_t *A, int LDA,
                        int *IPIV, int *INFO)
 {
     int i, j, k, sb;
@@ -96,7 +101,7 @@ int CORE_zgetrf_incpiv(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }
@@ -105,10 +110,10 @@ int CORE_zgetrf_incpiv(int M, int N, int IB,
     if ((M == 0) || (N == 0) || (IB == 0))
         return PLASMA_SUCCESS;
 
-    k = coreblas_imin(M, N);
+    k = min(M, N);
 
     for(i =0 ; i < k; i += IB) {
-        sb = coreblas_imin(IB, k-i);
+        sb = min(IB, k-i);
         /*
          * Factor diagonal and subdiagonal blocks and test for exact singularity.
          */

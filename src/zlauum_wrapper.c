@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -9,7 +9,8 @@
  *
  */
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "zlauum_L.h"
 #include "zlauum_U.h"
@@ -35,14 +36,14 @@
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in,out] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
  *          is not referenced.
@@ -66,18 +67,18 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlauum_New( PLASMA_enum uplo,
+dplasma_zlauum_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_lauum = NULL;
 
-    if ( uplo == PlasmaLower ) {
+    if ( uplo == dplasmaLower ) {
         parsec_lauum = (parsec_taskpool_t*)parsec_zlauum_L_new(
             uplo, A );
 
         /* Lower part of A with diagonal part */
         dplasma_add2arena_lower( ((parsec_zlauum_L_taskpool_t*)parsec_lauum)->arenas[PARSEC_zlauum_L_LOWER_TILE_ARENA],
-                                 A->mb*A->nb*sizeof(parsec_complex64_t),
+                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A->mb, 1 );
     } else {
@@ -86,13 +87,13 @@ dplasma_zlauum_New( PLASMA_enum uplo,
 
         /* Upper part of A with diagonal part */
         dplasma_add2arena_upper( ((parsec_zlauum_U_taskpool_t*)parsec_lauum)->arenas[PARSEC_zlauum_U_UPPER_TILE_ARENA],
-                                 A->mb*A->nb*sizeof(parsec_complex64_t),
+                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A->mb, 1 );
     }
 
     dplasma_add2arena_tile(((parsec_zlauum_L_taskpool_t*)parsec_lauum)->arenas[PARSEC_zlauum_L_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 
@@ -138,9 +139,9 @@ dplasma_zlauum_Destruct( parsec_taskpool_t *tp )
  *  factor U or L is stored in the upper or lower triangular part of the array
  *  A.
  *
- *  If uplo = PlasmaUpper then the upper triangle of the result is stored,
+ *  If uplo = dplasmaUpper then the upper triangle of the result is stored,
  *  overwriting the factor U in A.
- *  If uplo = PlasmaLower then the lower triangle of the result is stored,
+ *  If uplo = dplasmaLower then the lower triangle of the result is stored,
  *  overwriting the factor L in A.
  *
  *******************************************************************************
@@ -151,14 +152,14 @@ dplasma_zlauum_Destruct( parsec_taskpool_t *tp )
  * @param[in] uplo
  *          Specifies whether the matrix A is upper triangular or lower
  *          triangular:
- *          = PlasmaUpper: Upper triangle of A is stored;
- *          = PlasmaLower: Lower triangle of A is stored.
+ *          = dplasmaUpper: Upper triangle of A is stored;
+ *          = dplasmaLower: Lower triangle of A is stored.
  *
  * @param[in,out] A
  *          Descriptor of the triangular matrix A of size N-by-N.
- *          If uplo = PlasmaUpper, the leading N-by-N upper triangular part of
+ *          If uplo = dplasmaUpper, the leading N-by-N upper triangular part of
  *          the array A contains the upper triangular matrix, and the strictly
- *          lower triangular part of A is not referenced. If uplo = PlasmaLower,
+ *          lower triangular part of A is not referenced. If uplo = dplasmaLower,
  *          the leading N-by-N lower triangular part of the array A contains the
  *          lower triangular matrix, and the strictly upper triangular part of A
  *          is not referenced.
@@ -181,13 +182,13 @@ dplasma_zlauum_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zlauum( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_zlauum = NULL;
 
     /* Check input arguments */
-    if (uplo != PlasmaUpper && uplo != PlasmaLower) {
+    if (uplo != dplasmaUpper && uplo != dplasmaLower) {
         dplasma_error("dplasma_zlauum", "illegal value of uplo");
         return -1;
     }

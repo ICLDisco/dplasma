@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,8 +8,9 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
-#include <core_blas.h>
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
+#include "cores/core_blas.h"
 
 #include "zherk_LN.h"
 #include "zherk_LC.h"
@@ -38,19 +39,19 @@
  *******************************************************************************
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed or conjugate transposed:
- *          = PlasmaNoTrans:   A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
  *
  * @param[in] A
- *          A is a LDA-by-ka matrix, where ka is K when trans = PlasmaNoTrans,
+ *          A is a LDA-by-ka matrix, where ka is K when trans = dplasmaNoTrans,
  *          and is N otherwise.
  *
  * @param[in] beta
@@ -77,8 +78,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zherk_New( PLASMA_enum uplo,
-                   PLASMA_enum trans,
+dplasma_zherk_New( dplasma_enum_t uplo,
+                   dplasma_enum_t trans,
                    double alpha,
                    const parsec_tiled_matrix_dc_t* A,
                    double beta,
@@ -86,8 +87,8 @@ dplasma_zherk_New( PLASMA_enum uplo,
 {
     parsec_taskpool_t* tp;
 
-    if ( uplo == PlasmaLower ) {
-        if ( trans == PlasmaNoTrans ) {
+    if ( uplo == dplasmaLower ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zherk_LN_new(uplo, trans,
                                    alpha, A,
@@ -101,7 +102,7 @@ dplasma_zherk_New( PLASMA_enum uplo,
         }
     }
     else {
-        if ( trans == PlasmaNoTrans ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)
                 parsec_zherk_UN_new(uplo, trans,
                                    alpha, A,
@@ -116,7 +117,7 @@ dplasma_zherk_New( PLASMA_enum uplo,
     }
 
     dplasma_add2arena_tile(((parsec_zherk_LN_taskpool_t*)tp)->arenas[PARSEC_zherk_LN_DEFAULT_ARENA],
-                           C->mb*C->nb*sizeof(parsec_complex64_t),
+                           C->mb*C->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, C->mb);
 
@@ -174,19 +175,19 @@ dplasma_zherk_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of C is stored;
- *          = PlasmaLower: Lower triangle of C is stored.
+ *          = dplasmaUpper: Upper triangle of C is stored;
+ *          = dplasmaLower: Lower triangle of C is stored.
  *
  * @param[in] trans
  *          Specifies whether the matrix A is transposed or conjugate transposed:
- *          = PlasmaNoTrans:   A is not transposed;
- *          = PlasmaConjTrans: A is conjugate transposed.
+ *          = dplasmaNoTrans:   A is not transposed;
+ *          = dplasmaConjTrans: A is conjugate transposed.
  *
  * @param[in] alpha
  *          alpha specifies the scalar alpha.
  *
  * @param[in] A
- *          A is a LDA-by-ka matrix, where ka is K when trans = PlasmaNoTrans,
+ *          A is a LDA-by-ka matrix, where ka is K when trans = dplasmaNoTrans,
  *          and is N otherwise.
  *
  * @param[in] beta
@@ -212,8 +213,8 @@ dplasma_zherk_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zherk( parsec_context_t *parsec,
-               PLASMA_enum uplo,
-               PLASMA_enum trans,
+               dplasma_enum_t uplo,
+               dplasma_enum_t trans,
                double alpha,
                const parsec_tiled_matrix_dc_t *A,
                double beta,
@@ -222,11 +223,11 @@ dplasma_zherk( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zherk = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaLower) && (uplo != PlasmaUpper)) {
+    if ((uplo != dplasmaLower) && (uplo != dplasmaUpper)) {
         dplasma_error("PLASMA_zherk", "illegal value of uplo");
         return -1;
     }
-    if (trans != PlasmaConjTrans && trans != PlasmaNoTrans ) {
+    if (trans != dplasmaConjTrans && trans != dplasmaNoTrans ) {
         dplasma_error("dplasma_zherk", "illegal value of trans");
         return -2;
     }
@@ -234,8 +235,8 @@ dplasma_zherk( parsec_context_t *parsec,
         dplasma_error("dplasma_zherk", "illegal size of matrix C which should be square");
         return -6;
     }
-    if ( ((trans == PlasmaNoTrans) && (A->m != C->m)) ||
-         ((trans != PlasmaNoTrans) && (A->n != C->m)) ) {
+    if ( ((trans == dplasmaNoTrans) && (A->m != C->m)) ||
+         ((trans != dplasmaNoTrans) && (A->n != C->m)) ) {
         dplasma_error("dplasma_zherk", "illegal size of matrix A");
         return -4;
     }

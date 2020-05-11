@@ -12,11 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
+#include <cblas.h>
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -61,11 +59,15 @@
  *          added to the input values.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrasm = PCORE_ztrasm
+#define CORE_ztrasm PCORE_ztrasm
+#endif
 void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
                  int M, int N,
-                 const parsec_complex64_t *A, int lda, double *work)
+                 const PLASMA_Complex64_t *A, int lda, double *work)
 {
-    const parsec_complex64_t *tmpA;
+    const PLASMA_Complex64_t *tmpA;
     int i, j, imax;
     int idiag = (diag == PlasmaUnit) ? 1 : 0;
 
@@ -73,12 +75,12 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
      * PlasmaUpper / PlasmaColumnwise
      */
     if  (uplo == PlasmaUpper ) {
-        M = coreblas_imin(M, N);
+        M = min(M, N);
 
         if (storev == PlasmaColumnwise) {
             for (j = 0; j < N; j++) {
                 tmpA = A+(j*lda);
-                imax = coreblas_imin(j+1-idiag, M);
+                imax = min(j+1-idiag, M);
 
                 if ( j < M )
                     work[j] += idiag;
@@ -100,7 +102,7 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
             }
             for (j = 0; j < N; j++) {
                 tmpA = A+(j*lda);
-                imax = coreblas_imin(j+1-idiag, M);
+                imax = min(j+1-idiag, M);
 
                 for (i = 0; i < imax; i++) {
                     work[i] += cabs(*tmpA);
@@ -109,7 +111,7 @@ void CORE_ztrasm(PLASMA_enum storev, PLASMA_enum uplo, PLASMA_enum diag,
             }
         }
     } else {
-        N = coreblas_imin(M, N);
+        N = min(M, N);
 
         /*
          * PlasmaLower / PlasmaColumnwise

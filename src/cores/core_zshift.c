@@ -20,10 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /** ****************************************************************************
  *
@@ -62,11 +59,14 @@
  *         W(:) = A(s*L:s*L+L-1)
  *
  ******************************************************************************/
-
-void CORE_zshiftw(int s, int cl, int m, int n, int L, parsec_complex64_t *A, parsec_complex64_t *W) {
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zshiftw = PCORE_zshiftw
+#define CORE_zshiftw PCORE_zshiftw
+#endif
+void CORE_zshiftw(int s, int cl, int m, int n, int L, PLASMA_Complex64_t *A, PLASMA_Complex64_t *W) {
     int64_t k, k1;
     int     i, q, kL, k1L;
-    size_t  chunk_size = L*sizeof(parsec_complex64_t);
+    size_t  chunk_size = L*sizeof(PLASMA_Complex64_t);
 
     q = m * n - 1;
     k = s;
@@ -127,14 +127,15 @@ void CORE_zshiftw(int s, int cl, int m, int n, int L, parsec_complex64_t *A, par
  *         On exit, A = A', where A' contains the permutations
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zshift = PCORE_zshift
+#define CORE_zshift PCORE_zshift
+#endif
+void CORE_zshift(int s, int m, int n, int L, PLASMA_Complex64_t *A) {
+    PLASMA_Complex64_t *W;
 
-#if 0
-void CORE_zshift(int s, int m, int n, int L, parsec_complex64_t *A) {
-    parsec_complex64_t *W;
-
-    W = (parsec_complex64_t*)malloc(L * sizeof(parsec_complex64_t));
-    memcpy(W, &(A[s*L]), L*sizeof(parsec_complex64_t));
+    W = (PLASMA_Complex64_t*)malloc(L * sizeof(PLASMA_Complex64_t));
+    memcpy(W, &(A[s*L]), L*sizeof(PLASMA_Complex64_t));
     CORE_zshiftw(s, 0, m, n, L, A, W);
     free(W);
 }
-#endif

@@ -14,10 +14,7 @@
  **/
 #include <math.h>
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 #define COMPLEX
 
@@ -91,8 +88,12 @@
  *          \retval -k, the k-th argument had an illegal value
  *
  */
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zsyssq = PCORE_zsyssq
+#define CORE_zsyssq PCORE_zsyssq
+#endif
 int CORE_zsyssq(PLASMA_enum uplo, int N,
-                const parsec_complex64_t *A, int LDA,
+                const PLASMA_Complex64_t *A, int LDA,
                 double *scale, double *sumsq)
 {
     int i, j;

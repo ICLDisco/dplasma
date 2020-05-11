@@ -44,11 +44,11 @@ char *PARSEC_SCHED_NAME[] = {
 MPI_Datatype SYNCHRO = MPI_BYTE;
 #endif  /* PARSEC_HAVE_MPI */
 
-const int   side[2]  = { PlasmaLeft,    PlasmaRight };
-const int   uplo[2]  = { PlasmaUpper,   PlasmaLower };
-const int   diag[2]  = { PlasmaNonUnit, PlasmaUnit  };
-const int   trans[3] = { PlasmaNoTrans, PlasmaTrans, PlasmaConjTrans };
-const int   norms[4] = { PlasmaMaxNorm, PlasmaOneNorm, PlasmaInfNorm, PlasmaFrobeniusNorm };
+const int   side[2]  = { dplasmaLeft,    dplasmaRight };
+const int   uplo[2]  = { dplasmaUpper,   dplasmaLower };
+const int   diag[2]  = { dplasmaNonUnit, dplasmaUnit  };
+const int   trans[3] = { dplasmaNoTrans, dplasmaTrans, dplasmaConjTrans };
+const int   norms[4] = { dplasmaMaxNorm, dplasmaOneNorm, dplasmaInfNorm, dplasmaFrobeniusNorm };
 
 const char *sidestr[2]  = { "Left ", "Right" };
 const char *uplostr[2]  = { "Upper", "Lower" };
@@ -265,8 +265,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
 
     /* Default seed */
     iparam[IPARAM_RANDOM_SEED] = 3872;
-    iparam[IPARAM_MATRIX_INIT] = PlasmaMatrixRandom;
-    
+    iparam[IPARAM_MATRIX_INIT] = dplasmaMatrixRandom;
     iparam[IPARAM_NRUNS] = 1;
 
     do {

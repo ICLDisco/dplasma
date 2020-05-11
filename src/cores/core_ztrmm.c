@@ -14,10 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -80,12 +77,16 @@
  *          The leading dimension of the array B. LDB >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_ztrmm = PCORE_ztrmm
+#define CORE_ztrmm PCORE_ztrmm
+#endif
 void CORE_ztrmm(PLASMA_enum side, PLASMA_enum uplo,
                 PLASMA_enum transA, PLASMA_enum diag,
                 int M, int N,
-                parsec_complex64_t alpha,
-                const parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *B, int LDB)
+                PLASMA_Complex64_t alpha,
+                const PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *B, int LDB)
 {
     cblas_ztrmm(
         CblasColMajor,

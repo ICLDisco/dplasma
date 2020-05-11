@@ -1,6 +1,6 @@
 /**
  *
- * @file cores/descriptor.h
+ * @file descriptor.h
  *
  *  PLASMA auxiliary routines
  *  PLASMA is a software package provided by Univ. of Tennessee,
@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 /** ****************************************************************************
- *  Tile matrix cores/descriptor
+ *  Tile matrix descriptor
  *
  *  Matrices are stored in a contiguous data chunk containing in order
  *  A11, A21, A12, A22 with :

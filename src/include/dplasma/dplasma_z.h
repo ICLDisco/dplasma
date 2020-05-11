@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -14,41 +14,41 @@
  *               Blocking interface
  */
 /* Level 2 Blas */
-int dplasma_zgeadd( parsec_context_t *parsec, PLASMA_enum trans, parsec_complex64_t alpha,
-                    const parsec_tiled_matrix_dc_t *A, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *B);
-int dplasma_zgerc( parsec_context_t *parsec, parsec_complex64_t alpha,
+int dplasma_zgeadd( parsec_context_t *parsec, dplasma_enum_t trans, dplasma_complex64_t alpha,
+                    const parsec_tiled_matrix_dc_t *A, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *B);
+int dplasma_zgerc( parsec_context_t *parsec, dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
-int dplasma_zgeru( parsec_context_t *parsec, parsec_complex64_t alpha,
+int dplasma_zgeru( parsec_context_t *parsec, dplasma_complex64_t alpha,
                    const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
-int dplasma_ztradd( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum trans, parsec_complex64_t alpha,
-                    const parsec_tiled_matrix_dc_t *A, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *B);
+int dplasma_ztradd( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_complex64_t alpha,
+                    const parsec_tiled_matrix_dc_t *A, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *B);
 
 /* Level 3 Blas */
-int dplasma_zgemm( parsec_context_t *parsec, PLASMA_enum transA, PLASMA_enum transB,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zhemm( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum uplo,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zherk( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum trans,
+int dplasma_zgemm( parsec_context_t *parsec, dplasma_enum_t transA, dplasma_enum_t transB,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+int dplasma_zhemm( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t uplo,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+int dplasma_zherk( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans,
                    double alpha, const parsec_tiled_matrix_dc_t *A,
                    double beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zher2k( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum trans,
-                    parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+int dplasma_zher2k( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans,
+                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
                     double beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zsymm( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum uplo,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zsyrk( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum trans,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
-                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_zsyr2k( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum trans,
-                    parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                    parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-int dplasma_ztrmm( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-int dplasma_ztrsm( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+int dplasma_zsymm( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t uplo,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+int dplasma_zsyrk( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+int dplasma_zsyr2k( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans,
+                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+int dplasma_ztrmm( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_enum_t diag,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+int dplasma_ztrsm( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_enum_t diag,
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
 
 /* Level 3 Blas extensions */
 int dplasma_ztrsmpl( parsec_context_t *parsec, const parsec_tiled_matrix_dc_t *A,
@@ -61,7 +61,7 @@ int    dplasma_zgelqf( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, pa
 int    dplasma_zgelqf_param( parsec_context_t *parsec, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT);
 int    dplasma_zgelqs( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B );
 int    dplasma_zgelqs_param( parsec_context_t *parsec, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B );
-int    dplasma_zgels( parsec_context_t *parsec, PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B );
+int    dplasma_zgels( parsec_context_t *parsec, dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B );
 int    dplasma_zgeqrf( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T);
 int    dplasma_zgeqrf_param( parsec_context_t *parsec, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT);
 int    dplasma_zgeqrf_rec( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, int hnb);
@@ -72,82 +72,82 @@ int    dplasma_zgesv_incpiv ( parsec_context_t *parsec, parsec_tiled_matrix_dc_t
 int    dplasma_zgetrf( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV );
 int    dplasma_zgetrf_incpiv( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *L, parsec_tiled_matrix_dc_t *IPIV );
 int    dplasma_zgetrf_nopiv(  parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A );
-int    dplasma_zgetrs( parsec_context_t *parsec, const PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, parsec_tiled_matrix_dc_t *B );
-int    dplasma_zgetrs_incpiv( parsec_context_t *parsec, const PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *L, parsec_tiled_matrix_dc_t *IPIV, parsec_tiled_matrix_dc_t *B );
-int    dplasma_zlauum( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A );
-int    dplasma_zpoinv( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A);
-int    dplasma_zpoinv_sync( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A);
-int    dplasma_zposv ( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-int    dplasma_zpotrf( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A);
-int    dplasma_zpotrf_rec( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, int hmb );
-int    dplasma_zpotrs( parsec_context_t *parsec, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-int    dplasma_zpotri( parsec_context_t *parsec, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A);
-int    dplasma_ztrtri( parsec_context_t *parsec, PLASMA_enum uplo, PLASMA_enum diag, parsec_tiled_matrix_dc_t *A );
+int    dplasma_zgetrs( parsec_context_t *parsec, const dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, parsec_tiled_matrix_dc_t *B );
+int    dplasma_zgetrs_incpiv( parsec_context_t *parsec, const dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *L, parsec_tiled_matrix_dc_t *IPIV, parsec_tiled_matrix_dc_t *B );
+int    dplasma_zlauum( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A );
+int    dplasma_zpoinv( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A);
+int    dplasma_zpoinv_sync( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A);
+int    dplasma_zposv ( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+int    dplasma_zpotrf( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A);
+int    dplasma_zpotrf_rec( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, int hmb );
+int    dplasma_zpotrs( parsec_context_t *parsec, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+int    dplasma_zpotri( parsec_context_t *parsec, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A);
+int    dplasma_ztrtri( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t diag, parsec_tiled_matrix_dc_t *A );
 int    dplasma_zunglq( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *Q);
 int    dplasma_zunglq_param( parsec_context_t *parsec, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *Q);
 int    dplasma_zungqr( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *Q);
 int    dplasma_zungqr_param( parsec_context_t *parsec, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *Q);
-int    dplasma_zunmlq( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
-int    dplasma_zunmlq_param( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B );
-int    dplasma_zunmqr( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
-int    dplasma_zunmqr_param( parsec_context_t *parsec, PLASMA_enum side, PLASMA_enum trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B );
+int    dplasma_zunmlq( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
+int    dplasma_zunmlq_param( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B );
+int    dplasma_zunmqr( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
+int    dplasma_zunmqr_param( parsec_context_t *parsec, dplasma_enum_t side, dplasma_enum_t trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B );
 
 /* Lapack Auxiliary */
-int    dplasma_zlacpy( parsec_context_t *parsec, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-double dplasma_zlange( parsec_context_t *parsec, PLASMA_enum ntype, const parsec_tiled_matrix_dc_t *A);
-double dplasma_zlanhe( parsec_context_t *parsec, PLASMA_enum ntype, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A);
+int    dplasma_zlacpy( parsec_context_t *parsec, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+double dplasma_zlange( parsec_context_t *parsec, dplasma_enum_t ntype, const parsec_tiled_matrix_dc_t *A);
+double dplasma_zlanhe( parsec_context_t *parsec, dplasma_enum_t ntype, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A);
 double dplasma_zlanm2( parsec_context_t *parsec, const parsec_tiled_matrix_dc_t *A, int *info);
-double dplasma_zlansy( parsec_context_t *parsec, PLASMA_enum ntype, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A);
-double dplasma_zlantr( parsec_context_t *parsec, PLASMA_enum ntype, PLASMA_enum uplo, PLASMA_enum diag, const parsec_tiled_matrix_dc_t *A);
-int    dplasma_zlascal(parsec_context_t *parsec, PLASMA_enum type, parsec_complex64_t alpha, parsec_tiled_matrix_dc_t *A);
-int    dplasma_zlaset( parsec_context_t *parsec, PLASMA_enum uplo, parsec_complex64_t alpha, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *A);
+double dplasma_zlansy( parsec_context_t *parsec, dplasma_enum_t ntype, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A);
+double dplasma_zlantr( parsec_context_t *parsec, dplasma_enum_t ntype, dplasma_enum_t uplo, dplasma_enum_t diag, const parsec_tiled_matrix_dc_t *A);
+int    dplasma_zlascal(parsec_context_t *parsec, dplasma_enum_t type, dplasma_complex64_t alpha, parsec_tiled_matrix_dc_t *A);
+int    dplasma_zlaset( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_complex64_t alpha, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *A);
 int    dplasma_zlaswp( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *IPIV, int inc);
-int    dplasma_zlatms( parsec_context_t *parsec, PLASMA_enum mtxtype, double cond, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
-int    dplasma_zplghe( parsec_context_t *parsec, double             bump, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
-int    dplasma_zplgsy( parsec_context_t *parsec, parsec_complex64_t bump, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+int    dplasma_zlatms( parsec_context_t *parsec, dplasma_enum_t mtxtype, double cond, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+int    dplasma_zplghe( parsec_context_t *parsec, double             bump, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+int    dplasma_zplgsy( parsec_context_t *parsec, dplasma_complex64_t bump, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
 int    dplasma_zplrnt( parsec_context_t *parsec, int diagdom,                               parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
 
 /* Auxiliary routines available only through synchronous interface */
-int    dplasma_zpltmg( parsec_context_t *parsec, PLASMA_enum mtxtype, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
-int    dplasma_zprint( parsec_context_t *parsec, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A);
+int    dplasma_zpltmg( parsec_context_t *parsec, dplasma_enum_t mtxtype, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+int    dplasma_zprint( parsec_context_t *parsec, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A);
 
 /***********************************************************
  *             Non-Blocking interface
  */
 /* Level 2 Blas */
-parsec_taskpool_t* dplasma_zgeadd_New( PLASMA_enum trans, parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_zgerc_New ( parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
-parsec_taskpool_t* dplasma_zgeru_New ( parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
-parsec_taskpool_t* dplasma_ztradd_New( PLASMA_enum uplo, PLASMA_enum trans, parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zgeadd_New( dplasma_enum_t trans, dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zgerc_New ( dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
+parsec_taskpool_t* dplasma_zgeru_New ( dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *X, const parsec_tiled_matrix_dc_t *Y, parsec_tiled_matrix_dc_t *A);
+parsec_taskpool_t* dplasma_ztradd_New( dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *B);
 
 /* Level 3 Blas */
-parsec_taskpool_t* dplasma_zgemm_New( PLASMA_enum transa, PLASMA_enum transb,
-                                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zhemm_New( PLASMA_enum side, PLASMA_enum uplo,
-                                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zherk_New( PLASMA_enum uplo, PLASMA_enum trans,
+parsec_taskpool_t* dplasma_zgemm_New( dplasma_enum_t transa, dplasma_enum_t transb,
+                                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_zhemm_New( dplasma_enum_t side, dplasma_enum_t uplo,
+                                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_zherk_New( dplasma_enum_t uplo, dplasma_enum_t trans,
                                    double alpha, const parsec_tiled_matrix_dc_t *A,
                                    double beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zher2k_New( PLASMA_enum uplo, PLASMA_enum trans,
-                                    parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
+parsec_taskpool_t* dplasma_zher2k_New( dplasma_enum_t uplo, dplasma_enum_t trans,
+                                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
                                     const parsec_tiled_matrix_dc_t *B,
                                     double beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zsymm_New( PLASMA_enum side, PLASMA_enum uplo,
-                                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
-                                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zsyrk_New( PLASMA_enum uplo, PLASMA_enum trans,
-                                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
-                                   parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_zsyr2k_New( PLASMA_enum uplo, PLASMA_enum trans,
-                                    parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
+parsec_taskpool_t* dplasma_zsymm_New( dplasma_enum_t side, dplasma_enum_t uplo,
+                                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
+                                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_zsyrk_New( dplasma_enum_t uplo, dplasma_enum_t trans,
+                                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
+                                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_zsyr2k_New( dplasma_enum_t uplo, dplasma_enum_t trans,
+                                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
                                     const parsec_tiled_matrix_dc_t *B,
-                                    parsec_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
-parsec_taskpool_t* dplasma_ztrmm_New( PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                                   parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_ztrsm_New( PLASMA_enum side, PLASMA_enum uplo, PLASMA_enum trans, PLASMA_enum diag,
-                                   const parsec_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+                                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_ztrmm_New( dplasma_enum_t side, dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_enum_t diag,
+                                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_ztrsm_New( dplasma_enum_t side, dplasma_enum_t uplo, dplasma_enum_t trans, dplasma_enum_t diag,
+                                   const dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
 
 /* Level 3 Blas extensions */
 parsec_taskpool_t* dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *L,
@@ -163,31 +163,31 @@ parsec_taskpool_t* dplasma_zgeqrf_param_New(dplasma_qrtree_t *qrtree, parsec_til
 parsec_taskpool_t* dplasma_zgetrf_New(parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, int *INFO);
 parsec_taskpool_t* dplasma_zgetrf_incpiv_New(parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *L, parsec_tiled_matrix_dc_t *IPIV, int *INFO);
 parsec_taskpool_t* dplasma_zgetrf_nopiv_New(parsec_tiled_matrix_dc_t *A, int *INFO);
-parsec_taskpool_t* dplasma_zlauum_New( PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A);
-parsec_taskpool_t* dplasma_zpoinv_New( PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, int *INFO);
-parsec_taskpool_t* dplasma_zpotrf_New( PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, int *INFO);
-parsec_taskpool_t* dplasma_ztrtri_New( PLASMA_enum uplo, PLASMA_enum diag, parsec_tiled_matrix_dc_t *A, int *info);
+parsec_taskpool_t* dplasma_zlauum_New( dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A);
+parsec_taskpool_t* dplasma_zpoinv_New( dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, int *INFO);
+parsec_taskpool_t* dplasma_zpotrf_New( dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, int *INFO);
+parsec_taskpool_t* dplasma_ztrtri_New( dplasma_enum_t uplo, dplasma_enum_t diag, parsec_tiled_matrix_dc_t *A, int *info);
 parsec_taskpool_t* dplasma_zunglq_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *Q);
 parsec_taskpool_t* dplasma_zunglq_param_New(dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *Q);
 parsec_taskpool_t* dplasma_zungqr_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *Q);
 parsec_taskpool_t* dplasma_zungqr_param_New(dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *Q);
-parsec_taskpool_t* dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_zunmlq_param_New( PLASMA_enum side, PLASMA_enum trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_zunmqr_New( PLASMA_enum side, PLASMA_enum trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_zunmqr_param_New( PLASMA_enum side, PLASMA_enum trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zunmlq_New( dplasma_enum_t side, dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zunmlq_param_New( dplasma_enum_t side, dplasma_enum_t trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zunmqr_New( dplasma_enum_t side, dplasma_enum_t trans, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zunmqr_param_New( dplasma_enum_t side, dplasma_enum_t trans, dplasma_qrtree_t *qrtree, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *TS, parsec_tiled_matrix_dc_t *TT, parsec_tiled_matrix_dc_t *B);
 
 /* Auxiliary routines */
-parsec_taskpool_t* dplasma_zlacpy_New( PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
-parsec_taskpool_t* dplasma_zlange_New( PLASMA_enum ntype, const parsec_tiled_matrix_dc_t *A, double *norm);
-parsec_taskpool_t* dplasma_zlanhe_New( PLASMA_enum ntype, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A, double *result);
+parsec_taskpool_t* dplasma_zlacpy_New( dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
+parsec_taskpool_t* dplasma_zlange_New( dplasma_enum_t ntype, const parsec_tiled_matrix_dc_t *A, double *norm);
+parsec_taskpool_t* dplasma_zlanhe_New( dplasma_enum_t ntype, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, double *result);
 parsec_taskpool_t* dplasma_zlanm2_New( const parsec_tiled_matrix_dc_t *A, double *norm, int *info );
-parsec_taskpool_t* dplasma_zlansy_New( PLASMA_enum ntype, PLASMA_enum uplo, const parsec_tiled_matrix_dc_t *A, double *result);
-parsec_taskpool_t* dplasma_zlantr_New( PLASMA_enum ntype, PLASMA_enum uplo, PLASMA_enum diag, const parsec_tiled_matrix_dc_t *A, double *result);
-parsec_taskpool_t* dplasma_zlascal_New( PLASMA_enum type, parsec_complex64_t alpha, parsec_tiled_matrix_dc_t *A);
-parsec_taskpool_t* dplasma_zlaset_New( PLASMA_enum uplo, parsec_complex64_t alpha, parsec_complex64_t beta, parsec_tiled_matrix_dc_t *A);
+parsec_taskpool_t* dplasma_zlansy_New( dplasma_enum_t ntype, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, double *result);
+parsec_taskpool_t* dplasma_zlantr_New( dplasma_enum_t ntype, dplasma_enum_t uplo, dplasma_enum_t diag, const parsec_tiled_matrix_dc_t *A, double *result);
+parsec_taskpool_t* dplasma_zlascal_New( dplasma_enum_t type, dplasma_complex64_t alpha, parsec_tiled_matrix_dc_t *A);
+parsec_taskpool_t* dplasma_zlaset_New( dplasma_enum_t uplo, dplasma_complex64_t alpha, dplasma_complex64_t beta, parsec_tiled_matrix_dc_t *A);
 parsec_taskpool_t* dplasma_zlaswp_New( parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *IPIV, int inc);
-parsec_taskpool_t* dplasma_zplghe_New( double            bump, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
-parsec_taskpool_t* dplasma_zplgsy_New( parsec_complex64_t bump, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+parsec_taskpool_t* dplasma_zplghe_New( double            bump, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
+parsec_taskpool_t* dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
 parsec_taskpool_t* dplasma_zplrnt_New( int diagdom,                              parsec_tiled_matrix_dc_t *A, unsigned long long int seed);
 
 /* Sub-kernels to recursive DAGs */
@@ -272,9 +272,9 @@ void dplasma_zgeqrf_setrecursive( parsec_taskpool_t *o, int hnb );
 /**********************************************************
  * Check routines
  */
-int check_zaxmb(  parsec_context_t *parsec, int loud, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *b, parsec_tiled_matrix_dc_t *x );
-int check_zpotrf( parsec_context_t *parsec, int loud, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *A0 );
-int check_zpoinv( parsec_context_t *parsec, int loud, PLASMA_enum uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *Ainv );
+int check_zaxmb(  parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *b, parsec_tiled_matrix_dc_t *x );
+int check_zpotrf( parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *A0 );
+int check_zpoinv( parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *Ainv );
 
 /**********************************************************
  * Work in progress
@@ -291,14 +291,14 @@ void dplasma_zgetrf_qrf_Destruct( parsec_taskpool_t *o );
 void dplasma_ztrsmpl_qrf_Destruct( parsec_taskpool_t *o );
 
 /* LDLt butterfly */
-int dplasma_zhebut( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, parsec_complex64_t **U_but_ptr, int level);
+int dplasma_zhebut( parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, dplasma_complex64_t **U_but_ptr, int level);
 int dplasma_zhetrf(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A);
-int dplasma_zhetrs( parsec_context_t *parsec, int uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B, parsec_complex64_t *U_but_vec, int level);
+int dplasma_zhetrs( parsec_context_t *parsec, dplasma_enum_t uplo, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B, dplasma_complex64_t *U_but_vec, int level);
 int dplasma_ztrdsm( parsec_context_t *parsec, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B);
 
-parsec_taskpool_t* dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, parsec_complex64_t *U_but_vec, int it, int jt, int level, PLASMA_enum trans, int *info);
-parsec_taskpool_t* dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, parsec_complex64_t *U_but_vec, int it, int jt, int level, int *info);
-parsec_taskpool_t* dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, parsec_complex64_t *U_but_vec, int it, int jt, int level, int *info);
+parsec_taskpool_t* dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int it, int jt, int level, dplasma_enum_t trans, int *info);
+parsec_taskpool_t* dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int it, int jt, int level, int *info);
+parsec_taskpool_t* dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int it, int jt, int level, int *info);
 parsec_taskpool_t* dplasma_zhetrf_New( parsec_tiled_matrix_dc_t *A, int *info);
 parsec_taskpool_t* dplasma_ztrdsm_New( const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B );
 parsec_taskpool_t* dplasma_ztrmdm_New( parsec_tiled_matrix_dc_t *A);
@@ -311,10 +311,10 @@ void dplasma_ztrmdm_Destruct( parsec_taskpool_t *o );
 
 /* SVD */
 parsec_taskpool_t* dplasma_zhbrdt_New(parsec_tiled_matrix_dc_t *A);
-parsec_taskpool_t* dplasma_zheev_New( const PLASMA_enum jobz, const PLASMA_enum uplo, parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* W, parsec_tiled_matrix_dc_t* Z, int* info );
-parsec_taskpool_t* dplasma_zherbt_New( PLASMA_enum uplo, int ib, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T);
+parsec_taskpool_t* dplasma_zheev_New( const dplasma_enum_t jobz, const dplasma_enum_t uplo, parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* W, parsec_tiled_matrix_dc_t* Z, int* info );
+parsec_taskpool_t* dplasma_zherbt_New( dplasma_enum_t uplo, int ib, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *T);
 
-int dplasma_zheev( parsec_context_t *parsec, const PLASMA_enum jobz, const PLASMA_enum uplo, parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* W, parsec_tiled_matrix_dc_t* Z );
+int dplasma_zheev( parsec_context_t *parsec, const dplasma_enum_t jobz, const dplasma_enum_t uplo, parsec_tiled_matrix_dc_t* A, parsec_tiled_matrix_dc_t* W, parsec_tiled_matrix_dc_t* Z );
 
 void dplasma_zhbrdt_Destruct( parsec_taskpool_t *o );
 void dplasma_zheev_Destruct( parsec_taskpool_t *o );

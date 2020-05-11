@@ -45,7 +45,7 @@
 #
 
 # ==============================================================================
-# Copyright (c) 2019      The University of Tennessee and The University
+# Copyright (c) 2019-2020 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 #
@@ -175,9 +175,40 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES ".*Clang.*" OR
   set(MATH_LIB "m")
  endif()
 
-# First try the FindBLAS package
-find_package(BLAS)
+# FindBLAS behavior is hard to control. Yet there are certain BLAS that are
+# almost always the prefered one if they are available on a given system.
+# So, if the user has not expressed preference (setting BLA_VENDOR, or
+# calling FindBLAS before us, we will first try to see if we can link
+# with one of the preferred BLAS, and then only let FindBLAS sort it out
+# if we don't find what we want.
+if(BLA_VENDOR STREQUAL "" OR BLA_VENDOR STREQUAL "All")
+  # Still check implicitly linked BLAS libraries first
+  # don't use sgemm as it is provided as an intrisic in XLC (but nothing else)
+  if(CMAKE_Fortran_COMPILER_WORKS)
+    include(CheckFortranFunctionExists)
+    check_fortran_function_exists(ztrsm CC_HAS_BLAS)
+  else()
+    include(CheckCSourceCompiles)
+    check_c_source_compiles("int main(void) { ztrsm_(); return 0; }" CC_HAS_BLAS)
+  endif()
+  if(CC_HAS_BLAS)
+    find_package(BLAS) # populate the variables with findBLAS(All)
+  else(CC_HAS_BLAS)
+    foreach(BLA_VENDOR Intel10_64lp_seq IBMESSL All)
+      find_package(BLAS)
+      if(BLAS_FOUND)
+        break()
+      endif()
+    endforeach()
+endif(CC_HAS_BLAS)
+else()
+  # User provided preference, lets just do that.
+  find_package(BLAS)
+endif()
+
 if(BLAS_FOUND)
+  # Note that BLA_VENDOR is an /input/ variable to FindBLAS, and this test
+  # is dependent upon the above foreach setting BLA_VENDOR explicitely
   if("${BLA_VENDOR}" STREQUAL "IBMESSL")
     # Look for <essl.h>
     string(REGEX REPLACE "/lib6?4?/?[^/;]*" "" BLAS_essl_DIRS ${BLAS_LIBRARIES})

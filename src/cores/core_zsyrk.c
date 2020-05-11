@@ -14,11 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -77,10 +73,14 @@
  *          The leading dimension of the array C. LDC >= max( 1, N ).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zsyrk = PCORE_zsyrk
+#define CORE_zsyrk PCORE_zsyrk
+#endif
 void CORE_zsyrk(PLASMA_enum uplo, PLASMA_enum trans,
                 int N, int K,
-                parsec_complex64_t alpha, const parsec_complex64_t *A, int LDA,
-                parsec_complex64_t beta, parsec_complex64_t *C, int LDC)
+                PLASMA_Complex64_t alpha, const PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t beta, PLASMA_Complex64_t *C, int LDC)
 {
     cblas_zsyrk(
         CblasColMajor,

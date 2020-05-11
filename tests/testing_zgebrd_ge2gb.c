@@ -160,7 +160,7 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
                                        0, 0, dcA.super.n, dcA.super.n );
 
         dplasma_hqr_init( &qrtre0,
-                          PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                          dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                           ltre0, htre0, ts, P, domino, 0 );
 
         /**
@@ -168,11 +168,11 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
          */
         if (ltree == 9) {
             dplasma_svd_init( &qrtree,
-                              PlasmaNoTrans, subA,
+                              dplasmaNoTrans, subA,
                               htree, P, cores, hmb );
 
             dplasma_svd_init( &lqtree,
-                              PlasmaTrans, subA,
+                              dplasmaTrans, subA,
                               htree, Q, cores, hmb );
         } else {
 #if defined(PARSEC_SIM)
@@ -233,11 +233,11 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
             }
 #endif /* defined(PARSEC_SIM) */
             dplasma_hqr_init( &qrtree,
-                              PlasmaNoTrans, subA,
+                              dplasmaNoTrans, subA,
                               ltree, htree, ts, P, 0, 0 );
 
             dplasma_hqr_init( &lqtree,
-                              PlasmaTrans, subA,
+                              dplasmaTrans, subA,
                               ltree, htree, ts, Q, 0, 0 );
         }
     }
@@ -247,11 +247,11 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
          */
         if (ltree == 9) {
             dplasma_svd_init( &qrtree,
-                              PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                              dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                               htree, P, cores, hmb );
 
             dplasma_svd_init( &lqtree,
-                              PlasmaTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                              dplasmaTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                               htree, Q, cores, hmb );
         } else {
 #if defined(PARSEC_SIM)
@@ -270,11 +270,11 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
             }
 #endif /* defined(PARSEC_SIM) */
             dplasma_hqr_init( &qrtree,
-                              PlasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                              dplasmaNoTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                               ltree, htree, ts, P, 0, 0 );
 
             dplasma_hqr_init( &lqtree,
-                              PlasmaTrans, (parsec_tiled_matrix_dc_t *)&dcA,
+                              dplasmaTrans, (parsec_tiled_matrix_dc_t *)&dcA,
                               ltree, htree, ts, Q, 0, 0 );
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -12,7 +12,7 @@
 #include "dplasma.h"
 #include <math.h>
 #include "parsec/vpmap.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmajdf.h"
 #include "parsec/private_mempool.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
@@ -202,17 +202,6 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
                                 NULL, NULL, NULL,
                                 INFO);
 
-#if defined(CORE_GETRF_270)
-
-    if ( A->storage == matrix_Tile ) {
-        CORE_zgetrf_rectil_init();
-    } else {
-        CORE_zgetrf_reclap_init();
-    }
-    tp->_g_nbmaxthrd = dplasma_imin( nbthreads, 48 );
-
-#else
-
     if ( A->storage == matrix_Tile ) {
         tp->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
     } else {
@@ -220,25 +209,23 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
     }
     tp->_g_nbmaxthrd = nbthreads;
 
-#endif
-
     tp->_g_W = (double*)malloc(sizeW * sizeof(double));
 
     tp->_g_p_work = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_work, ib * TS->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_work, ib * TS->nb * sizeof(dplasma_complex64_t) );
 
     tp->_g_p_tau = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_tau, TS->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_tau, TS->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
     dplasma_add2arena_tile( tp->arenas[PARSEC_zgetrf_qrf_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
     dplasma_add2arena_lower( tp->arenas[PARSEC_zgetrf_qrf_LOWER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
@@ -250,13 +237,13 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
 
     /* Upper triangular part of tile with diagonal */
     dplasma_add2arena_upper( tp->arenas[PARSEC_zgetrf_qrf_UPPER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Little T */
     dplasma_add2arena_rectangle( tp->arenas[PARSEC_zgetrf_qrf_LITTLE_T_ARENA],
-                                 TS->mb*TS->nb*sizeof(parsec_complex64_t),
+                                 TS->mb*TS->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, TS->mb, TS->nb, -1);
 

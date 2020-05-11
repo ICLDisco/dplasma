@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2011-2013 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -68,7 +68,7 @@ BODY
 
     /* This is the first one */
     if (m == k) {
-        CORE_zlaset( PlasmaUpperLower, tempmm, tempnn, 0., 0., A, ldam );
+        CORE_zlaset( dplasmaUpperLower, tempmm, tempnn, 0., 0., A, ldam );
     }
 
     CORE_zpltmg_toeppd2(

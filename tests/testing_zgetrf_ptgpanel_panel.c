@@ -80,19 +80,19 @@ int main(int argc, char ** argv)
             {
               parsec_data_t* data = dcA->super.data_of(&dcA->super, t, t);
               parsec_data_copy_t* copy = parsec_data_get_copy(data, 0);
-              parsec_complex64_t *tab = (parsec_complex64_t*)parsec_data_copy_get_ptr(copy);
+              dplasma_complex64_t *tab = (dplasma_complex64_t*)parsec_data_copy_get_ptr(copy);
               for(e = 0; e < dcA->mb; e++)
-                tab[e * dcA->mb + e] += (parsec_complex64_t)minmn;
+                tab[e * dcA->mb + e] += (dplasma_complex64_t)minmn;
             }
         }
     }
 
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA,
                     (parsec_tiled_matrix_dc_t *)&dcA0 );
 
     if ( check ) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcAl );
         K = 0;
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
                                  (parsec_tiled_matrix_dc_t*)&dcIPIV);
 
     for(i=0; i<K; i++) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA0,
                         (parsec_tiled_matrix_dc_t *)&dcA );
 
@@ -134,14 +134,14 @@ int main(int argc, char ** argv)
 
         eps = LAPACKE_dlamch_work('e');
 
-        Anorm = dplasma_zlange( parsec, PlasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA0 );
+        Anorm = dplasma_zlange( parsec, dplasmaInfNorm, (parsec_tiled_matrix_dc_t*)&dcA0 );
         if( rank  == 0 ) {
-            parsec_complex64_t *dA, *lA;
+            dplasma_complex64_t *dA, *lA;
             int *dplasma_piv;
             int *lapack_piv;
 
-            dA = (parsec_complex64_t*)( ((parsec_dc_t*) &dcA )->data_of(((parsec_dc_t*) &dcA),  0, 0) );
-            lA = (parsec_complex64_t*)( ((parsec_dc_t*) &dcAl)->data_of(((parsec_dc_t*) &dcAl), 0, 0) );
+            dA = (dplasma_complex64_t*)( ((parsec_dc_t*) &dcA )->data_of(((parsec_dc_t*) &dcA),  0, 0) );
+            lA = (dplasma_complex64_t*)( ((parsec_dc_t*) &dcAl)->data_of(((parsec_dc_t*) &dcAl), 0, 0) );
             dplasma_piv = (int*)( ((parsec_dc_t*) &dcIPIV )->data_of(((parsec_dc_t*) &dcIPIV),  0, 0) );
             lapack_piv  = (int*)( ((parsec_dc_t*) &dcIPIVl)->data_of(((parsec_dc_t*) &dcIPIVl), 0, 0) );
 
@@ -169,11 +169,11 @@ int main(int argc, char ** argv)
 #endif
 
         if ( ipivok ) {
-            dplasma_zgeadd( parsec, PlasmaNoTrans,
+            dplasma_zgeadd( parsec, dplasmaNoTrans,
                             -1.0, (parsec_tiled_matrix_dc_t*)&dcA,
                              1.0, (parsec_tiled_matrix_dc_t*)&dcAl );
 
-            Rnorm = dplasma_zlange( parsec, PlasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcAl );
+            Rnorm = dplasma_zlange( parsec, dplasmaMaxNorm, (parsec_tiled_matrix_dc_t*)&dcAl );
             result = Rnorm / (Anorm * dplasma_imax(M,N) * eps);
 
             if ( rank == 0 && loud > 2 ) {

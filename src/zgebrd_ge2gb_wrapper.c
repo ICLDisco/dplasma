@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -8,7 +8,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/private_mempool.h"
@@ -184,50 +184,50 @@ dplasma_zgebrd_ge2gbx_New( int ib,
                                   NULL, NULL);
 
     tp->_g_p_work = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_work, ib * A->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_work, ib * A->nb * sizeof(dplasma_complex64_t) );
 
     tp->_g_p_tau = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( tp->_g_p_tau, A->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( tp->_g_p_tau, A->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
     dplasma_add2arena_tile( tp->arenas[PARSEC_zgebrd_ge2gb_DEFAULT_ARENA],
-                            A->mb * A->nb * sizeof(parsec_complex64_t),
+                            A->mb * A->nb * sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Upper triangular part Non-Unit (QR) */
     dplasma_add2arena_upper( tp->arenas[PARSEC_zgebrd_ge2gb_UPPER_NON_UNIT_ARENA],
-                             A->mb * A->nb * sizeof(parsec_complex64_t),
+                             A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Upper triangular part Unit (LQ) */
     dplasma_add2arena_upper( tp->arenas[PARSEC_zgebrd_ge2gb_UPPER_UNIT_ARENA],
-                             A->mb * A->nb * sizeof(parsec_complex64_t),
+                             A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Lower triangular part Non-Unit (LQ) */
     dplasma_add2arena_lower( tp->arenas[PARSEC_zgebrd_ge2gb_LOWER_NON_UNIT_ARENA],
-                             A->mb * A->nb * sizeof(parsec_complex64_t),
+                             A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Lower triangular part Unit (QR) */
     dplasma_add2arena_lower( tp->arenas[PARSEC_zgebrd_ge2gb_LOWER_UNIT_ARENA],
-                             A->mb * A->nb * sizeof(parsec_complex64_t),
+                             A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Little T */
     dplasma_add2arena_rectangle( tp->arenas[PARSEC_zgebrd_ge2gb_LITTLE_T_ARENA],
-                                 ib * A->nb * sizeof(parsec_complex64_t),
+                                 ib * A->nb * sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, ib, A->nb, -1);
 
     /* Band */
     dplasma_add2arena_rectangle( tp->arenas[PARSEC_zgebrd_ge2gb_BAND_ARENA],
-                                 Band->mb * Band->nb * sizeof(parsec_complex64_t),
+                                 Band->mb * Band->nb * sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, Band->mb, Band->nb, -1);
 
@@ -325,7 +325,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
     if ( A->mt >= A->nt || 1) {
         if ( A->mt > 2*A->nt ) {
             qrtre0 = malloc( sizeof(dplasma_qrtree_t) );
-            dplasma_hqr_init( qrtre0, PlasmaNoTrans,
+            dplasma_hqr_init( qrtre0, dplasmaNoTrans,
                               A, -1, -1, -1, P, -1, 0 );
 
             subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
@@ -336,11 +336,11 @@ dplasma_zgebrd_ge2gb_New( int ib,
         }
 
         dplasma_svd_init( qrtree,
-                          PlasmaNoTrans, subA,
+                          dplasmaNoTrans, subA,
                           -1, P, cores, 2 );
 
         dplasma_svd_init( lqtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, Q, cores, 2 );
 
         if (subA != A) {
@@ -353,7 +353,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
 #if 0
         if ( A->nt > 2*A->mt ) {
             qrtre0 = malloc( sizeof(dplasma_qrtree_t) );
-            dplasma_hqr_init( qrtre0, PlasmaTrans,
+            dplasma_hqr_init( qrtre0, dplasmaTrans,
                               A, -1, -1, -1, Q, -1, 0 );
 
             subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
@@ -364,11 +364,11 @@ dplasma_zgebrd_ge2gb_New( int ib,
         }
 
         dplasma_svd_init( qrtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, Q, cores, 2 );
 
         dplasma_svd_init( lqtree,
-                          PlasmaTrans, subA,
+                          dplasmaTrans, subA,
                           -1, P, cores, 2 );
 
         if (subA != A) {

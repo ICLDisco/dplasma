@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -9,7 +9,8 @@
 
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "ztrdsm.h"
 
@@ -53,7 +54,7 @@ dplasma_ztrdsm_New(const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *
     parsec_trdsm = (parsec_taskpool_t*)parsec_ztrdsm_new( A, B );
 
     dplasma_add2arena_tile(((parsec_ztrdsm_taskpool_t*)parsec_trdsm)->arenas[PARSEC_ztrdsm_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(parsec_complex64_t),
+                           A->mb*A->nb*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, A->mb);
 

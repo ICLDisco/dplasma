@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 #include "parsec/private_mempool.h"
 
@@ -36,20 +36,20 @@
  *
  *        Q = H(1) H(2) . . . H(k)
  *
- *  as returned by dplasma_zgelqf(). Q is of order M if side = PlasmaLeft
- *  and of order N if side = PlasmaRight.
+ *  as returned by dplasma_zgelqf(). Q is of order M if side = dplasmaLeft
+ *  and of order N if side = dplasmaRight.
  *
  * WARNING: The computations are not done by this call.
  *
  *******************************************************************************
  *
  * @param[in] side
- *          @arg PlasmaLeft:  apply Q or Q**H from the left;
- *          @arg PlasmaRight: apply Q or Q**H from the right.
+ *          @arg dplasmaLeft:  apply Q or Q**H from the left;
+ *          @arg dplasmaRight: apply Q or Q**H from the right.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   no transpose, apply Q;
- *          @arg PlasmaConjTrans: conjugate transpose, apply Q**H.
+ *          @arg dplasmaNoTrans:   no transpose, apply Q;
+ *          @arg dplasmaConjTrans: conjugate transpose, apply Q**H.
  *
  * @param[in] A
  *          Descriptor of the matrix A of size K-by-M factorized with the
@@ -58,8 +58,8 @@
  *          defines the elementary reflector H(i), for i = 1,2,...,k, as
  *          returned by dplasma_zgelqf_New() in the first k rows of its array
  *          argument A.
- *          If side == PlasmaLeft,  M >= K >= 0.
- *          If side == PlasmaRight, N >= K >= 0.
+ *          If side == dplasmaLeft,  M >= K >= 0.
+ *          If side == dplasmaRight, N >= K >= 0.
  *
  * @param[in] T
  *          Descriptor of the matrix T distributed exactly as the A matrix. T.mb
@@ -88,7 +88,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans,
+dplasma_zunmlq_New( dplasma_enum_t side, dplasma_enum_t trans,
                     parsec_tiled_matrix_dc_t *A,
                     parsec_tiled_matrix_dc_t *T,
                     parsec_tiled_matrix_dc_t *C )
@@ -108,7 +108,7 @@ dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans,
     /*     dplasma_error("dplasma_zunmlq_New", "illegal C descriptor"); */
     /*     return NULL; */
     /* } */
-    if ( side == PlasmaLeft ) {
+    if ( side == dplasmaLeft ) {
         An = C->m;
     } else {
         An = C->n;
@@ -126,8 +126,8 @@ dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans,
         return NULL;
     }
 
-    if ( side == PlasmaLeft ) {
-        if ( trans == PlasmaNoTrans ) {
+    if ( side == dplasmaLeft ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)parsec_zunmlq_LN_new( side, trans,
                                                            A,
                                                            C,
@@ -141,7 +141,7 @@ dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans,
                                                            NULL);
         }
     } else {
-        if ( trans == PlasmaNoTrans ) {
+        if ( trans == dplasmaNoTrans ) {
             tp = (parsec_taskpool_t*)parsec_zunmlq_RN_new( side, trans,
                                                            A,
                                                            C,
@@ -157,23 +157,23 @@ dplasma_zunmlq_New( PLASMA_enum side, PLASMA_enum trans,
     }
 
     ((parsec_zunmlq_LC_taskpool_t*)tp)->_g_pool_0 = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
-    parsec_private_memory_init( ((parsec_zunmlq_LC_taskpool_t*)tp)->_g_pool_0, ib * T->nb * sizeof(parsec_complex64_t) );
+    parsec_private_memory_init( ((parsec_zunmlq_LC_taskpool_t*)tp)->_g_pool_0, ib * T->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
     dplasma_add2arena_tile( ((parsec_zunmlq_LC_taskpool_t*)tp)->arenas[PARSEC_zunmlq_LC_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
     dplasma_add2arena_upper( ((parsec_zunmlq_LC_taskpool_t*)tp)->arenas[PARSEC_zunmlq_LC_UPPER_TILE_ARENA],
-                             A->mb*A->nb*sizeof(parsec_complex64_t),
+                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Little T */
     dplasma_add2arena_rectangle( ((parsec_zunmlq_LC_taskpool_t*)tp)->arenas[PARSEC_zunmlq_LC_LITTLE_T_ARENA],
-                                 T->mb*T->nb*sizeof(parsec_complex64_t),
+                                 T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
 
@@ -231,8 +231,8 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
  *
  *        Q = H(1) H(2) . . . H(k)
  *
- *  as returned by dplasma_zgelqf(). Q is of order M if side = PlasmaLeft
- *  and of order N if side = PlasmaRight.
+ *  as returned by dplasma_zgelqf(). Q is of order M if side = dplasmaLeft
+ *  and of order N if side = dplasmaRight.
  *
  *******************************************************************************
  *
@@ -240,12 +240,12 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] side
- *          @arg PlasmaLeft:  apply Q or Q**H from the left;
- *          @arg PlasmaRight: apply Q or Q**H from the right.
+ *          @arg dplasmaLeft:  apply Q or Q**H from the left;
+ *          @arg dplasmaRight: apply Q or Q**H from the right.
  *
  * @param[in] trans
- *          @arg PlasmaNoTrans:   no transpose, apply Q;
- *          @arg PlasmaConjTrans: conjugate transpose, apply Q**H.
+ *          @arg dplasmaNoTrans:   no transpose, apply Q;
+ *          @arg dplasmaConjTrans: conjugate transpose, apply Q**H.
  *
  * @param[in] A
  *          Descriptor of the matrix A of size K-by-(N,M) factorized with the
@@ -254,8 +254,8 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
  *          defines the elementary reflector H(i), for i = 1,2,...,k, as
  *          returned by dplasma_zgelqf_New() in the first k rows of its array
  *          argument A.
- *          If side == PlasmaLeft,  M >= K >= 0.
- *          If side == PlasmaRight, N >= K >= 0.
+ *          If side == dplasmaLeft,  M >= K >= 0.
+ *          If side == dplasmaRight, N >= K >= 0.
  *
  * @param[in] T
  *          Descriptor of the matrix T distributed exactly as the A matrix. T.mb
@@ -285,7 +285,7 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zunmlq( parsec_context_t *parsec,
-                PLASMA_enum side, PLASMA_enum trans,
+                dplasma_enum_t side, dplasma_enum_t trans,
                 parsec_tiled_matrix_dc_t *A,
                 parsec_tiled_matrix_dc_t *T,
                 parsec_tiled_matrix_dc_t *C )
@@ -298,18 +298,18 @@ dplasma_zunmlq( parsec_context_t *parsec,
         return -1;
     }
 
-    if ((side != PlasmaLeft) && (side != PlasmaRight)) {
+    if ((side != dplasmaLeft) && (side != dplasmaRight)) {
         dplasma_error("dplasma_zunmlq_New", "illegal value of side");
         return -1;
     }
-    if ((trans != PlasmaNoTrans) &&
-        (trans != PlasmaTrans)   &&
-        (trans != PlasmaConjTrans)) {
+    if ((trans != dplasmaNoTrans) &&
+        (trans != dplasmaTrans)   &&
+        (trans != dplasmaConjTrans)) {
         dplasma_error("dplasma_zunmlq_New", "illegal value of trans");
         return -2;
     }
 
-    if ( side == PlasmaLeft ) {
+    if ( side == dplasmaLeft ) {
         An = C->m;
     } else {
         An = C->n;

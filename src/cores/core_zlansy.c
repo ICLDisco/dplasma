@@ -15,10 +15,7 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -70,8 +67,12 @@
  *          On exit, normA is the norm of matrix A.
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zlansy = PCORE_zlansy
+#define CORE_zlansy PCORE_zlansy
+#endif
 void CORE_zlansy(int norm, PLASMA_enum uplo, int N,
-                 const parsec_complex64_t *A, int LDA,
+                 const PLASMA_Complex64_t *A, int LDA,
                  double *work, double *normA)
 {
     *normA = LAPACKE_zlansy_work(

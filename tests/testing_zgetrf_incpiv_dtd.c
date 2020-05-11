@@ -8,7 +8,7 @@
  */
 
 #include "common.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/superscalar/insert_function.h"
 
@@ -25,10 +25,10 @@ parsec_core_getrf_incpiv(parsec_execution_stream_t *es, parsec_task_t * this_tas
     int m;
     int n;
     int ib;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
     int *IPIV;
-    PLASMA_bool check_info;
+    int check_info;
     int *info;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &ib, &A, &lda, &IPIV,
@@ -51,11 +51,11 @@ parsec_core_gessm(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int k;
     int ib;
     int *IPIV;
-    parsec_complex64_t *L;
+    dplasma_complex64_t *L;
     int ldl;
-    parsec_complex64_t *D;
+    dplasma_complex64_t *D;
     int ldd;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &k, &ib, &IPIV, &L, &ldl,
@@ -74,16 +74,16 @@ parsec_core_tstrf(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int n;
     int ib;
     int nb;
-    parsec_complex64_t *U;
+    dplasma_complex64_t *U;
     int ldu;
-    parsec_complex64_t *A;
+    dplasma_complex64_t *A;
     int lda;
-    parsec_complex64_t *L;
+    dplasma_complex64_t *L;
     int ldl;
     int *IPIV;
-    parsec_complex64_t *WORK;
+    dplasma_complex64_t *WORK;
     int ldwork;
-    PLASMA_bool *check_info;
+    int *check_info;
     int *info;
 
     parsec_dtd_unpack_args(this_task, &m, &n, &ib, &nb, &U, &ldu, &A, &lda, &L,
@@ -107,13 +107,13 @@ parsec_core_ssssm(parsec_execution_stream_t *es, parsec_task_t * this_task)
     int n2;
     int k;
     int ib;
-    parsec_complex64_t *A1;
+    dplasma_complex64_t *A1;
     int lda1;
-    parsec_complex64_t *A2;
+    dplasma_complex64_t *A2;
     int lda2;
-    parsec_complex64_t *L1;
+    dplasma_complex64_t *L1;
     int ldl1;
-    parsec_complex64_t *L2;
+    dplasma_complex64_t *L2;
     int ldl2;
     int *IPIV;
 
@@ -216,17 +216,17 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("+++ Generate matrices ... ");
     dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_dc_t *)&dcA, random_seed );
     if ( check ) {
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcA0 );
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed + 1 );
-        dplasma_zlacpy( parsec, PlasmaUpperLower,
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
                         (parsec_tiled_matrix_dc_t *)&dcX );
     }
     if ( check_inv ) {
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
-        dplasma_zlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
     }
     if(loud > 2) printf("Done\n");
 
@@ -239,13 +239,13 @@ int main(int argc, char ** argv)
     int tempkm, tempkn, tempmm, tempnn;
     int ib = dcL.super.mb;
     int minMNT = min(dcA.super.mt, dcA.super.nt);
-    PLASMA_bool check_info;
+    int check_info;
     int anb, nb, ldl;
 
     /* Allocating data arrays to be used by comm engine */
     /* A */
     dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
-                            dcA.super.mb*dcA.super.nb*sizeof(parsec_complex64_t),
+                            dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
@@ -257,7 +257,7 @@ int main(int argc, char ** argv)
 
     /* L */
     dplasma_add2arena_rectangle( parsec_dtd_arenas[L_TILE_RECTANGLE],
-                                 dcL.super.mb*dcL.super.nb*sizeof(parsec_complex64_t),
+                                 dcL.super.mb*dcL.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcL.super.mb, dcL.super.nb, -1);
 
@@ -285,7 +285,7 @@ int main(int argc, char ** argv)
                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     INOUT | TILE_FULL | AFFINITY,
                            sizeof(int),           &ldak,                             VALUE,
                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, k, k),  OUTPUT | TILE_RECTANGLE,
-                           sizeof(PLASMA_bool),   &check_info,                       VALUE,
+                           sizeof(int),   &check_info,                       VALUE,
                            sizeof(int *),         &info,                             REF,
                            PARSEC_DTD_ARG_END );
 
@@ -329,9 +329,9 @@ int main(int argc, char ** argv)
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     OUTPUT | L_TILE_RECTANGLE,
                                sizeof(int),           &ldl,                              VALUE,
                                PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  OUTPUT | TILE_RECTANGLE,
-                               sizeof(parsec_complex64_t)*ib*nb,    NULL,                SCRATCH,
+                               sizeof(dplasma_complex64_t)*ib*nb,    NULL,                SCRATCH,
                                sizeof(int),           &nb,                               VALUE,
-                               sizeof(PLASMA_bool),   &check_info,                       VALUE,
+                               sizeof(int),           &check_info,                       VALUE,
                                sizeof(int *),         &info,                             REF,
                                PARSEC_DTD_ARG_END );
 
@@ -375,7 +375,7 @@ int main(int argc, char ** argv)
     parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcIPIV );
 
     /* finishing all the tasks inserted, but not finishing the handle */
-    parsec_dtd_taskpool_wait( parsec, dtd_tp );
+    parsec_dtd_taskpool_wait( dtd_tp );
 
     /* Waiting on all handle and turning everything off for this context */
     parsec_context_wait( parsec );
@@ -397,7 +397,7 @@ int main(int argc, char ** argv)
         /*
          * First check with a right hand side
          */
-        dplasma_zgetrs_incpiv( parsec, PlasmaNoTrans,
+        dplasma_zgetrs_incpiv( parsec, dplasmaNoTrans,
                                (parsec_tiled_matrix_dc_t *)&dcA,
                                (parsec_tiled_matrix_dc_t *)&dcL,
                                (parsec_tiled_matrix_dc_t *)&dcIPIV,
@@ -413,7 +413,7 @@ int main(int argc, char ** argv)
          * Second check with inverse
          */
         if ( check_inv ) {
-            dplasma_zgetrs_incpiv( parsec, PlasmaNoTrans,
+            dplasma_zgetrs_incpiv( parsec, dplasmaNoTrans,
                                    (parsec_tiled_matrix_dc_t *)&dcA,
                                    (parsec_tiled_matrix_dc_t *)&dcL,
                                    (parsec_tiled_matrix_dc_t *)&dcIPIV,
@@ -476,14 +476,14 @@ static int check_solution( parsec_context_t *parsec, int loud,
     int m = dcB->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute b - A*x */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
 
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * m * eps ) ;
 
@@ -520,13 +520,13 @@ static int check_inverse( parsec_context_t *parsec, int loud,
     int m = dcA->m;
     double eps = LAPACKE_dlamch_work('e');
 
-    Anorm    = dplasma_zlange(parsec, PlasmaInfNorm, dcA   );
-    InvAnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcInvA);
+    Anorm    = dplasma_zlange(parsec, dplasmaInfNorm, dcA   );
+    InvAnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcInvA);
 
     /* Compute I - A*A^{-1} */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcInvA, 1.0, dcI);
 
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcI);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcI);
 
     result = Rnorm / ( ( Anorm * InvAnorm ) * m * eps ) ;
 

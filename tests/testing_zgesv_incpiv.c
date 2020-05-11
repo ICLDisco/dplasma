@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -78,10 +78,10 @@ int main(int argc, char ** argv)
 
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
 
@@ -122,10 +122,10 @@ int main(int argc, char ** argv)
     
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
 
@@ -136,7 +136,7 @@ int main(int argc, char ** argv)
                                  (parsec_tiled_matrix_dc_t *)&dcL,
                                  (parsec_tiled_matrix_dc_t *)&dcIPIV );
     if ( info == 0 ) {
-        dplasma_zgetrs_incpiv(parsec, PlasmaNoTrans,
+        dplasma_zgetrs_incpiv(parsec, dplasmaNoTrans,
                               (parsec_tiled_matrix_dc_t *)&dcA,
                               (parsec_tiled_matrix_dc_t *)&dcL,
                               (parsec_tiled_matrix_dc_t *)&dcIPIV,
@@ -172,10 +172,10 @@ int main(int argc, char ** argv)
     
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
-    dplasma_zlacpy( parsec, PlasmaUpperLower,
+    dplasma_zlacpy( parsec, dplasmaUpperLower,
                     (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
     
@@ -193,8 +193,8 @@ int main(int argc, char ** argv)
                         (parsec_tiled_matrix_dc_t *)&dcIPIV,
                         (parsec_tiled_matrix_dc_t *)&dcX);
         
-        dplasma_ztrsm(parsec, PlasmaLeft, PlasmaUpper,
-                      PlasmaNoTrans, PlasmaNonUnit, 1.0,
+        dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper,
+                      dplasmaNoTrans, dplasmaNonUnit, 1.0,
                       (parsec_tiled_matrix_dc_t *)&dcA,
                       (parsec_tiled_matrix_dc_t *)&dcX);
     }
@@ -249,13 +249,13 @@ static int check_solution( parsec_context_t *parsec, int loud,
     double Rnorm, Anorm, Bnorm, Xnorm, result;
     double eps = LAPACKE_dlamch_work('e');
     
-    Anorm = dplasma_zlange(parsec, PlasmaInfNorm, dcA);
-    Bnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
-    Xnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcX);
+    Anorm = dplasma_zlange(parsec, dplasmaInfNorm, dcA);
+    Bnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
+    Xnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcX);
 
     /* Compute b - A*x */
-    dplasma_zgemm( parsec, PlasmaNoTrans, PlasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
-    Rnorm = dplasma_zlange(parsec, PlasmaInfNorm, dcB);
+    dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaNoTrans, -1.0, dcA, dcX, 1.0, dcB);
+    Rnorm = dplasma_zlange(parsec, dplasmaInfNorm, dcB);
     result = Rnorm / ( ( Anorm * Xnorm + Bnorm ) * N * eps ) ;
 
     if( loud ) { 

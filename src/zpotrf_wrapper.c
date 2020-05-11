@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,7 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 
 #include "zpotrf_U.h"
@@ -60,7 +60,7 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
  * definite in the complex case) matrix A, with or without recursive calls.
  * The factorization has the form
  *
- *    \f[ A = \{_{L\times L^H, if uplo = PlasmaLower}^{U^H\times U, if uplo = PlasmaUpper} \f]
+ *    \f[ A = \{_{L\times L^H, if uplo = dplasmaLower}^{U^H\times U, if uplo = dplasmaUpper} \f]
  *
  *  where U is an upper triangular matrix and L is a lower triangular matrix.
  *
@@ -79,8 +79,8 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
  *******************************************************************************
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in,out] A
  *          Descriptor of the distributed matrix A.
@@ -117,7 +117,7 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zpotrf_New( PLASMA_enum uplo,
+dplasma_zpotrf_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A,
                     int *info )
 {
@@ -125,13 +125,13 @@ dplasma_zpotrf_New( PLASMA_enum uplo,
     parsec_taskpool_t *tp = NULL;
 
     /* Check input arguments */
-    if ((uplo != PlasmaUpper) && (uplo != PlasmaLower)) {
+    if ((uplo != dplasmaUpper) && (uplo != dplasmaLower)) {
         dplasma_error("dplasma_zpotrf_New", "illegal value of uplo");
         return NULL /*-1*/;
     }
 
     *info = 0;
-    if ( uplo == PlasmaUpper ) {
+    if ( uplo == dplasmaUpper ) {
         tp = (parsec_taskpool_t*)parsec_zpotrf_U_new( uplo, A, info);
     } else {
         tp = (parsec_taskpool_t*)parsec_zpotrf_L_new( uplo, A, info);
@@ -142,7 +142,7 @@ dplasma_zpotrf_New( PLASMA_enum uplo,
     if(0 == parsec_zpotrf->_g_PRI_CHANGE)
       parsec_zpotrf->_g_PRI_CHANGE = A->nt;
     dplasma_add2arena_tile( parsec_zpotrf->arenas[PARSEC_zpotrf_L_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
@@ -187,7 +187,7 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
  * definite (or Hermitian positive definite in the complex case) matrix A.
  * The factorization has the form
  *
- *    \f[ A = \{_{L\times L^H, if uplo = PlasmaLower}^{U^H\times U, if uplo = PlasmaUpper} \f]
+ *    \f[ A = \{_{L\times L^H, if uplo = dplasmaLower}^{U^H\times U, if uplo = dplasmaUpper} \f]
  *
  *  where U is an upper triangular matrix and L is a lower triangular matrix.
  *
@@ -197,8 +197,8 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A.
@@ -226,7 +226,7 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zpotrf( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 parsec_tiled_matrix_dc_t *A )
 {
     parsec_taskpool_t *parsec_zpotrf = NULL;
@@ -262,7 +262,7 @@ dplasma_zpotrf( parsec_context_t *parsec,
  * An, using the recursive DAGs feature if hmb is smaller than A.mb or A.nb.
  * The factorization has the form
  *
- *    \f[ A = \{_{L\times L^H, if uplo = PlasmaLower}^{U^H\times U, if uplo = PlasmaUpper} \f]
+ *    \f[ A = \{_{L\times L^H, if uplo = dplasmaLower}^{U^H\times U, if uplo = dplasmaUpper} \f]
  *
  *  where U is an upper triangular matrix and L is a lower triangular matrix.
  *
@@ -272,8 +272,8 @@ dplasma_zpotrf( parsec_context_t *parsec,
  *          The parsec context of the application that will run the operation.
  *
  * @param[in] uplo
- *          = PlasmaUpper: Upper triangle of A is referenced;
- *          = PlasmaLower: Lower triangle of A is referenced.
+ *          = dplasmaUpper: Upper triangle of A is referenced;
+ *          = dplasmaLower: Lower triangle of A is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed matrix A.
@@ -306,7 +306,7 @@ dplasma_zpotrf( parsec_context_t *parsec,
  ******************************************************************************/
 int
 dplasma_zpotrf_rec( parsec_context_t *parsec,
-                    PLASMA_enum uplo,
+                    dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A, int hmb )
 {
     parsec_taskpool_t *parsec_zpotrf = NULL;

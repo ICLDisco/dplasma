@@ -12,10 +12,9 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <cblas.h>
+#include <lapacke.h>
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -132,14 +131,14 @@
 int
 CORE_zparfb(PLASMA_enum side, PLASMA_enum trans, PLASMA_enum direct, PLASMA_enum storev,
             int M1, int N1, int M2, int N2, int K, int L,
-                  parsec_complex64_t *A1, int LDA1,
-                  parsec_complex64_t *A2, int LDA2,
-            const parsec_complex64_t *V, int LDV,
-            const parsec_complex64_t *T, int LDT,
-                  parsec_complex64_t *WORK, int LDWORK)
+                  PLASMA_Complex64_t *A1, int LDA1,
+                  PLASMA_Complex64_t *A2, int LDA2,
+            const PLASMA_Complex64_t *V, int LDV,
+            const PLASMA_Complex64_t *T, int LDT,
+                  PLASMA_Complex64_t *WORK, int LDWORK)
 {
-    static parsec_complex64_t zone  =  1.0;
-    static parsec_complex64_t mzone = -1.0;
+    static PLASMA_Complex64_t zone  =  1.0;
+    static PLASMA_Complex64_t mzone = -1.0;
 
     int j;
 

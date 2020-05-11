@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019      The University of Tennessee and The University
+ * Copyright (c) 2019-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Imported from:
@@ -19,10 +19,11 @@
 #ifndef _PLASMA_CORE_BLAS_H_
 #define _PLASMA_CORE_BLAS_H_
 
+
+#include "cores/dplasma_plasmatypes.h"
+#include "cores/descriptor.h"
 #include <cblas.h>
 #include <lapacke.h>
-#include "plasmatypes.h"
-#include "cores/descriptor.h"
 
 #include "cores/core_zblas.h"
 #include "cores/core_dblas.h"
@@ -35,18 +36,10 @@
 extern "C" {
 #endif
 
-  static inline int coreblas_imin(int a, int b) { return (a < b) ? a : b; };
-  static inline int coreblas_imax(int a, int b) { return (a > b) ? a : b; };
   /*
    * Coreblas Error
    */
 #define coreblas_error(k, str) fprintf(stderr, "%s: Parameter %d / %s\n", __func__, k, str);
-
- /** ****************************************************************************
-  *  LAPACK Constants
-  **/
-extern char *plasma_lapack_constants[];
-#define lapack_const(plasma_const) plasma_lapack_constants[plasma_const][0]
 
 /* CBLAS requires for scalar arguments to be passed by address rather than by value */
 #ifndef CBLAS_SADDR

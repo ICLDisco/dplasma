@@ -12,13 +12,8 @@
  * @precisions normal z -> c d s
  *
  **/
-
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-
+#include "common.h"
 #undef REAL
 #define COMPLEX
 
@@ -94,14 +89,32 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zherfb = PCORE_zherfb
+#define CORE_zherfb PCORE_zherfb
+#define CORE_zunmlq PCORE_zunmlq
+#define CORE_zunmqr PCORE_zunmqr
+int  CORE_zunmlq(PLASMA_enum side, PLASMA_enum trans,
+                 int M, int N, int IB, int K,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *C, int LDC,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+int  CORE_zunmqr(PLASMA_enum side, PLASMA_enum trans,
+                 int M, int N, int K, int IB,
+                 const PLASMA_Complex64_t *V, int LDV,
+                 const PLASMA_Complex64_t *T, int LDT,
+                 PLASMA_Complex64_t *C, int LDC,
+                 PLASMA_Complex64_t *WORK, int LDWORK);
+#endif
 int CORE_zherfb( PLASMA_enum uplo, int n,
                  int k, int ib, int nb,
-                 const parsec_complex64_t *A, int lda,
-                 const parsec_complex64_t *T, int ldt,
-                 parsec_complex64_t *C, int ldc,
-                 parsec_complex64_t *WORK, int ldwork )
+                 const PLASMA_Complex64_t *A, int lda,
+                 const PLASMA_Complex64_t *T, int ldt,
+                 PLASMA_Complex64_t *C, int ldc,
+                 PLASMA_Complex64_t *WORK, int ldwork )
 {
-    parsec_complex64_t tmp;
+    PLASMA_Complex64_t tmp;
     int i, j;
 
     /* Check input arguments */
@@ -125,15 +138,15 @@ int CORE_zherfb( PLASMA_enum uplo, int n,
         coreblas_error(5, "Illegal value of nb");
         return -5;
     }
-    if ( (lda < coreblas_imax(1,n)) && (n > 0) ) {
+    if ( (lda < max(1,n)) && (n > 0) ) {
         coreblas_error(7, "Illegal value of lda");
         return -7;
     }
-    if ( (ldt < coreblas_imax(1,ib)) && (ib > 0) ) {
+    if ( (ldt < max(1,ib)) && (ib > 0) ) {
         coreblas_error(9, "Illegal value of ldt");
         return -9;
     }
-    if ( (ldc < coreblas_imax(1,n)) && (n > 0) ) {
+    if ( (ldc < max(1,n)) && (n > 0) ) {
         coreblas_error(11, "Illegal value of ldc");
         return -11;
     }

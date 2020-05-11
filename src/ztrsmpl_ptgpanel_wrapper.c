@@ -8,10 +8,9 @@
  */
 #include "parsec.h"
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#include <core_blas.h>
 
 #include "ztrsmpl_ptgpanel.h"
 
@@ -28,7 +27,7 @@ dplasma_ztrsmpl_ptgpanel_New( const parsec_tiled_matrix_dc_t *A,
 
     /* A */
     dplasma_add2arena_tile( parsec_ztrsmpl_ptgpanel->arenas[PARSEC_ztrsmpl_ptgpanel_DEFAULT_ARENA],
-                            A->mb*A->nb*sizeof(parsec_complex64_t),
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 

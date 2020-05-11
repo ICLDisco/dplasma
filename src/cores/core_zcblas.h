@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019      The University of Tennessee and The University
+ * Copyright (c) 2019-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Imported from:
@@ -29,11 +29,11 @@ extern "C" {
  *  Declarations of serial kernels - alphabetical order
  **/
 void CORE_clag2z(int m, int n,
-                 const parsec_complex32_t *A, int lda,
-                 parsec_complex64_t *B, int ldb);
+                 const PLASMA_Complex32_t *A, int lda,
+                 PLASMA_Complex64_t *B, int ldb);
 void CORE_zlag2c(int m, int n,
-                 const parsec_complex64_t *A, int lda,
-                 parsec_complex32_t *B, int ldb, int *info);
+                 const PLASMA_Complex64_t *A, int lda,
+                 PLASMA_Complex32_t *B, int ldb, int *info);
 
 #ifdef __cplusplus
 }

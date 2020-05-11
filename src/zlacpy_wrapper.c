@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,7 +10,8 @@
 
 #include <lapacke.h>
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "map2.h"
 
@@ -19,12 +20,12 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
                          const parsec_tiled_matrix_dc_t *descA,
                          const parsec_tiled_matrix_dc_t *descB,
                          const void *_A, void *_B,
-                         PLASMA_enum uplo, int m, int n,
+                         dplasma_enum_t uplo, int m, int n,
                          void *args )
 {
     int tempmm, tempnn, ldam, ldbm;
-    const parsec_complex64_t *A = (const parsec_complex64_t*)_A;
-    parsec_complex64_t       *B = (parsec_complex64_t*)_B;
+    const dplasma_complex64_t *A = (const dplasma_complex64_t*)_A;
+    dplasma_complex64_t       *B = (dplasma_complex64_t*)_B;
     (void)es;
     (void)args;
 
@@ -34,7 +35,7 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
     ldbm = BLKLDD( descB, m );
 
     LAPACKE_zlacpy_work(
-        LAPACK_COL_MAJOR, lapack_const( uplo ), tempmm, tempnn, A, ldam, B, ldbm);
+        LAPACK_COL_MAJOR, dplasma_lapack_const( uplo ), tempmm, tempnn, A, ldam, B, ldbm);
 
     return 0;
 }
@@ -55,9 +56,9 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is copied:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is refrenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is refrenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed original matrix A. Any tiled matrix
@@ -86,13 +87,13 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zlacpy_New( PLASMA_enum uplo,
+dplasma_zlacpy_New( dplasma_enum_t uplo,
                     const parsec_tiled_matrix_dc_t *A,
                     parsec_tiled_matrix_dc_t *B)
 {
     parsec_taskpool_t* tp;
 
-    tp = dplasma_map2_New(uplo, PlasmaNoTrans, A, B,
+    tp = dplasma_map2_New(uplo, dplasmaNoTrans, A, B,
                           dplasma_zlacpy_operator, NULL );
 
     return tp;
@@ -142,9 +143,9 @@ dplasma_zlacpy_Destruct( parsec_taskpool_t *tp )
  *
  * @param[in] uplo
  *          Specifies which part of matrix A is copied:
- *          = PlasmaUpperLower: All matrix is referenced.
- *          = PlasmaUpper:      Only upper part is refrenced.
- *          = PlasmaLower:      Only lower part is referenced.
+ *          = dplasmaUpperLower: All matrix is referenced.
+ *          = dplasmaUpper:      Only upper part is refrenced.
+ *          = dplasmaLower:      Only lower part is referenced.
  *
  * @param[in] A
  *          Descriptor of the distributed original matrix A. Any tiled matrix
@@ -172,15 +173,15 @@ dplasma_zlacpy_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zlacpy( parsec_context_t *parsec,
-                PLASMA_enum uplo,
+                dplasma_enum_t uplo,
                 const parsec_tiled_matrix_dc_t *A,
                 parsec_tiled_matrix_dc_t *B)
 {
     parsec_taskpool_t *parsec_zlacpy = NULL;
 
-    if ((uplo != PlasmaUpperLower) &&
-        (uplo != PlasmaUpper)      &&
-        (uplo != PlasmaLower))
+    if ((uplo != dplasmaUpperLower) &&
+        (uplo != dplasmaUpper)      &&
+        (uplo != dplasmaLower))
     {
         dplasma_error("dplasma_zlacpy", "illegal value of uplo");
         return -2;

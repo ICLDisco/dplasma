@@ -12,10 +12,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -31,13 +28,13 @@
  *  Hermann Hankel, is a square matrix with constant skew-diagonals (positive
  *  sloping diagonals), e.g.:
  *
- *  \f[ \left\|\begin{array}{lllll}
+ *  \f[ \begin{bmatrix}
  *  a & b & c & d & e \\
  *  b & c & d & e & f \\
  *  c & d & e & f & g \\
  *  d & e & f & g & h \\
  *  e & f & g & h & i \\
- *  \end{array}\right\|
+ *  \end{bmatrix}
  *  \f].
  *
  *  A(i,j) = A(i-1,j+1)
@@ -84,10 +81,14 @@
  *         \retval <0 if INFO = -k, the k-th argument had an illegal value
  *
  ******************************************************************************/
-int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, parsec_complex64_t *A, int LDA,
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_hankel = PCORE_zpltmg_hankel
+#define CORE_zpltmg_hankel PCORE_zpltmg_hankel
+#endif
+int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, PLASMA_Complex64_t *A, int LDA,
                         int m0, int n0, int nb,
-                        const parsec_complex64_t *V1,
-                        const parsec_complex64_t *V2 )
+                        const PLASMA_Complex64_t *V1,
+                        const PLASMA_Complex64_t *V2 )
 {
     int p, i, j, ii, jj;
 
@@ -100,7 +101,7 @@ int CORE_zpltmg_hankel( PLASMA_enum uplo, int M, int N, parsec_complex64_t *A, i
         coreblas_error(3, "Illegal value of N");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }

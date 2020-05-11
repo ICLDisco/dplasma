@@ -13,11 +13,9 @@
  * @precisions normal z -> c d s
  *
  **/
+#include "common.h"
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include <lapacke.h>
 
 /***************************************************************************//**
  *
@@ -64,10 +62,10 @@
  ******************************************************************************/
 int
 CORE_zgetf2_nopiv(int M, int N,
-                  parsec_complex64_t *A, int LDA)
+                  PLASMA_Complex64_t *A, int LDA)
 {
-    parsec_complex64_t mzone = (parsec_complex64_t)-1.0;
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t mzone = (PLASMA_Complex64_t)-1.0;
+    PLASMA_Complex64_t alpha;
     double sfmin;
     int i, j, k;
     int info;
@@ -82,7 +80,7 @@ CORE_zgetf2_nopiv(int M, int N,
         coreblas_error(2, "Illegal value of N");
         return -2;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }
@@ -92,10 +90,10 @@ CORE_zgetf2_nopiv(int M, int N,
         return PLASMA_SUCCESS;
 
     sfmin = LAPACKE_dlamch_work('S');
-    k = coreblas_imin(M, N);
+    k = min(M, N);
     for(i=0 ; i < k; i++) {
         alpha = A[i*LDA+i];
-        if ( alpha != (parsec_complex64_t)0.0 ) {
+        if ( alpha != (PLASMA_Complex64_t)0.0 ) {
             /* Compute elements J+1:M of J-th column. */
             if (i < M) {
                 if ( cabs(alpha) > sfmin ) {

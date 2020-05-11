@@ -1,6 +1,6 @@
 /**
  *
- * @file core_blas/cores/descriptor.c
+ * @file core_blas/descriptor.c
  *
  *  PLASMA auxiliary routines
  *  PLASMA is a software package provided by Univ. of Tennessee,
@@ -13,14 +13,10 @@
  **/
 #include <stdlib.h>
 #include <assert.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-
+#include "common.h"
 
 /***************************************************************************//**
- *  Internal static cores/descriptor initializer
+ *  Internal static descriptor initializer
  **/
 PLASMA_desc plasma_desc_init(PLASMA_enum dtyp, int mb, int nb, int bsiz,
                              int lm, int ln, int i, int j, int m, int n)
@@ -61,7 +57,7 @@ PLASMA_desc plasma_desc_init(PLASMA_enum dtyp, int mb, int nb, int bsiz,
 }
 
 /***************************************************************************//**
- *  Internal static cores/descriptor initializer for submatrices
+ *  Internal static descriptor initializer for submatrices
  **/
 PLASMA_desc plasma_desc_submatrix(PLASMA_desc descA, int i, int j, int m, int n)
 {

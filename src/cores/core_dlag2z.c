@@ -12,11 +12,8 @@
  * @precisions normal z -> c
  *
  **/
+#include "common.h"
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
 
 /***************************************************************************//**
  *
@@ -54,9 +51,13 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_dlag2z = PCORE_dlag2z
+#define CORE_dlag2z PCORE_dlag2z
+#endif
 int CORE_dlag2z( int m, int n,
                  const double *R, int ldr,
-                 parsec_complex64_t *Z, int ldz )
+                 PLASMA_Complex64_t *Z, int ldz )
 {
     int i, j;
 
@@ -68,11 +69,11 @@ int CORE_dlag2z( int m, int n,
         coreblas_error(2, "Illegal value of n");
         return -2;
     }
-    if ( (ldr < coreblas_imax(1,m)) && (m > 0) ) {
+    if ( (ldr < max(1,m)) && (m > 0) ) {
         coreblas_error(4, "Illegal value of ldr");
         return -4;
     }
-    if ( (ldz < coreblas_imax(1,m)) && (m > 0) ) {
+    if ( (ldz < max(1,m)) && (m > 0) ) {
         coreblas_error(7, "Illegal value of ldz");
         return -7;
     }

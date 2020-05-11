@@ -15,10 +15,7 @@
  *
  **/
 #include <lapacke.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -82,11 +79,15 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zgeqrt = PCORE_zgeqrt
+#define CORE_zgeqrt PCORE_zgeqrt
+#endif
 int CORE_zgeqrt(int M, int N, int IB,
-                parsec_complex64_t *A, int LDA,
-                parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *TAU,
-                parsec_complex64_t *WORK)
+                PLASMA_Complex64_t *A, int LDA,
+                PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *TAU,
+                PLASMA_Complex64_t *WORK)
 {
     int i, k, sb;
 
@@ -103,11 +104,11 @@ int CORE_zgeqrt(int M, int N, int IB,
         coreblas_error(3, "Illegal value of IB");
         return -3;
     }
-    if ((LDA < coreblas_imax(1,M)) && (M > 0)) {
+    if ((LDA < max(1,M)) && (M > 0)) {
         coreblas_error(5, "Illegal value of LDA");
         return -5;
     }
-    if ((LDT < coreblas_imax(1,IB)) && (IB > 0)) {
+    if ((LDT < max(1,IB)) && (IB > 0)) {
         coreblas_error(7, "Illegal value of LDT");
         return -7;
     }
@@ -116,10 +117,10 @@ int CORE_zgeqrt(int M, int N, int IB,
     if ((M == 0) || (N == 0) || (IB == 0))
         return PLASMA_SUCCESS;
 
-    k = coreblas_imin(M, N);
+    k = min(M, N);
 
     for(i = 0; i < k; i += IB) {
-        sb = coreblas_imin(IB, k-i);
+        sb = min(IB, k-i);
 
         LAPACKE_zgeqr2_work(LAPACK_COL_MAJOR, M-i, sb,
                             &A[LDA*i+i], LDA, &TAU[i], WORK);

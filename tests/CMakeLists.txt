@@ -83,5 +83,11 @@ endif()
 
 testings_addexec(targets "${DPLASMA_PRECISIONS}" "${TESTS}")
 
+option(DPLASMA_INSTALL_TESTS OFF "Install the DPLASMA tests (in libexec)")
+if(DPLASMA_INSTALL_TESTS)
+  install(TARGETS ${targets}
+          DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/dplasma/tests)
+endif(DPLASMA_INSTALL_TESTS)
+
 # Define Testings
 include(Testings.cmake)

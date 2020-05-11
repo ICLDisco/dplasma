@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -71,13 +71,11 @@
  *     These lines are defined by (i-k)/p = 0.
  */
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
 #include "dplasmaaux.h"
 
 #include <math.h>
-#if defined(PARSEC_HAVE_STRING_H)
 #include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
 
 /* static int dplasma_qrtree_getinon0( const qr_piv_t *arg,  */
 /*                                 const int k, int i, int mt ); */

@@ -10,7 +10,8 @@
  */
 
 #include "dplasma.h"
-#include "dplasmatypes.h"
+#include "dplasma/types.h"
+#include "dplasmaaux.h"
 
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
@@ -48,7 +49,7 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zheev_New(PLASMA_enum jobz, PLASMA_enum uplo,
+dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
                   parsec_tiled_matrix_dc_t* A,
                   parsec_tiled_matrix_dc_t* W,  /* Should be removed: internal workspace as T */
                   parsec_tiled_matrix_dc_t* Z,
@@ -58,25 +59,25 @@ dplasma_zheev_New(PLASMA_enum jobz, PLASMA_enum uplo,
     *info = 0;
 
     /* Check input arguments */
-    if( (jobz != PlasmaNoVec) && (jobz != PlasmaVec) ) {
+    if( (jobz != dplasmaNoVec) && (jobz != dplasmaVec) ) {
         dplasma_error("dplasma_zheev_New", "illegal value of jobz");
         *info = -1;
         return NULL;
     }
-    if( (uplo != PlasmaLower) && (uplo != PlasmaUpper) ) {
+    if( (uplo != dplasmaLower) && (uplo != dplasmaUpper) ) {
         dplasma_error("dplasma_zheev_New", "illegal value of uplo");
         *info = -2;
         return NULL;
     }
 
     /* TODO: remove those extra check when those options will be implemented */
-    if( jobz == PlasmaVec ) {
-        dplasma_error("dplasma_zheev_New", "PlasmaVec not implemented (yet)");
+    if( jobz == dplasmaVec ) {
+        dplasma_error("dplasma_zheev_New", "dplasmaVec not implemented (yet)");
         *info = -1;
         return NULL;
     }
 
-    if( PlasmaLower == uplo ) {
+    if( dplasmaLower == uplo ) {
         parsec_taskpool_t* zherbt_obj, * zhbrdt_obj;
         parsec_diag_band_to_rect_taskpool_t* band2rect_obj;
         parsec_taskpool_t* zheev_compound;
@@ -94,21 +95,21 @@ dplasma_zheev_New(PLASMA_enum jobz, PLASMA_enum uplo,
 
         zherbt_obj = (parsec_taskpool_t*)dplasma_zherbt_New( uplo, ib, A, (parsec_tiled_matrix_dc_t*)T );
         band2rect_obj = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)A, (two_dim_block_cyclic_t*)W,
-                A->mt, A->nt, A->mb, A->nb, sizeof(parsec_complex64_t));
+                A->mt, A->nt, A->mb, A->nb, sizeof(dplasma_complex64_t));
         zhbrdt_obj = (parsec_taskpool_t*)dplasma_zhbrdt_New(W);
         zheev_compound = parsec_compose( zherbt_obj, (parsec_taskpool_t*)band2rect_obj );
         zheev_compound = parsec_compose( zheev_compound, zhbrdt_obj );
 
         parsec_arena_t* arena = band2rect_obj->arenas[PARSEC_diag_band_to_rect_DEFAULT_ARENA];
         dplasma_add2arena_tile(arena,
-                               A->mb*A->nb*sizeof(parsec_complex64_t),
+                               A->mb*A->nb*sizeof(dplasma_complex64_t),
                                PARSEC_ARENA_ALIGNMENT_SSE,
                                parsec_datatype_double_complex_t, A->mb);
 
         return zheev_compound;
     }
     else {
-        dplasma_error("dplasma_zheev_New", "PlasmaUpper not implemented (yet)");
+        dplasma_error("dplasma_zheev_New", "dplasmaUpper not implemented (yet)");
         *info = -2;
         return NULL;
     }
@@ -176,7 +177,7 @@ dplasma_zheev_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zheev( parsec_context_t *parsec,
-               PLASMA_enum jobz, PLASMA_enum uplo,
+               dplasma_enum_t jobz, dplasma_enum_t uplo,
                parsec_tiled_matrix_dc_t* A,
                parsec_tiled_matrix_dc_t* W, /* Should be removed */
                parsec_tiled_matrix_dc_t* Z )
@@ -185,11 +186,11 @@ dplasma_zheev( parsec_context_t *parsec,
     int info = 0;
 
     /* Check input arguments */
-    if( (jobz != PlasmaNoVec) && (jobz != PlasmaVec) ) {
+    if( (jobz != dplasmaNoVec) && (jobz != dplasmaVec) ) {
         dplasma_error("dplasma_zheev", "illegal value of jobz");
         return -1;
     }
-    if( (uplo != PlasmaLower) && (uplo != PlasmaUpper) ) {
+    if( (uplo != dplasmaLower) && (uplo != dplasmaUpper) ) {
         dplasma_error("dplasma_zheev", "illegal value of uplo");
         return -2;
     }

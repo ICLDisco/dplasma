@@ -13,10 +13,7 @@
  *
  **/
 #include <math.h>
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -71,12 +68,16 @@
  *         The leading dimension of the tile A. LDA >= max(1,M).
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zpltmg_fiedler = PCORE_zpltmg_fiedler
+#define CORE_zpltmg_fiedler PCORE_zpltmg_fiedler
+#endif
 void CORE_zpltmg_fiedler( int M, int N,
-                          const parsec_complex64_t *X, int incX,
-                          const parsec_complex64_t *Y, int incY,
-                                parsec_complex64_t *A, int LDA )
+                          const PLASMA_Complex64_t *X, int incX,
+                          const PLASMA_Complex64_t *Y, int incY,
+                                PLASMA_Complex64_t *A, int LDA )
 {
-    const parsec_complex64_t *tmpX;
+    const PLASMA_Complex64_t *tmpX;
     int i, j;
 
     for (j=0; j<N; j++, Y+=incY) {

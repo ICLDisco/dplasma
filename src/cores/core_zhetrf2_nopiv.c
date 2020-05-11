@@ -13,34 +13,17 @@
 /*
  * @precisions normal z -> c d s
  */
-#include "parsec/parsec_config.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
 
-#if defined(PARSEC_HAVE_STRING_H)
-#include <string.h>
-#endif  /* defined(PARSEC_HAVE_STRING_H) */
-#if defined(PARSEC_HAVE_STDARG_H)
-#include <stdarg.h>
-#endif  /* defined(PARSEC_HAVE_STDARG_H) */
-#include <stdio.h>
-#ifdef PARSEC_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#include <core_blas.h>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include <common.h>
 
 extern void CORE_zhetrf_nopiv(int uplo, int N, int ib,
-                         parsec_complex64_t *A, int LDA,
-                         parsec_complex64_t *WORK, int LDWORK,
+                         PLASMA_Complex64_t *A, int LDA,
+                         PLASMA_Complex64_t *WORK, int LDWORK,
                          int *INFO);
 
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        parsec_complex64_t *A, int LDA,
-        parsec_complex64_t *WORK, int LWORK, int *INFO);
+        PLASMA_Complex64_t *A, int LDA,
+        PLASMA_Complex64_t *WORK, int LWORK, int *INFO);
 
 /***************************************************************************//**
  *
@@ -55,17 +38,17 @@ void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
-#if defined(PLASMA_PARSEC_HAVE_WEAK)
+#if defined(PLASMA_HAVE_WEAK)
 #pragma weak CORE_zhetrf2_nopiv = PCORE_zhetrf2_nopiv
 #define CORE_zhetrf2_nopiv PCORE_zhetrf2_nopiv
 #endif
 void CORE_zhetrf2_nopiv(PLASMA_enum uplo, int N, int ib,
-        parsec_complex64_t *A, int LDA,
-        parsec_complex64_t *WORK, int LWORK, int *INFO)
+        PLASMA_Complex64_t *A, int LDA,
+        PLASMA_Complex64_t *WORK, int LWORK, int *INFO)
 {
 
     int j;
-    parsec_complex64_t alpha;
+    PLASMA_Complex64_t alpha;
 
     /* Factorize A as L*D*L' using the lower/upper triangle of A */
     CORE_zhetrf_nopiv(uplo, N, ib, A, LDA, WORK, LWORK, INFO);

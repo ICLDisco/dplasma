@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2009-2017 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  */
 
-#include "dplasma_complex.h"
+#include "dplasma/complex.h"
 
 #ifndef DPLASMA_HAVE_COMPLEX_H
 
@@ -54,20 +54,20 @@ double cabs(double _Complex z)
     return ans;
 }
 
-double cimag(parsec_complex64_t z)
+double cimag(dplasma_complex64_t z)
 {
     return ((double *)&z)[1];
 }
 
-double creal(parsec_complex64_t z)
+double creal(dplasma_complex64_t z)
 {
     return ((double *)&z)[0];
 }
 
-parsec_complex64_t conj(parsec_complex64_t z)
+dplasma_complex64_t conj(dplasma_complex64_t z)
 {
     double *zp, *vp;
-    parsec_complex64_t v;
+    dplasma_complex64_t v;
 
     zp = (double *)&z;
     vp = (double *)&v;

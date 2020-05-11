@@ -14,11 +14,7 @@
  * @precisions normal z -> c d s
  *
  **/
-#include "parsec/parsec_config.h"
-#include "dplasma.h"
-#include "dplasma_cores.h"
-#include "dplasma_zcores.h"
-#include "core_zblas.h"
+#include "common.h"
 
 /***************************************************************************//**
  *
@@ -113,13 +109,17 @@
  *          \retval <0 if -i, the i-th argument had an illegal value
  *
  ******************************************************************************/
+#if defined(PLASMA_HAVE_WEAK)
+#pragma weak CORE_zttmqr = PCORE_zttmqr
+#define CORE_zttmqr PCORE_zttmqr
+#endif
 int CORE_zttmqr(PLASMA_enum side, PLASMA_enum trans,
                 int M1, int N1, int M2, int N2, int K, int IB,
-                parsec_complex64_t *A1, int LDA1,
-                parsec_complex64_t *A2, int LDA2,
-                const parsec_complex64_t *V, int LDV,
-                const parsec_complex64_t *T, int LDT,
-                parsec_complex64_t *WORK, int LDWORK)
+                PLASMA_Complex64_t *A1, int LDA1,
+                PLASMA_Complex64_t *A2, int LDA2,
+                const PLASMA_Complex64_t *V, int LDV,
+                const PLASMA_Complex64_t *T, int LDT,
+                PLASMA_Complex64_t *WORK, int LDWORK)
 {
     int i,  i1, i3;
     int NQ, NW;
@@ -179,23 +179,23 @@ int CORE_zttmqr(PLASMA_enum side, PLASMA_enum trans,
         coreblas_error(8, "Illegal value of IB");
         return -8;
     }
-    if (LDA1 < coreblas_imax(1,M1)){
+    if (LDA1 < max(1,M1)){
         coreblas_error(10, "Illegal value of LDA1");
         return -10;
     }
-    if (LDA2 < coreblas_imax(1,M2)){
+    if (LDA2 < max(1,M2)){
         coreblas_error(12, "Illegal value of LDA2");
         return -12;
     }
-    if (LDV < coreblas_imax(1,NQ)){
+    if (LDV < max(1,NQ)){
         coreblas_error(14, "Illegal value of LDV");
         return -14;
     }
-    if (LDT < coreblas_imax(1,IB)){
+    if (LDT < max(1,IB)){
         coreblas_error(16, "Illegal value of LDT");
         return -16;
     }
-    if (LDWORK < coreblas_imax(1,NW)){
+    if (LDWORK < max(1,NW)){
         coreblas_error(18, "Illegal value of LDWORK");
         return -18;
     }
@@ -215,18 +215,18 @@ int CORE_zttmqr(PLASMA_enum side, PLASMA_enum trans,
     }
 
     for (i = i1; (i > -1) && (i < K); i+=i3) {
-        kb = coreblas_imin(IB, K-i);
+        kb = min(IB, K-i);
 
         if (side == PlasmaLeft) {
             mi1 = kb;
-            mi2 = coreblas_imin(i+kb, M2);
-            l   = coreblas_imin(kb, coreblas_imax(0, M2-i));
+            mi2 = min(i+kb, M2);
+            l   = min(kb, max(0, M2-i));
             ic  = i;
         }
         else {
             ni1 = kb;
-            ni2 = coreblas_imin(i+kb, N2);
-            l   = coreblas_imin(kb, coreblas_imax(0, N2-i));
+            ni2 = min(i+kb, N2);
+            l   = min(kb, max(0, N2-i));
             jc  = i;
         }
 

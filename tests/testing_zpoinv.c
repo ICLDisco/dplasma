@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -16,7 +16,7 @@ int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    PLASMA_enum uplo = PlasmaLower;
+    dplasma_enum_t uplo = dplasmaLower;
     int info = 0;
     int ret = 0;
 
@@ -72,7 +72,7 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
             two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile, nodes, rank,
                                    MB, NB, LDA, N, 0, 0, N, N, 1, 1, P));
-        dplasma_zplghe( parsec, (double)(N), PlasmaUpperLower,
+        dplasma_zplghe( parsec, (double)(N), dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA0, random_seed);
 
         ret |= check_zpoinv( parsec, (rank == 0) ? loud : 0, uplo,

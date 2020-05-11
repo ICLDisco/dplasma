@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,6 +10,7 @@
  */
 
 #include "dplasma.h"
+#include "dplasmaaux.h"
 
 /**
  *******************************************************************************
@@ -88,8 +89,8 @@ dplasma_zgeqrs( parsec_context_t *parsec,
     parsec_taskpool_t *parsec_zunmqr = NULL;
     parsec_taskpool_t *parsec_ztrsm  = NULL;
 
-    parsec_zunmqr = dplasma_zunmqr_New( PlasmaLeft, PlasmaConjTrans, A, T, B );
-    parsec_ztrsm  = dplasma_ztrsm_New(  PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, subA, subB );
+    parsec_zunmqr = dplasma_zunmqr_New( dplasmaLeft, dplasmaConjTrans, A, T, B );
+    parsec_ztrsm  = dplasma_ztrsm_New(  dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
 
     parsec_context_add_taskpool( parsec, parsec_zunmqr );
     parsec_context_add_taskpool( parsec, parsec_ztrsm );
@@ -101,8 +102,8 @@ dplasma_zgeqrs( parsec_context_t *parsec,
 
 #else
 
-    dplasma_zunmqr( parsec, PlasmaLeft, PlasmaConjTrans, A, T, B );
-    dplasma_ztrsm(  parsec, PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, 1.0, subA, subB );
+    dplasma_zunmqr( parsec, dplasmaLeft, dplasmaConjTrans, A, T, B );
+    dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
 
 #endif
 

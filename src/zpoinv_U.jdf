@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2016 The University of Tennessee and The University
+ * Copyright (c) 2010-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -44,10 +44,10 @@ BODY
 
 
     printlog("CORE_potrf_zpotrf(%d)\n"
-             "\t(PlasmaUpper, tempkm, A(%d,%d)[%p], ldak, descA->nb*k)\n",
+             "\t(dplasmaUpper, tempkm, A(%d,%d)[%p], ldak, descA->nb*k)\n",
              k, k, k, A);
 
-    CORE_zpotrf(PlasmaUpper, tempkm,
+    CORE_zpotrf(dplasmaUpper, tempkm,
                 A /* descA(k,k) */, ldak, &info );
 }
 END
@@ -76,10 +76,10 @@ BODY
 
 
     printlog("CORE_potrf_ztrsm(%d, %d)\n"
-             "\t(PlasmaLeft, PlasmaUpper, PlasmaConjTrans, PlasmaNonUnit, descA->nb, tempmm, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
+             "\t(dplasmaLeft, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit, descA->nb, tempmm, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
              k, m, k, k, A, k, m, B);
 
-    CORE_ztrsm(PlasmaLeft, PlasmaUpper, PlasmaConjTrans, PlasmaNonUnit,
+    CORE_ztrsm(dplasmaLeft, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit,
                descA->nb, tempmm,
                1., A /* descA(k,k) */, ldak,
                    B /* descA(k,m) */, ldak );
@@ -110,9 +110,9 @@ BODY
 
 
     printlog("CORE_potrf_zherk(%d, %d)\n"
-             "\t(PlasmaUpper, PlasmaConjTrans, tempmm, descA->mb, -1., A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaUpper, dplasmaConjTrans, tempmm, descA->mb, -1., A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], ldam)\n",
              k, m, k, m, A, m, m, B);
-    CORE_zherk(PlasmaUpper, PlasmaConjTrans,
+    CORE_zherk(dplasmaUpper, dplasmaConjTrans,
                tempmm, descA->mb,
                -1., A /* descA(k,m) */, ldak,
                 1., B /* descA(m,m) */, ldam );
@@ -154,7 +154,7 @@ BODY [type=CUDA]
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
-    cublasZgemm( lapack_const(PlasmaConjTrans), 'N',
+    cublasZgemm( dplasma_lapack_const(dplasmaConjTrans), 'N',
                  descA->mb, tempmm, descA->mb,
                  mzone, (cuDoubleComplex*)A, ldak,
                         (cuDoubleComplex*)B, ldak,
@@ -172,10 +172,10 @@ BODY
     int ldan = BLKLDD( descA, n );
 
     printlog("CORE_potrf_zgemm(%d, %d, %d)\n"
-             "\t(PlasmaConjTrans, PlasmaNoTrans, descA->mb, tempmm, descA->mb, -1, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], descA->mb)\n",
+             "\t(dplasmaConjTrans, dplasmaNoTrans, descA->mb, tempmm, descA->mb, -1, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], descA->mb)\n",
              k, m, n, k, n, A, k, m, B, n, m, C);
 
-    CORE_zgemm(PlasmaConjTrans, PlasmaNoTrans,
+    CORE_zgemm(dplasmaConjTrans, dplasmaNoTrans,
                descA->mb, tempmm, descA->mb,
                -1., A /* descA(k,n) */, ldak,
                     B /* descA(k,m) */, ldak,
@@ -213,10 +213,10 @@ BODY
 
 
     printlog("CORE_trtri_ztrsmL(%d, %d)\n"
-             "\t(PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, tempkm, tempnn, -1, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
+             "\t(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, tempkm, tempnn, -1, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
              k, n, k, k, A, k, n, B);
 
-    CORE_ztrsm(PlasmaLeft, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit,
+    CORE_ztrsm(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit,
                tempkm, tempnn,
                -1., A /* descA(k,k) */, ldak,
                     B /* descA(k,n) */, ldak );
@@ -279,10 +279,10 @@ BODY
     int ldak = BLKLDD( descA, k );
 
     printlog("CORE_trtri_zgemm(%d, %d, %d)\n"
-             "\t(PlasmaNoTrans, PlasmaNoTrans, descA->mb, tempnn, tempkm, 1., A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaNoTrans, dplasmaNoTrans, descA->mb, tempnn, tempkm, 1., A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, 1., A(%d,%d)[%p], ldam)\n",
              k, m, n, m, k, A, k, n, B, m, n, C);
 
-    CORE_zgemm(PlasmaNoTrans, PlasmaNoTrans,
+    CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                descA->mb, tempnn, tempkm,
                1., A /* descA(m,k) */, ldam,
                    B /* descA(k,n) */, ldak,
@@ -319,9 +319,9 @@ BODY
 
 
     printlog("CORE_trtri_ztrsmR(%d, %d)\n"
-             "\t(PlasmaRight, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit, descA->mb, tempkm, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaRight, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, descA->mb, tempkm, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
              k, m, k, k, A, m, k, B);
-    CORE_ztrsm(PlasmaRight, PlasmaUpper, PlasmaNoTrans, PlasmaNonUnit,
+    CORE_ztrsm(dplasmaRight, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit,
                descA->mb, tempkm,
                1., A /* descA(k,k) */, ldak,
                    B /* descA(m,k) */, ldam );
@@ -352,10 +352,10 @@ BODY
 
 
     printlog("CORE_trtri_ztrtri(%d)\n"
-             "\t(PlasmaUpper, PlasmaNonUnit, tempkm, A(%d,%d)[%p], ldak, descA->mb*k)\n",
+             "\t(dplasmaUpper, dplasmaNonUnit, tempkm, A(%d,%d)[%p], ldak, descA->mb*k)\n",
              k, k, k, A);
 
-    CORE_ztrtri(PlasmaUpper, PlasmaNonUnit, tempkm,
+    CORE_ztrtri(dplasmaUpper, dplasmaNonUnit, tempkm,
                 A /* descA(k,k) */, ldak, &info );
 }
 END
@@ -384,10 +384,10 @@ BODY
 
 
     printlog("CORE_lauum_zherk(%d, %d)\n"
-             "\t(PlasmaUpper, PlasmaNoTrans, descA->mb, tempkn, 1., A(%d,%d)[%p], ldam, 1., A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaUpper, dplasmaNoTrans, descA->mb, tempkn, 1., A(%d,%d)[%p], ldam, 1., A(%d,%d)[%p], ldam)\n",
              k, m, m, k, A, m, m, B);
 
-    CORE_zherk(PlasmaUpper, PlasmaNoTrans,
+    CORE_zherk(dplasmaUpper, dplasmaNoTrans,
                descA->mb, tempkn,
                1., A /* descA(m,k) */, ldam,
                1., B /* descA(m,m) */, ldam );
@@ -428,7 +428,7 @@ BODY [type=CUDA]
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
-    cublasZgemm( 'N', lapack_const(PlasmaConjTrans),
+    cublasZgemm( 'N', dplasma_lapack_const(dplasmaConjTrans),
                  descA->mb, descA->nb, tempkn,
                  zone, (cuDoubleComplex*)A, ldam,
                        (cuDoubleComplex*)B, ldan,
@@ -446,10 +446,10 @@ BODY
     int ldan = BLKLDD( descA, n );
 
     printlog("CORE_lauum_zgemm(%d, %d, %d)\n"
-             "\t(PlasmaNoTrans, PlasmaConjTrans, descA->mb, descA->nb, tempkn, 1., A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldan, 1., A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaNoTrans, dplasmaConjTrans, descA->mb, descA->nb, tempkn, 1., A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldan, 1., A(%d,%d)[%p], ldam)\n",
              k, m, n, m, k, A, n, k, B, m, n, C);
 
-    CORE_zgemm(PlasmaNoTrans, PlasmaConjTrans,
+    CORE_zgemm(dplasmaNoTrans, dplasmaConjTrans,
                descA->mb, descA->nb, tempkn,
                1., A /* descA(m,k) */, ldam,
                    B /* descA(n,k) */, ldan,
@@ -485,10 +485,10 @@ BODY
 
 
     printlog("CORE_lauum_ztrmm(%d, %d)\n"
-             "\t(PlasmaRight, PlasmaUpper, PlasmaConjTrans, PlasmaNonUnit, descA->mb, tempkn, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
+             "\t(dplasmaRight, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit, descA->mb, tempkn, 1., A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
              k, m, k, k, A, m, k, B);
 
-    CORE_ztrmm(PlasmaRight, PlasmaUpper, PlasmaConjTrans, PlasmaNonUnit,
+    CORE_ztrmm(dplasmaRight, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit,
                descA->mb, tempkn,
                1., A /* descA(k,k) */, ldak,
                    B /* descA(m,k) */, ldam );
@@ -517,10 +517,10 @@ BODY
 
 
     printlog("CORE_lauum_zlauum(%d)\n"
-             "\t(PlasmaUpper, tempkn, A(%d,%d)[%p], ldak)\n",
+             "\t(dplasmaUpper, tempkn, A(%d,%d)[%p], ldak)\n",
              k, k, k, A);
 
-    CORE_zlauum(PlasmaUpper, tempkn,
+    CORE_zlauum(dplasmaUpper, tempkn,
                 A /* descA(k,k) */, ldak );
 }
 END
