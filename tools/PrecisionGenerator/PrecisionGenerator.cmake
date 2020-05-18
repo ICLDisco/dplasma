@@ -13,7 +13,7 @@
 # PaRSEC Internal: generation of various floating point precision files from a template.
 #
 include(ParseArguments)
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 if(Python_VERSION_MAJOR GREATER 2)
   get_filename_component(PYTHON_EXE_DIR ${Python_EXECUTABLE} PATH)
   find_program(PYTHON_2TO3_EXECUTABLE
