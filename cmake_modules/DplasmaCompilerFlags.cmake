@@ -124,6 +124,19 @@ add_compile_options(
 add_compile_definitions(
   $<$<CONFIG:RELEASE>:NDEBUG>)
 
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+  # Ninja is weird with colors. It does not present a pty to cc (hence 
+  # colors get disabled by default), but if colors are forced upon it, it 
+  # will do the right thing and print colors only on terminals.
+  foreach(colorflag -fdiagnostics-color -fcolor-diagnostics)
+    check_c_compiler_flag(${colorflag} DPLASMA_CC_COLORS${colorflag})
+    if(${DPLASMA_CC_COLORS${colorflag}})
+      add_compile_options(${colorflag})
+      break()
+    endif()
+  endforeach()
+endif()
+
 #
 # Fortran tricks: fortran main avoidance
 #
