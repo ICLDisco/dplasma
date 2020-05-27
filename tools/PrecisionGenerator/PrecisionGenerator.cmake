@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2019 The University of Tennessee and The University
+# Copyright (c) 2009-2020 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 #
@@ -13,9 +13,9 @@
 # PaRSEC Internal: generation of various floating point precision files from a template.
 #
 include(ParseArguments)
-FIND_PACKAGE(PythonInterp REQUIRED)
-if(PYTHON_VERSION_MAJOR GREATER 2)
-  get_filename_component(PYTHON_EXE_DIR ${PYTHON_EXECUTABLE} PATH)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+if(Python_VERSION_MAJOR GREATER 2)
+  get_filename_component(PYTHON_EXE_DIR ${Python_EXECUTABLE} PATH)
   find_program(PYTHON_2TO3_EXECUTABLE
     NAMES 2to3
     HINTS ${PYTHON_EXE_DIR})
@@ -75,7 +75,7 @@ function(precisions_rules_py)
     set(sources_list "${sources_list} ${_src}")
   endforeach()
 
-  set(gencmd ${PYTHON_EXECUTABLE} ${GENDEPENDENCIES} -f "${sources_list}" -p "${options_list}" -s "${CMAKE_CURRENT_SOURCE_DIR}" ${PRECISIONPP_arg} ${PRECISIONPP_prefix})
+  set(gencmd ${Python_EXECUTABLE} ${GENDEPENDENCIES} -f "${sources_list}" -p "${options_list}" -s "${CMAKE_CURRENT_SOURCE_DIR}" ${PRECISIONPP_arg} ${PRECISIONPP_prefix})
   execute_process(COMMAND ${gencmd} OUTPUT_VARIABLE dependencies_list)
 
   foreach(_dependency ${dependencies_list})
@@ -88,7 +88,7 @@ function(precisions_rules_py)
       set(_dependency_PREC   "${CMAKE_MATCH_2}")
       set(_dependency_OUTPUT "${CMAKE_MATCH_3}")
 
-      set(pythoncmd ${PYTHON_EXECUTABLE} ${PRECISIONPP} -f ${CMAKE_CURRENT_SOURCE_DIR}/${_dependency_INPUT} -p ${_dependency_PREC} ${PRECISIONPP_arg} ${PRECISIONPP_prefix})
+      set(pythoncmd ${Python_EXECUTABLE} ${PRECISIONPP} -f ${CMAKE_CURRENT_SOURCE_DIR}/${_dependency_INPUT} -p ${_dependency_PREC} ${PRECISIONPP_arg} ${PRECISIONPP_prefix})
 
       string(STRIP "${_dependency_OUTPUT}" _dependency_OUTPUT)
       string(COMPARE NOTEQUAL "${_dependency_OUTPUT}" "" got_file)

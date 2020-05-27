@@ -23,6 +23,12 @@ if(POLICY CMP0074)
   #          in addition to the specified paths
   cmake_policy(SET CMP0074 NEW)
 ENDIF(POLICY CMP0074)
+if(POLICY CMP0094)
+  # CMP0094: Starting with CMake 3.16, all FIND_Python will use the first matching version instead of
+  #          of searching for the largest available version number (which defeats our selection logic)
+  cmake_policy(SET CMP0094 NEW)
+ENDIF(POLICY CMP0094)
+
 
 # CTest system
 SET(DART_TESTING_TIMEOUT 120)
