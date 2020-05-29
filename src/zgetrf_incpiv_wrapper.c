@@ -15,7 +15,6 @@
 #include "parsec/private_mempool.h"
 
 #include "zgetrf_incpiv.h"
-#include "zgetrf_incpiv_sd.h"
 
 /**
  *******************************************************************************
@@ -23,14 +22,7 @@
  * @ingroup dplasma_complex64
  *
  * dplasma_zgetrf_incpiv_New - Generates the taskpool that computes the LU
- * factorization of a M-by-N matrix A using tile algorithm.
- *
- * This algorithm exploits the multi-threaded recursive kernels of the PLASMA
- * library and by consequence require a column-cyclic data distribution if used
- * in distributed memory.
- * This is not an optimal solution for distributed memory system, and should be
- * used only if no other possibiliies is available. Absolute priority scheduler
- * is known to improve the performance of this algorithm and should be prefered.
+ * factorization of a M-by-N matrix A using incremental pivoting tile algorithm.
  *
  * Other variants of LU decomposition are available in the library wioth the
  * following function:
@@ -53,17 +45,10 @@
  *
  * @param[out] L
  *          Descriptor of the matrix L distributed exactly as the A matrix.
- *           - If IPIV != NULL, L.mb defines the IB parameter of the tile LU
+ *          L.mb defines the IB parameter of the tile LU
  *          algorithm. This matrix must be of size A.mt * L.mb - by - A.nt *
  *          L.nb, with L.nb == A.nb.
  *          On exit, contains auxiliary information required to solve the system.
- *           - If IPIV == NULL, pivoting information are stored within
- *          L. (L.mb-1) defines the IB parameter of the tile LU algorithm. This
- *          matrix must be of size A.mt * L.mb - by - A.nt * L.nb, with L.nb =
- *          A.nb, and L.mb = ib+1.
- *          On exit, the first A.mb elements contains the IPIV information, the
- *          leftover contains auxiliary information required to solve the
- *          system.
  *
  * @param[out] IPIV
  *          Descriptor of the IPIV matrix. Should be distributed exactly as the
@@ -71,7 +56,6 @@
  *          A.mb and IPIV.nb = 1.
  *          On exit, contains the pivot indices of the successive row
  *          interchanged performed during the factorization.
- *          If IPIV == NULL, rows interchange information is stored within L.
  *
  * @param[out] INFO
  *          On algorithm completion: equal to 0 on success, i if the ith
@@ -107,24 +91,16 @@ dplasma_zgetrf_incpiv_New( parsec_tiled_matrix_dc_t *A,
         dplasma_error("dplasma_zgetrf_incpiv_New", "L doesn't have the same number of tiles as A");
         return NULL;
     }
-    if ( (IPIV != NULL) && ((A->mt != IPIV->mt) || (A->nt != IPIV->nt)) ) {
+    if ( (A->mt != IPIV->mt) || (A->nt != IPIV->nt) ) {
         dplasma_error("dplasma_zgetrf_incpiv_New", "IPIV doesn't have the same number of tiles as A");
         return NULL;
     }
 
-    if ( IPIV != NULL ) {
-        ib = L->mb;
-        parsec_getrf_incpiv = parsec_zgetrf_incpiv_new( A,
-                                                      L,
-                                                      (parsec_data_collection_t*)IPIV,
-                                                      INFO, NULL);
-    } else {
-        ib = L->mb - 1;
-        parsec_getrf_incpiv = (parsec_zgetrf_incpiv_taskpool_t*)
-            parsec_zgetrf_incpiv_sd_new( A,
-                                        L,
-                                        NULL, INFO, NULL);
-    }
+    ib = L->mb;
+    parsec_getrf_incpiv = parsec_zgetrf_incpiv_new( A,
+                                                    L,
+                                                    (parsec_data_collection_t*)IPIV,
+                                                    INFO, NULL);
 
     parsec_getrf_incpiv->_g_work_pool = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
     parsec_private_memory_init( parsec_getrf_incpiv->_g_work_pool, ib * L->nb * sizeof(dplasma_complex64_t) );
@@ -204,15 +180,8 @@ dplasma_zgetrf_incpiv_Destruct( parsec_taskpool_t *tp )
  *
  * @ingroup dplasma_complex64
  *
- * dplasma_zgetrf_incpiv - Computes the LU factorization of a M-by-N matrix A
- * using tile algorithm.
- *
- * This algorithm exploits the multi-threaded recursive kernels of the PLASMA
- * library and by consequence require a column-cyclic data distribution if used
- * in distributed memory.
- * This is not an optimal solution for distributed memory system, and should be
- * used only if no other possibiliies is available. Absolute priority scheduler
- * is known to improve the performance of this algorithm and should be prefered.
+ * dplasma_zgetrf_incpiv_New - Generates the taskpool that computes the LU
+ * factorization of a M-by-N matrix A using incremental pivoting tile algorithm.
  *
  * Other variants of LU decomposition are available in the library wioth the
  * following function:
@@ -236,17 +205,10 @@ dplasma_zgetrf_incpiv_Destruct( parsec_taskpool_t *tp )
  *
  * @param[out] L
  *          Descriptor of the matrix L distributed exactly as the A matrix.
- *           - If IPIV != NULL, L.mb defines the IB parameter of the tile LU
+ *          L.mb defines the IB parameter of the tile LU
  *          algorithm. This matrix must be of size A.mt * L.mb - by - A.nt *
  *          L.nb, with L.nb == A.nb.
  *          On exit, contains auxiliary information required to solve the system.
- *           - If IPIV == NULL, pivoting information are stored within
- *          L. (L.mb-1) defines the IB parameter of the tile LU algorithm. This
- *          matrix must be of size A.mt * L.mb - by - A.nt * L.nb, with L.nb =
- *          A.nb, and L.mb = ib+1.
- *          On exit, the first A.mb elements contains the IPIV information, the
- *          leftover contains auxiliary information required to solve the
- *          system.
  *
  * @param[out] IPIV
  *          Descriptor of the IPIV matrix. Should be distributed exactly as the
@@ -254,7 +216,6 @@ dplasma_zgetrf_incpiv_Destruct( parsec_taskpool_t *tp )
  *          A.mb and IPIV.nb = 1.
  *          On exit, contains the pivot indices of the successive row
  *          interchanged performed during the factorization.
- *          If IPIV == NULL, rows interchange information is stored within L.
  *
  *******************************************************************************
  *
@@ -285,7 +246,7 @@ dplasma_zgetrf_incpiv( parsec_context_t *parsec,
         dplasma_error("dplasma_zgetrf_incpiv", "L doesn't have the same number of tiles as A");
         return -3;
     }
-    if ( (IPIV != NULL) && ((A->mt != IPIV->mt) || (A->nt != IPIV->nt)) ) {
+    if ( (A->mt != IPIV->mt) || (A->nt != IPIV->nt) ) {
         dplasma_error("dplasma_zgetrf_incpiv", "IPIV doesn't have the same number of tiles as A");
         return -4;
     }

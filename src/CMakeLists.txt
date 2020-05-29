@@ -80,12 +80,10 @@ set(JDF
   zgetrf.jdf
   zgetrf_ptgpanel.jdf
   zgetrf_incpiv.jdf
-  zgetrf_incpiv_sd.jdf
   zgetrf_nopiv.jdf
   zgetrf_qrf.jdf
   ztrsmpl.jdf
   ztrsmpl_ptgpanel.jdf
-  ztrsmpl_sd.jdf
   ztrsmpl_qrf.jdf
   # Other
   zgebrd_ge2gb.jdf
