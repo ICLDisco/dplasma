@@ -332,7 +332,7 @@ int  dplasma_zgerfs( parsec_context_t *parsec, parsec_tiled_matrix_dc_t* ddescA,
 parsec_taskpool_t* dplasma_ztrsmpl_ptgpanel_New(const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *IPIV, parsec_tiled_matrix_dc_t *B);
 parsec_taskpool_t* dplasma_zgetrf_std_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, int P, int Q, int *info );
 parsec_taskpool_t* dplasma_zgetrf_panel_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, int P, int Q, int *info );
-parsec_taskpool_t* dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, int P, int Q, int *info );
+parsec_taskpool_t* dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *IPIV, int *info );
 parsec_taskpool_t* dplasma_zgetrf_sp_New(double criteria, parsec_tiled_matrix_dc_t *A, int *info);
 
 void dplasma_ztrsmpl_ptgpanel_Destruct( parsec_taskpool_t *o );
