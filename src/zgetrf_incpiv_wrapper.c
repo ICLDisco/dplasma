@@ -24,6 +24,10 @@
  * dplasma_zgetrf_incpiv_New - Generates the taskpool that computes the LU
  * factorization of a M-by-N matrix A using incremental pivoting tile algorithm.
  *
+ * Note that incremental pivoting LU is not as tolerant to round-off errors
+ * as standard partial pivoting LU, in particular with matrices where some
+ * off-diagonal elements are much larger than diagonal elements.
+ *
  * Other variants of LU decomposition are available in the library wioth the
  * following function:
  *     - dplasma_zgetrf_New() that performs LU decomposition with partial pivoting.
@@ -182,6 +186,10 @@ dplasma_zgetrf_incpiv_Destruct( parsec_taskpool_t *tp )
  *
  * dplasma_zgetrf_incpiv_New - Generates the taskpool that computes the LU
  * factorization of a M-by-N matrix A using incremental pivoting tile algorithm.
+ *
+ * Note that incremental pivoting LU is not as tolerant to round-off errors
+ * as standard partial pivoting LU, in particular with matrices where some
+ * off-diagonal elements are much larger than diagonal elements.
  *
  * Other variants of LU decomposition are available in the library wioth the
  * following function:
