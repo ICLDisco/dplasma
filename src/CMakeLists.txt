@@ -82,7 +82,7 @@ set(JDF
   zgetrf_incpiv.jdf
   zgetrf_nopiv.jdf
   zgetrf_qrf.jdf
-  ztrsmpl.jdf
+  ztrsmpl_incpiv.jdf
   ztrsmpl_ptgpanel.jdf
   ztrsmpl_qrf.jdf
   # Other
@@ -177,7 +177,7 @@ set(SOURCES
   zgetrf_wrapper.c
   zgetrs_wrapper.c
   zgetrs_incpiv_wrapper.c
-  ztrsmpl_wrapper.c
+  ztrsmpl_incpiv_wrapper.c
   ztrsmpl_qrf_wrapper.c
   ztrsmpl_ptgpanel_wrapper.c
   #

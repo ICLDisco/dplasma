@@ -13,14 +13,14 @@
 #include "dplasma/types.h"
 #include "cores/core_blas.h"
 
-#include "ztrsmpl.h"
+#include "ztrsmpl_incpiv.h"
 
 /**
  *******************************************************************************
  *
  * @ingroup dplasma_complex64
  *
- * dplasma_ztrsmpl_New - Generates the taskpool that solves U*x = b, when U has
+ * dplasma_ztrsmpl_incpiv_New - Generates the taskpool that solves U*x = b, when U has
  * been generated through LU factorization with incremental pivoting strategy
  * See dplasma_zgetrf_incpiv_New().
  *
@@ -60,58 +60,58 @@
  *          \retval NULL if incorrect parameters are given.
  *          \retval The parsec taskpool describing the operation that can be
  *          enqueued in the runtime with parsec_context_add_taskpool(). It, then, needs to be
- *          destroy with dplasma_ztrsmpl_Destruct();
+ *          destroy with dplasma_ztrsmpl_incpiv_Destruct();
  *
  *******************************************************************************
  *
- * @sa dplasma_ztrsmpl
- * @sa dplasma_ztrsmpl_Destruct
- * @sa dplasma_ctrsmpl_New
- * @sa dplasma_dtrsmpl_New
- * @sa dplasma_strsmpl_New
+ * @sa dplasma_ztrsmpl_incpiv
+ * @sa dplasma_ztrsmpl_incpiv_Destruct
+ * @sa dplasma_ctrsmpl_incpiv_New
+ * @sa dplasma_dtrsmpl_incpiv_New
+ * @sa dplasma_strsmpl_incpiv_New
  *
  ******************************************************************************/
 parsec_taskpool_t *
-dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
+dplasma_ztrsmpl_incpiv_New(const parsec_tiled_matrix_dc_t *A,
                     const parsec_tiled_matrix_dc_t *L,
                     const parsec_tiled_matrix_dc_t *IPIV,
                     parsec_tiled_matrix_dc_t *B)
 {
-    parsec_ztrsmpl_taskpool_t *parsec_trsmpl = NULL; 
+    parsec_ztrsmpl_incpiv_taskpool_t *parsec_trsmpl_incpiv = NULL; 
 
     if ( (A->mt != L->mt) || (A->nt != L->nt) ) {
-        dplasma_error("dplasma_ztrsmpl_New", "L doesn't have the same number of tiles as A");
+        dplasma_error("dplasma_ztrsmpl_incpiv_New", "L doesn't have the same number of tiles as A");
         return NULL;
     }
     if ( (A->mt != IPIV->mt) || (A->nt != IPIV->nt) ) {
-        dplasma_error("dplasma_ztrsmpl_New", "IPIV doesn't have the same number of tiles as A");
+        dplasma_error("dplasma_ztrsmpl_incpiv_New", "IPIV doesn't have the same number of tiles as A");
         return NULL;
     }
 
-    parsec_trsmpl = parsec_ztrsmpl_new(A,
+    parsec_trsmpl_incpiv = parsec_ztrsmpl_incpiv_new(A,
                                        L,
                                        IPIV,
                                        B );
 
     /* A */
-    dplasma_add2arena_tile( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ARENA],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, A->mb, 1, -1 );
 
     /* L */
-    dplasma_add2arena_rectangle( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_SMALL_L_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ARENA],
                                  L->mb*L->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, L->mb, L->nb, -1);
 
-    return (parsec_taskpool_t*)parsec_trsmpl;
+    return (parsec_taskpool_t*)parsec_trsmpl_incpiv;
 }
 
 /**
@@ -119,8 +119,8 @@ dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
  *
  * @ingroup dplasma_complex64
  *
- *  dplasma_ztrsmpl_Destruct - Free the data structure associated to an taskpool
- *  created with dplasma_ztrsmpl_New().
+ *  dplasma_ztrsmpl_incpiv_Destruct - Free the data structure associated to an taskpool
+ *  created with dplasma_ztrsmpl_incpiv_New().
  *
  *******************************************************************************
  *
@@ -130,18 +130,18 @@ dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
  *
  *******************************************************************************
  *
- * @sa dplasma_ztrsmpl_New
- * @sa dplasma_ztrsmpl
+ * @sa dplasma_ztrsmpl_incpiv_New
+ * @sa dplasma_ztrsmpl_incpiv
  *
  ******************************************************************************/
 void
-dplasma_ztrsmpl_Destruct( parsec_taskpool_t *tp )
+dplasma_ztrsmpl_incpiv_Destruct( parsec_taskpool_t *tp )
 {
-    parsec_ztrsmpl_taskpool_t *parsec_trsmpl = (parsec_ztrsmpl_taskpool_t *)tp;
+    parsec_ztrsmpl_incpiv_taskpool_t *parsec_trsmpl_incpiv = (parsec_ztrsmpl_incpiv_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_DEFAULT_ARENA] );
-    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_PIVOT_ARENA  ] );
-    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_SMALL_L_ARENA] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ARENA] );
 
     parsec_taskpool_free(tp);
 }
@@ -151,7 +151,7 @@ dplasma_ztrsmpl_Destruct( parsec_taskpool_t *tp )
  *
  * @ingroup dplasma_complex64
  *
- * dplasma_ztrsmpl - Solves U*x = b, when U has been generated through LU
+ * dplasma_ztrsmpl_incpiv - Solves U*x = b, when U has been generated through LU
  * factorization with incremental pivoting strategy
  * See dplasma_zgetrf_incpiv().
  *
@@ -195,37 +195,37 @@ dplasma_ztrsmpl_Destruct( parsec_taskpool_t *tp )
  *
  *******************************************************************************
  *
- * @sa dplasma_ztrsmpl
- * @sa dplasma_ztrsmpl_Destruct
- * @sa dplasma_ctrsmpl_New
- * @sa dplasma_dtrsmpl_New
- * @sa dplasma_strsmpl_New
+ * @sa dplasma_ztrsmpl_incpiv
+ * @sa dplasma_ztrsmpl_incpiv_Destruct
+ * @sa dplasma_ctrsmpl_incpiv_New
+ * @sa dplasma_dtrsmpl_incpiv_New
+ * @sa dplasma_strsmpl_incpiv_New
  *
  ******************************************************************************/
 int
-dplasma_ztrsmpl( parsec_context_t *parsec,
+dplasma_ztrsmpl_incpiv( parsec_context_t *parsec,
                  const parsec_tiled_matrix_dc_t *A,
                  const parsec_tiled_matrix_dc_t *L,
                  const parsec_tiled_matrix_dc_t *IPIV,
                        parsec_tiled_matrix_dc_t *B )
 {
-    parsec_taskpool_t *parsec_ztrsmpl = NULL;
+    parsec_taskpool_t *parsec_ztrsmpl_incpiv = NULL;
 
     if ( (A->mt != L->mt) || (A->nt != L->nt) ) {
-        dplasma_error("dplasma_ztrsmpl", "L doesn't have the same number of tiles as A");
+        dplasma_error("dplasma_ztrsmpl_incpiv", "L doesn't have the same number of tiles as A");
         return -3;
     }
     if ( (A->mt != IPIV->mt) || (A->nt != IPIV->nt) ) {
-        dplasma_error("dplasma_ztrsmpl", "IPIV doesn't have the same number of tiles as A");
+        dplasma_error("dplasma_ztrsmpl_incpiv", "IPIV doesn't have the same number of tiles as A");
         return -4;
     }
 
-    parsec_ztrsmpl = dplasma_ztrsmpl_New(A, L, IPIV, B);
-    if ( parsec_ztrsmpl != NULL )
+    parsec_ztrsmpl_incpiv = dplasma_ztrsmpl_incpiv_New(A, L, IPIV, B);
+    if ( parsec_ztrsmpl_incpiv != NULL )
     {
-        parsec_context_add_taskpool( parsec, parsec_ztrsmpl );
+        parsec_context_add_taskpool( parsec, parsec_ztrsmpl_incpiv );
         dplasma_wait_until_completion( parsec );
-        dplasma_ztrsmpl_Destruct( parsec_ztrsmpl );
+        dplasma_ztrsmpl_incpiv_Destruct( parsec_ztrsmpl_incpiv );
         return 0;
     }
     else

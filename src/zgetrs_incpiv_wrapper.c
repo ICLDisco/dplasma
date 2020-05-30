@@ -16,7 +16,7 @@
  *
  * @ingroup dplasma_complex64
  *
- * dplasma_zgetrs - Solves a system of linear equations A * X = B with a general
+ * dplasma_zgetrs_incpiv - Solves a system of linear equations A * X = B with a general
  * square matrix A using the LU factorization with incremental pivoting strategy
  * computed by dplasma_zgetrf_incpiv().
  *
@@ -74,11 +74,11 @@
  *
  *******************************************************************************
  *
- * @sa dplasma_zgetrs_New
- * @sa dplasma_zgetrs_Destruct
- * @sa dplasma_cgetrs
- * @sa dplasma_dgetrs
- * @sa dplasma_sgetrs
+ * @sa dplasma_zgetrs_incpiv_New
+ * @sa dplasma_zgetrs_incpiv_Destruct
+ * @sa dplasma_cgetrs_incpiv
+ * @sa dplasma_dgetrs_incpiv
+ * @sa dplasma_sgetrs_incpiv
  *
  ******************************************************************************/
 int
@@ -91,26 +91,26 @@ dplasma_zgetrs_incpiv(parsec_context_t *parsec,
 {
     /* Check input arguments */
     if (trans != dplasmaNoTrans) {
-        dplasma_error("dplasma_zgetrs", "only dplasmaNoTrans supported");
+        dplasma_error("dplasma_zgetrs_incpiv", "only dplasmaNoTrans supported");
         return -1;
     }
 
 #ifdef PARSEC_COMPOSITION
-    parsec_taskpool_t *parsec_ztrsmpl = NULL;
+    parsec_taskpool_t *parsec_ztrsmpl_incpiv = NULL;
     parsec_taskpool_t *parsec_ztrsm   = NULL;
 
-    parsec_ztrsmpl = dplasma_ztrsmpl_New(A, L, IPIV, B);
+    parsec_ztrsmpl_incpiv = dplasma_ztrsmpl_incpiv_New(A, L, IPIV, B);
     parsec_ztrsm   = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
 
-    parsec_context_add_taskpool( parsec, parsec_ztrsmpl );
+    parsec_context_add_taskpool( parsec, parsec_ztrsmpl_incpiv );
     parsec_context_add_taskpool( parsec, parsec_ztrsm   );
 
     dplasma_wait_until_completion( parsec );
 
-    dplasma_ztrsm_Destruct( parsec_ztrsmpl );
+    dplasma_ztrsm_Destruct( parsec_ztrsmpl_incpiv );
     dplasma_ztrsm_Destruct( parsec_ztrsm   );
 #else
-    dplasma_ztrsmpl(parsec, A, L, IPIV, B );
+    dplasma_ztrsmpl_incpiv(parsec, A, L, IPIV, B );
     dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B );
 #endif
     return 0;

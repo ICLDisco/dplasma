@@ -15,7 +15,7 @@
  *
  * @ingroup dplasma_complex64
  *
- * dplasma_zgesv - Solves a system of linear equations A * X = B with a general
+ * dplasma_zgesv_incpiv - Solves a system of linear equations A * X = B with a general
  * square matrix A using the LU factorization with incremental pivoting strategy
  * computed by dplasma_zgetrf_incpiv().
  *
@@ -65,11 +65,11 @@
  *
  *******************************************************************************
  *
- * @sa dplasma_zgesv_New
- * @sa dplasma_zgesv_Destruct
- * @sa dplasma_cgesv
- * @sa dplasma_dgesv
- * @sa dplasma_sgesv
+ * @sa dplasma_zgesv_incpiv_New
+ * @sa dplasma_zgesv_incpiv_Destruct
+ * @sa dplasma_cgesv_incpiv
+ * @sa dplasma_dgesv_invpiv
+ * @sa dplasma_sgesv_invpiv
  *
  ******************************************************************************/
 int
@@ -83,7 +83,7 @@ dplasma_zgesv_incpiv( parsec_context_t *parsec,
 
 #ifdef PARSEC_COMPOSITION
     parsec_taskpool_t *parsec_zgetrf  = dplasma_zgetrf_incpiv_New(A, L, IPIV, &info);
-    parsec_taskpool_t *parsec_ztrsmpl = dplasma_ztrsmpl_New(A, L, IPIV, B);
+    parsec_taskpool_t *parsec_ztrsmpl = dplasma_ztrsmpl_incpiv_New(A, L, IPIV, B);
     parsec_taskpool_t *parsec_ztrsm   = dplasma_ztrsm_New(dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, A, B);
 
     parsec_context_add_taskpool( parsec, parsec_zgetrf  );
@@ -93,7 +93,7 @@ dplasma_zgesv_incpiv( parsec_context_t *parsec,
     dplasma_wait_until_completion( parsec );
 
     dplasma_zgetrf_incpiv_Destruct( parsec_zgetrf  );
-    dplasma_ztrsmpl_Destruct( parsec_ztrsmpl );
+    dplasma_ztrsmpl_incpiv_Destruct( parsec_ztrsmpl );
     dplasma_ztrsm_Destruct( parsec_ztrsm   );
 #else
     info = dplasma_zgetrf_incpiv(parsec, A, L, IPIV );
