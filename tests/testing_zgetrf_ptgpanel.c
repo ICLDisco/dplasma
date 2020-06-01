@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -35,18 +35,17 @@ int main(int argc, char ** argv)
 #if defined(HAVE_CUDA) && 0
     iparam[IPARAM_NGPUS] = 0;
 #endif
-    /* Initialize Parsec */
+    /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZGETRF, ((DagDouble_t)M, (DagDouble_t)N));
 
-#ifndef MYDEBUG
+    LDA = dplasma_imax( LDA, MT * MB );
+
     if ( M != N && check ) {
-        fprintf(stderr, "Check cannot be perfomed with M != N\n");
+        fprintf(stderr, "Check is impossible if M != N\n");
         check = 0;
     }
-#endif
-    LDA = dplasma_imax( LDA, MT * MB );
 
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
@@ -74,52 +73,15 @@ int main(int argc, char ** argv)
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                N, NRHS, KP, KQ, P));
 
-#ifdef MYDEBUG
-    PASTE_CODE_ALLOCATE_MATRIX(dcAl, check,
-                               two_dim_block_cyclic, (&dcAl, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, 1));
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcIPIVl, check,
-                               two_dim_block_cyclic, (&dcIPIVl, matrix_Integer, matrix_Lapack,
-                                                      1, rank, 1, NB, 1, dplasma_imin(M, N), 0, 0,
-                                                      1, dplasma_imin(M, N), KP, KQ, 1));
-#endif
-
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 7657);
-
-    /* Increase diagonale to avoid pivoting */
-    if (0)
-    {
-        parsec_tiled_matrix_dc_t *dcA = (parsec_tiled_matrix_dc_t *)&dcA;
-        int minmnt = dplasma_imin( dcA->mt, dcA->nt );
-        int minmn  = dplasma_imin( dcA->m,  dcA->n );
-        int t, e;
-
-        for(t = 0; t < minmnt; t++ ) {
-          if(dcA->super.rank_of(&dcA->super, t, t) == dcA->super.myrank)
-            {
-              parsec_data_t* data = dcA->super.data_of(&dcA->super, t, t);
-              parsec_data_copy_t* copy = parsec_data_get_copy(data, 0);
-              dplasma_complex64_t *tab = (dplasma_complex64_t*)parsec_data_copy_get_ptr(copy);
-              for(e = 0; e < dcA->mb; e++)
-                tab[e * dcA->mb + e] += (dplasma_complex64_t)minmn;
-            }
-        }
-    }
 
     if ( check )
     {
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcA0 );
-#ifdef MYDEBUG
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcA,
-                        (parsec_tiled_matrix_dc_t *)&dcAl );
-#endif
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 2354);
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
@@ -132,8 +94,6 @@ int main(int argc, char ** argv)
     PASTE_CODE_ENQUEUE_KERNEL(parsec, zgetrf_ptgpanel,
                               ((parsec_tiled_matrix_dc_t*)&dcA,
                                (parsec_tiled_matrix_dc_t*)&dcIPIV,
-                               P,
-                               Q,
                                &info));
     /* lets rock! */
     PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_ptgpanel);
@@ -145,35 +105,6 @@ int main(int argc, char ** argv)
         ret |= 1;
     }
     else if ( check ) {
-#ifdef MYDEBUG
-        if( rank  == 0 ) {
-            int i;
-            LAPACKE_zgetrf_work(LAPACK_COL_MAJOR, M, N,
-                                (dplasma_complex64_t*)(dcAl.mat), LDA,
-                                (int *)(dcIPIVl.mat));
-
-            printf("The Lapack swap are :\n");
-            for(i=0; i < dplasma_imin(M, N); i++) {
-                if ( i%NB == 0 )
-                    printf("\n(%d, %d) ", 0, i/NB );
-                printf( "%d ", ((int *)dcIPIVl.mat)[i] );
-            }
-            printf("\n");
-        }
-/*         dplasma_iprint(parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t*)&dcIPIV);  */
-        dplasma_zprint(parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t*)&dcA);
-        dplasma_zprint(parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t*)&dcAl);
-
-        dplasma_zgeadd( parsec, dplasmaUpperLower, -1.0,
-                        (parsec_tiled_matrix_dc_t*)&dcA,
-                        (parsec_tiled_matrix_dc_t*)&dcAl );
-        dplasma_zprint(parsec, dplasmaUpperLower, (parsec_tiled_matrix_dc_t*)&dcAl);
-
-        parsec_data_free(dcAl.mat);
-        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcAl);
-        parsec_data_free(dcIPIVl.mat);
-        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcIPIVl);
-#else
         dplasma_ztrsmpl_ptgpanel(parsec,
                                (parsec_tiled_matrix_dc_t *)&dcA,
                                (parsec_tiled_matrix_dc_t *)&dcIPIV,
@@ -188,7 +119,6 @@ int main(int argc, char ** argv)
                                (parsec_tiled_matrix_dc_t *)&dcA0,
                                (parsec_tiled_matrix_dc_t *)&dcB,
                                (parsec_tiled_matrix_dc_t *)&dcX);
-#endif
     }
 
     if ( check ) {
