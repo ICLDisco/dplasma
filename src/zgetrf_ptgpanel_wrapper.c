@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -13,17 +13,62 @@
 
 #include "zgetrf_ptgpanel.h"
 
-#define LDV  3
 #define IB  32
 
+/**
+ *******************************************************************************
+ *
+ * @ingroup dplasma_complex64
+ *
+ * dplasma_zgetrf_ptgpanel_New - Generates the taskpool that computes the LU
+ * factorization of a M-by-N matrix A: A = P * L * U by partial pivoting
+ * algorithm.
+ *
+ * WARNING: The computations are not done by this call.
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] A
+ *          Descriptor of the distributed matrix A to be factorized.
+ *          On entry, describes the M-by-N matrix A.
+ *          On exit, the factors L and U from the factorization
+ *          A = P*L*U; the unit diagonal elements of L are not stored.
+ *
+ * @param[out] IPIV
+ *          Descriptor of the IPIV matrix. Should be of size 1-by-min(M,N).
+ *          On exit, contains the pivot indices; for 1 <= i <= min(M,N), row i
+ *          of the matrix was interchanged with row IPIV(i).
+ *
+ * @param[out] INFO
+ *          On algorithm completion: equal to 0 on success, i if the ith
+ *          diagonal value is equal to 0. That implies incoherent result.
+ *
+ *******************************************************************************
+ *
+ * @return
+ *          \retval NULL if incorrect parameters are given.
+ *          \retval The parsec taskpool describing the operation that can be
+ *          enqueued in the runtime with parsec_context_add_taskpool(). It, then, needs to be
+ *          destroy with dplasma_zgetrf_ptgpanel_Destruct();
+ *
+ *******************************************************************************
+ *
+ * @sa dplasma_zgetrf_ptgpanel
+ * @sa dplasma_zgetrf_ptg_panel_Destruct
+ * @sa dplasma_cgetrf_ptgpanel_New
+ * @sa dplasma_dgetrf_ptgpanel_New
+ * @sa dplasma_sgetrf_ptgpanel_New
+ *
+ ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A,
                            parsec_tiled_matrix_dc_t *IPIV,
-                           int P, int Q,
                            int *info )
 {
     parsec_zgetrf_ptgpanel_taskpool_t *parsec_zgetrf_ptgpanel = NULL;
     int nb = A->nb;
+    int P = ((two_dim_block_cyclic_t*)A)->grid.rows;
+    int Q = ((two_dim_block_cyclic_t*)A)->grid.cols;
 
     /* The code has to be fixed for N >> M */
     assert( A->m >= A->n );
@@ -71,6 +116,26 @@ dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A,
     return (parsec_taskpool_t*)parsec_zgetrf_ptgpanel;
 }
 
+/**
+ *******************************************************************************
+ *
+ * @ingroup dplasma_complex64
+ *
+ *  dplasma_zgetrf_ptgpanel_Destruct - Free the data structure associated to a
+ *  taskpool created with dplasma_zgetrf_ptgpanel_New().
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] taskpool
+ *          On entry, the taskpool to destroy.
+ *          On exit, the tasdkpool cannot be used anymore.
+ *
+ *******************************************************************************
+ *
+ * @sa dplasma_zgetrf_ptgpanel_New
+ * @sa dplasma_zgetrf_ptgpanel
+ *
+ ******************************************************************************/
 void
 dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
 {
@@ -86,6 +151,46 @@ dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
     parsec_taskpool_free(tp);
 }
 
+/**
+ *******************************************************************************
+ *
+ * @ingroup dplasma_complex64
+ *
+ * dplasma_zgetrf_ptgpanel - Computes the LU factorization of a M-by-N 
+ * matrix A: A = P * L * U by partial pivoting algorithm.
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] parsec
+ *          The parsec context of the application that will run the operation.
+ *
+ * @param[in,out] A
+ *          Descriptor of the distributed matrix A to be factorized.
+ *          On entry, describes the M-by-N matrix A.
+ *          On exit, the factors L and U from the factorization
+ *          A = P*L*U; the unit diagonal elements of L are not stored.
+ *
+ * @param[out] IPIV
+ *          Descriptor of the IPIV matrix. Should be of size 1-by-min(M,N).
+ *          On exit, contains the pivot indices; for 1 <= i <= min(M,N), row i
+ *          of the matrix was interchanged with row IPIV(i).
+ *
+ *******************************************************************************
+ *
+ * @return
+ *          \retval -i if the ith parameters is incorrect.
+ *          \retval 0 on success.
+ *          \retval i if ith value is singular. Result is incoherent.
+ *
+ *******************************************************************************
+ *
+ * @sa dplasma_zgetrf_ptgpanel
+ * @sa dplasma_zgetrf_ptgpanel_Destruct
+ * @sa dplasma_cgetrf_ptgpanel_New
+ * @sa dplasma_dgetrf_ptgpanel_New
+ * @sa dplasma_sgetrf_ptgpanel_New
+ *
+ ******************************************************************************/
 int
 dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
                        parsec_tiled_matrix_dc_t *A,
@@ -94,10 +199,7 @@ dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
     int info = 0, ginfo = 0 ;
     parsec_taskpool_t *parsec_zgetrf_ptgpanel = NULL;
 
-    int P = ((two_dim_block_cyclic_t*)A)->grid.rows;
-    int Q = ((two_dim_block_cyclic_t*)A)->grid.cols;
-
-    parsec_zgetrf_ptgpanel = dplasma_zgetrf_ptgpanel_New(A, IPIV, P, Q, &info);
+    parsec_zgetrf_ptgpanel = dplasma_zgetrf_ptgpanel_New(A, IPIV, &info);
 
     if ( parsec_zgetrf_ptgpanel != NULL )
     {

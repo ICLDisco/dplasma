@@ -1,11 +1,12 @@
 #!/bin/bash
 #
-# Copyright (c) 2018-2019 The University of Tennessee and The University
+# Copyright (c) 2018-2020 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 
 prefix=/usr/local
 srcdir=${0%/*}
+cmake_generator="Unix Makefiles"
 
 # Be paranoid about errors and abort asap
 set -e
@@ -30,6 +31,8 @@ cat <<EOF
                 Directly pass VAR=VALUE to the Cmake configure stage
 --
                 The remainder of the command line arguments are sent to the Cmake configure stage as-is
+--with-ninja[=DIR]
+                Use Ninja to build to project
 
 
 --with-platform=FILE
@@ -108,6 +111,8 @@ cat <<EOF
 
 --with-python[=DIR]
                 use the Python interpreter [installed in DIR] (default=autodetect)
+--enable-python-venv
+                create a Python virtualenv that contains the dependencies for Parsec profiling tools (default=false)
 
 --with-mpi[=DIR]
                 use the MPI communication library [installed in DIR] (default=autodetect)
@@ -281,6 +286,13 @@ while [ "x$1" != x ]; do
         --with-python=*) with_python="${1#*=}"; shift;;
         --with-python) with_python=yes; shift;;
         --without-python) with_python=no; shift;;
+        --enable-python-venv) enable_python_venv=yes; shift;;
+        --disable-python-venv) enable_python_venv=no; shift;;
+
+# Ninja Generator
+        --with-ninja=*) with_ninja="${1#*=}"; shift;;
+        --with-ninja) with_ninja=yes; shift;;
+        --without-ninja) with_ninja=no; shift;;
 
 # Cmake passthrough
         -D*=*) CMAKE_DEFINES+=" $(printf %q "$1")"; shift;;
@@ -337,6 +349,16 @@ for i in "$@"; do
 done
 }
 
+function set_python_venv {
+    if [ -x "$(command -v virtualenv)" ]; then
+        virtualenv --prompt='pyparsec> ' ${PYTHON_EXECUTABLE:+-p ${PYTHON_EXECUTABLE}} venv
+        source venv/bin/activate
+        pip install Cython pandas matplotlib tables
+    else
+        echo >&2 "Could not prepare a Python venv because \`virtualenv\` was not found... Continue with native Python."
+    fi
+}
+
 #
 # Cross compilation support helpers
 #
@@ -368,8 +390,8 @@ _EOF
     local NATIVE_OPTS="-DBUILD_TESTING=OFF -DBUILD_TOOLS=ON -DBUILD_PARSEC=ON -DCMAKE_INSTALL_PREFIX=$NATIVE_PREFIX $NATIVE_MPI $NATIVE_CUDA $NATIVE_HWLOC $NATIVE_COMPILERS"
 
     set_cmake_executable #may have been changed in the platform file
-    echo "CC=\"${NATIVE_CC}\" CFLAGS=\"${NATIVE_CFLAGS}\" CXX=\"${NATIVE_CXX}\" CXXFLAGS=\"${NATIVE_CXXFLAGS}\" LDFLAGS=\"${NATIVE_LDFLAGS}\" ${cmake_executable} -G \"Unix Makefiles\" ${NATIVE_OPTS} ${PARSEC_TOOLCHAIN_OPTIONS} $(for i in "$@"; do printf ' %q' "$i"; done) ${srcdir}"
-    CC="${NATIVE_CC}" CFLAGS="${NATIVE_CFLAGS}" CXX="${NATIVE_CXX}" CXXFLAGS="${NATIVE_CXXFLAGS}" LDFLAGS="${NATIVE_LDFLAGS}" ${cmake_executable} -G "Unix Makefiles" ${NATIVE_OPTS} ${PARSEC_TOOLCHAIN_OPTIONS} "$@" ${srcdir}
+    echo "CC=\"${NATIVE_CC}\" CFLAGS=\"${NATIVE_CFLAGS}\" CXX=\"${NATIVE_CXX}\" CXXFLAGS=\"${NATIVE_CXXFLAGS}\" LDFLAGS=\"${NATIVE_LDFLAGS}\" ${cmake_executable} -G\"${cmake_generator}\" ${NATIVE_OPTS} ${PARSEC_TOOLCHAIN_OPTIONS} $(for i in "$@"; do printf ' %q' "$i"; done) ${srcdir}"
+    CC="${NATIVE_CC}" CFLAGS="${NATIVE_CFLAGS}" CXX="${NATIVE_CXX}" CXXFLAGS="${NATIVE_CXXFLAGS}" LDFLAGS="${NATIVE_LDFLAGS}" ${cmake_executable} -G"${cmake_generator}" ${NATIVE_OPTS} ${PARSEC_TOOLCHAIN_OPTIONS} "$@" ${srcdir}
     popd
     [ -r "$TOOLCHAIN_FILE" ] || echo >&2 "Cross compiling Toolchain file TOOLCHAIN_FILE=$TOOLCHAIN_FILE is missing... This will probably cause an error."
     local TOOLCHAIN=" -DCMAKE_TOOLCHAIN_FILE=\"$TOOLCHAIN_FILE\" -DIMPORT_EXECUTABLES=\"$NATIVE_DIR/ImportExecutables.cmake\""
@@ -588,14 +610,40 @@ xno) echo >&2 "Python is required. Please provide a path to the python executabl
 xyes) ;;
 x) ;;
 *)  PYTHON_EXECUTABLES=$(PATH="$with_python:$with_python/bin:${PATH}" command -v $with_python python{,3,2})
-    for PYTHON_EXECUTABLE in $PYTHON_EXECUTABLES; do
-        [[ $PYTHON_EXECUTABLE =~ $with_python ]] && CMAKE_DEFINES+=" -DPYTHON_EXECUTABLE=$(printf %q "$PYTHON_EXECUTABLE")" && break
+    for pe in $PYTHON_EXECUTABLES; do
+        [[ $pe =~ $with_python ]] && PYTHON_EXECUTABLE=$pe && break
     done
+esac
+
+case x$enable_python_venv in
+xyes) set_python_venv ;
+      pe=$(command -v $PWD/venv/bin/python)
+      [[ $pe ]] && PYTHON_EXECUTABLE=$pe;;
+*) ;;
+esac
+
+[[ x$PYTHON_EXECUTABLE != x ]] && CMAKE_DEFINES+=" -DPython_EXECUTABLE=$(printf %q "$PYTHON_EXECUTABLE")"
+
+
+case x$with_ninja in
+xno) ;;
+xyes) cmake_generator="Ninja";; # do as we are told no questions asked.
+*) if cmake --help | grep '^\s*Ninja\s*=' -q ; then
+    if [ x$with_ninja = x ]; then
+        # just probe, if nothing found that's ok.
+        NINJA_EXECUTABLES=$(command -v ninja) || true
+    else
+        NINJA_EXECUTABLES=$(PATH="$with_ninja:$with_ninja/bin:${PATH}" command -v $with_ninja ninja)
+    fi
+    if [ "$NINJA_EXECUTABLES" ]; then
+        cmake_generator="Ninja"
+    fi
+   fi
 esac
 
 # CMAKE INVOCATION
 
-CMAKE_COMMAND="$ENVVARS $cmake_executable -G 'Unix Makefiles' $srcdir $CMAKE_DEFINES $CMAKE_DEFINES_RAW"
+CMAKE_COMMAND="$ENVVARS $cmake_executable -G'$cmake_generator' $srcdir $CMAKE_DEFINES $CMAKE_DEFINES_RAW"
 
 cat <<EOF
 ### CMake generated invocation
@@ -607,5 +655,10 @@ EOF
 if [ x$nocreate != xyes ]; then
     [ x$_PARSEC_CONFIG_STATUS_OPT_NORECHECK != xyes ] && echo "Removing Cmake Cache..." && rm -rf CMakeCache.txt CMakeFiles
     eval $CMAKE_COMMAND
+    cat<<EOF
+#
+### CMake Generator: $cmake_generator
+#
+EOF
 fi
 

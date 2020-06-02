@@ -2,9 +2,9 @@
 # Note how this is done with an execute_process, during the configure
 # rather than during the build: this is because GenDeps is invoked during
 # configure, hence it needs to be created at this point
-FIND_PACKAGE(PythonInterp REQUIRED)
-if(PYTHON_VERSION_MAJOR GREATER 2)
-  get_filename_component(PYTHON_EXE_DIR ${PYTHON_EXECUTABLE} PATH)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+if(Python_VERSION_MAJOR GREATER 2)
+  get_filename_component(PYTHON_EXE_DIR ${Python_EXECUTABLE} PATH)
   find_program(PYTHON_2TO3_EXECUTABLE
     NAMES 2to3
     HINTS ${PYTHON_EXE_DIR})

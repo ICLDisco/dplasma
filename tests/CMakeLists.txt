@@ -57,7 +57,6 @@ set(TESTS
    testing_zgetrf_incpiv.c
    testing_zgetrf_nopiv.c
    testing_zgetrf_ptgpanel.c
-   testing_zgetrf_ptgpanel_panel.c
    testing_zgetrf_qrf.c
    #testing_zgesv.c
    testing_zgesv_incpiv.c
