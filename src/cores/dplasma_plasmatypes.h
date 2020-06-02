@@ -207,7 +207,7 @@ enum plasma_matrix_type_e {
 };
 
 /* rename the global symbol */
-#define plasma_lapack_constants dplasma_lapack_constants
+#define plasma_lapack_constants dplasma_lapack_const_strings
 #define lapack_const(i) dplasma_lapack_const(i)
 
 #include "dplasma/complex.h"

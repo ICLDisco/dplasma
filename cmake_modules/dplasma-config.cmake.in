@@ -1,0 +1,35 @@
+set(DPLASMA_VERSION @DPLASMA_VERSION_MAJOR@.@DPLASMA_VERSION_MINOR@.@DPLASMA_VERSION_PATCH@)
+
+@PACKAGE_INIT@
+
+set_and_check(DPLASMA_DIR "${PACKAGE_PREFIX_DIR}")
+set_and_check(DPLASMA_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(DPLASMA_CMAKE_DIRS "@PACKAGE_CMAKE_INSTALL_DATADIR@/cmake/dplasma")
+set_and_check(DPLASMA_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+set_and_check(DPLASMA_BINARY_DIRS "@PACKAGE_CMAKE_INSTALL_BINDIR@")
+set_and_check(DPLASMA_LIBEXEC_DIRS "@PACKAGE_CMAKE_LIBEXECDIR@")
+
+# Pull the dependencies
+list(APPEND CMAKE_PREFIX_PATH "${DPLASMA_CMAKE_DIRS}")
+list(APPEND CMAKE_MODULE_PATH "${DPLASMA_CMAKE_DIRS}")
+
+if(NOT @DPLASMA_FORCE_INTERNAL_PARSEC)
+  if("@PaRSEC_ROOT@")
+    set_and_check(PaRSEC_ROOT "@PaRSEC_ROOT@")
+    find_package(PaRSEC REQUIRED)
+  endif()
+else(NOT @DPLASMA_FORCE_INTERNAL_PARSEC)
+  set_and_check(PaRSEC_ROOT "$PACKAGE_PREFIX_DIR")
+  find_package(PaRSEC REQUIRED)
+endif()
+
+set(BLA_VENDOR "@BLA_VENDOR@")
+find_package(LAPACKE REQUIRED)
+
+# Pull the PaRSEC::<targets>
+if(NOT TARGET DPlasma::dplasma)
+  include(${CMAKE_CURRENT_LIST_DIR}/dplasma-targets.cmake)
+endif(NOT TARGET Dplasma::dplasma)
+
+# Populate the variables
+set(DPLASMA_LIBRARIES DPlasma::dplasma CACHE STRING "List of libraries suitable for use in target_link_libraries") # for compatibility with older (non-target based) clients

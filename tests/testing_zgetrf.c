@@ -32,9 +32,7 @@ int main(int argc, char ** argv)
     iparam_default_ibnbmb(iparam, 40, 200, 200);
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
-#if defined(PARSEC_HAVE_CUDA) && 0
-    iparam[IPARAM_NGPUS] = 0;
-#endif
+    iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);

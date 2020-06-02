@@ -66,7 +66,7 @@ BODY
     printlog("CORE_zunmlq(%d, %d, %d) [%d, %d]\n"
              "\t(side=%s, trans=%s, M=%d, N=%d, K=%d, ib=%d,\n"
              "\t A(%d,%d)[%p], lda=%d, T(%d,%d)[%p], ldt=%d, B(%d,%d)[%p], ldb=%d, W=%p, LDW=%d)\n",
-             k, i, m, p, nextp, dplasma_lapack_const( side ), dplasma_lapack_const( trans ), tempmm, temppn, tempmin, ib,
+             k, i, m, p, nextp, &dplasma_lapack_const( side ), &dplasma_lapack_const( trans ), tempmm, temppn, tempmin, ib,
              k, p, A, ldak, k, p, T, descTS->mb, m, p, C, ldbm, W, descTS->nb );
 
     CORE_zunmlq(
@@ -154,7 +154,7 @@ BODY
     printlog("CORE_ztsmlq(%d, %d, %d)\n"
              "\t(side=%s, trans=%s, M1=%d, N1=%d, M2=%d, N2=%d, K=%d, ib=%d,\n"
              "\t A1(%d,%d)[%p], lda1=%d, A2(%d,%d)[%p], lda2=%d, V(%d,%d)[%p], ldv=%d, T(%d,%d)[%p], ldt=%d, W=%p, LDW=%d)\n",
-             k, m, n, dplasma_lapack_const( side ), dplasma_lapack_const( trans ),
+             k, m, n, &dplasma_lapack_const( side ), &dplasma_lapack_const( trans ),
              tempmm, descB->nb, tempmm, tempnn, tempkm, ib,
              m, p, A1, ldbm, m, n, A2, ldbm, k, n, V, ldak, k, n, T, descTS->mb, W, ldwork );
 

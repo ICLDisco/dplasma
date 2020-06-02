@@ -8,7 +8,7 @@
 #include "parsec/private_mempool.h"
 #include "floputils.h"
 
-/* sqrt function */
+/* sqrt function; these names needed for the precision generator stage */
 #define dplasma_zsqrt csqrt
 #define dplasma_csqrt csqrtf
 #define dplasma_dsqrt sqrt
@@ -18,18 +18,16 @@
 #define QUOTEME(x) QUOTEME_(x)
 
 
-#ifdef PARSEC_CALL_TRACE
+#ifdef DPLASMA_TRACE_KERNELS
 #   include <stdlib.h>
 #   include <stdio.h>
 #   define printlog(str, ...) fprintf(stderr, "thread %d VP %d " str "\n", \
                                       es->th_id, es->virtual_process->vp_id, __VA_ARGS__)
 #   define printlogcuda(str, ...) fprintf(stderr, "cuda %d " str "\n", \
                                           gpu_device->cuda_index, __VA_ARGS__)
-#   define OUTPUT(ARG)  printf ARG
 #else
 #   define printlog(...) do {} while(0)
 #   define printlogcuda(...) do {} while(0)
-#   define OUTPUT(ARG)
 #endif
 
 #ifndef PARSEC_HAVE_MPI
@@ -40,7 +38,7 @@
 #endif  /* PARSEC_HAVE_MPI */
 
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 
 typedef cublasStatus_t (*cublas_zgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
@@ -59,7 +57,7 @@ typedef cublasStatus_t (*cublas_sgemm_t) ( char TRANSA, char TRANSB, int m, int 
                                  float alpha, float *d_A, int lda,
                                               float *d_B, int ldb,
                                  float beta,  float *d_C, int ldc );
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 #endif /* _DPLASMAJDF_H_ */
 

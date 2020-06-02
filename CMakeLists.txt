@@ -83,7 +83,10 @@ endif( SUPPORT_C11 )
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(DPLASMA_WITH_RECURSIVE
-  "Enable recursive kernels to be called when available" OFF)
+  "Enable recursive kernels to be called when available" ON)
+
+option(DPLASMA_TRACE_KERNELS
+  "Enable tracing dplasma kernel calls for debugging (slow)" OFF)
 
 mark_as_advanced( DPLASMA_GPU_WITH_MAGMA )
 option(DPLASMA_GPU_WITH_MAGMA
@@ -265,9 +268,11 @@ endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 
 if(PARSEC_HAVE_CUDA)
-  # CUDA is pulled by PaRSEC
-  set(DPLASMA_HAVE_CUDA ${PARSEC_HAVE_CUDA} CACHE BOOL "DPLASMA compiled with CUDA support")
-  message(STATUS "CUDA support for DPLASMA enabled")
+  option(DPLASMA_HAVE_CUDA
+    "Use CUDA to accelerate DPLASMA routines" ON)
+  if(DPLASMA_HAVE_CUDA)
+    message(STATUS "CUDA support for DPLASMA enabled")
+  endif()
 endif(PARSEC_HAVE_CUDA)
 
 
@@ -278,6 +283,43 @@ IF( BUILD_TESTING )
 ENDIF( BUILD_TESTING )
 Add_Subdirectory(examples)
 Add_Subdirectory(docs)
+
+# Configuration header
+configure_file (
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/include/dplasma/config.h.in"
+  "${PROJECT_BINARY_DIR}/src/include/dplasma/config.h")
+install(FILES
+  "${PROJECT_BINARY_DIR}/src/include/dplasma/config.h"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dplasma)
+
+# Export Targets
+install(EXPORT dplasma-targets # rules to export the targets built here
+  FILE dplasma-targets.cmake
+  NAMESPACE DPlasma::
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma)
+
+# cmake config files
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(cmake_modules/dplasma-config.cmake.in
+  ${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma
+  PATH_VARS 
+    CMAKE_INSTALL_INCLUDEDIR
+    CMAKE_INSTALL_DATADIR
+    CMAKE_INSTALL_LIBDIR
+    CMAKE_INSTALL_BINDIR
+    CMAKE_INSTALL_LIBEXECDIR)
+
+write_basic_package_version_file(${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config-version.cmake
+    VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
+    COMPATIBILITY SameMajorVersion)
+
+install(FILES
+  ${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config.cmake
+  ${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config-version.cmake
+  ${PROJECT_SOURCE_DIR}/cmake_modules/FindLAPACKE.cmake
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma)
 
 configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/src/include/dplasma.pc.in"
