@@ -77,9 +77,7 @@ endif()
 # but this should only be used in RelWithDebInfo mode.
 check_c_compiler_flag( "-Og" DPLASMA_HAVE_Og )
 if( DPLASMA_HAVE_Og )
-  set(o0flag "-Og")
-else()
-  set(o0flag "-O0")
+  set(ogflag "-Og")
 endif()
 
 # Set warnings for debug builds
@@ -118,7 +116,7 @@ endif(_match_icc)
 
 # verbose compilation in debug
 add_compile_options(
-  "$<$<CONFIG:RELWITHDEBINFO>:${o0flag};${wflags}>"
+  "$<$<CONFIG:RELWITHDEBINFO>:${ogflag};${wflags}>"
   "$<$<CONFIG:DEBUG>:${wflags}>")
 # remove asserts in release
 add_compile_definitions(
