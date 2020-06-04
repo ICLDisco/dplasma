@@ -14,9 +14,9 @@ extern "C" %{
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include <math.h>
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 %}
 
 /*
@@ -158,7 +158,7 @@ BODY
     printlog("gemm( %d, %d, %d )\n"
              "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",
              m, n, k,
-             dplasma_lapack_const( transA ), dplasma_lapack_const( transB ),
+             &dplasma_lapack_const( transA ), &dplasma_lapack_const( transB ),
              tempmm, tempnn, tempkk,
              creal(alpha), m, k, ldam,
                            n, k, ldbn,

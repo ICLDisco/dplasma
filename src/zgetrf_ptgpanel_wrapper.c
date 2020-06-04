@@ -208,7 +208,7 @@ dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
         dplasma_zgetrf_ptgpanel_Destruct( parsec_zgetrf_ptgpanel );
     }
 
-#if defined(HAVE_MPI)
+#if defined(PARSEC_HAVE_MPI)
     MPI_Allreduce( &info, &ginfo, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else
     ginfo = info;
