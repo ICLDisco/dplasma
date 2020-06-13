@@ -62,12 +62,12 @@ dplasma_zger_internal_New( int trans, dplasma_complex64_t alpha,
                               Y,
                               A);
 
-    dplasma_add2arena_tile( zger_tp->arenas[PARSEC_zger_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &zger_tp->arenas_datatypes[PARSEC_zger_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb);
 
-    dplasma_add2arena_rectangle( zger_tp->arenas[PARSEC_zger_VECTOR_ARENA],
+    dplasma_add2arena_rectangle( &zger_tp->arenas_datatypes[PARSEC_zger_VECTOR_ARENA],
                                  X->mb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, X->mb, 1, -1);
@@ -78,8 +78,8 @@ dplasma_zger_internal_New( int trans, dplasma_complex64_t alpha,
 static inline void
 dplasma_zger_internal_Destruct( parsec_taskpool_t *tp )
 {
-    parsec_matrix_del2arena( ((parsec_zger_taskpool_t *)tp)->arenas[PARSEC_zger_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( ((parsec_zger_taskpool_t *)tp)->arenas[PARSEC_zger_VECTOR_ARENA] );
+    dplasma_matrix_del2arena( &((parsec_zger_taskpool_t *)tp)->arenas_datatypes[PARSEC_zger_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &((parsec_zger_taskpool_t *)tp)->arenas_datatypes[PARSEC_zger_VECTOR_ARENA] );
 
     parsec_taskpool_free(tp);
 }

@@ -74,19 +74,18 @@ int main(int argc, char ** argv)
         if(loud > 2) printf("Done\n");
 
         int t;
-        for ( t = 0; t < 3; ++t) {
+        for(t = 0; t < nruns; t++) {
+            parsec_devices_release_memory();
             /* Create PaRSEC */
-            PASTE_CODE_ENQUEUE_KERNEL(parsec, zgemm,
+            PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgemm,
                                       (tA, tB, alpha,
                                        (parsec_tiled_matrix_dc_t *)&dcA,
                                        (parsec_tiled_matrix_dc_t *)&dcB,
                                        beta,
-                                       (parsec_tiled_matrix_dc_t *)&dcC));
+                                       (parsec_tiled_matrix_dc_t *)&dcC),
+                                      dplasma_zgemm_Destruct( PARSEC_zgemm ));
 
-            /* lets rock! */
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zgemm);
-
-            dplasma_zgemm_Destruct( PARSEC_zgemm );
+            parsec_devices_reset_load(parsec);
         }
 
         parsec_data_free(dcA.mat);
@@ -146,12 +145,15 @@ int main(int argc, char ** argv)
 
                 /* Create GEMM PaRSEC */
                 if(loud) printf("Compute ... ... ");
-                dplasma_zgemm(parsec, trans[tA], trans[tB],
-                              (dplasma_complex64_t)alpha,
-                              (parsec_tiled_matrix_dc_t *)&dcA,
-                              (parsec_tiled_matrix_dc_t *)&dcB,
-                              (dplasma_complex64_t)beta,
-                              (parsec_tiled_matrix_dc_t *)&dcC);
+                    PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgemm,
+                              (trans[tA], trans[tB],
+                               (dplasma_complex64_t)alpha,
+                               (parsec_tiled_matrix_dc_t *)&dcA,
+                               (parsec_tiled_matrix_dc_t *)&dcB,
+                               (dplasma_complex64_t)beta,
+                               (parsec_tiled_matrix_dc_t *)&dcC),
+                              dplasma_zgemm_Destruct( PARSEC_zgemm ));
+
                 if(loud) printf("Done\n");
 
                 parsec_data_free(dcA.mat);

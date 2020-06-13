@@ -68,13 +68,13 @@ dplasma_zlaswp_New(parsec_tiled_matrix_dc_t *A,
                                     inc );
 
     /* A */
-    dplasma_add2arena_tile( parsec_laswp->arenas[PARSEC_zlaswp_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_laswp->arenas_datatypes[PARSEC_zlaswp_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( parsec_laswp->arenas[PARSEC_zlaswp_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_laswp->arenas_datatypes[PARSEC_zlaswp_PIVOT_ARENA],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, 1, A->mb, -1 );
@@ -107,8 +107,8 @@ dplasma_zlaswp_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zlaswp_taskpool_t *parsec_zlaswp = (parsec_zlaswp_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_zlaswp->arenas[PARSEC_zlaswp_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_zlaswp->arenas[PARSEC_zlaswp_PIVOT_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zlaswp->arenas_datatypes[PARSEC_zlaswp_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zlaswp->arenas_datatypes[PARSEC_zlaswp_PIVOT_ARENA  ] );
 
     parsec_taskpool_free(tp);
 }

@@ -244,19 +244,19 @@ int main(int argc, char ** argv)
 
     /* Allocating data arrays to be used by comm engine */
     /* A */
-    dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
+    dplasma_add2arena_tile( &parsec_dtd_arenas_datatypes[TILE_FULL],
                             dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( parsec_dtd_arenas[TILE_RECTANGLE],
+    dplasma_add2arena_rectangle( &parsec_dtd_arenas_datatypes[TILE_RECTANGLE],
                                  dcA.super.mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, dcA.super.mb, 1, -1 );
 
     /* L */
-    dplasma_add2arena_rectangle( parsec_dtd_arenas[L_TILE_RECTANGLE],
+    dplasma_add2arena_rectangle( &parsec_dtd_arenas_datatypes[L_TILE_RECTANGLE],
                                  dcL.super.mb*dcL.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcL.super.mb, dcL.super.nb, -1);
@@ -443,9 +443,9 @@ int main(int argc, char ** argv)
     }
 
     /* Cleaning data arrays we allocated for communication */
-    parsec_matrix_del2arena( parsec_dtd_arenas[TILE_FULL] );
-    parsec_matrix_del2arena( parsec_dtd_arenas[TILE_RECTANGLE] );
-    parsec_matrix_del2arena( parsec_dtd_arenas[L_TILE_RECTANGLE] );
+    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_FULL] );
+    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_RECTANGLE] );
+    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[L_TILE_RECTANGLE] );
 
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcL );

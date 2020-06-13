@@ -106,6 +106,8 @@ void print_usage(void)
             "\n"
             " -y --butlvl       : Level of the Butterfly (starting from 0).\n"
             "\n"
+            " --nruns            : Number of times to run the kernel.\n"
+            "\n"
             " -v --verbose      : extra verbose output\n"
             " -h --help         : this message\n"
             "\n"
@@ -244,6 +246,9 @@ static struct option long_options[] =
     {"v",           optional_argument,  0, 'v'},
     {"help",        no_argument,        0, 'h'},
     {"h",           no_argument,        0, 'h'},
+
+    {"nruns",       required_argument,  0, '3'},
+
     {0, 0, 0, 0}
 };
 #endif  /* defined(PARSEC_HAVE_GETOPT_LONG) */
@@ -262,6 +267,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     /* Default seed */
     iparam[IPARAM_RANDOM_SEED] = 3872;
     iparam[IPARAM_MATRIX_INIT] = dplasmaMatrixRandom;
+    iparam[IPARAM_NRUNS] = 1;
 
     do {
 #if defined(PARSEC_HAVE_GETOPT_LONG)
@@ -276,6 +282,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
         switch(c)
         {
             case 'c': iparam[IPARAM_NCORES] = atoi(optarg); break;
+            case '3': iparam[IPARAM_NRUNS] = atoi(optarg); break;
             case 'm': iparam[IPARAM_THREAD_MT] = 1; break;
             case 'o':
                 if( !strcmp(optarg, "LFQ") )

@@ -100,13 +100,13 @@ dplasma_zgetrf_New( parsec_tiled_matrix_dc_t *A,
     parsec_getrf->_g_nbmaxthrd = nbthreads;
 
     /* A */
-    dplasma_add2arena_tile( parsec_getrf->arenas[PARSEC_zgetrf_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_getrf->arenas_datatypes[PARSEC_zgetrf_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( parsec_getrf->arenas[PARSEC_zgetrf_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_getrf->arenas_datatypes[PARSEC_zgetrf_PIVOT_ARENA],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, 1, A->mb, -1 );
@@ -139,8 +139,8 @@ dplasma_zgetrf_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgetrf_taskpool_t *parsec_zgetrf = (parsec_zgetrf_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_zgetrf->arenas[PARSEC_zgetrf_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_zgetrf->arenas[PARSEC_zgetrf_PIVOT_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf->arenas_datatypes[PARSEC_zgetrf_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zgetrf->arenas_datatypes[PARSEC_zgetrf_PIVOT_ARENA  ] );
 
     if ( parsec_zgetrf->_g_getrfdata != NULL )
         free( parsec_zgetrf->_g_getrfdata );

@@ -144,15 +144,15 @@ dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
     parsec_zhebut = (parsec_taskpool_t *)parsec_zhebut_new(seg_descA,U_before, U_after, nt, mt, pool_0);
 
     for(i=0; i<36; i++){
-        parsec_arena_t *arena;
+        parsec_arena_datatype_t *adt;
         int type_exists;
         unsigned int m_sz, n_sz;
 
         type_exists = type_index_to_sizes(&seg_descA->seg_info, i, &m_sz, &n_sz);
 
         if( type_exists ){
-            arena = ((parsec_zhebut_taskpool_t*)parsec_zhebut)->arenas[i];
-            parsec_matrix_add2arena_rect( arena, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            adt = &((parsec_zhebut_taskpool_t*)parsec_zhebut)->arenas_datatypes[i];
+            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -166,7 +166,7 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
     parsec_zhebut_taskpool_t *obut = (parsec_zhebut_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        parsec_matrix_del2arena( obut->arenas[i] );
+        dplasma_matrix_del2arena( &obut->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);
@@ -215,15 +215,15 @@ dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
     parsec_zgebut = (parsec_taskpool_t *)parsec_zgebut_new(seg_descA, U_before, U_after, nt, mt, pool_0);
 
     for(i=0; i<36; i++){
-        parsec_arena_t *arena;
+        parsec_arena_datatype_t *adt;
         int type_exists;
         unsigned int m_sz, n_sz;
 
         type_exists = type_index_to_sizes(&seg_descA->seg_info, i, &m_sz, &n_sz);
 
         if( type_exists ){
-            arena = ((parsec_zgebut_taskpool_t*)parsec_zgebut)->arenas[i];
-            parsec_matrix_add2arena_rect( arena, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            adt = &((parsec_zgebut_taskpool_t*)parsec_zgebut)->arenas_datatypes[i];
+            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -237,7 +237,7 @@ dplasma_zgebut_Destruct( parsec_taskpool_t *tp )
     parsec_zgebut_taskpool_t *obut = (parsec_zgebut_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        parsec_matrix_del2arena( obut->arenas[i] );
+        dplasma_matrix_del2arena( &obut->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);
@@ -286,15 +286,15 @@ dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
     parsec_zgebmm = (parsec_taskpool_t *)parsec_zgebmm_new(seg_descA, U_but_vec, nt, mt, trans, pool_0);
 
     for(i=0; i<36; i++){
-        parsec_arena_t *arena;
+        parsec_arena_datatype_t *adt;
         int type_exists;
         unsigned int m_sz, n_sz;
 
         type_exists = type_index_to_sizes(&seg_descA->seg_info, i, &m_sz, &n_sz);
 
         if( type_exists ){
-            arena = ((parsec_zgebmm_taskpool_t*)parsec_zgebmm)->arenas[i];
-            parsec_matrix_add2arena_rect( arena, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            adt = &((parsec_zgebmm_taskpool_t*)parsec_zgebmm)->arenas_datatypes[i];
+            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -308,7 +308,7 @@ dplasma_zgebmm_Destruct( parsec_taskpool_t *tp )
     parsec_zgebmm_taskpool_t *obmm = (parsec_zgebmm_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        parsec_matrix_del2arena( obmm->arenas[i] );
+        dplasma_matrix_del2arena( &obmm->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);

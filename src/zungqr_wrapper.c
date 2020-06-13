@@ -99,19 +99,19 @@ dplasma_zungqr_New( parsec_tiled_matrix_dc_t *A,
     parsec_private_memory_init( tp->_g_p_work, ib * T->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
-    dplasma_add2arena_tile( tp->arenas[PARSEC_zungqr_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zungqr_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
-    dplasma_add2arena_lower( tp->arenas[PARSEC_zungqr_LOWER_TILE_ARENA],
+    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zungqr_LOWER_TILE_ARENA],
                              A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Little T */
-    dplasma_add2arena_rectangle( tp->arenas[PARSEC_zungqr_LITTLE_T_ARENA],
+    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zungqr_LITTLE_T_ARENA],
                                  T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
@@ -144,9 +144,9 @@ dplasma_zungqr_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zungqr_taskpool_t *parsec_zungqr = (parsec_zungqr_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_zungqr->arenas[PARSEC_zungqr_DEFAULT_ARENA   ] );
-    parsec_matrix_del2arena( parsec_zungqr->arenas[PARSEC_zungqr_LOWER_TILE_ARENA] );
-    parsec_matrix_del2arena( parsec_zungqr->arenas[PARSEC_zungqr_LITTLE_T_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zungqr->arenas_datatypes[PARSEC_zungqr_DEFAULT_ARENA   ] );
+    dplasma_matrix_del2arena( &parsec_zungqr->arenas_datatypes[PARSEC_zungqr_LOWER_TILE_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zungqr->arenas_datatypes[PARSEC_zungqr_LITTLE_T_ARENA  ] );
 
     parsec_private_memory_fini( parsec_zungqr->_g_p_work );
     free( parsec_zungqr->_g_p_work );

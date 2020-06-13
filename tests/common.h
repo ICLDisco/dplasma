@@ -72,6 +72,7 @@ enum iparam_t {
   IPARAM_QR_TSRR,      /* Enable/disable the round-robin on TS domain */
   IPARAM_BUT_LEVEL,    /* Butterfly level */
   IPARAM_SCHEDULER,    /* User-selected scheduler */
+  IPARAM_NRUNS,        /* Number of times to run the kernel */
   IPARAM_SIZEOF
 };
 
@@ -111,6 +112,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int KQ    = iparam[IPARAM_KQ];                                      \
     int HMB   = iparam[IPARAM_HMB];                                     \
     int HNB   = iparam[IPARAM_HNB];                                     \
+    int nruns = iparam[IPARAM_NRUNS];                                   \
     int MT    = (M%MB==0) ? (M/MB) : (M/MB+1);                          \
     int NT    = (N%NB==0) ? (N/NB) : (N/NB+1);                          \
     int KT    = (K%MB==0) ? (K/MB) : (K/MB+1);                          \
@@ -125,7 +127,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     (void)rank;(void)nodes;(void)cores;(void)gpus;(void)P;(void)Q;(void)M;(void)N;(void)K;(void)NRHS; \
     (void)LDA;(void)LDB;(void)LDC;(void)IB;(void)MB;(void)NB;(void)MT;(void)NT;(void)KT; \
     (void)KP;(void)KQ;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
-    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;
+    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
 
 /* Define a double type which not pass through the precision generation process */
 typedef double DagDouble_t;
@@ -186,20 +188,12 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     }
 
 #define PASTE_CODE_ENQUEUE_KERNEL(PARSEC, KERNEL, PARAMS)               \
-    SYNC_TIME_START();                                                  \
+    SYNC_TIME_START();                                                   \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS;   \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");      \
     if( loud > 2 ) SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
 
-
-#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
-    SYNC_TIME_START();                                                  \
-    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
-    TIME_START();                                                       \
-    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
-    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n", \
-                           P, Q, NB, N,                                 \
-                           gflops=(flops/1e9)/sync_time_elapsed));      \
+#define PASTE_PROF_INFO\
     PROFILING_SAVE_dINFO("TIME_ELAPSED", time_elapsed);                 \
     PROFILING_SAVE_dINFO("SYNC_TIME_ELAPSED", sync_time_elapsed);       \
     PROFILING_SAVE_dINFO("GFLOPS", gflops);                             \
@@ -232,7 +226,17 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_QR_DOMINO", iparam[IPARAM_QR_DOMINO]);  \
     PROFILING_SAVE_iINFO("PARAM_QR_TSRR", iparam[IPARAM_QR_TSRR]);      \
     PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
-    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  \
+    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  
+
+#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
+    SYNC_TIME_START();                                                  \
+    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
+    TIME_START();                                                       \
+    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
+    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n", \
+                           P, Q, NB, N,                                 \
+                           gflops=(flops/1e9)/sync_time_elapsed));      \
+    PASTE_PROF_INFO;                                                    \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
@@ -242,5 +246,41 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     }                                                                   \
     (void)gflops;
 
+
+#define PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(PARSEC, KERNEL, PARAMS, DESTRUCT)\
+    SYNC_TIME_START();                                                  \
+    parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS; \
+    PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");\
+    SYNC_TIME_STOP();                                                   \
+    double stime_A = sync_time_elapsed;                                 \
+    SYNC_TIME_START();                                                  \
+    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start");\
+    TIME_START();                                                       \
+    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait");\
+    SYNC_TIME_STOP();                                                   \
+    double stime_B = sync_time_elapsed;                                 \
+    SYNC_TIME_START();                                                  \
+    DESTRUCT;                                                           \
+    SYNC_TIME_STOP();                                                   \
+    double stime_C = sync_time_elapsed;                                 \
+    if(rank==0){                                                        \
+        printf("[****] TIME(s) %12.5f : " #KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"\
+                  " - ENQ&PROG&DEST %12.5f : %14f gflops"               \
+                  " - ENQ %12.5f - DEST %12.5f\n",                      \
+                          stime_B, P, Q, NB, N,                         \
+                          gflops=(flops/1e9)/stime_B,                   \
+                          (stime_A+stime_B+stime_C),                    \
+                          (flops/1e9)/(stime_A+stime_B+stime_C),        \
+                          stime_A,stime_C);                             \
+    }                                                                   \
+    PASTE_PROF_INFO;                                                    \
+    if(loud >= 5 && rank == 0) {                                        \
+        printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
+               "                 encoding=\"none\" compression=\"none\">\n" \
+               "%g\n"                                                   \
+               "</DartMeasurement>\n",                                  \
+               gflops);                                                 \
+    }                                                                   \
+    (void)gflops;
 
 #endif /* _TESTSCOMMON_H */
