@@ -145,16 +145,16 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
         result);
 
     /* Set the datatypes */
-    dplasma_add2arena_tile(((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas[PARSEC_zlansy_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(dplasma_complex64_t),
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           parsec_datatype_double_complex_t, A->mb);
-    dplasma_add2arena_rectangle(((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas[PARSEC_zlansy_COL_ARENA],
-                                mb * nb * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
-                                parsec_datatype_double_t, mb, nb, -1);
-    dplasma_add2arena_rectangle(((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas[PARSEC_zlansy_ELT_ARENA],
-                                elt * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
-                                parsec_datatype_double_t, elt, 1, -1);
+    dplasma_add2arena_tile( &((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas_datatypes[PARSEC_zlansy_DEFAULT_ARENA],
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
+                            PARSEC_ARENA_ALIGNMENT_SSE,
+                            parsec_datatype_double_complex_t, A->mb );
+    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas_datatypes[PARSEC_zlansy_COL_ARENA],
+                                 mb * nb * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
+                                 parsec_datatype_double_t, mb, nb, -1 );
+    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlanhe)->arenas_datatypes[PARSEC_zlansy_ELT_ARENA],
+                                 elt * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
+                                 parsec_datatype_double_t, elt, 1, -1 );
 
     return (parsec_taskpool_t*)parsec_zlanhe;
 }
@@ -187,9 +187,9 @@ dplasma_zlanhe_Destruct( parsec_taskpool_t *tp )
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)(parsec_zlanhe->_g_Tdist) );
     free( parsec_zlanhe->_g_Tdist );
 
-    parsec_matrix_del2arena( parsec_zlanhe->arenas[PARSEC_zlansy_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_zlanhe->arenas[PARSEC_zlansy_COL_ARENA] );
-    parsec_matrix_del2arena( parsec_zlanhe->arenas[PARSEC_zlansy_ELT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zlanhe->arenas_datatypes[PARSEC_zlansy_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zlanhe->arenas_datatypes[PARSEC_zlansy_COL_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zlanhe->arenas_datatypes[PARSEC_zlansy_ELT_ARENA] );
 
     parsec_taskpool_free(tp);
 }

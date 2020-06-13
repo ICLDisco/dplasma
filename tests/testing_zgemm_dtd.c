@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
         parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new();
 
         /* Default type */
-        dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
+        dplasma_add2arena_tile( &parsec_dtd_arenas_datatypes[TILE_FULL],
                                 dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, dcA.super.mb );
@@ -284,7 +284,7 @@ int main(int argc, char ** argv)
         parsec_taskpool_free( dtd_tp );
 
         /* Cleaning data arrays we allocated for communication */
-        parsec_matrix_del2arena( parsec_dtd_arenas[0] );
+        dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[0] );
         parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
 
         parsec_data_free(dcA.mat);
@@ -344,7 +344,7 @@ int main(int argc, char ** argv)
 
                 /* Allocating data arrays to be used by comm engine */
                 /* Default type */
-                dplasma_add2arena_tile( parsec_dtd_arenas[TILE_FULL],
+                dplasma_add2arena_tile( &parsec_dtd_arenas_datatypes[TILE_FULL],
                                         dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                                         PARSEC_ARENA_ALIGNMENT_SSE,
                                         parsec_datatype_double_complex_t, dcA.super.mb );
@@ -525,7 +525,7 @@ int main(int argc, char ** argv)
                 parsec_taskpool_free( dtd_tp );
 
                 /* Cleaning data arrays we allocated for communication */
-                parsec_matrix_del2arena( parsec_dtd_arenas[0] );
+                dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[0] );
                 parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
 
                 parsec_data_free(dcA.mat);

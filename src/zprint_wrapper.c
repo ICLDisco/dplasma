@@ -68,7 +68,7 @@ int dplasma_zprint( parsec_context_t *parsec,
 
     if (tp != NULL) {
         /* Default type */
-        dplasma_add2arena_tile( tp->arenas[PARSEC_zprint_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zprint_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb );
@@ -76,7 +76,7 @@ int dplasma_zprint( parsec_context_t *parsec,
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)tp);
         dplasma_wait_until_completion(parsec);
 
-        parsec_matrix_del2arena( tp->arenas[PARSEC_zprint_DEFAULT_ARENA] );
+        dplasma_matrix_del2arena( &tp->arenas_datatypes[PARSEC_zprint_DEFAULT_ARENA] );
         parsec_taskpool_free( &tp->super );
         return 0;
     }

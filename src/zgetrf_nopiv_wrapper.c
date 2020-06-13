@@ -73,7 +73,7 @@ dplasma_zgetrf_nopiv_New( parsec_tiled_matrix_dc_t *A,
     parsec_getrf_nopiv = parsec_zgetrf_nopiv_new( A, INFO );
 
     /* A */
-    dplasma_add2arena_tile( parsec_getrf_nopiv->arenas[PARSEC_zgetrf_nopiv_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_getrf_nopiv->arenas_datatypes[PARSEC_zgetrf_nopiv_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
@@ -106,7 +106,7 @@ dplasma_zgetrf_nopiv_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgetrf_nopiv_taskpool_t *parsec_zgetrf_nopiv = (parsec_zgetrf_nopiv_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_zgetrf_nopiv->arenas[PARSEC_zgetrf_nopiv_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_nopiv->arenas_datatypes[PARSEC_zgetrf_nopiv_DEFAULT_ARENA] );
 
     parsec_taskpool_free(tp);
 }

@@ -42,10 +42,10 @@ dplasma_zhetrf_New( parsec_tiled_matrix_dc_t *A, int *INFO)
 
     parsec_zhetrf = (parsec_taskpool_t *)parsec_zhetrf_new(dplasmaLower, A, (parsec_data_collection_t *)A, ib, pool_1, pool_0, INFO);
 
-    dplasma_add2arena_tile(((parsec_zhetrf_taskpool_t*)parsec_zhetrf)->arenas[PARSEC_zhetrf_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(dplasma_complex64_t),
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           parsec_datatype_double_complex_t, A->mb);
+    dplasma_add2arena_tile( &((parsec_zhetrf_taskpool_t*)parsec_zhetrf)->arenas_datatypes[PARSEC_zhetrf_DEFAULT_ARENA],
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
+                            PARSEC_ARENA_ALIGNMENT_SSE,
+                            parsec_datatype_double_complex_t, A->mb );
 
     return parsec_zhetrf;
 }
@@ -55,7 +55,7 @@ dplasma_zhetrf_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zhetrf_taskpool_t *obut = (parsec_zhetrf_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( obut->arenas[PARSEC_zhetrf_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &obut->arenas_datatypes[PARSEC_zhetrf_DEFAULT_ARENA] );
 
     parsec_taskpool_free(tp);
 }
@@ -72,10 +72,10 @@ dplasma_ztrmdm_New( parsec_tiled_matrix_dc_t *A)
 
     parsec_ztrmdm = (parsec_taskpool_t *)parsec_ztrmdm_new(A);
 
-    dplasma_add2arena_tile(((parsec_ztrmdm_taskpool_t*)parsec_ztrmdm)->arenas[PARSEC_ztrmdm_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(dplasma_complex64_t),
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           parsec_datatype_double_complex_t, A->mb);
+    dplasma_add2arena_tile( &((parsec_ztrmdm_taskpool_t*)parsec_ztrmdm)->arenas_datatypes[PARSEC_ztrmdm_DEFAULT_ARENA],
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
+                            PARSEC_ARENA_ALIGNMENT_SSE,
+                            parsec_datatype_double_complex_t, A->mb );
 
     return parsec_ztrmdm;
 }
@@ -85,7 +85,7 @@ dplasma_ztrmdm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrmdm_taskpool_t *obut = (parsec_ztrmdm_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( obut->arenas[PARSEC_ztrmdm_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &obut->arenas_datatypes[PARSEC_ztrmdm_DEFAULT_ARENA] );
 
     parsec_taskpool_free(tp);
 }

@@ -22,6 +22,7 @@ set(EXTRA_SOURCES
   dplasma_systolic_qr.c
   map2_wrapper.c
   butterfly_map.c
+  utils/dplasma_arena_datatype.c
 )
 if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
@@ -217,9 +218,11 @@ target_include_directories(dplasma
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/utils>
     $<$<NOT:${DPLASMA_BUILD_INPLACE}>:
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/include>>)
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/include>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/utils>>)
 
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 

@@ -191,17 +191,9 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     SYNC_TIME_START();                                                   \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS;   \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");      \
-    /*if( loud > 2 )*/ SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
+    if( loud > 2 ) SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
 
-
-#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
-    SYNC_TIME_START();                                                  \
-    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
-    TIME_START();                                                       \
-    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
-    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n", \
-                           P, Q, NB, N,                                 \
-                           gflops=(flops/1e9)/sync_time_elapsed));      \
+#define PASTE_PROF_INFO\
     PROFILING_SAVE_dINFO("TIME_ELAPSED", time_elapsed);                 \
     PROFILING_SAVE_dINFO("SYNC_TIME_ELAPSED", sync_time_elapsed);       \
     PROFILING_SAVE_dINFO("GFLOPS", gflops);                             \
@@ -234,7 +226,17 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_QR_DOMINO", iparam[IPARAM_QR_DOMINO]);  \
     PROFILING_SAVE_iINFO("PARAM_QR_TSRR", iparam[IPARAM_QR_TSRR]);      \
     PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
-    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  \
+    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  
+
+#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
+    SYNC_TIME_START();                                                  \
+    PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
+    TIME_START();                                                       \
+    PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
+    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n", \
+                           P, Q, NB, N,                                 \
+                           gflops=(flops/1e9)/sync_time_elapsed));      \
+    PASTE_PROF_INFO;                                                    \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
@@ -271,38 +273,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                           (flops/1e9)/(stime_A+stime_B+stime_C),        \
                           stime_A,stime_C);                             \
     }                                                                   \
-    PROFILING_SAVE_dINFO("TIME_ELAPSED", time_elapsed);                 \
-    PROFILING_SAVE_dINFO("SYNC_TIME_ELAPSED", stime_B);                 \
-    PROFILING_SAVE_dINFO("GFLOPS", gflops);                             \
-    PROFILING_SAVE_iINFO("PARAM_RANK", iparam[IPARAM_RANK]);            \
-    PROFILING_SAVE_iINFO("PARAM_NNODES", iparam[IPARAM_NNODES]);        \
-    PROFILING_SAVE_iINFO("PARAM_NCORES", iparam[IPARAM_NCORES]);        \
-    PROFILING_SAVE_iINFO("PARAM_NGPUS", iparam[IPARAM_NGPUS]);          \
-    PROFILING_SAVE_iINFO("PARAM_P", iparam[IPARAM_P]);                  \
-    PROFILING_SAVE_iINFO("PARAM_Q", iparam[IPARAM_Q]);                  \
-    PROFILING_SAVE_iINFO("PARAM_M", iparam[IPARAM_M]);                  \
-    PROFILING_SAVE_iINFO("PARAM_N", iparam[IPARAM_N]);                  \
-    PROFILING_SAVE_iINFO("PARAM_K", iparam[IPARAM_K]);                  \
-    PROFILING_SAVE_iINFO("PARAM_LDA", iparam[IPARAM_LDA]);              \
-    PROFILING_SAVE_iINFO("PARAM_LDB", iparam[IPARAM_LDB]);              \
-    PROFILING_SAVE_iINFO("PARAM_LDC", iparam[IPARAM_LDC]);              \
-    PROFILING_SAVE_iINFO("PARAM_IB", iparam[IPARAM_IB]);                \
-    PROFILING_SAVE_iINFO("PARAM_NB", iparam[IPARAM_NB]);                \
-    PROFILING_SAVE_iINFO("PARAM_MB", iparam[IPARAM_MB]);                \
-    PROFILING_SAVE_iINFO("PARAM_KP", iparam[IPARAM_KQ]);                \
-    PROFILING_SAVE_iINFO("PARAM_KQ", iparam[IPARAM_KP]);                \
-    PROFILING_SAVE_iINFO("PARAM_HNB", iparam[IPARAM_HNB]);              \
-    PROFILING_SAVE_iINFO("PARAM_CHECK", iparam[IPARAM_CHECK]);          \
-    PROFILING_SAVE_iINFO("PARAM_CHECKINV", iparam[IPARAM_CHECKINV]);    \
-    PROFILING_SAVE_iINFO("PARAM_VERBOSE", iparam[IPARAM_VERBOSE]);      \
-    PROFILING_SAVE_iINFO("PARAM_LOWLVL_TREE", iparam[IPARAM_LOWLVL_TREE]); \
-    PROFILING_SAVE_iINFO("PARAM_HIGHLVL_TREE", iparam[IPARAM_HIGHLVL_TREE]); \
-    PROFILING_SAVE_iINFO("PARAM_QR_TS_SZE", iparam[IPARAM_QR_TS_SZE]);  \
-    PROFILING_SAVE_iINFO("PARAM_QR_HLVL_SZE", iparam[IPARAM_QR_HLVL_SZE]); \
-    PROFILING_SAVE_iINFO("PARAM_QR_DOMINO", iparam[IPARAM_QR_DOMINO]);  \
-    PROFILING_SAVE_iINFO("PARAM_QR_TSRR", iparam[IPARAM_QR_TSRR]);      \
-    PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
-    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  \
+    PASTE_PROF_INFO;                                                    \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \

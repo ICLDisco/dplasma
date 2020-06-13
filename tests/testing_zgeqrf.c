@@ -131,11 +131,7 @@ int main(int argc, char ** argv)
                        (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
     dplasma_zlacpy( parsec, uplo,
                        (parsec_tiled_matrix_dc_t *)&dcT2, (parsec_tiled_matrix_dc_t *)&dcT );
-
-#ifdef VERBOSE
-    PRINT(parsec,MPI_Barrier(MPI_COMM_WORLD));
-#endif
-
+    
 #if defined(PARSEC_SIM)
     {
         int largest_simulation_date = parsec_getsimulationdate( parsec );

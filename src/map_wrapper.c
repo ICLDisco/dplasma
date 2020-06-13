@@ -88,32 +88,32 @@ dplasma_map_New( dplasma_enum_t uplo,
 
     switch( A->mtype ) {
     case matrix_ComplexDouble :
-        dplasma_add2arena_tile( parsec_map->arenas[PARSEC_map_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb);
         break;
     case matrix_ComplexFloat  :
-        dplasma_add2arena_tile( parsec_map->arenas[PARSEC_map_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(dplasma_complex32_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_complex_t, A->mb);
         break;
     case matrix_RealDouble    :
-        dplasma_add2arena_tile( parsec_map->arenas[PARSEC_map_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(double),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_t, A->mb);
         break;
     case matrix_RealFloat     :
-        dplasma_add2arena_tile( parsec_map->arenas[PARSEC_map_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(float),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_float_t, A->mb);
         break;
     case matrix_Integer       :
     default:
-        dplasma_add2arena_tile( parsec_map->arenas[PARSEC_map_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ARENA],
                                 A->mb*A->nb*sizeof(int),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_int_t, A->mb);
@@ -150,7 +150,7 @@ dplasma_map_Destruct( parsec_taskpool_t *tp )
         free( omap->_g_op_args );
     }
 
-    parsec_matrix_del2arena( omap->arenas[PARSEC_map_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &omap->arenas_datatypes[PARSEC_map_DEFAULT_ARENA] );
 
     parsec_taskpool_free(tp);
 }

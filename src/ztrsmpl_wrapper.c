@@ -111,19 +111,19 @@ dplasma_ztrsmpl_New(const parsec_tiled_matrix_dc_t *A,
     }
 
     /* A */
-    dplasma_add2arena_tile( parsec_trsmpl->arenas[PARSEC_ztrsmpl_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( parsec_trsmpl->arenas[PARSEC_ztrsmpl_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_PIVOT_ARENA],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, A->mb, 1, -1 );
 
     /* L */
-    dplasma_add2arena_rectangle( parsec_trsmpl->arenas[PARSEC_ztrsmpl_SMALL_L_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_SMALL_L_ARENA],
                                  L->mb*L->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, L->mb, L->nb, -1);
@@ -156,9 +156,9 @@ dplasma_ztrsmpl_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrsmpl_taskpool_t *parsec_trsmpl = (parsec_ztrsmpl_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_trsmpl->arenas[PARSEC_ztrsmpl_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_trsmpl->arenas[PARSEC_ztrsmpl_PIVOT_ARENA  ] );
-    parsec_matrix_del2arena( parsec_trsmpl->arenas[PARSEC_ztrsmpl_SMALL_L_ARENA] );
+    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_PIVOT_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_trsmpl->arenas_datatypes[PARSEC_ztrsmpl_SMALL_L_ARENA] );
 
     parsec_taskpool_free(tp);
 }

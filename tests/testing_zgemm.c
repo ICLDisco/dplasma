@@ -154,13 +154,6 @@ int main(int argc, char ** argv)
                                (parsec_tiled_matrix_dc_t *)&dcC),
                               dplasma_zgemm_Destruct( PARSEC_zgemm ));
 
-                // dplasma_zgemm(parsec, trans[tA], trans[tB],
-                //               (dplasma_complex64_t)alpha,
-                //               (parsec_tiled_matrix_dc_t *)&dcA,
-                //               (parsec_tiled_matrix_dc_t *)&dcB,
-                //               (dplasma_complex64_t)beta,
-                //               (parsec_tiled_matrix_dc_t *)&dcC);
-                
                 if(loud) printf("Done\n");
 
                 parsec_data_free(dcA.mat);

@@ -75,13 +75,13 @@ dplasma_ztrsmpl_ptgpanel_New( const parsec_tiled_matrix_dc_t *A,
     parsec_ztrsmpl_ptgpanel = parsec_ztrsmpl_ptgpanel_new(A, IPIV, B, P);
 
     /* A */
-    dplasma_add2arena_tile( parsec_ztrsmpl_ptgpanel->arenas[PARSEC_ztrsmpl_ptgpanel_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_ztrsmpl_ptgpanel->arenas_datatypes[PARSEC_ztrsmpl_ptgpanel_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* PERMUT */
-    dplasma_add2arena_rectangle( parsec_ztrsmpl_ptgpanel->arenas[PARSEC_ztrsmpl_ptgpanel_PERMUT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_ztrsmpl_ptgpanel->arenas_datatypes[PARSEC_ztrsmpl_ptgpanel_PERMUT_ARENA],
                                  2 * nb * sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, 2, nb, -1 );
@@ -114,8 +114,8 @@ dplasma_ztrsmpl_ptgpanel_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrsmpl_ptgpanel_taskpool_t *parsec_ztrsmpl_ptgpanel = (parsec_ztrsmpl_ptgpanel_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_ztrsmpl_ptgpanel->arenas[PARSEC_ztrsmpl_ptgpanel_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_ztrsmpl_ptgpanel->arenas[PARSEC_ztrsmpl_ptgpanel_PERMUT_ARENA ] );
+    dplasma_matrix_del2arena( &parsec_ztrsmpl_ptgpanel->arenas_datatypes[PARSEC_ztrsmpl_ptgpanel_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_ztrsmpl_ptgpanel->arenas_datatypes[PARSEC_ztrsmpl_ptgpanel_PERMUT_ARENA ] );
 
     parsec_taskpool_free(tp);
 }

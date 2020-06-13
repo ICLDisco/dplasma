@@ -81,8 +81,8 @@ goto fin;
     SYNC_TIME_START();
     parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)&dcA, &dcBAND,
                                                                                             MT, NT, MB, NB, sizeof(dplasma_complex64_t));
-    parsec_arena_t* arena = PARSEC_diag_band_to_rect->arenas[PARSEC_diag_band_to_rect_DEFAULT_ARENA];
-    dplasma_add2arena_tile(arena,
+    parsec_arena_datatype_t* adt = &PARSEC_diag_band_to_rect->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ARENA];
+    dplasma_add2arena_tile(adt,
                            MB*NB*sizeof(dplasma_complex64_t),
                            PARSEC_ARENA_ALIGNMENT_SSE,
                            parsec_datatype_double_complex_t, MB);

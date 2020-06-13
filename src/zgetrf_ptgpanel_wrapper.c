@@ -78,37 +78,37 @@ dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A,
                                                      P, Q, info);
 
     /* A */
-    dplasma_add2arena_tile( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_DEFAULT_ARENA],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* SWAP */
-    dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_SWAP_ARENA],
+    dplasma_add2arena_rectangle( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_SWAP_ARENA],
                                  (2*nb+1)*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, 2*nb+1, 1, -1 );
 
     /* MAXL */
-    dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_MAXL_ARENA],
+    dplasma_add2arena_rectangle( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_MAXL_ARENA],
                                  (nb+1)*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, 1, nb+1, -1 );
 
     /* UMES */
-    dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_UMES_ARENA],
+    dplasma_add2arena_rectangle( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_UMES_ARENA],
                                  IB*nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, IB, nb, -1 );
 
     /* PIVOT */
-    dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_PIVOT_ARENA],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, IPIV->mb, IPIV->nb, -1 );
 
     /* PERMUT */
-    dplasma_add2arena_rectangle( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_PERMUT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_PERMUT_ARENA],
                                  2 * nb * sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, 2, nb, -1 );
@@ -141,12 +141,12 @@ dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgetrf_ptgpanel_taskpool_t *parsec_zgetrf_ptgpanel = (parsec_zgetrf_ptgpanel_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_DEFAULT_ARENA] );
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_SWAP_ARENA   ] );
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_MAXL_ARENA   ] );
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_UMES_ARENA   ] );
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_PIVOT_ARENA  ] );
-    parsec_matrix_del2arena( parsec_zgetrf_ptgpanel->arenas[PARSEC_zgetrf_ptgpanel_PERMUT_ARENA ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_SWAP_ARENA   ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_MAXL_ARENA   ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_UMES_ARENA   ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_PIVOT_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zgetrf_ptgpanel->arenas_datatypes[PARSEC_zgetrf_ptgpanel_PERMUT_ARENA ] );
 
     parsec_taskpool_free(tp);
 }

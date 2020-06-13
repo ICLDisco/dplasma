@@ -85,7 +85,7 @@ dplasma_ztrtri_New( dplasma_enum_t uplo,
             uplo, diag, A, INFO );
 
         /* Lower part of A with diagonal part */
-        dplasma_add2arena_lower( ((parsec_ztrtri_L_taskpool_t*)parsec_trtri)->arenas[PARSEC_ztrtri_L_LOWER_TILE_ARENA],
+        dplasma_add2arena_lower( &((parsec_ztrtri_L_taskpool_t*)parsec_trtri)->arenas_datatypes[PARSEC_ztrtri_L_LOWER_TILE_ARENA],
                                  A->mb*A->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A->mb, 1 );
@@ -94,16 +94,16 @@ dplasma_ztrtri_New( dplasma_enum_t uplo,
             uplo, diag, A, INFO );
 
         /* Lower part of A with diagonal part */
-        dplasma_add2arena_upper( ((parsec_ztrtri_U_taskpool_t*)parsec_trtri)->arenas[PARSEC_ztrtri_U_UPPER_TILE_ARENA],
+        dplasma_add2arena_upper( &((parsec_ztrtri_U_taskpool_t*)parsec_trtri)->arenas_datatypes[PARSEC_ztrtri_U_UPPER_TILE_ARENA],
                                  A->mb*A->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A->mb, 1 );
     }
 
-    dplasma_add2arena_tile(((parsec_ztrtri_L_taskpool_t*)parsec_trtri)->arenas[PARSEC_ztrtri_L_DEFAULT_ARENA],
-                           A->mb*A->nb*sizeof(dplasma_complex64_t),
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           parsec_datatype_double_complex_t, A->mb);
+    dplasma_add2arena_tile( &((parsec_ztrtri_L_taskpool_t*)parsec_trtri)->arenas_datatypes[PARSEC_ztrtri_L_DEFAULT_ARENA],
+                            A->mb*A->nb*sizeof(dplasma_complex64_t),
+                            PARSEC_ARENA_ALIGNMENT_SSE,
+                            parsec_datatype_double_complex_t, A->mb );
 
     return parsec_trtri;
 }
@@ -133,8 +133,8 @@ dplasma_ztrtri_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrtri_L_taskpool_t *otrtri = (parsec_ztrtri_L_taskpool_t *)tp;
 
-    parsec_matrix_del2arena( otrtri->arenas[PARSEC_ztrtri_L_DEFAULT_ARENA   ] );
-    parsec_matrix_del2arena( otrtri->arenas[PARSEC_ztrtri_L_LOWER_TILE_ARENA] );
+    dplasma_matrix_del2arena( &otrtri->arenas_datatypes[PARSEC_ztrtri_L_DEFAULT_ARENA   ] );
+    dplasma_matrix_del2arena( &otrtri->arenas_datatypes[PARSEC_ztrtri_L_LOWER_TILE_ARENA] );
     parsec_taskpool_free(tp);
 }
 
