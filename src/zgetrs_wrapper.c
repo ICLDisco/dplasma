@@ -18,7 +18,7 @@
  *
  * dplasma_zgetrs - Solves a system of linear equations A * X = B with a
  * general square matrix A using the LU factorization with partial pivoting strategy
- * computed by dplasma_zgetrf().
+ * computed by dplasma_zgetrf or dplasma_zgetrf_1d().
  *
  *******************************************************************************
  *

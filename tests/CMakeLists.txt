@@ -52,7 +52,7 @@ set(TESTS
    testing_zunmqr_systolic.c
    testing_zunmlq_systolic.c
    # LU
-   testing_zgetrf.c
+   testing_zgetrf_1d.c
    testing_zgetrf_incpiv.c
    testing_zgetrf_nopiv.c
    testing_zgetrf_ptgpanel.c

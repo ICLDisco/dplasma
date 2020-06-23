@@ -129,7 +129,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
 
     # LU
     dplasma_add_test(getrf_nopiv        gemm    shm -N 378 -t 93       ${OPTIONS})
-    dplasma_add_test(getrf              gemm    shm -N 378 -t 93       ${OPTIONS})
+    dplasma_add_test(getrf_1d           gemm    shm -N 378 -t 93       ${OPTIONS})
     dplasma_add_test(getrf_ptgpanel     gemm    shm -N 378 -t 93       ${OPTIONS})
     dplasma_add_test(getrf_incpiv       gemm    shm -N 378 -t 93 -i 17 ${OPTIONS})
     dplasma_add_test(getrf_qrf          gemm    shm -N 378 -t 93 -i 17 ${OPTIONS})
@@ -240,7 +240,7 @@ if( MPI_C_FOUND )
     endif()
 
     # LU
-    dplasma_add_test(getrf              gemm mpi:${PROCS} -N 378 -t 19 -P 1 ${OPTIONS})
+    dplasma_add_test(getrf_1d           gemm mpi:${PROCS} -N 378 -t 19 -P 1 ${OPTIONS})
     dplasma_add_test(getrf_incpiv       gemm mpi:${PROCS} -N 378 -t 19 -i 7 ${OPTIONS})
     dplasma_add_test(getrf_incpiv_dtd   gemm mpi:${PROCS} -N 378 -t 19 -i 7 ${OPTIONS})
     dplasma_add_test(getrf_ptgpanel     gemm mpi:${PROCS} -N 378 -t 19      ${OPTIONS})
