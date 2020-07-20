@@ -129,28 +129,28 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, 1, 1, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcTS0, rbidiag,
         two_dim_block_cyclic, (&dcTS0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, 1, 1, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcTT0, rbidiag,
         two_dim_block_cyclic, (&dcTT0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, 1, 1, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcTS, 1,
         two_dim_block_cyclic, (&dcTS, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, 1, 1, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcTT, 1,
         two_dim_block_cyclic, (&dcTT, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, 1, 1, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcBand, 1,
         two_dim_block_cyclic, (&dcBand, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB+1, NB, MB+1, minMN, 0, 0,
-                               MB+1, minMN, 1, 1, 1));
+                               rank, MB+1, NB, MB+1, minMN, 0, 0,
+                               MB+1, minMN, 1, 1, 1, 1, 0, 0));
 
     /* Initialize the matrix */
     if(loud > 3) printf("+++ Generate matrices ... ");

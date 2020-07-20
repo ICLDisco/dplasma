@@ -62,7 +62,7 @@ parsec_taskpool_t*
 dplasma_zlanm2_New( const parsec_tiled_matrix_dc_t *A,
                     double *result, int *info )
 {
-    int P, Q, m, n, mb, nb, elt;
+    int P, Q, IP, JQ, m, n, mb, nb, elt;
     two_dim_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlanm2 = NULL;
 
@@ -73,6 +73,8 @@ dplasma_zlanm2_New( const parsec_tiled_matrix_dc_t *A,
 
     P = ((two_dim_block_cyclic_t*)A)->grid.rows;
     Q = ((two_dim_block_cyclic_t*)A)->grid.cols;
+    IP = ((two_dim_block_cyclic_t*)A)->grid.ip;
+    JQ = ((two_dim_block_cyclic_t*)A)->grid.jq;
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     mb = A->mb;
@@ -89,12 +91,12 @@ dplasma_zlanm2_New( const parsec_tiled_matrix_dc_t *A,
 
     two_dim_block_cyclic_init(
         Tdist, matrix_RealDouble, matrix_Tile,
-        A->super.nodes, A->super.myrank,
+        A->super.myrank,
         1, 1, /* Dimensions of the tiles              */
         m, n, /* Dimensions of the matrix             */
         0, 0, /* Starting points (not important here) */
         m, n, /* Dimensions of the submatrix          */
-        1, 1, P);
+        P, Q, 1, 1, IP, JQ);
     Tdist->super.super.data_of = NULL;
     Tdist->super.super.data_of_key = NULL;
 

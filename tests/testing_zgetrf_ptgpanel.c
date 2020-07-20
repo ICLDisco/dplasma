@@ -49,28 +49,28 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
         two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
-                               nodes, rank, 1, NB, P, dplasma_imin(M, N), 0, 0,
-                               P, dplasma_imin(M, N), KP, KQ, P));
+                               rank, 1, NB, P, dplasma_imin(M, N), 0, 0,
+                               P, dplasma_imin(M, N), P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

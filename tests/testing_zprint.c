@@ -35,13 +35,13 @@ int main(int argc, char ** argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, P, uplo));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   M, N, P, nodes/P, uplo));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble,  matrix_Tile,
-                               nodes, rank, MB, NB, LDB, N, 0, 0,
-                               M, N, 1, 1, P));
+                               rank, MB, NB, LDB, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

@@ -110,6 +110,8 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int NB    = iparam[IPARAM_NB];                                      \
     int KP    = iparam[IPARAM_KP];                                      \
     int KQ    = iparam[IPARAM_KQ];                                      \
+    int IP    = 0;                                                      \
+    int JQ    = 0;                                                      \
     int HMB   = iparam[IPARAM_HMB];                                     \
     int HNB   = iparam[IPARAM_HNB];                                     \
     int nruns = iparam[IPARAM_NRUNS];                                   \
@@ -126,7 +128,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int async = iparam[IPARAM_ASYNC];                                   \
     (void)rank;(void)nodes;(void)cores;(void)gpus;(void)P;(void)Q;(void)M;(void)N;(void)K;(void)NRHS; \
     (void)LDA;(void)LDB;(void)LDC;(void)IB;(void)MB;(void)NB;(void)MT;(void)NT;(void)KT; \
-    (void)KP;(void)KQ;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
+    (void)KP;(void)KQ;(void)IP;(void)JQ;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
     (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
 
 /* Define a double type which not pass through the precision generation process */

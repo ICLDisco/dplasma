@@ -157,8 +157,8 @@ int main(int argc, char **argv)
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     /* Initializing dc for dtd */
     two_dim_block_cyclic_t *__dcA = &dcA;
@@ -166,8 +166,8 @@ int main(int argc, char **argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
         two_dim_block_cyclic, (&dcT, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, KP, KQ, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
 
     /* Initializing dc for dtd */
     two_dim_block_cyclic_t *__dcT = &dcT;
@@ -175,23 +175,23 @@ int main(int argc, char **argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcQ, check,
         two_dim_block_cyclic, (&dcQ, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     /* Check the solution */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               M, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               M, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 3) printf("+++ Generate matrices ... ");
@@ -425,9 +425,9 @@ static int check_orthogonality(parsec_context_t *parsec, int loud, parsec_tiled_
 
     PASTE_CODE_ALLOCATE_MATRIX(Id, 1,
         two_dim_block_cyclic, (&Id, matrix_ComplexDouble, matrix_Tile,
-                               Q->super.nodes, twodQ->grid.rank,
+                               twodQ->grid.rank,
                                Q->mb, Q->nb, minMN, minMN, 0, 0,
-                               minMN, minMN, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.rows));
+                               minMN, minMN, twodQ->grid.rows, twodQ->grid.cols, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.ip, twodQ->grid.jq));
 
     dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
@@ -484,15 +484,15 @@ check_factorization(parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(Residual, 1,
         two_dim_block_cyclic, (&Residual, matrix_ComplexDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, M, N, 0, 0,
-                               M, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
+                               M, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq));
 
     PASTE_CODE_ALLOCATE_MATRIX(R, 1,
         two_dim_block_cyclic, (&R, matrix_ComplexDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
+                               N, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq));
 
     /* Copy the original A in Residual */
     dplasma_zlacpy( parsec, dplasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );

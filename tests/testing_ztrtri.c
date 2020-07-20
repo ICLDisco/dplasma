@@ -38,12 +38,12 @@ int main(int argc, char ** argv)
     LDC = dplasma_imax(LDC, M);
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, KP, KQ, P));
+                               rank, MB, NB, LDA, Am, 0, 0,
+                               Am, Am, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcAinv, check,
         two_dim_block_cyclic, (&dcAinv, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, KP, KQ, P));
+                               rank, MB, NB, LDA, Am, 0, 0,
+                               Am, Am, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
@@ -158,15 +158,15 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(Id, 1,
         two_dim_block_cyclic, (&Id, matrix_ComplexDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
+                               N, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq));
 
     PASTE_CODE_ALLOCATE_MATRIX(A0, 1,
         two_dim_block_cyclic, (&A0, matrix_ComplexDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows));
+                               N, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq));
 
     dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
     if ( diag == dplasmaNonUnit ) {

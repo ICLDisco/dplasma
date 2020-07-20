@@ -97,7 +97,7 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
     parsec_taskpool_t* zgemm_tp;
     parsec_arena_datatype_t* adt;
     two_dim_block_cyclic_t *Cdist;
-    int P, Q, m, n;
+    int P, Q, IP, JQ, m, n;
 
     /* Check input arguments */
     if ((transA != dplasmaNoTrans) && (transA != dplasmaTrans) && (transA != dplasmaConjTrans)) {
@@ -112,6 +112,8 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
     if ( C->dtype & two_dim_block_cyclic_type ) {
         P = ((two_dim_block_cyclic_t*)C)->grid.rows;
         Q = ((two_dim_block_cyclic_t*)C)->grid.cols;
+        IP = ((two_dim_block_cyclic_t*)C)->grid.ip;
+        JQ = ((two_dim_block_cyclic_t*)C)->grid.jq;
 
         m = dplasma_imax(C->mt, P);
         n = dplasma_imax(C->nt, Q);
@@ -124,12 +126,12 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
 
         two_dim_block_cyclic_init(
             Cdist, matrix_RealDouble, matrix_Tile,
-            C->super.nodes, C->super.myrank,
+            C->super.myrank,
             1, 1, /* Dimensions of the tiles              */
             m, n, /* Dimensions of the matrix             */
             0, 0, /* Starting points (not important here) */
             m, n, /* Dimensions of the submatrix          */
-            1, 1, P);
+            P, Q, 1, 1, IP, JQ);
         Cdist->super.super.data_of = NULL;
         Cdist->super.super.data_of_key = NULL;
 

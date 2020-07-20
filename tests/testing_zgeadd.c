@@ -60,14 +60,14 @@ int main(int argc, char ** argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC0, check,
         two_dim_block_cyclic, (&dcC0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC0, Cseed);
 
@@ -84,8 +84,8 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDA, LDA, 0, 0,
-                                   Am, An, KP, KQ, P));
+                                   rank, MB, NB, LDA, LDA, 0, 0,
+                                   Am, An, P, nodes/P, KP, KQ, IP, JQ));
 
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
 
@@ -149,8 +149,8 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                                    two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                                          nodes, rank, MB, NB, LDA, LDA, 0, 0,
-                                                          Am, An, KP, KQ, P));
+                                                          rank, MB, NB, LDA, LDA, 0, 0,
+                                                          Am, An, P, nodes/P, KP, KQ, IP, JQ));
 
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
 
@@ -249,16 +249,16 @@ static int check_tr_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(localA, 1,
                                two_dim_block_cyclic, (&localA, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDA, An, 0, 0,
-                                                      Am, An, 1, 1, 1));
+                                                      rank, MB, NB, LDA, An, 0, 0,
+                                                      Am, An, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(localC, 1,
                                two_dim_block_cyclic, (&localC, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDC, N, 0, 0,
-                                                      M, N, 1, 1, 1));
+                                                      rank, MB, NB, LDC, N, 0, 0,
+                                                      M, N, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(localC2, 1,
                                two_dim_block_cyclic, (&localC2, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDC, N, 0, 0,
-                                                      M, N, 1, 1, 1));
+                                                      rank, MB, NB, LDC, N, 0, 0,
+                                                      M, N, 1, 1, 1, 1, 0, 0));
 
     dplasma_zlacpy( parsec, dplasmaUpperLower, dcA,  (parsec_tiled_matrix_dc_t *)&localA  );
     dplasma_zlacpy( parsec, dplasmaUpperLower, dcC,  (parsec_tiled_matrix_dc_t *)&localC  );
@@ -335,16 +335,16 @@ static int check_ge_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(localA, 1,
                                two_dim_block_cyclic, (&localA, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDA, An, 0, 0,
-                                                      Am, An, 1, 1, 1));
+                                                      rank, MB, NB, LDA, An, 0, 0,
+                                                      Am, An, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(localC, 1,
                                two_dim_block_cyclic, (&localC, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDC, N, 0, 0,
-                                                      M, N, 1, 1, 1));
+                                                      rank, MB, NB, LDC, N, 0, 0,
+                                                      M, N, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(localC2, 1,
                                two_dim_block_cyclic, (&localC2, matrix_ComplexDouble, matrix_Lapack,
-                                                      1, rank, MB, NB, LDC, N, 0, 0,
-                                                      M, N, 1, 1, 1));
+                                                      rank, MB, NB, LDC, N, 0, 0,
+                                                      M, N, 1, 1, 1, 1, 0, 0));
 
     dplasma_zlacpy( parsec, dplasmaUpperLower, dcA,  (parsec_tiled_matrix_dc_t *)&localA  );
     dplasma_zlacpy( parsec, dplasmaUpperLower, dcC,  (parsec_tiled_matrix_dc_t *)&localC  );

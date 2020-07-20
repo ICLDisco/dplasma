@@ -317,8 +317,8 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
     two_dim_block_cyclic_t *twodA = (two_dim_block_cyclic_t *)A;
     two_dim_block_cyclic_t Q;
     two_dim_block_cyclic_init( &Q, matrix_ComplexDouble, matrix_Tile,
-                               1, A->super.myrank,
-                               A->mb, A->nb, A->mb*A->mt, 3, 0, 0, A->m, 3, twodA->grid.krows, twodA->grid.kcols, 1 );
+                               A->super.myrank,
+                               A->mb, A->nb, A->mb*A->mt, 3, 0, 0, A->m, 3, 1, 1, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq );
     Q.mat = parsec_data_allocate((size_t)Q.super.nb_local_tiles *
                                 (size_t)Q.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(Q.super.mtype));
@@ -409,8 +409,8 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
     dplasma_complex64_t *Vmat, tau;
 
     vector_two_dim_cyclic_init( &V, matrix_ComplexDouble, matrix_VectorDiag,
-                                1, A->super.myrank,
-                                A->mb, A->m, 0, A->m, 1 );
+                                A->super.myrank,
+                                A->mb, A->m, 0, A->m, 1, 1 );
     V.mat = parsec_data_allocate((size_t)V.super.nb_local_tiles *
                                 (size_t)V.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(V.super.mtype));

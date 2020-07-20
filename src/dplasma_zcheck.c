@@ -78,9 +78,9 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     dplasma_enum_t side;
 
     two_dim_block_cyclic_init(&LLt, matrix_ComplexDouble, matrix_Tile,
-                              A->super.nodes, twodA->grid.rank,
+                              twodA->grid.rank,
                               A->mb, A->nb, M, N, 0, 0,
-                              M, N, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows);
+                              M, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq);
 
     LLt.mat = parsec_data_allocate((size_t)LLt.super.nb_local_tiles *
                                   (size_t)LLt.super.bsiz *
@@ -276,9 +276,9 @@ int check_zpoinv( parsec_context_t *parsec, int loud,
     eps = LAPACKE_dlamch_work('e');
 
     two_dim_block_cyclic_init(&Id, matrix_ComplexDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, A->n, A->n, 0, 0,
-                               A->n, A->n, twodA->grid.krows, twodA->grid.kcols, twodA->grid.rows);
+                               A->n, A->n, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq);
 
     Id.mat = parsec_data_allocate((size_t)Id.super.nb_local_tiles *
                                   (size_t)Id.super.bsiz *

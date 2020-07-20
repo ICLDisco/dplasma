@@ -86,8 +86,8 @@ dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
 
         two_dim_block_cyclic_t* T = calloc(1, sizeof(two_dim_block_cyclic_t));
         two_dim_block_cyclic_init(T, matrix_ComplexDouble, matrix_Tile,
-             A->super.nodes, A->super.myrank, ib, A->nb, A->mt*ib, A->n, 0, 0,
-             A->mt*ib, A->n, As->grid.krows, As->grid.krows, As->grid.rows);
+             A->super.myrank, ib, A->nb, A->mt*ib, A->n, 0, 0,
+             A->mt*ib, A->n, As->grid.rows, As->grid.cols, As->grid.krows, As->grid.krows, As->grid.ip, As->grid.jq);
         T->mat = parsec_data_allocate((size_t)T->super.nb_local_tiles *
                                      (size_t)T->super.bsiz *
                                      (size_t)parsec_datadist_getsizeoftype(T->super.mtype));
