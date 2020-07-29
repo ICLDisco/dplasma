@@ -77,15 +77,13 @@ set(JDF
   zgeqrfr_tsqrt.jdf
   zgeqrfr_tsmqr.jdf
   # LU
-  zgetrf.jdf
+  zgetrf_1d.jdf
   zgetrf_ptgpanel.jdf
   zgetrf_incpiv.jdf
-  zgetrf_incpiv_sd.jdf
   zgetrf_nopiv.jdf
   zgetrf_qrf.jdf
-  ztrsmpl.jdf
+  ztrsmpl_incpiv.jdf
   ztrsmpl_ptgpanel.jdf
-  ztrsmpl_sd.jdf
   ztrsmpl_qrf.jdf
   # Other
   zgebrd_ge2gb.jdf
@@ -171,15 +169,15 @@ set(SOURCES
   zunmlq_param_wrapper.c
   #
   zgesv_incpiv_wrapper.c
-  zgesv_wrapper.c
+  zgesv_1d_wrapper.c
   zgetrf_incpiv_wrapper.c
   zgetrf_nopiv_wrapper.c
   zgetrf_qrf_wrapper.c
   zgetrf_ptgpanel_wrapper.c
-  zgetrf_wrapper.c
+  zgetrf_1d_wrapper.c
   zgetrs_wrapper.c
   zgetrs_incpiv_wrapper.c
-  ztrsmpl_wrapper.c
+  ztrsmpl_incpiv_wrapper.c
   ztrsmpl_qrf_wrapper.c
   ztrsmpl_ptgpanel_wrapper.c
   #

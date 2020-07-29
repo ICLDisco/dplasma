@@ -30,6 +30,7 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 40, 200, 200);
+    iparam[IPARAM_P] = 1; /* only support 1-D cyclic */
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
     iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
@@ -103,14 +104,14 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("Done\n");
 
     /* Create PaRSEC */
-    if(loud > 2) printf("+++ Computing getrf ... ");
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zgetrf,
+    if(loud > 2) printf("+++ Computing getrf_1d ... ");
+    PASTE_CODE_ENQUEUE_KERNEL(parsec, zgetrf_1d,
                               ((parsec_tiled_matrix_dc_t*)&dcA,
                                (parsec_tiled_matrix_dc_t*)&dcIPIV,
                                &info));
     /* lets rock! */
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf);
-    dplasma_zgetrf_Destruct( PARSEC_zgetrf );
+    PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_1d);
+    dplasma_zgetrf_1d_Destruct( PARSEC_zgetrf_1d );
     if(loud > 2) printf("Done.\n");
 
     if ( info != 0 ) {

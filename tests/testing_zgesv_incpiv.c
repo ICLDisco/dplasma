@@ -187,12 +187,12 @@ int main(int argc, char ** argv)
                                  (parsec_tiled_matrix_dc_t *)&dcIPIV );
 
     if ( info == 0 ) {
-        dplasma_ztrsmpl(parsec,
+        dplasma_ztrsmpl_incpiv(parsec,
                         (parsec_tiled_matrix_dc_t *)&dcA,
                         (parsec_tiled_matrix_dc_t *)&dcL,
                         (parsec_tiled_matrix_dc_t *)&dcIPIV,
                         (parsec_tiled_matrix_dc_t *)&dcX);
-        
+
         dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper,
                       dplasmaNoTrans, dplasmaNonUnit, 1.0,
                       (parsec_tiled_matrix_dc_t *)&dcA,
