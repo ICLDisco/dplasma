@@ -449,6 +449,9 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
 static void parse_arguments(int *iparam) {
     int verbose = iparam[IPARAM_RANK] ? 0 : iparam[IPARAM_VERBOSE];
 
+    /* we want to run at least once, right? */
+    if(iparam[IPARAM_NRUNS] < 1) iparam[IPARAM_NRUNS] = 1;
+
     if(iparam[IPARAM_NGPUS] < 0) iparam[IPARAM_NGPUS] = 0;
     if(iparam[IPARAM_NGPUS] > 0) {
         if (iparam[IPARAM_VERBOSE] > 3) {
