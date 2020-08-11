@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.15)
 project (DPLASMA C)
 
 include(CMakeDependentOption)
@@ -23,6 +23,11 @@ if(POLICY CMP0074)
   #          in addition to the specified paths
   cmake_policy(SET CMP0074 NEW)
 ENDIF(POLICY CMP0074)
+if(POLICY CMP0079)
+  # CMP0079: CMake 3.13 now allows the target_link_libraries() command to be called from any directory
+  # to add link dependencies and link interface libraries to targets created in other directories.
+  cmake_policy(SET CMP0079 NEW)
+endif(POLICY CMP0079)
 if(POLICY CMP0094)
   # CMP0094: Starting with CMake 3.16, all FIND_Python will use the first matching version instead of
   #          of searching for the largest available version number (which defeats our selection logic)

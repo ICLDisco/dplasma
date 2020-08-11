@@ -121,6 +121,8 @@ add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${gen
 add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PSOURCES})
 
 ### Generate the dplasma_cores object library
+# We cannot do a simple target_sources because of a bug in CMake <3.18 where the
+# GENERATED property has a directory visibility
 if(NOT TARGET dplasma_cores)
   add_library(dplasma_cores OBJECT ${PSOURCES} ${generated_cores} ${generated_cores_sdcz} ${generated_cores_cz})
 endif(NOT TARGET dplasma_cores)
@@ -137,6 +139,9 @@ target_link_libraries(dplasma_cores
   PaRSEC::parsec
   LAPACKE::LAPACKE
   m)
+
+# Integrate the output into the main library
+target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores>)
 
 if( DPLASMA_HAVE_CUDA )
   # generate the cores_cuda library (hooks to cublas)
@@ -165,8 +170,8 @@ if( DPLASMA_HAVE_CUDA )
 
   # dplasma_cores is an object library, and linking an object library from an object library is 
   # currently broken (CMake 3.12). So we pull-in the sources of dplasma_cores_cuda directly.
-  target_sources(dplasma_cores PUBLIC $<TARGET_OBJECTS:dplasma_cores_cuda>)
-  target_link_libraries(dplasma_cores
+  target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores_cuda>)
+  target_link_libraries(dplasma
     PUBLIC # this does not get inherited through TARGET_OBJECTS so it needs to be exported explicitly
     ${CUDA_CUBLAS_LIBRARIES})
 

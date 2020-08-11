@@ -133,7 +133,7 @@ function(precisions_rules_py)
         set_source_files_properties(${_dependency_OUTPUT} APPEND PROPERTIES
             COMPILE_DEFINITIONS "PRECISION_${_dependency_PREC}"
             INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR})
-        list(APPEND outputlist ${_dependency_OUTPUT})
+        list(APPEND outputlist "${_dependency_OUTPUT}")
       endif( got_file )
     endif()
   endforeach()
