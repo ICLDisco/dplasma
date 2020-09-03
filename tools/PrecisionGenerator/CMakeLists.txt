@@ -12,21 +12,26 @@ if(Python_VERSION_MAJOR GREATER 2)
     message(FATAL_ERROR "2to3 python utility not found. Use Python 2.7 or provide the 2to3 utility")
   endif()
 
+  # If we are building in place and we need to convert the python tools, we
+  # need to do the conversion in a temporary directory, to avoid overwriting the
+  # original v2 tool
+  if( DPLASMA_BUILD_INPLACE )
+    set(PRECISIONGENERATOR_LOCATION ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/2to3)
+  else( DPLASMA_BUILD_INPLACE )
+    set(PRECISIONGENERATOR_LOCATION ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator)
+  endif( DPLASMA_BUILD_INPLACE )
   execute_process(OUTPUT_QUIET
-      COMMAND ${PYTHON_2TO3_EXECUTABLE} -w -W -n -o ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator)
-
-    install(FILES
-            ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/PrecisionDeps.py
-            ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/PrecisionGenerator.py
-            ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/subs.py
-            ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/Conversion.py
-            DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/dplasma/PrecisionGenerator)
+    COMMAND ${PYTHON_2TO3_EXECUTABLE} -w -W -n -o ${PRECISIONGENERATOR_LOCATION} ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator)
 else()
-    install(FILES
-            ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/PrecisionDeps.py
-            ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/PrecisionGenerator.py
-            ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/subs.py
-            ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/Conversion.py
-            DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/dplasma/PrecisionGenerator)
+  set(PRECISIONGENERATOR_LOCATION ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator)
 endif()
 
+set(PRECISIONGENERATOR_LOCATION ${PRECISIONGENERATOR_LOCATION} CACHE INTERNAL
+  "Location of the PrecisionGenerator python tool to be created (should not be changed by users)")
+
+install(FILES
+        ${PRECISIONGENERATOR_LOCATION}/PrecisionDeps.py
+        ${PRECISIONGENERATOR_LOCATION}/PrecisionGenerator.py
+        ${PRECISIONGENERATOR_LOCATION}/subs.py
+        ${PRECISIONGENERATOR_LOCATION}/Conversion.py
+        DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/dplasma/PrecisionGenerator)
