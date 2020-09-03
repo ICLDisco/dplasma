@@ -13,24 +13,15 @@
 # PaRSEC Internal: generation of various floating point precision files from a template.
 #
 include(ParseArguments)
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
-if(Python_VERSION_MAJOR GREATER 2)
-  get_filename_component(PYTHON_EXE_DIR ${Python_EXECUTABLE} PATH)
-  find_program(PYTHON_2TO3_EXECUTABLE
-    NAMES 2to3
-    HINTS ${PYTHON_EXE_DIR})
-  if(NOT PYTHON_2TO3_EXECUTABLE)
-    message(FATAL_ERROR "2to3 python utility not found. Use Python 2.7 or provide the 2to3 utility")
-  endif()
 
-  set(GENDEPENDENCIES  ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/PrecisionDeps.py)
-  set(PRECISIONPP      ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/PrecisionGenerator.py)
-  set(PRECISIONPP_subs ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/subs.py)
-else()
-  set(GENDEPENDENCIES  ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/PrecisionDeps.py)
-  set(PRECISIONPP      ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/PrecisionGenerator.py)
-  set(PRECISIONPP_subs ${CMAKE_SOURCE_DIR}/tools/PrecisionGenerator/subs.py)
-endif()
+if(NOT DEFINED PRECISIONGENERATOR_LOCATION)
+  message(FATAL_ERROR "PRECISIONGENERATOR_LOCATION is not defined as it
+  should")
+endif(NOT DEFINED PRECISIONGENERATOR_LOCATION)
+
+set(GENDEPENDENCIES  ${PRECISIONGENERATOR_LOCATION}/PrecisionDeps.py)
+set(PRECISIONPP      ${PRECISIONGENERATOR_LOCATION}/PrecisionGenerator.py)
+set(PRECISIONPP_subs ${PRECISIONGENERATOR_LOCATION}/subs.py)
 
 #
 # Generates a rule for every SOURCES file, to create the precisions in PRECISIONS. If TARGETDIR
@@ -51,17 +42,15 @@ function(precisions_rules_py)
   CDR(SOURCES ${PREC_RULE_DEFAULT_ARGS})
   MESSAGE(STATUS "Generate precision dependencies in ${CMAKE_CURRENT_SOURCE_DIR}\t${OUTPUTLIST}")
 
+  set(PRECISIONPP_arg "-P")
   # By default the TARGETDIR is the current binary directory
   if( "${PREC_RULE_TARGETDIR}" STREQUAL "" )
     set(PREC_RULE_TARGETDIR "./")
     set(PRECISIONPP_prefix "./")
-    set(PRECISIONPP_arg "-P")
   else( "${PREC_RULE_TARGETDIR}" STREQUAL "" )
-    if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
-    else(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
+    if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
       file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
-    endif(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
-    set(PRECISIONPP_arg "-P")
+    endif(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${PREC_RULE_TARGETDIR})
     set(PRECISIONPP_prefix "${PREC_RULE_TARGETDIR}")
   endif( "${PREC_RULE_TARGETDIR}" STREQUAL "" )
 
