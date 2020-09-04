@@ -17,6 +17,11 @@ if(Python_VERSION_MAJOR GREATER 2)
   # original v2 tool
   if( DPLASMA_BUILD_INPLACE )
     set(PRECISIONGENERATOR_LOCATION ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator/2to3)
+    # we need to handle the case where the conversion was
+    # already done once by removing the old files and start anew.
+    if( EXISTS ${PRECISIONGENERATOR_LOCATION} )
+      file(REMOVE_RECURSE ${PRECISIONGENERATOR_LOCATION})
+    endif( EXISTS ${PRECISIONGENERATOR_LOCATION} )
   else( DPLASMA_BUILD_INPLACE )
     set(PRECISIONGENERATOR_LOCATION ${CMAKE_BINARY_DIR}/tools/PrecisionGenerator)
   endif( DPLASMA_BUILD_INPLACE )

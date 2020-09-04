@@ -200,7 +200,7 @@ if(BLA_VENDOR STREQUAL "" OR BLA_VENDOR STREQUAL "All")
         break()
       endif()
     endforeach()
-endif(CC_HAS_BLAS)
+  endif(CC_HAS_BLAS)
 else()
   # User provided preference, lets just do that.
   find_package(BLAS)
