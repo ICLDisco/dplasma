@@ -1,0 +1,8 @@
+[cu*_alloc_failed]
+There was not enough memory available on a CUDA device
+while trying to allocate a %s handle to manage tasks on
+this device, or another CUDA device on the node. The
+PaRSEC runtime system may be configured to reserve too
+much memory on CUDA devices. Try reducing the amount of
+reserved memory by setting the PaRSEC MCA parameter
+'device_cuda_memory_use' to a lower value.

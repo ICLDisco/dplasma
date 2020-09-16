@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 The University of Tennessee and The University
+ * Copyright (c) 2011-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -13,6 +13,7 @@
 #include <alloca.h>
 #include <string.h>
 #include "dplasmaaux.h"
+#include "parsec/utils/show_help.h"
 
 #if defined(PARSEC_HAVE_MPI)
 /*
@@ -64,7 +65,7 @@ dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_dc_t* 
         return 0;
 
     keyword = alloca( strlen(function)+2 );
-    
+
     switch( dc->mtype ) {
     case matrix_RealFloat:
         sprintf(keyword, "S%s", function);
@@ -109,3 +110,87 @@ dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_dc_t *A )
     }
 }
 
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
+#include <cusolverDn.h>
+#include "potrf_cublas_utils.h"
+#include "parsec/utils/zone_malloc.h"
+
+/* Unfortunately, CUBLAS does not provide a error to string function */
+static char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
+{
+    switch(cublas_status)
+    {
+        case CUBLAS_STATUS_SUCCESS: return "CUBLAS_STATUS_SUCCESS";
+        case CUBLAS_STATUS_NOT_INITIALIZED: return "CUBLAS_STATUS_NOT_INITIALIZED";
+        case CUBLAS_STATUS_ALLOC_FAILED: return "CUBLAS_STATUS_ALLOC_FAILED";
+        case CUBLAS_STATUS_INVALID_VALUE: return "CUBLAS_STATUS_INVALID_VALUE";
+        case CUBLAS_STATUS_ARCH_MISMATCH: return "CUBLAS_STATUS_ARCH_MISMATCH";
+        case CUBLAS_STATUS_MAPPING_ERROR: return "CUBLAS_STATUS_MAPPING_ERROR";
+        case CUBLAS_STATUS_EXECUTION_FAILED: return "CUBLAS_STATUS_EXECUTION_FAILED";
+        case CUBLAS_STATUS_INTERNAL_ERROR: return "CUBLAS_STATUS_INTERNAL_ERROR";
+        default: return "unknown CUBLAS error";
+    }
+}
+
+/* Unfortunately, cuSolver does not provide a error to string function */
+static char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status)
+{
+    switch(cusolver_status) {
+        case CUSOLVER_STATUS_SUCCESS: return "CUSOLVER_STATUS_SUCCESS";
+        case CUSOLVER_STATUS_NOT_INITIALIZED: return "CUSOLVER_STATUS_NOT_INITIALIZED";
+        case CUSOLVER_STATUS_ALLOC_FAILED: return "CUSOLVER_STATUS_ALLOC_FAILED";
+        case CUSOLVER_STATUS_INVALID_VALUE: return "CUSOLVER_STATUS_INVALID_VALUE";
+        case CUSOLVER_STATUS_ARCH_MISMATCH: return "CUSOLVER_STATUS_ARCH_MISMATCH";
+        case CUSOLVER_STATUS_EXECUTION_FAILED: return "CUSOLVER_STATUS_EXECUTION_FAILED";
+        case CUSOLVER_STATUS_INTERNAL_ERROR: return "CUSOLVER_STATUS_INTERNAL_ERROR";
+        case CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED: return "CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+        default: return "unknown cusolver error";
+    }
+}
+
+void *dplasma_create_cuda_handles(void *obj, void *_n)
+{
+    parsec_gpu_exec_stream_t *stream = (parsec_gpu_exec_stream_t *)obj;
+    dplasma_cuda_handles_t *new;
+    cublasHandle_t cublas_handle;
+    cublasStatus_t cublas_status;
+
+    (void)_n;
+
+    /* No need to call cudaSetDevice, as this has been done by PaRSEC before calling the task body */
+    cublas_status = cublasCreate(&cublas_handle);
+    if(CUBLAS_STATUS_SUCCESS != cublas_status) {
+        if( CUBLAS_STATUS_ALLOC_FAILED == cublas_status ) {
+            parsec_show_help("help-dplasma.txt", "cu*_alloc_failed", 1, "CUBLAS");
+        }
+        parsec_fatal("Unable to create CUBLAS Handle: %s",
+                     dplasma_cublas_error_to_string(cublas_status));
+        return NULL;
+    }
+    cublas_status = cublasSetStream(cublas_handle, stream->cuda_stream);
+    assert(CUBLAS_STATUS_SUCCESS == cublas_status);
+
+    cusolverDnHandle_t cusolver_handle;
+    cusolverStatus_t   cusolver_status;
+    cusolver_status = cusolverDnCreate(&cusolver_handle);
+    if(CUSOLVER_STATUS_SUCCESS != cusolver_status) {
+        cublasDestroy(cublas_handle);
+        if( CUSOLVER_STATUS_ALLOC_FAILED == cusolver_status ) {
+            parsec_show_help("help-dplasma.txt", "cu*_alloc_failed", 1, "cusolver");
+        }
+        parsec_fatal("Unable to create a cuSolver handle: %s",
+                     dplasma_cusolver_error_to_string(cusolver_status));
+        return NULL;
+    }
+    cusolver_status = cusolverDnSetStream(cusolver_handle, stream->cuda_stream);
+    assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
+
+    new = malloc(sizeof(dplasma_cuda_handles_t));
+    new->cublas_handle = cublas_handle;
+    new->cusolverDn_handle = cusolver_handle;
+
+    return new;
+}
+
+#endif

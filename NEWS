@@ -6,6 +6,10 @@ This file contains the main features as well as overviews of specific
 bug fixes (and other actions) for each version of DPLASMA since
 inception (basically the split from the PaRSEC project).
 
+ - Use new Info system of PaRSEC to register cublas and
+   CuDnSolver handles and allow to run all kernels of
+   POTRF on GPUs
+
  - DPLASMA does not depend anymore on external COREBLAS or PLASMA, but only on BLAS
    and LAPACKE
 
