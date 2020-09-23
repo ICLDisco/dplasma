@@ -55,6 +55,12 @@ extern "C" %{
 /*
  * Globals
  */
+
+/* Keep this first, as in all jdf in this directory, to
+ * enable switching between GEMM implementations.
+ */
+gemm_type [ type = int hidden=on default="DPLASMA_ZGEMM_TT" ]
+
 transA [type = int]
 transB [type = int]
 
@@ -69,8 +75,6 @@ descB      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_
 
 ddescC     [type = "dplasma_data_collection_t*"]
 descC      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescC)->dc_original" aligned=ddescC]
-
-Cdist  [type = "parsec_data_collection_t *" hidden=on default="NULL"]
 
 /** We need to keep the set of handle-globals the same between
  *  zgemm_*.jdf, to ensure that all handles can be destroyed

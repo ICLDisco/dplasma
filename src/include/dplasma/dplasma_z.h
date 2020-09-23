@@ -9,6 +9,7 @@
 #define _DPLASMA_Z_H_
 
 #include "parsec/data_dist/matrix/matrix.h"
+#include "utils/dplasma_info.h"
 
 /***********************************************************
  *               Blocking interface
@@ -124,6 +125,9 @@ parsec_taskpool_t* dplasma_ztradd_New( dplasma_enum_t uplo, dplasma_enum_t trans
 parsec_taskpool_t* dplasma_zgemm_New( dplasma_enum_t transa, dplasma_enum_t transb,
                                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
                                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
+parsec_taskpool_t* dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
+                                         dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
+                                         dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C, dplasma_info_t opt);
 parsec_taskpool_t* dplasma_zhemm_New( dplasma_enum_t side, dplasma_enum_t uplo,
                                    dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A, const parsec_tiled_matrix_dc_t *B,
                                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t *C);
@@ -275,6 +279,22 @@ void dplasma_zgeqrf_setrecursive( parsec_taskpool_t *o, int hnb );
 int check_zaxmb(  parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *b, parsec_tiled_matrix_dc_t *x );
 int check_zpotrf( parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *A0 );
 int check_zpoinv( parsec_context_t *parsec, int loud, dplasma_enum_t uplo, parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *Ainv );
+
+/**********************************************************
+ * Defines used to identify particular JDFs
+ */
+#define DPLASMA_ZGEMM_NN        1
+#define DPLASMA_ZGEMM_NN_SUMMA  2
+#define DPLASMA_ZGEMM_NN_GPU    3
+#define DPLASMA_ZGEMM_NT        4
+#define DPLASMA_ZGEMM_NT_SUMMA  5
+#define DPLASMA_ZGEMM_NT_GPU    6
+#define DPLASMA_ZGEMM_TN        7
+#define DPLASMA_ZGEMM_TN_SUMMA  8
+#define DPLASMA_ZGEMM_TN_GPU    9
+#define DPLASMA_ZGEMM_TT       10
+#define DPLASMA_ZGEMM_TT_SUMMA 11
+#define DPLASMA_ZGEMM_TT_GPU   12
 
 /**********************************************************
  * Work in progress

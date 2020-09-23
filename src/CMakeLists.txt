@@ -23,6 +23,7 @@ set(EXTRA_SOURCES
   butterfly_map.c
   utils/dplasma_arena_datatype.c
   utils/dplasma_lapack_adtt.c
+  utils/dplasma_info.c
 )
 if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
@@ -41,6 +42,7 @@ set(JDF
   #
   zgemm_NN.jdf zgemm_TN.jdf zgemm_NT.jdf zgemm_TT.jdf
   zgemm_NN_summa.jdf zgemm_TN_summa.jdf zgemm_NT_summa.jdf zgemm_TT_summa.jdf
+  zgemm_NN_gpu.jdf
   zhemm.jdf
   zher2k_LN.jdf zher2k_LC.jdf zher2k_UN.jdf zher2k_UC.jdf
   zherk_LN.jdf zherk_LC.jdf zherk_UN.jdf zherk_UC.jdf
@@ -239,5 +241,9 @@ install(TARGETS dplasma
     EXPORT dplasma-targets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES
+  "utils/dplasma_info.h"
+  "utils/dplasma_arena_datatype.h"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dplasma/utils)
 
 add_documented_files(PROJECT "DPLASMA" DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_wrappers} ${generated_jdf})
