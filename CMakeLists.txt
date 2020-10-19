@@ -238,6 +238,10 @@ if(DPLASMA_HAVE_CUDA)
     find_package(CUDAToolkit REQUIRED)
   endif(NOT TARGET CUDA::cusolver)
 endif()
+option(DPLASMA_HAVE_HIP "Use HIP to accelerate DPLASMA routines" ${PARSEC_HAVE_HIP})
+if(DPLASMA_HAVE_HIP)
+  message(STATUS "HIP support for DPLASMA enabled")
+endif()
 
 ############################################################################
 # CTest system
