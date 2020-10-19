@@ -283,6 +283,13 @@ if(DPLASMA_HAVE_CUDA)
   message(STATUS "CUDA support for DPLASMA enabled")
 endif()
 
+if(PARSEC_HAVE_HIP)
+  option(DPLASMA_HAVE_HIP
+    "Use HIP to accelerate DPLASMA routines" ON)
+  if(DPLASMA_HAVE_HIP)
+    message(STATUS "HIP support for DPLASMA enabled")
+  endif()
+endif(PARSEC_HAVE_HIP)
 
 set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
 Add_Subdirectory(src)
