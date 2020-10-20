@@ -117,7 +117,15 @@ typedef struct {
     void * cusolverDn_handle;
 } dplasma_cuda_handles_t;
 void *dplasma_create_cuda_handles(void *obj, void *user);
+#endif
 
+#if defined(DPLASMA_HAVE_HIP)
+#include <hipblas.h>
+#include "parsec/mca/device/hip/device_hip.h"
+typedef struct {
+    hipblasHandle_t hipblas_handle;
+} dplasma_hip_handles_t;
+void *dplasma_create_hip_handles(void *obj, void *user);
 #endif
 
 #endif /* _DPLASMAAUX_H_INCLUDED */
