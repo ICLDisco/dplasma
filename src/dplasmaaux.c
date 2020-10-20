@@ -162,7 +162,7 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
     cublas_status = cublasCreate(&cublas_handle);
     if(CUBLAS_STATUS_SUCCESS != cublas_status) {
         if( CUBLAS_STATUS_ALLOC_FAILED == cublas_status ) {
-            parsec_show_help("help-dplasma.txt", "cu*_alloc_failed", 1, "CUBLAS");
+            parsec_show_help("help-dplasma.txt", "gpu_alloc_failed", 1, "CUBLAS");
         }
         parsec_fatal("Unable to create CUBLAS Handle: %s",
                      dplasma_cublas_error_to_string(cublas_status));
@@ -177,7 +177,7 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
     if(CUSOLVER_STATUS_SUCCESS != cusolver_status) {
         cublasDestroy(cublas_handle);
         if( CUSOLVER_STATUS_ALLOC_FAILED == cusolver_status ) {
-            parsec_show_help("help-dplasma.txt", "cu*_alloc_failed", 1, "cusolver");
+            parsec_show_help("help-dplasma.txt", "gpu_alloc_failed", 1, "cusolver");
         }
         parsec_fatal("Unable to create a cuSolver handle: %s",
                      dplasma_cusolver_error_to_string(cusolver_status));
@@ -194,3 +194,56 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
 }
 
 #endif
+
+#if defined(DPLASMA_HAVE_HIP)
+#include <hipblas.h>
+#include "potrf_wrapper.h"
+#include "parsec/utils/zone_malloc.h"
+
+/* Unfortunately, HIPBLAS does not provide a error to string function */
+static char *dplasma_hipblas_error_to_string(hipblasStatus_t hipblas_status)
+{
+    switch(hipblas_status)
+    {
+        case HIPBLAS_STATUS_SUCCESS: return "HIPBLAS_STATUS_SUCCESS";
+        case HIPBLAS_STATUS_NOT_INITIALIZED: return "HIPBLAS_STATUS_NOT_INITIALIZED";
+        case HIPBLAS_STATUS_ALLOC_FAILED: return "HIPBLAS_STATUS_ALLOC_FAILED";
+        case HIPBLAS_STATUS_INVALID_VALUE: return "HIPBLAS_STATUS_INVALID_VALUE";
+        case HIPBLAS_STATUS_ARCH_MISMATCH: return "HIPBLAS_STATUS_ARCH_MISMATCH";
+        case HIPBLAS_STATUS_MAPPING_ERROR: return "HIPBLAS_STATUS_MAPPING_ERROR";
+        case HIPBLAS_STATUS_EXECUTION_FAILED: return "HIPBLAS_STATUS_EXECUTION_FAILED";
+        case HIPBLAS_STATUS_INTERNAL_ERROR: return "HIPBLAS_STATUS_INTERNAL_ERROR";
+        default: return "unknown HIPBLAS error";
+    }
+}
+
+
+void *dplasma_create_cuda_handles(void *obj, void *_n)
+{
+    parsec_hip_exec_stream_t *stream = (parsec_hip_exec_stream_t *)obj;
+    dplasma_hip_handles_t *new;
+    hipblasHandle_t hipblas_handle;
+    hipblasStatus_t cublas_status;
+
+    (void)_n;
+
+
+    /* No need to call hipSetDevice, as this has been done by PaRSEC before calling the task body */
+    hipblas_status = hipblasCreate(&hipblas_handle);
+    if(HIPBLAS_STATUS_SUCCESS != hipblas_status) {
+        if( HIPBLAS_STATUS_ALLOC_FAILED == hipblas_status) {
+            parsec_show_help("help-dplasma.txt", "gpu_alloc_failed", 1, "HIPBLAS");
+        }
+        parsec_fatal("Unable to create HIPBLAS Handle: %s", dplasma_hipblas_error_to_string(hipblas_status));
+        return NULL;
+    }
+    hipblas_status = hipblasSetStream(hipblas_handle, stream->hip_stream);
+    assert(HIPBLAS_STATUS_SUCCESS == hipblas_status);
+
+    new = malloc(sizeof(dplasma_hip_handles_t));
+    new->hipblas_handle = hipblas_handle;
+
+    return new;
+}
+#endif
+
