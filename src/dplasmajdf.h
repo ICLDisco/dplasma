@@ -43,26 +43,10 @@
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
-
-typedef hipblasStatus_t (*hipblas_zgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
-                                 hipblasDoubleComplex alpha, hipblasDoubleComplex *d_A, int lda,
-                                 hipblasDoubleComplex *d_B, int ldb,
-                                 hipblasDoubleComplex beta,  hipblasDoubleComplex *d_C, int ldc );
-typedef hipblasStatus_t (*hipblas_cgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
-                                 hipblasComplex alpha, hipblasComplex *d_A, int lda,
-                                 hipblasComplex *d_B, int ldb,
-                                 hipblasComplex beta,  hipblasComplex *d_C, int ldc );
-typedef hipblasStatus_t (*hipblas_dgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
-                                 double alpha, double *d_A, int lda,
-                                 double *d_B, int ldb,
-                                 double beta,  double *d_C, int ldc );
-typedef hipblasStatus_t (*hipblas_sgemm_t) ( char TRANSA, char TRANSB, int m, int n, int k,
-                                 float alpha, float *d_A, int lda,
-                                              float *d_B, int ldb,
-                                 float beta,  float *d_C, int ldc );
-#endif  /* defined(DPLASMA_HAVE_HIPBLAS) */
+#endif  /* defined(DPLASMA_HAVE_HIP) */
 
 
 #endif /* _DPLASMAJDF_H_ */
