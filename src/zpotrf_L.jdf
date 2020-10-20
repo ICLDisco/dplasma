@@ -20,6 +20,12 @@ static void zpotrf_L_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
 #include <cublas_v2.h>
 #include "potrf_cublas_utils.h"
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+#if defined(DPLASMA_HAVE_HIP)
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#include <rocsolver.h>
+#include "potrf_wrapper.h"
+#endif  /* defined(DPLASMA_HAVE_HIP) */
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT 0
@@ -169,6 +175,29 @@ BODY [type=CUDA
 }
 END
 
+BODY [type=HIP_DISABLED
+      weigth=k]
+{
+    int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
+    int ldak = BLKLDD( descA, k );
+
+    hipblasStatus_t status;
+    hipblasFillMode_t hipblas_uplo;
+
+    if( PlasmaLower == uplo )
+        hipblas_uplo = HIPBLAS_FILL_MODE_LOWER;
+    if( PlasmaUpper == uplo )
+        hipblas_uplo = HIPBLAS_FILL_MODE_UPPER;
+
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+
+    status = rocsolver_zpotrf( handles->hipblas_handle, hipblas_uplo, tempkm, T, ldak, INFO);
+    assert( HIPBLAS_STATUS_SUCCESS == status );
+}
+END
+
 BODY
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
@@ -240,6 +269,31 @@ BODY [type=CUDA]
 }
 END
 
+BODY [type=HIP
+      weight=(m+k)]
+{
+    int tempmm = m == descA->mt - 1 ? descA->m - m * descA->mb : descA->mb;
+    int ldak = BLKLDD(descA, k);
+    int ldan = BLKLDD(descA, n);
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipDoubleComplex zone  = make_hipDoubleComplex( 1., 0.);
+#else
+    double zone = 1.;
+#endif
+
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+
+    hipblasStatus_t status;
+    status = hipblasZtrsm(handles->hipblas_handle,
+                                 HIPBLAS_SIDE_RIGHT, HIPBLAS_FILL_MODE_LOWER,
+                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
+                                 tempmm, descA->nb,
+                                 &zone, T, ldak, C, ldan);
+    assert(HIPBLAS_STATUS_SUCCESS == status);
+}
+END
 
 BODY [type=RECURSIVE]
 {
@@ -344,6 +398,27 @@ BODY [type=CUDA]
                              &zone, T, ldam_T);
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
                             {return -1;} );
+}
+END
+
+BODY [type=HIP
+      weight=(m+k)]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m*descA->mb : descA->mb;
+    int ldam = BLKLDD( descA, m );
+    double zone  =  1.;
+    double mzone = -1.;
+    hipblasStatus_t status;
+
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZherk( handles->hipblas_handle,
+                                  HIPBLAS_FILL_MODE_LOWER, HIPBLAS_OP_N,
+                                  tempmm, descA->mb,
+                                  &mzone, A, ldam,
+                                  &zone, T, ldam);
+    assert(HIPBLAS_STATUS_SUCCESS == status);
 }
 END
 
@@ -465,6 +540,38 @@ BODY [type=CUDA
                              &zone,  (cuDoubleComplex*)C, ldam_C );
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status,
                             {return -1;} );
+}
+END
+
+BODY [type=HIP
+      weight=(n+1-k)]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipDoubleComplex zone  = make_hipDoubleComplex( 1., 0.);
+    hipDoubleComplex mzone = make_hipDoubleComplex(-1., 0.);
+#else
+    double zone  =  1.;
+    double mzone = -1.;
+#endif
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldam = BLKLDD( descA, m );
+    int ldan = BLKLDD( descA, n );
+
+    hipblasStatus_t status;
+    assert( ldan <= descA->mb );
+    assert( ldam <= descA->mb );
+
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+
+    status = hipblasZgemm( handles->hipblas_handle,
+                                  HIPBLAS_OP_N, HIPBLAS_OP_C,
+                                  tempmm, descA->mb, descA->mb,
+                                  &mzone, (hipDoubleComplex*)A, ldam,
+                                          (hipDoubleComplex*)B, ldan,
+                                  &zone,  (hipDoubleComplex*)C, ldam );
+    assert(HIPBLAS_STATUS_SUCCESS == status);
 }
 END
 
