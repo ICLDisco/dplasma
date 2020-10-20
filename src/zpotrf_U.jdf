@@ -78,8 +78,9 @@ PRI_CHANGE [type = "int" hidden = on default = 0 ]
 PRI_MAX    [type = "int" hidden = on default = "(descA->mt * ( 6 + descA->mt * ( 6 + descA->mt )))" ]
 smallnb    [type = "int" hidden = on default = "descA->mb" ]
 
-CuHandlesID   [type = "int" hidden = on default = -1 ]
-POWorkspaceID [type = "int" hidden = on default = -1 ]
+cuda_handles_infokey    [type = "int" hidden = on default = -1 ]
+cuda_workspaces_infokey [type = "int" hidden = on default = -1 ]
+hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 /**************************************************
  *               potrf_zpotrf                     *
@@ -152,9 +153,9 @@ BODY [type=CUDA
     if( PlasmaUpper == uplo )
         cublas_uplo = CUBLAS_FILL_MODE_UPPER;
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
-    wp = parsec_info_get(&gpu_device->super.infos, POWorkspaceID);
+    wp = parsec_info_get(&gpu_device->super.infos, cuda_workspaces_infokey);
     assert(NULL != wp);
 
     workspace = (cuDoubleComplex*)wp->tmpmem;
@@ -228,7 +229,7 @@ BODY [type=CUDA]
 #endif
 
     cublasStatus_t status;
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     status = cublasZtrsm_v2(handles->cublas_handle,
                             CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
@@ -335,7 +336,7 @@ BODY [type=CUDA]
     double mzone = -1.;
     cublasStatus_t status;
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     status = cublasZherk_v2( handles->cublas_handle,
                              CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C,
@@ -457,7 +458,7 @@ BODY [type=CUDA
     assert( ldak_B <= descA->mb );
     assert( ldam_C <= descA->mb );
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
 
     cublasSetKernelStream( parsec_body.stream );
