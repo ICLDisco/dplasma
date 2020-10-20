@@ -287,6 +287,12 @@ if(PARSEC_HAVE_HIP)
   option(DPLASMA_HAVE_HIP
     "Use HIP to accelerate DPLASMA routines" ON)
   if(DPLASMA_HAVE_HIP)
+    # This is kinda ugly but the PATH and HINTS don't get transmitted to sub-dependents
+    set(CMAKE_SYSTEM_PREFIX_PATH_save ${CMAKE_SYSTEM_PREFIX_PATH})
+    list(APPEND CMAKE_SYSTEM_PREFIX_PATH /opt/rocm)
+    find_package(hipblas REQUIRED)
+    find_package(rocsolver REQUIRED)
+    set(CMAKE_SYSTEM_PREFIX_PATH ${CMAKE_SYSTEM_PREFIX_PATH_save})
     message(STATUS "HIP support for DPLASMA enabled")
   endif()
 endif(PARSEC_HAVE_HIP)
