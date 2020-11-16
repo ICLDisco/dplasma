@@ -31,7 +31,7 @@ ztrsmL(k, n) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, descA->mb, CLE
 
   CTL   ctl  -> (k == 0) ? ctll ztrtri(0)
 
-  READ  A    <- A ztrsm_in_A(k)        [type = UPPER_TILE]
+  READ  A    <- A ztrsm_in_A(k)        [type_remote = UPPER_TILE]
 
   RW    B    <- descA(k, n)
                  /* Read Only tasks */
@@ -128,7 +128,7 @@ ztrsmR(k, m) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaRight, descA->mb, CL
     /* Release the trtri on A(k,k) */
   CTL   ctl  -> ctlr ztrtri(k)
 
-  READ  A    <- A ztrsm_in_A(k)        [type = UPPER_TILE]
+  READ  A    <- A ztrsm_in_A(k)        [type_remote = UPPER_TILE]
   RW    B    <- (k == (m+1)) ? B ztrsmL(k-1, k)
              <- (k >  (m+1)) ? C zgemm(k-1, m, k)
              -> descA(m, k)
@@ -157,9 +157,9 @@ ztrsm_in_A(k) [profile = off]
   /* Locality */
   : descA(k,k)
 
-  READ  A    <- descA(k,k)                                          [type = UPPER_TILE]
-             -> (k < descA->mt-1) ? A ztrsmL(k, (k+1)..(descA->mt-1)) [type = UPPER_TILE]
-             -> (k > 0)          ? A ztrsmR(k, 0..(k-1))            [type = UPPER_TILE]
+  READ  A    <- descA(k,k)                                          /*[type = UPPER_TILE type_data = UPPER_TILE]*/
+             -> (k < descA->mt-1) ? A ztrsmL(k, (k+1)..(descA->mt-1)) [type_remote = UPPER_TILE]
+             -> (k > 0)          ? A ztrsmR(k, 0..(k-1))              [type_remote = UPPER_TILE]
 
 BODY
 {
@@ -177,8 +177,8 @@ ztrtri(k) [ flops = inline_c %{ return FLOPS_ZTRTRI(CLEAN_NB(descA, k)); %} ]
   CTL   ctll  <- ((k == 0) && (descA->nt > 1)) ? ctl ztrsmL(0, 1 .. descA->nt-1)
   CTL   ctlr  <-  (k >  0)                    ? ctl ztrsmR(k, 0 .. k-1)
 
-  RW    A    <- descA(k,k)     [type = UPPER_TILE]
-             -> descA(k,k)     [type = UPPER_TILE]
+  RW    A    <- descA(k,k)   /*[type = UPPER_TILE type_data = UPPER_TILE]*/
+             -> descA(k,k)     [type = UPPER_TILE type_data = UPPER_TILE]
 
 BODY
 {

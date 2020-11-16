@@ -32,8 +32,8 @@ zunmlq(k, n)
   /* Locality */
   : descB( k, n )
 
-  READ  A    <- A zunmlq_in_data_A0(k)   [type = UPPER_TILE]
-  READ  T    <- T zunmlq_in_data_T1(k)   [type = LITTLE_T]
+  READ  A    <- A zunmlq_in_data_A0(k)   [type_remote = UPPER_TILE]
+  READ  T    <- T zunmlq_in_data_T1(k)   [type_remote = LITTLE_T]
   RW    C    -> ( k == 0 ) ? descB(k, n)
              -> ( k >  0 ) ? A2 ztsmlq(k-1, k, n)
              <- ( k <  (descB->mt-1)) ? A1 ztsmlq(k, k+1, n)
@@ -71,8 +71,8 @@ zunmlq_in_data_T1(k) [profile = off]
   /* Locality */
   : descT(k, k)
 
-  READ  T    <- descT(k, k)                   [type = LITTLE_T]
-             -> T zunmlq(k, 0 .. descB->nt-1) [type = LITTLE_T]
+  READ  T    <- descT(k, k)                 /*[type = LITTLE_T type_data = LITTLE_T]*/
+             -> T zunmlq(k, 0 .. descB->nt-1) [type_remote = LITTLE_T]
 
 BODY
 {
@@ -87,8 +87,8 @@ zunmlq_in_data_A0(k) [profile = off]
   /* Locality */
   : descA(k, k)
 
-  READ  A    <- descA(k, k)                   [type = UPPER_TILE]
-             -> A zunmlq(k, 0 .. descB->nt-1 ) [type = UPPER_TILE]
+  READ  A    <- descA(k, k)                  /*[type = UPPER_TILE type_data = UPPER_TILE]*/
+             -> A zunmlq(k, 0 .. descB->nt-1 ) [type_remote = UPPER_TILE]
 
 BODY
 {
@@ -117,7 +117,7 @@ ztsmlq(k, m, n)
              <- ((k <  (descA->mt-1)) & (m >  (k+1))) ? A2 ztsmlq(k+1, m, n)
 
   READ  V    <- V ztsmlq_in_data_A1(k, m)
-  READ  T    <- T ztsmlq_in_data_T2(k, m)  [type = LITTLE_T]
+  READ  T    <- T ztsmlq_in_data_T2(k, m)  [type_remote = LITTLE_T]
 
 BODY
 {
@@ -155,8 +155,8 @@ ztsmlq_in_data_T2(k, m) [profile = off]
   /* Locality */
   : descT(k, m)
 
-  READ  T    <- descT(k, m)                          [type = LITTLE_T]
-             -> T ztsmlq(k, m, 0 .. (descB->nt-1))   [type = LITTLE_T]
+  READ  T    <- descT(k, m)                        /*[type = LITTLE_T type_data = LITTLE_T]*/
+             -> T ztsmlq(k, m, 0 .. (descB->nt-1))   [type_remote = LITTLE_T]
 
 BODY
 {

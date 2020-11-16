@@ -32,8 +32,8 @@ n2 = %{ if ((k-1) >= descA->mt) return dplasma_imin(k - descA->mt, descA->nt-1);
 
 : descA( m1, n1 )
 
-WRITE R -> ( k < (descA->mt+descA->nt-1) ) ? R1 PLRNT( m1, n1 )  [type = VECTOR]
-        -> ( k > 0 )                     ? R2 PLRNT( m2, n2 )  [type = VECTOR]
+WRITE R -> ( k < (descA->mt+descA->nt-1) ) ? R1 PLRNT( m1, n1 ) [type = VECTOR type_remote = VECTOR]
+        -> ( k > 0 )                       ? R2 PLRNT( m2, n2 ) [type = VECTOR type_remote = VECTOR]
 
 BODY
 {
@@ -55,10 +55,10 @@ n = 0 .. descA->nt-1
 : descA(m, n)
 
 // Parameters
-READ R1 <- ((n == 0) || (m == descA->mt-1)) ? R GEN_RANDOM(m+n)   : R1 PLRNT(m+1, n-1)  [type = VECTOR]
-        -> ((n < descA->nt-1) && (m > 0))   ? R1 PLRNT(m-1, n+1)                        [type = VECTOR]
-READ R2 <- ((n == 0) || (m == descA->mt-1)) ? R GEN_RANDOM(m+n+1) : R2 PLRNT(m+1, n-1)  [type = VECTOR]
-        -> ((n < descA->nt-1) && (m > 0) )  ? R2 PLRNT(m-1, n+1)                        [type = VECTOR]
+READ R1 <- ((n == 0) || (m == descA->mt-1)) ? R GEN_RANDOM(m+n)   : R1 PLRNT(m+1, n-1)  [type_remote = VECTOR]
+        -> ((n < descA->nt-1) && (m > 0))   ? R1 PLRNT(m-1, n+1)                        [type_remote = VECTOR]
+READ R2 <- ((n == 0) || (m == descA->mt-1)) ? R GEN_RANDOM(m+n+1) : R2 PLRNT(m+1, n-1)  [type_remote = VECTOR]
+        -> ((n < descA->nt-1) && (m > 0) )  ? R2 PLRNT(m-1, n+1)                        [type_remote = VECTOR]
 
 RW   A <- descA(m, n)
        -> descA(m, n)

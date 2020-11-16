@@ -60,7 +60,7 @@ static dplasma_complex64_t mzone = -1.;
  * permutation of the first nb elements, and the second one contains
  * the inverse permutation of those same elements.
  *
- * Let's have i the element to pivot with ip. IPIV[i] = ip;
+ * Lets have i the element to pivot with ip. IPIV[i] = ip;
  * We set i_1 as such iperm[ i_1  ] = i
  *  and  ip_1 as such iperm[ ip_1 ] = ip
  *
@@ -139,8 +139,8 @@ r = inline_c %{ return (k+m) % P; %}
 :descIPIV(r, k)
 
 // Parameters
-READ  IP <- descIPIV( r, k )                                 [type = PIVOT]
-         -> IP GETRF_MAX(k, (k+m) .. (descA->mt-1) .. P, 0)  [type = PIVOT]
+READ  IP <- descIPIV( r, k )                               /*[type = PIVOT type_data = PIVOT]*/
+         -> IP GETRF_MAX(k, (k+m) .. (descA->mt-1) .. P, 0)  [type_remote = PIVOT]
 
 ; inline_c %{ return get_priority(k, k); %}
 
@@ -164,8 +164,8 @@ r = inline_c %{ return (k+m) % P; %}
 :descIPIV(r, k)
 
 // Parameters
-READ  IP <- IP GETRF_FNL(k, k+m)                          [type = PIVOT]
-         -> descIPIV(r, k)                                [type = PIVOT]
+READ  IP <- IP GETRF_FNL(k, k+m)                          [type_remote = PIVOT]
+         -> descIPIV(r, k)                                [type = PIVOT type_data = PIVOT]
 
 ;inline_c %{ return get_priority(k, k); %}
 
@@ -188,8 +188,7 @@ m = 0 .. inline_c %{ return dplasma_imin( descA->mt-k-1, P-1 ); %}
 :descA(k+m, k%Q)
 
 // Parameters
-WRITE  U <- NEW                                            [type = UMES]
-         -> U GETRF_MAX(k, (k+m) .. (descA->mt-1) .. P, 0)  [type = UMES]
+WRITE  U -> U GETRF_MAX(k, (k+m) .. (descA->mt-1) .. P, 0)  [type = UMES type_remote = UMES]
 
 ;inline_c %{ return get_priority(k, k); %}
 
@@ -244,30 +243,30 @@ RW  T <- ((h == 0) && (k == 0)) ? descA(m, k)
       -> ( (m-k) < P ) ? A GETRF_SVM(k, h, m-k )
 
  /* Buffer keeping the diagonal row and the maximum of step h-1 */
-READ V <- (h != 0) ? T GETRF_SND(k, h-1, dmax, lr ) : NULL                                  [type = SWAP]
+READ V <- (h != 0) ? T GETRF_SND(k, h-1, dmax, lr ) : NULL                                  [type_remote = SWAP]
 
 /****************************************************************/
 
  /* Buffer keeping the diagonal row and the maximum of step h-1 */
-RW  IP <- ( h == 0 ) ? IP IP_in( k, lr )                                                    [type = PIVOT]
-       <- ( h != 0 ) ? IP GETRF_MAX( k, m, h-1 )                                            [type = PIVOT]
-       -> ( h <  hmax ) ? IP GETRF_MAX(k, m, h+1)                                           [type = PIVOT]
-       -> ( h == hmax ) ? IP GETRF_FNL(k, m)                                                [type = PIVOT]
+RW  IP <- ( h == 0 ) ? IP IP_in( k, lr )                                                    [type_remote = PIVOT]
+       <- ( h != 0 ) ? IP GETRF_MAX( k, m, h-1 )                                            [type_remote = PIVOT]
+       -> ( h <  hmax ) ? IP GETRF_MAX(k, m, h+1)                                           [type_remote = PIVOT]
+       -> ( h == hmax ) ? IP GETRF_FNL(k, m)                                                [type_remote = PIVOT]
 
  /* Stores locally the factorized diagonal tile U */
-RW  U <-  (h == 0)                 ? U U_in(k, lr)                                          [type = UMES]
-      <- ((h != 0) && (h%IB == 0)) ? U GETRF_MDL(k,lr,(h/IB)-1)                             [type = UMES]
-      <- ((h != 0) && (h%IB != 0)) ? U GETRF_MAX(k,m,h-1)                                   [type = UMES]
+RW  U <-  (h == 0)                 ? U U_in(k, lr)                                          [type_remote = UMES]
+      <- ((h != 0) && (h%IB == 0)) ? U GETRF_MDL(k,lr,(h/IB)-1)                             [type_remote = UMES]
+      <- ((h != 0) && (h%IB != 0)) ? U GETRF_MAX(k,m,h-1)                                   [type_remote = UMES]
 
-      -> (((h%IB == IB-1) || (h == hmax)) && (m-k<P)) ? U GETRF_MDL(k, lr, h/IB)            [type = UMES]
-      ->  ((h%IB != IB-1) && (h != hmax))             ? U GETRF_MAX(k, m,  h+1)             [type = UMES]
+      -> (((h%IB == IB-1) || (h == hmax)) && (m-k<P)) ? U GETRF_MDL(k, lr, h/IB)            [type_remote = UMES]
+      ->  ((h%IB != IB-1) && (h != hmax))             ? U GETRF_MAX(k, m,  h+1)             [type_remote = UMES]
 
  /* Store the selected i and the associated row for comparison with other tiles */
  /* Send to the reduction tree ( left, middle, right ) */
-WRITE  M -> (size == 1) ? M GETRF_SVM(k, h, lr)                                             [type = MAXL]
-         -> (size != 1) && (lm <= lmmax)                ? Mm GETRF_RDC(k, h, lr, lm       ) [type = MAXL]
-         -> (size != 1) && (lm >  lmmax) && (lm%2 == 1) ? Mg GETRF_RDC(k, h, lr, (lm-1)/2 ) [type = MAXL]
-         -> (size != 1) && (lm >  lmmax) && (lm%2 == 0) ? Md GETRF_RDC(k, h, lr, (lm-1)/2 ) [type = MAXL]
+WRITE  M -> (size == 1) ? M GETRF_SVM(k, h, lr)                                             [type = MAXL type_remote = MAXL]
+         -> (size != 1) && (lm <= lmmax)                ? Mm GETRF_RDC(k, h, lr, lm       ) [type = MAXL type_remote = MAXL]
+         -> (size != 1) && (lm >  lmmax) && (lm%2 == 1) ? Mg GETRF_RDC(k, h, lr, (lm-1)/2 ) [type = MAXL type_remote = MAXL]
+         -> (size != 1) && (lm >  lmmax) && (lm%2 == 0) ? Md GETRF_RDC(k, h, lr, (lm-1)/2 ) [type = MAXL type_remote = MAXL]
 
 // Priority
 ;inline_c %{ return get_priority(k, k); %}
@@ -401,17 +400,17 @@ md = inline_c %{ return 2 * m + 2; %}
 // Parallel partitioning
 :descA(k+r, k)
 
-RW    Mm <- M GETRF_MAX(k, k+r+P*m, h)                                   [type = MAXL]
-         -> (m == 0) ? M GETRF_SVM(k, h, r)                              [type = MAXL]
-         -> (m != 0) && ((m%2) == 1) ? Mg GETRF_RDC(k, h, r, (m-1)/2 )   [type = MAXL]
-         -> (m != 0) && ((m%2) == 0) ? Md GETRF_RDC(k, h, r, (m-1)/2 )   [type = MAXL]
+RW    Mm <- M GETRF_MAX(k, k+r+P*m, h)                                   [type_remote = MAXL]
+         -> (m == 0) ? M GETRF_SVM(k, h, r)                              [type_remote = MAXL]
+         -> (m != 0) && ((m%2) == 1) ? Mg GETRF_RDC(k, h, r, (m-1)/2 )   [type_remote = MAXL]
+         -> (m != 0) && ((m%2) == 0) ? Md GETRF_RDC(k, h, r, (m-1)/2 )   [type_remote = MAXL]
 
-READ  Mg <- (mg <= mmax) ? Mm GETRF_RDC(k, h, r, mg )                    [type = MAXL]
-         <- (mg >  mmax) && (mg <  size) ? M GETRF_MAX(k, k+r+P*mg, h )  [type = MAXL]
+READ  Mg <- (mg <= mmax) ? Mm GETRF_RDC(k, h, r, mg )                    [type_remote = MAXL]
+         <- (mg >  mmax) && (mg <  size) ? M GETRF_MAX(k, k+r+P*mg, h )  [type_remote = MAXL]
          <- NULL
 
-READ  Md <- (md <= mmax) ? Mm GETRF_RDC(k, h, r, md )                    [type = MAXL]
-         <- (md >  mmax) && (md <  size) ? M GETRF_MAX(k, k+r+P*md, h )  [type = MAXL]
+READ  Md <- (md <= mmax) ? Mm GETRF_RDC(k, h, r, md )                    [type_remote = MAXL]
+         <- (md >  mmax) && (md <  size) ? M GETRF_MAX(k, k+r+P*md, h )  [type_remote = MAXL]
          <- NULL
 
 // Priority
@@ -479,11 +478,11 @@ size = inline_c %{ int ret = (descA->mt-k) / P;
 
 READ  A <- T GETRF_MAX(k, k+r, h)
 
-READ  M <- (size == 1) ? M  GETRF_MAX(k, k+r, h)       [type = MAXL]
-        <- (size != 1) ? Mm GETRF_RDC(k, h, r, 0)      [type = MAXL]
+READ  M <- (size == 1) ? M  GETRF_MAX(k, k+r, h)       [type_remote = MAXL]
+        <- (size != 1) ? Mm GETRF_RDC(k, h, r, 0)      [type_remote = MAXL]
 
-WRITE V1 -> T  GETRF_SND(k, h, 0, r          )         [type = SWAP] /* Local  */
-WRITE V2 -> B  GETRF_SND(k, h, 0, (r+1)%rmax )         [type = SWAP] /* Remote */
+WRITE V1 -> T  GETRF_SND(k, h, 0, r          )         [type = SWAP type_remote = SWAP] /* Local  */
+WRITE V2 -> B  GETRF_SND(k, h, 0, (r+1)%rmax )         [type = SWAP type_remote = SWAP] /* Remote */
 
 // Priority
 ;inline_c %{ return get_priority(k, k); %}
@@ -546,17 +545,17 @@ pui = inline_c %{ return 1 << d; %}
 :descA(k+r, k)
 
         /* Local forward of T */
-RW    T <- (d >  0   ) ? T GETRF_SND(k, h, d-1, r) : V1 GETRF_SVM(k, h, r)             [type = SWAP]
+RW    T <- (d >  0   ) ? T GETRF_SND(k, h, d-1, r) : V1 GETRF_SVM(k, h, r)             [type_remote = SWAP]
 
-        -> (d <  dmax) ? T GETRF_SND(k, h, d+1, r)                                     [type = SWAP]
-        -> (d == dmax) && ((h == hmax) || ((h+1)%IB == 0)) ? V GETRF_MDL(k, r, h/IB)   [type = SWAP]
-        -> (d == dmax) &&  (h != hmax) ? V GETRF_MAX(k, (k+r)..(descA->mt-1)..P, h+1)  [type = SWAP]
+        -> (d <  dmax) ? T GETRF_SND(k, h, d+1, r)                                     [type_remote = SWAP]
+        -> (d == dmax) && ((h == hmax) || ((h+1)%IB == 0)) ? V GETRF_MDL(k, r, h/IB)   [type_remote = SWAP]
+        -> (d == dmax) &&  (h != hmax) ? V GETRF_MAX(k, (k+r)..(descA->mt-1)..P, h+1)  [type_remote = SWAP]
 
         /* Send T to the bottom */
-RW    B <- (d == 0)    ? V2 GETRF_SVM(k, h,      (rmax+r-1)  %rmax )                   [type = SWAP]
-        <- (d != 0)    ? B  GETRF_SND(k, h, d-1, (rmax+r-pui)%rmax )                   [type = SWAP]
+RW    B <- (d == 0)    ? V2 GETRF_SVM(k, h,      (rmax+r-1)  %rmax )                   [type_remote = SWAP]
+        <- (d != 0)    ? B  GETRF_SND(k, h, d-1, (rmax+r-pui)%rmax )                   [type_remote = SWAP]
 
-        -> (d <  dmax) ? B  GETRF_SND(k, h, d+1, (r+2*pui)%rmax)                       [type = SWAP]
+        -> (d <  dmax) ? B  GETRF_SND(k, h, d+1, (r+2*pui)%rmax)                       [type_remote = SWAP]
 
 // Priority
 ;inline_c %{ return get_priority(k, k); %}
@@ -620,10 +619,10 @@ sender = inline_c %{ return ((h == hmax) ? minmn-1 : ((h+1)*IB)-1); %}
 // Parallel partitioning
 :descA(k+r, k)
 
-READ  V <- T GETRF_SND(k, sender, dmax, r)                                              [type = SWAP]
-        -> (h == hmax) ? V GETRF_FNL(k, (k+r) .. (descA->mt-1) .. P)                    [type = SWAP]
-RW    U <- U GETRF_MAX(k, k+r, sender)                                                  [type = UMES]
-        -> (h != hmax) ? U GETRF_MAX(k, (k+r) .. (descA->mt-1) .. P, ((h+1)*IB))        [type = UMES]
+READ  V <- T GETRF_SND(k, sender, dmax, r)                                              [type_remote = SWAP]
+        -> (h == hmax) ? V GETRF_FNL(k, (k+r) .. (descA->mt-1) .. P)                    [type_remote = SWAP]
+RW    U <- U GETRF_MAX(k, k+r, sender)                                                  [type_remote = UMES]
+        -> (h != hmax) ? U GETRF_MAX(k, (k+r) .. (descA->mt-1) .. P, ((h+1)*IB))        [type_remote = UMES]
 
 // Priority
 ;inline_c %{ return get_priority(k, k); %}
@@ -676,12 +675,12 @@ RW    T <- T GETRF_MAX(k, m, minmn-1)
         -> (m == k) ? T TRSM_U(k, (k+1) .. (descA->nt-1)) : A GEMM(k, m, (k+1) .. (descA->nt-1))
         -> descA(m, k)
 
-READ  V <- V GETRF_MDL(k,(m-k)%P,imax)                                                         [type = SWAP]
+READ  V <- V GETRF_MDL(k,(m-k)%P,imax)                                                         [type_remote = SWAP]
 
-RW   IP <- IP GETRF_MAX( k, m, minmn-1 )                                                       [type = PIVOT]
-        -> ((m-k) < P) ? IP IP_out(k,(m-k))                                                    [type = PIVOT]
+RW   IP <- IP GETRF_MAX( k, m, minmn-1 )                                                       [type_remote = PIVOT]
+        -> ((m-k) < P) ? IP IP_out(k,(m-k))                                                    [type_remote = PIVOT]
 
-WRITE PERM -> ((m-k) < P) ? PERM SWAP_COLLECT(k, m .. (descA->mt-1) .. P, (k+1) .. (descA->nt-1))   [type = PERMUT]
+WRITE PERM -> ((m-k) < P) ? PERM SWAP_COLLECT(k, m .. (descA->mt-1) .. P, (k+1) .. (descA->nt-1))   [type = PERMUT type_remote = PERMUT]
 
 // Priority
 ;inline_c %{ return get_priority(k, k); %}
@@ -782,7 +781,7 @@ n = k+1 .. descA->nt-1
 // Parameters
 READ      U <- ACOPY SWAP_COPY(k, n)
 
-READ   PERM <-  PERM SWAP_COLLECT(k, m, n)      [type = PERMUT]
+READ   PERM <-  PERM SWAP_COLLECT(k, m, n)      [type_remote = PERMUT]
 
 RW        T <-  T    SWAP_COLLECT(k, m, n)
             ->  (m > k) ? C GEMM(k, m, n)
@@ -849,9 +848,9 @@ READ  T     <-  (k == m) ? ACOPY SWAP_COPY(k, n)
             <-  (k != m) && (k != 0) ? C GEMM(k-1, m, n)
             ->  (m > k) ? T SWAP_RECV(k,m,n)
 
-READ  PERM  <-  PERM GETRF_FNL(k, k + i )                                              [type = PERMUT]
-            ->  PERM SWAP_RECV(k, m, n )                                               [type = PERMUT]
-            ->  (((descA->mt-m-1) <  P) && (i%2 == 0) ) ? PERM SWAP_SND(k, 1, i/2, n ) [type = PERMUT]
+READ  PERM  <-  PERM GETRF_FNL(k, k + i )                                              [type_remote = PERMUT]
+            ->  PERM SWAP_RECV(k, m, n )                                               [type_remote = PERMUT]
+            ->  (((descA->mt-m-1) <  P) && (i%2 == 0) ) ? PERM SWAP_SND(k, 1, i/2, n ) [type_remote = PERMUT]
 
 WRITE BUFIN ->  ((m-k) < P) && ((descA->mt-m-1) >= P) ? BUF SWAP_COLLECT(k, m+P .. (descA->mt-1) .. P, n)
             ->  ((m-k) < P) && ((descA->mt-m-1) <  P) && (i%2 == 0) ? Rtop    SWAP_SND(k, 1, i/2, n )
@@ -939,9 +938,9 @@ READ     Rbottom <- (l == 1) && (iB <  height) && ((mB-k) <  P) ? BUFIN SWAP_COL
                  <- (l != 1) && (iB >= height) ? NULL
                  <- (l != 1) && (iB <  height) ? Rtop SWAP_SND( k, l-1, 2*i+1, n )
 
-READ     PERM    <- (l == 1) ? PERM SWAP_COLLECT( k, mT, n )                            [type = PERMUT]
-                 <- (l != 1) ? PERM SWAP_SND( k, l-1, 2*i, n )                          [type = PERMUT]
-                 -> (( l < depth) && (0 == (i % 2))) ? PERM SWAP_SND( k, l+1, i/2, n )  [type = PERMUT]
+READ     PERM    <- (l == 1) ? PERM SWAP_COLLECT( k, mT, n )                            [type_remote = PERMUT]
+                 <- (l != 1) ? PERM SWAP_SND( k, l-1, 2*i, n )                          [type_remote = PERMUT]
+                 -> (( l < depth) && (0 == (i % 2))) ? PERM SWAP_SND( k, l+1, i/2, n )  [type_remote = PERMUT]
 
 
 ;inline_c %{ return get_priority(k, n); %}

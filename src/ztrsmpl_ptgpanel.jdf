@@ -20,7 +20,7 @@ extern "C" %{
  * permutation of the first nb elements, and the second one contains
  * the inverse permutation of those same elements.
  *
- * Let's have i the element to pivot with ip. IPIV[i] = ip;
+ * Lets have i the element to pivot with ip. IPIV[i] = ip;
  * We set i_1 as such iperm[ i_1  ] = i
  *  and  ip_1 as such iperm[ ip_1 ] = ip
  *
@@ -99,7 +99,7 @@ r = inline_c %{ return (k+m) % P; %}
 // Parameters
 READ  IP   <- descIPIV( r, k )
 
-WRITE PERM -> PERM B_SWAP_COLLECT(k, (k+m) .. (descB->mt-1) .. P, 0 .. (descB->nt-1) )  [type = PERMUT]
+WRITE PERM -> PERM B_SWAP_COLLECT(k, (k+m) .. (descB->mt-1) .. P, 0 .. (descB->nt-1) )  [type = PERMUT type_remote = PERMUT]
 
 ;inline_c %{ return get_priority(k, minmnt+k); %}
 
@@ -145,7 +145,7 @@ END
  *                    B_SWAP_COPY
  * Copying the A(k,n) and send it to itself
  **************************************************/
-B_SWAP_COPY(k,n) 
+B_SWAP_COPY(k,n)
 
 // Execution space
 k = 0 .. minmnt
@@ -200,7 +200,7 @@ n = 0   .. descB->nt-1
 // Parameters
 READ      U <- BCOPY B_SWAP_COPY(k, n)
 
-READ   PERM <- PERM B_SWAP_COLLECT(k, m, n)                  [type = PERMUT]
+READ   PERM <- PERM B_SWAP_COLLECT(k, m, n)                  [type_remote = PERMUT]
 
 RW        T <- T    B_SWAP_COLLECT(k, m, n)
             -> (m > k) ? C B_GEMM(k, m, n)
@@ -265,9 +265,9 @@ READ  T     <-  (k == m) ? BCOPY B_SWAP_COPY(k, n)
             <-  (k != m) && (k != 0) ? C B_GEMM(k-1, m, n)
             ->  (m > k) ? T B_SWAP_RECV(k,m,n)
 
-READ  PERM  <-  PERM PERM_in_TR(k, i )                                                   [type = PERMUT]
-            ->  PERM B_SWAP_RECV(k, m, n )                                               [type = PERMUT]
-            ->  (((descB->mt-m-1) <  P) && (i%2 == 0) ) ? PERM B_SWAP_SND(k, 1, i/2, n )  [type = PERMUT]
+READ  PERM  <-  PERM PERM_in_TR(k, i )                                                    [type_remote = PERMUT]
+            ->  PERM B_SWAP_RECV(k, m, n )                                                [type_remote = PERMUT]
+            ->  (((descB->mt-m-1) <  P) && (i%2 == 0) ) ? PERM B_SWAP_SND(k, 1, i/2, n )  [type_remote = PERMUT]
 
 WRITE BUFIN ->  ((m-k) < P) && ((descA->mt-m-1) >= P) ? BUF B_SWAP_COLLECT(k, m+P .. (descB->mt-1) .. P, n)
             ->  ((m-k) < P) && ((descA->mt-m-1) <  P) && (i%2 == 0) ? Rtop    B_SWAP_SND(k, 1, i/2, n )
@@ -355,9 +355,9 @@ READ     Rbottom <- (l == 1) && (iB <  height) && ((mB-k) <  P) ? BUFIN B_SWAP_C
                  <- (l != 1) && (iB >= height) ? descB(mT, n) /* Unused */
                  <- (l != 1) && (iB <  height) ? Rtop B_SWAP_SND( k, l-1, 2*i+1, n )
 
-READ     PERM    <- (l == 1) ? PERM B_SWAP_COLLECT( k, mT, n )                            [type = PERMUT]
-                 <- (l != 1) ? PERM B_SWAP_SND( k, l-1, 2*i, n )                          [type = PERMUT]
-                 -> (( l < depth) && (0 == (i % 2))) ? PERM B_SWAP_SND( k, l+1, i/2, n )  [type = PERMUT]
+READ     PERM    <- (l == 1) ? PERM B_SWAP_COLLECT( k, mT, n )                            [type_remote = PERMUT]
+                 <- (l != 1) ? PERM B_SWAP_SND( k, l-1, 2*i, n )                          [type_remote = PERMUT]
+                 -> (( l < depth) && (0 == (i % 2))) ? PERM B_SWAP_SND( k, l+1, i/2, n )  [type_remote = PERMUT]
 
 
 ;inline_c %{ return get_priority(k, minmnt+n); %}

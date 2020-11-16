@@ -100,7 +100,7 @@ dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
         zheev_compound = parsec_compose( zherbt_obj, (parsec_taskpool_t*)band2rect_obj );
         zheev_compound = parsec_compose( zheev_compound, zhbrdt_obj );
 
-        parsec_arena_datatype_t* adt = &band2rect_obj->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ARENA];
+        parsec_arena_datatype_t* adt = &band2rect_obj->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX];
         dplasma_add2arena_tile( adt,
                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
@@ -141,7 +141,7 @@ dplasma_zheev_Destruct( parsec_taskpool_t *tp )
     parsec_data_free(T->mat);
     parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)T); free(T);
 
-    dplasma_matrix_del2arena( &((parsec_diag_band_to_rect_taskpool_t *)tp)->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &((parsec_diag_band_to_rect_taskpool_t *)tp)->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX] );
 #endif
     parsec_taskpool_free(tp);
 }

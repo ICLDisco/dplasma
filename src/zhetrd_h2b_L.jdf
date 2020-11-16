@@ -30,8 +30,8 @@ bcast_zgeqrt(k)
   : descA(k+1,k)
   READ A <- A zgeqrt(k)
          -> (descA->mt>=(k+3)) ? F zunmqr(k, (k+2)..(descA->mt-1))
-  READ B <- B zgeqrt(k) [type=LITTLE_T]
-         -> (descA->mt>=(k+3)) ? G zunmqr(k, (k+2)..(descA->mt-1)) [type = LITTLE_T]
+  READ B <- B zgeqrt(k) [type_remote=LITTLE_T]
+         -> (descA->mt>=(k+3)) ? G zunmqr(k, (k+2)..(descA->mt-1)) [type_remote = LITTLE_T]
 
 ; (descA->nt-k)*(descA->nt-k)*(descA->nt-k)
 BODY
@@ -43,8 +43,8 @@ zgeqrt_to_zherfb(k)
   : descA(k+1,k)
   READ A <- A zgeqrt(k)
          -> C zherfb(k)
-  READ B <- B zgeqrt(k) [type=LITTLE_T]
-         -> D zherfb(k) [type=LITTLE_T]
+  READ B <- B zgeqrt(k) [type_remote=LITTLE_T]
+         -> D zherfb(k) [type_remote=LITTLE_T]
 
 ; (descA->nt-k)*(descA->nt-k)*(descA->nt-k)
 BODY
@@ -75,10 +75,10 @@ zgeqrt(k)
           -> ((k+2)>=descA->mt) ? descA(k+1,k)
           -> A bcast_zgeqrt(k)
           -> (descA->mt>=(k+3)) ? J ztsqrt(k, k+2)
-  RW    B <- descT(k+1,k)               [type = LITTLE_T]
-          -> descT(k+1,k)               [type = LITTLE_T]
-          -> B zgeqrt_to_zherfb(k)   [type = LITTLE_T]
-          -> B bcast_zgeqrt(k)       [type = LITTLE_T]
+  RW    B <- descT(k+1,k)          /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> descT(k+1,k)            [type = LITTLE_T type_data = LITTLE_T]
+          -> B zgeqrt_to_zherfb(k)   [type_remote = LITTLE_T]
+          -> B bcast_zgeqrt(k)       [type_remote = LITTLE_T]
 
   /*
   The following is a superset of the necessary anti-dependencies:
@@ -123,7 +123,7 @@ zherfb(k)
   /* W == A(m1,m1) */
 
   READ  C <- A zgeqrt_to_zherfb(k)
-  READ  D <- B zgeqrt_to_zherfb(k)   [type = LITTLE_T]
+  READ  D <- B zgeqrt_to_zherfb(k)   [type_remote = LITTLE_T]
   RW    E <- (0==k) ? descA(k+1,k+1)
           <- (k>=1) & ((k+1)>=descA->mt) ? descA(k+1,k+1)
           <- (k>=1) & (descA->mt>=(k+2)) ? W ztsmqr_corner(k+1-2, k+1)
@@ -174,7 +174,7 @@ zunmqr(k,m)
   /* V == A(m1,k+1) */
 
   READ  F <- A bcast_zgeqrt(k)
-  READ  G <- B bcast_zgeqrt(k)  [type = LITTLE_T]
+  READ  G <- B bcast_zgeqrt(k)  [type_remote = LITTLE_T]
   RW    H <- (0==k) ? descA(m,k+1)
           <- (k>=1) ? N ztsmqr_hetra1(k+1-2, m, k+1)
           -> (m>=(k+3)) ? Q ztsmqr(k, k+2, m)
@@ -231,9 +231,9 @@ bcast_ztsqrt(k,m1)
   READ K <- K ztsqrt(k,m1)
          -> (m1>=(3+k)) ? O ztsmqr_hetra1(k, m1, (k+2)..(m1-1))
          -> (descA->mt>=(2+m1)) ? S ztsmqr(k, m1, (m1+1)..(descA->mt-1))
-  READ L <- L ztsqrt(k,m1) [type=LITTLE_T]
-         -> (descA->mt>=(m1+2)) ? T ztsmqr(k, m1, (m1+1)..(descA->mt-1))   [type = LITTLE_T]
-         -> (m1>=(k+3)) ? P ztsmqr_hetra1(k, m1, (k+2)..(m1-1))    [type = LITTLE_T]
+  READ L <- L ztsqrt(k,m1) [type_remote=LITTLE_T]
+         -> (descA->mt>=(m1+2)) ? T ztsmqr(k, m1, (m1+1)..(descA->mt-1))   [type_remote = LITTLE_T]
+         -> (m1>=(k+3)) ? P ztsmqr_hetra1(k, m1, (k+2)..(m1-1))    [type_remote = LITTLE_T]
 
 ; (descA->nt - k)*(descA->mt - m1)*(descA->mt - m1)
 BODY
@@ -270,10 +270,10 @@ ztsqrt(k,m1)
           -> K bcast_ztsqrt(k, m1)
           -> X ztsmqr_corner(k, m1)
           -> descA(m1,k)
-  RW    L <- descT(m1,k)                  [type = LITTLE_T]
-          -> L bcast_ztsqrt(k, m1)     [type = LITTLE_T]
-          -> Y ztsmqr_corner(k, m1)    [type = LITTLE_T]
-          -> descT(m1,k)                  [type = LITTLE_T]
+  RW    L <- descT(m1,k)             /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> L bcast_ztsqrt(k, m1)     [type_remote = LITTLE_T]
+          -> Y ztsmqr_corner(k, m1)    [type_remote = LITTLE_T]
+          -> descT(m1,k)               [type = LITTLE_T type_data = LITTLE_T]
 
   /*
   The following is a superset of the necessary anti-dependencies:
@@ -350,7 +350,7 @@ ztsmqr_hetra1(k,m1,i)
           -> (descA->nt==(k+2)) ? descA(m1,i)
           -> (i==(k+2)) & (descA->nt>=(i+1)) ? H zunmqr(i-1, m1)
   READ  O <- K bcast_ztsqrt(k, m1)
-  READ  P <- L bcast_ztsqrt(k, m1)    [type = LITTLE_T]
+  READ  P <- L bcast_ztsqrt(k, m1)    [type_remote = LITTLE_T]
 
   /*
   The following is a superset of the necessary anti-dependencies:
@@ -406,7 +406,7 @@ ztsmqr(k,m1,j)
           <- (0==k) ? descA(j,m1)
           -> N ztsmqr_hetra1(k, j, m1)
   READ  S <- K bcast_ztsqrt(k, m1)
-  READ  T <- L bcast_ztsqrt(k, m1)    [type = LITTLE_T]
+  READ  T <- L bcast_ztsqrt(k, m1)    [type_remote = LITTLE_T]
 
   /*
   The following is a superset of the necessary anti-dependencies:
@@ -509,7 +509,7 @@ ztsmqr_corner(k,m1)
           -> (descA->nt==(k+2)) ? descA(m1,m1)
           -> ((k+2)==m1) & (descA->nt>=(k+3)) ? E zherfb(m1-1)
   READ  X <- K ztsqrt(k, m1)
-  READ  Y <- L ztsqrt(k, m1) [type = LITTLE_T]
+  READ  Y <- L ztsqrt(k, m1) [type_remote = LITTLE_T]
 
   /*
   The following is a superset of the necessary anti-dependencies:

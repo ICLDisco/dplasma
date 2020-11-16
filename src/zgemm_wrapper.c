@@ -141,14 +141,14 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                 tp = parsec_zgemm_NN_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
                                                (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             } else {
                 parsec_zgemm_NT_summa_taskpool_t* tp;
                 tp = parsec_zgemm_NT_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
                                                (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
@@ -157,7 +157,7 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                 tp = parsec_zgemm_TN_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
                                                (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
             else {
@@ -165,7 +165,7 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                 tp = parsec_zgemm_TT_summa_new(transA, transB, alpha, beta,
                                                A, B, C,
                                                (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         }
@@ -177,13 +177,13 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                 parsec_zgemm_NN_taskpool_t* tp;
                 tp = parsec_zgemm_NN_new(transA, transB, alpha, beta,
                                          A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             } else {
                 parsec_zgemm_NT_taskpool_t* tp;
                 tp = parsec_zgemm_NT_new(transA, transB, alpha, beta,
                                          A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
@@ -191,14 +191,14 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                 parsec_zgemm_TN_taskpool_t* tp;
                 tp = parsec_zgemm_TN_new(transA, transB, alpha, beta,
                                          A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
             else {
                 parsec_zgemm_TT_taskpool_t* tp;
                 tp = parsec_zgemm_TT_new(transA, transB, alpha, beta,
                                          A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ARENA];
+                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         }
@@ -208,6 +208,8 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
+
+
     return zgemm_tp;
 }
 
@@ -237,7 +239,7 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
     parsec_zgemm_NN_taskpool_t *zgemm_tp = (parsec_zgemm_NN_taskpool_t *)tp;
     parsec_tiled_matrix_dc_t* Cdist = (parsec_tiled_matrix_dc_t*)zgemm_tp->_g_Cdist;
 
-    dplasma_matrix_del2arena( &zgemm_tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &zgemm_tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
     if ( NULL != Cdist ) {
         parsec_tiled_matrix_dc_destroy( Cdist );

@@ -141,28 +141,29 @@ dplasma_zgeqrf_New( parsec_tiled_matrix_dc_t *A,
     parsec_private_memory_init( tp->_g_p_work, ib * T->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
-    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgeqrf_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgeqrf_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
-    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgeqrf_LOWER_TILE_ARENA],
+    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgeqrf_LOWER_TILE_ADT_IDX],
                              A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Upper triangular part of tile with diagonal */
-    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgeqrf_UPPER_TILE_ARENA],
+    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgeqrf_UPPER_TILE_ADT_IDX],
                              A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Little T */
-    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgeqrf_LITTLE_T_ARENA],
+    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgeqrf_LITTLE_T_ADT_IDX],
                                  T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
+
 
     return (parsec_taskpool_t*)tp;
 }
@@ -192,10 +193,10 @@ dplasma_zgeqrf_Destruct( parsec_taskpool_t *tp)
 {
     parsec_zgeqrf_taskpool_t *parsec_zgeqrf = (parsec_zgeqrf_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_DEFAULT_ARENA   ] );
-    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_LOWER_TILE_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_UPPER_TILE_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_LITTLE_T_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_DEFAULT_ADT_IDX   ] );
+    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_LOWER_TILE_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_UPPER_TILE_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zgeqrf->arenas_datatypes[PARSEC_zgeqrf_LITTLE_T_ADT_IDX  ] );
 
     parsec_private_memory_fini( parsec_zgeqrf->_g_p_work );
     parsec_private_memory_fini( parsec_zgeqrf->_g_p_tau  );

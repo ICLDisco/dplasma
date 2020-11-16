@@ -31,34 +31,33 @@ struct dplasma_datatype_s {
 };
 typedef struct dplasma_datatype_s dplasma_datatype_t;
 
-
 /* Function to obtain an arena with the given specifications.
- * If the hashmap doesn't contain one equivalent, a new arena is created. 
+ * If the hashmap doesn't contain one equivalent, a new arena is created.
  * The returned arena is retain to avoid it to be freed during the destructor
- * of the taskpool. 
- * Arenas will be freed during parsec_fini (parsec external at fini callback) or 
- * when invoking arenas_cleanup. 
- * The user is not allowed to free directly the arenas. 
+ * of the taskpool.
+ * Arenas will be freed during parsec_fini (parsec external at fini callback) or
+ * when invoking arenas_cleanup.
+ * The user is not allowed to free directly the arenas.
  */
 int dplasma_get_or_construct_arena(parsec_arena_t** parena,
                                    size_t elem_size,
                                    size_t alignment);
 
-/* Function to clean up the arenas in the list that are tracked in the hashmap. 
+/* Function to clean up the arenas in the list that are tracked in the hashmap.
  * Arenas are released and will be destructed when any taskpool using them has been
- * destruct.  
+ * destruct.
  * arenas: list of arenas to be cleaned up. If NULL all arenas are removed.
- * count: number of arenas in the list. 
+ * count: number of arenas in the list.
  */
 void dplasma_cleanup_arenas(parsec_arena_t** arenas,
                             int count);
 
 
 /* Function to obtain an datatatype with the given specifications.
- * If the hashmap doesn't contain one equivalent, a new datatype is created. 
- * Datatypes will be freed during parsec_fini (parsec external at fini callback) or 
- * when invoking datatypes_cleanup. 
- * The user is not allowed to free directly the datatypes. 
+ * If the hashmap doesn't contain one equivalent, a new datatype is created.
+ * Datatypes will be freed during parsec_fini (parsec external at fini callback) or
+ * when invoking datatypes_cleanup.
+ * The user is not allowed to free directly the datatypes.
  */
 int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatype_t oldtype,
                                       int uplo, int diag,
@@ -66,11 +65,11 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
                                       int resized,
                                       ptrdiff_t * extent);
 
-/* Function to clean up ONE datatype. 
+/* Function to clean up ONE datatype.
  * When reusing arenas and datatypes the call has no effect. The key of a datatype can only
- * be constructed with the arguments used during creation. Thus, datatypes will be cleaned during 
+ * be constructed with the arguments used during creation. Thus, datatypes will be cleaned during
  * callback during parsec context at fini.
- * When reusing is not activated, the datatype will be freed. 
+ * When reusing is not activated, the datatype will be freed.
  */
 int dplasma_cleanup_datatype( parsec_datatype_t *adt );
 

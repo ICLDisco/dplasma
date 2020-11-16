@@ -28,8 +28,8 @@ m = 0 .. descA->mt-1
 
 : descA(m, m)
 
-    WRITE R -> R1 PLRNT(m, 0..descA->nt-1)  [type = VECTOR]
-            -> R2 PLRNT(0..descA->mt-1, m)  [type = VECTOR]
+    WRITE R -> R1 PLRNT(m, 0..descA->nt-1)  [type = VECTOR type_remote = VECTOR]
+            -> R2 PLRNT(0..descA->mt-1, m)  [type = VECTOR type_remote = VECTOR]
 BODY
 {
     CORE_zplrnt( descA->mb, 1, R, descA->mb,
@@ -50,8 +50,8 @@ n = 0 .. descA->nt-1
 : descA(m, n)
 
 // Parameters
-READ R1 <- R GEN_RANDOM(m)                 [type = VECTOR]
-READ R2 <- R GEN_RANDOM(n)                 [type = VECTOR]
+READ R1 <- R GEN_RANDOM(m)                 [type_remote = VECTOR]
+READ R2 <- R GEN_RANDOM(n)                 [type_remote = VECTOR]
 
 RW   A <- descA(m, n)
        -> descA(m, n)

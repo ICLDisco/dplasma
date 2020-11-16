@@ -61,8 +61,8 @@ IPIV_in(k) [profile = off]
 
   : dataIP(0, k)
 
-READ IP <- dataIP(0, k)              [type = PIVOT]
-        -> IPIV getrf(k, 0..nbtrd)   [type = PIVOT]
+READ IP <- dataIP(0, k)            /*[type = PIVOT type_data = PIVOT]*/
+        -> IPIV getrf(k, 0..nbtrd)   [type_remote = PIVOT]
 
 BODY
 {
@@ -75,8 +75,8 @@ IPIV_out(k) [profile = off]
 
   : dataIP(0, k)
 
-  READ IP <- IPIV getrf(k, 0)        [type = PIVOT]
-          -> dataIP(0, k)            [type = PIVOT]
+  READ IP <- IPIV getrf(k, 0)        [type_remote = PIVOT]
+          -> dataIP(0, k)            [type = PIVOT type_data = PIVOT]
 
 BODY
 {
@@ -101,10 +101,10 @@ getrf(k, t) [high_priority = on flops = inline_c%{ return t == 0 ? FLOPS_ZGETRF(
              -> (t == 0) && (k < (descA->nt-1)) ? A swptrsm(k, k+1..descA->nt-1)
              -> (t == 0) ? descA(k, k)
 
-  RW    IPIV <- IP IPIV_in(k)                                                       [type = PIVOT]
-             -> ( t==0 ) ? IP IPIV_out(k)                                           [type = PIVOT]
-             -> ((t==0) && (k < (descA->nt-1))) ? IPIV swptrsm(k, k+1 .. descA->nt-1) [type = PIVOT]
-             -> ((t==0) && (k > 0))            ? IPIV swpback(k, 0 .. k-1)          [type = PIVOT]
+  RW    IPIV <- IP IPIV_in(k)                                                         [type_remote = PIVOT]
+             -> ( t==0 ) ? IP IPIV_out(k)                                             [type_remote = PIVOT]
+             -> ((t==0) && (k < (descA->nt-1))) ? IPIV swptrsm(k, k+1 .. descA->nt-1) [type_remote = PIVOT]
+             -> ((t==0) && (k > 0))            ? IPIV swpback(k, 0 .. k-1)            [type_remote = PIVOT]
 
   CTL   ctl  <- (k > 0) ? ctl tile2panel(k-1, k)
              -> (t == 0) && (k < descA->mt-1) ? ctl GEMM_A_in(k, k+1..descA->mt-1)
@@ -175,7 +175,7 @@ swptrsm(k, n)   [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(desc
   :descA(k, n)
 
   READ  A    <- A    getrf(k, 0)
-  READ  IPIV <- IPIV getrf(k, 0)                                [type = PIVOT]
+  READ  IPIV <- IPIV getrf(k, 0)                                [type_remote = PIVOT]
 
   RW    B    <- ( 0 == k ) ? descA(k,n) : C gemm(k-1, k, n)
           /* <- descA(k..descA->mt-1, n) : C gemm(k-1, k..descA->mt-1, n) */
@@ -299,7 +299,7 @@ swpback(k, n)
   RW    A    <- descA(k, n)
              -> descA(k, n)
 
-  READ  IPIV <- IPIV getrf(k, 0)                                [type = PIVOT]
+  READ  IPIV <- IPIV getrf(k, 0)                                [type_remote = PIVOT]
 
   CTL   ctl  <- (n == (k-1)) ? ctl tile2panel(n, k..descA->nt-1)
 

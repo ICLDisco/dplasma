@@ -129,36 +129,38 @@ dplasma_map2_New( dplasma_enum_t uplo,
 
     switch( A->mtype ) {
     case matrix_ComplexDouble :
-        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb);
         break;
     case matrix_ComplexFloat  :
-        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(dplasma_complex32_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_complex_t, A->mb);
         break;
     case matrix_RealDouble    :
-        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(double),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_t, A->mb);
         break;
     case matrix_RealFloat     :
-        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(float),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_float_t, A->mb);
         break;
     case matrix_Integer       :
     default:
-        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA],
+        dplasma_add2arena_tile( &parsec_map2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(int),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_int_t, A->mb);
     }
+
+
     return (parsec_taskpool_t*)parsec_map2;
 }
 
@@ -191,7 +193,7 @@ dplasma_map2_Destruct( parsec_taskpool_t *tp )
         free( omap2->_g_op_args );
     }
 
-    dplasma_matrix_del2arena( &omap2->arenas_datatypes[PARSEC_map2_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &omap2->arenas_datatypes[PARSEC_map2_DEFAULT_ADT_IDX] );
 
     parsec_taskpool_free(tp);
 }

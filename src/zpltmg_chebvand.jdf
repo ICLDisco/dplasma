@@ -28,7 +28,7 @@ n = 0 .. descA->nt-1
 
 : descA(0, n)
 
-WRITE W -> W PLRNT(0, n)  [type = VECTOR]
+WRITE W -> W PLRNT(0, n)  [type = VECTOR type_remote = VECTOR]
 
 BODY
 {
@@ -49,8 +49,8 @@ n = 0 .. descA->nt-1
 : descA(m, n)
 
 // Parameters
-RW   W <- (m == 0) ? W GENWS(n) : W PLRNT( m-1, n )  [type = VECTOR]
-       -> (m < descA->mt-1) ? W PLRNT( m+1, n )       [type = VECTOR]
+RW   W <- (m == 0) ? W GENWS(n) : W PLRNT( m-1, n )   [type_remote = VECTOR]
+       -> (m < descA->mt-1) ? W PLRNT( m+1, n )       [type_remote = VECTOR]
 
 RW   A <- descA(m, n)
        -> descA(m, n)

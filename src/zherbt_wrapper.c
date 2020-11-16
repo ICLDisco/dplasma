@@ -47,14 +47,15 @@ dplasma_zherbt_New( dplasma_enum_t uplo, int IB,
                                           A,
                                           T,
                                           pool[3], pool[2], pool[1], pool[0]);
-        dplasma_add2arena_rectangle( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_DEFAULT_ARENA],
+        dplasma_add2arena_rectangle( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_DEFAULT_ADT_IDX],
                                      A->mb*A->nb*sizeof(dplasma_complex64_t),
                                      PARSEC_ARENA_ALIGNMENT_SSE,
                                      parsec_datatype_double_complex_t, A->mb, A->nb, -1);
-        dplasma_add2arena_rectangle( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_LITTLE_T_ARENA],
+        dplasma_add2arena_rectangle( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_LITTLE_T_ADT_IDX],
                                      T->mb*T->nb*sizeof(dplasma_complex64_t),
                                      PARSEC_ARENA_ALIGNMENT_SSE,
                                      parsec_datatype_double_complex_t, T->mb, T->nb, -1);
+
     }
 
     return (parsec_taskpool_t*)parsec_zherbt;
@@ -66,8 +67,8 @@ void dplasma_zherbt_Destruct( parsec_taskpool_t *tp )
 
     if( dplasmaLower == parsec_zherbt->_g_uplo ) {
 
-        dplasma_matrix_del2arena( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_DEFAULT_ARENA   ] );
-        dplasma_matrix_del2arena( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_LITTLE_T_ARENA  ] );
+        dplasma_matrix_del2arena( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_DEFAULT_ADT_IDX   ] );
+        dplasma_matrix_del2arena( &parsec_zherbt->arenas_datatypes[PARSEC_zherbt_L_LITTLE_T_ADT_IDX  ] );
 
         parsec_private_memory_fini( parsec_zherbt->_g_pool_0 );
         free( parsec_zherbt->_g_pool_0 );

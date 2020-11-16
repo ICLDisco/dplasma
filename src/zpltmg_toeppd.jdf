@@ -28,7 +28,7 @@ m = 0 .. descA->mt-1
 
 : descA(m, 0)
 
-    WRITE R -> R PLRNT(m, 0..descA->nt-1, m)  [type = VECTOR]
+    WRITE R -> R PLRNT(m, 0..descA->nt-1, m)  [type = VECTOR type_remote = VECTOR]
 
 BODY
 {
@@ -50,9 +50,9 @@ k = 0 .. descA->mt-1
 : descA(m, n)
 
 // Parameters
-RW   R <- ( m == k )                       ? R GEN_RANDOM(m)                          [type = VECTOR]
-       <- ( m != k )                       ? R PLRNT(          (m+1)%descA->mt, n, k)  [type = VECTOR]
-       -> ( (descA->mt+m-1)%descA->mt != k ) ? R PLRNT( (descA->mt+m-1)%descA->mt, n, k)  [type = VECTOR]
+RW   R <- ( m == k )                         ? R GEN_RANDOM(m)                            [type_remote = VECTOR]
+       <- ( m != k )                         ? R PLRNT(          (m+1)%descA->mt, n, k)   [type_remote = VECTOR]
+       -> ( (descA->mt+m-1)%descA->mt != k ) ? R PLRNT( (descA->mt+m-1)%descA->mt, n, k)  [type_remote = VECTOR]
 
 RW   A <- ( m == k )                ? descA(m, n)
        <- ( m != k )                ? A PLRNT( m, n, (descA->mt+k-1)%descA->mt )

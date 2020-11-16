@@ -151,14 +151,14 @@ dplasma_zlansy_New( dplasma_enum_t norm,
         result);
 
     /* Set the datatypes */
-    dplasma_add2arena_tile( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
-    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_COL_ARENA],
+    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_COL_ADT_IDX],
                                  mb * nb * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_t, mb, nb, -1 );
-    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_ELT_ARENA],
+    dplasma_add2arena_rectangle( &((parsec_zlansy_taskpool_t*)parsec_zlansy)->arenas_datatypes[PARSEC_zlansy_ELT_ADT_IDX],
                                  elt * sizeof(double), PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_t, elt, 1, -1 );
 
@@ -193,9 +193,9 @@ dplasma_zlansy_Destruct( parsec_taskpool_t *tp )
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)(parsec_zlansy->_g_Tdist) );
     free( parsec_zlansy->_g_Tdist );
 
-    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_DEFAULT_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_COL_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_ELT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_DEFAULT_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_COL_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zlansy->arenas_datatypes[PARSEC_zlansy_ELT_ADT_IDX] );
 
     parsec_taskpool_free(tp);
 }

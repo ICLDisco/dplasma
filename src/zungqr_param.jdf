@@ -77,8 +77,8 @@ zunmqr(k, i, n)
   /* Locality */
   : descQ(m, n)
 
-  READ  A <- A zunmqr_in_A(k, i)        [type = LOWER_TILE]
-  READ  T <- T zunmqr_in_T(k, i)        [type = LITTLE_T]
+  READ  A <- A zunmqr_in_A(k, i)        [type_remote = LOWER_TILE]
+  READ  T <- T zunmqr_in_T(k, i)        [type_remote = LITTLE_T]
 
   RW    C -> ( k == 0 ) ? descQ(m, n)
           -> ( k >  0 ) ? A2 zttmqr(k-1, m, n)
@@ -123,8 +123,8 @@ zunmqr_in_A(k, i) [profile = off]
 
   : descA( m, k )
 
-  RW A <- descA( m, k )                     [type = LOWER_TILE]
-       -> A zunmqr(k, i, k .. descQ->nt-1)   [type = LOWER_TILE]
+  RW A <- descA( m, k )                    /*[type = LOWER_TILE type_data = LOWER_TILE]*/
+       -> A zunmqr(k, i, k .. descQ->nt-1)   [type_remote = LOWER_TILE]
 
 BODY
 {
@@ -143,8 +143,8 @@ zunmqr_in_T(k, i) [profile = off]
 
   : descTS( m, k )
 
-  RW T <- descTS( m, k )                    [type = LITTLE_T]
-       -> T zunmqr(k, i, k .. descQ->nt-1)   [type = LITTLE_T]
+  RW T <- descTS( m, k )                   /*[type = LITTLE_T type_data = LITTLE_T]*/
+       -> T zunmqr(k, i, k .. descQ->nt-1)   [type_remote = LITTLE_T]
 
 BODY
 {
@@ -194,9 +194,9 @@ zttmqr(k, m, n)
           -> ( (type  != 0) && (prevm != descQ->mt ) ) ? A1 zttmqr(k, prevm, n )
 
   READ  V <- (type == 0) ? V zttmqr_in_V(k, m)
-          <- (type != 0) ? V zttmqr_in_V(k, m) [type = UPPER_TILE]
+          <- (type != 0) ? V zttmqr_in_V(k, m) [type_remote = UPPER_TILE]
 
-  READ  T <- T zttmqr_in_T(k, m) [type = LITTLE_T]
+  READ  T <- T zttmqr_in_T(k, m) [type_remote = LITTLE_T]
 
 BODY
 {
@@ -254,7 +254,7 @@ zttmqr_in_V(k, m) [profile = off]
 
   RW V <- descA(m, k)
        -> (type == 0) ? V zttmqr(k, m, k .. descQ->nt-1)
-       -> (type != 0) ? V zttmqr(k, m, k .. descQ->nt-1) [type = UPPER_TILE]
+       -> (type != 0) ? V zttmqr(k, m, k .. descQ->nt-1) [type_remote = UPPER_TILE]
 
 BODY
 {
@@ -272,8 +272,8 @@ zttmqr_in_T(k, m) [profile = off]
 
   : descTT(m, k)
 
-  RW T <- descTT(m, k)                     [type = LITTLE_T]
-       -> T zttmqr(k, m, k .. descQ->nt-1)  [type = LITTLE_T]
+  RW T <- descTT(m, k)                    /*[type = LITTLE_T type_data = LITTLE_T]*/
+       -> T zttmqr(k, m, k .. descQ->nt-1)  [type_remote = LITTLE_T]
 BODY
 {
     /* nothing */

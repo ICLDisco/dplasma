@@ -152,6 +152,8 @@ dplasma_zlatms( parsec_context_t *parsec,
     }
     else {
         P = 1;
+        IP = 0;
+        JQ = 0;
     }
 
     /* Init the random matrix R */

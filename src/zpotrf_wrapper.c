@@ -141,10 +141,11 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     parsec_zpotrf->_g_PRI_CHANGE = dplasma_aux_get_priority_limit( "POTRF", A );
     if(0 == parsec_zpotrf->_g_PRI_CHANGE)
       parsec_zpotrf->_g_PRI_CHANGE = A->nt;
-    dplasma_add2arena_tile( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
+
 
     return tp;
 }
@@ -174,7 +175,7 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = (parsec_zpotrf_L_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
 }
 

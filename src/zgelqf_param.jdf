@@ -54,13 +54,13 @@ zgelqt(k, i)
 
           -> A zgelqt_typechange(k, i)
 
-          -> (  k == descA->nt-1 ) ? descA(k, n)                                 [type = LOWER_TILE]
-          -> ( (k <  descA->nt-1) & (nextn != descA->nt) ) ?  A1 zttlqt(k, nextn) [type = LOWER_TILE]
-          -> ( (k <  descA->nt-1) & (nextn == descA->nt) ) ?  A2 zttlqt(k, n)     [type = LOWER_TILE]
+          -> (  k == descA->nt-1 ) ? descA(k, n)                                  [type = LOWER_TILE type_data = LOWER_TILE]
+          -> ( (k <  descA->nt-1) & (nextn != descA->nt) ) ?  A1 zttlqt(k, nextn) [type_remote = LOWER_TILE]
+          -> ( (k <  descA->nt-1) & (nextn == descA->nt) ) ?  A2 zttlqt(k, n)     [type_remote = LOWER_TILE]
 
-  RW    T <- descTS(k, n)                                                       [type = LITTLE_T]
-          -> descTS(k, n)                                                       [type = LITTLE_T]
-          -> (k < descA->mt-1) ? T zunmlq(k, i, (k+1)..(descA->mt-1))             [type = LITTLE_T]
+  RW    T <- descTS(k, n)                                                       /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> descTS(k, n)                                                         [type = LITTLE_T type_data = LITTLE_T]
+          -> (k < descA->mt-1) ? T zunmlq(k, i, (k+1)..(descA->mt-1))             [type_remote = LITTLE_T]
 
   ; %{ return GETPRIO_PANEL(k, n); %}
 
@@ -101,8 +101,8 @@ zgelqt_typechange(k, i) [profile = off]
   : descA(k, n)
 
   RW A <- A zgelqt(k, i)
-       -> ( k < (descA->mt-1) ) ? A zunmlq(k, i, (k+1)..(descA->mt-1)) [type = UPPER_TILE]
-       -> descA(k, n)                                                [type = UPPER_TILE]
+       -> ( k < (descA->mt-1) ) ? A zunmlq(k, i, (k+1)..(descA->mt-1)) [type_remote = UPPER_TILE]
+       -> descA(k, n)                                                  [type = UPPER_TILE type_data = UPPER_TILE]
 BODY
 {
     /* Nothing */
@@ -127,8 +127,8 @@ zunmlq(k, i, m)
   /* Locality */
   : descA(m, n)
 
-  READ  A <- A zgelqt_typechange(k, i)                              [type = UPPER_TILE]
-  READ  T <- T zgelqt(k, i)                                         [type = LITTLE_T]
+  READ  A <- A zgelqt_typechange(k, i)                              [type_remote = UPPER_TILE]
+  READ  T <- T zgelqt(k, i)                                         [type_remote = LITTLE_T]
 
   RW    C <- ( 0 == k ) ? descA(m, n)
           <- ( k >  0 ) ? A2 zttmlq(k-1, m, n)
@@ -193,25 +193,25 @@ zttlqt(k, n)
 
   : descA(k, n)
 
-  RW   A1 <- (   prevp == descA->nt ) ? A  zgelqt(k, ip ) : A1 zttlqt(k, prevp ) [type = LOWER_TILE]
-          -> (   nextp != descA->nt ) ? A1 zttlqt(k, nextp )                     [type = LOWER_TILE]
-          -> ( ( nextp == descA->nt ) & (p == k) ) ? A zttlqt_out_A1(k)          [type = LOWER_TILE]
-          -> ( ( nextp == descA->nt ) & (p != k) ) ? A2 zttlqt(k, p)             [type = LOWER_TILE]
+  RW   A1 <- (   prevp == descA->nt ) ? A  zgelqt(k, ip ) : A1 zttlqt(k, prevp ) [type_remote = LOWER_TILE]
+          -> (   nextp != descA->nt ) ? A1 zttlqt(k, nextp )                     [type_remote = LOWER_TILE]
+          -> ( ( nextp == descA->nt ) & (p == k) ) ? A zttlqt_out_A1(k)          [type_remote = LOWER_TILE]
+          -> ( ( nextp == descA->nt ) & (p != k) ) ? A2 zttlqt(k, p)             [type_remote = LOWER_TILE]
 
-  RW   A2 <- ( (type == 0) && (k     == 0        ) ) ? descA(k, n)                                  /* TS case */
-          <- ( (type == 0) && (k     != 0        ) ) ? A2 zttmlq(k-1, k, n )                        /* TS case */
-          <- ( (type != 0) && (prevn == descA->nt ) ) ? A  zgelqt(k, in )        [type = LOWER_TILE] /* TT case */
-          <- ( (type != 0) && (prevn != descA->nt ) ) ? A1 zttlqt(k, prevn )     [type = LOWER_TILE] /* TT case */
+  RW   A2 <- ( (type == 0) && (k     == 0        ) ) ? descA(k, n)                                          /* TS case */
+          <- ( (type == 0) && (k     != 0        ) ) ? A2 zttmlq(k-1, k, n )                                /* TS case */
+          <- ( (type != 0) && (prevn == descA->nt ) ) ? A  zgelqt(k, in )        [type_remote = LOWER_TILE] /* TT case */
+          <- ( (type != 0) && (prevn != descA->nt ) ) ? A1 zttlqt(k, prevn )     [type_remote = LOWER_TILE] /* TT case */
 
           -> (type == 0 ) ? descA(k, n)
-          -> (type != 0 ) ? descA(k, n)                                             [type = LOWER_TILE]
+          -> (type != 0 ) ? descA(k, n)                                             [type = LOWER_TILE type_data = LOWER_TILE]
 
           -> (type == 0) &&  (descA->mt-1 > k) ? V zttmlq(k, (k+1)..(descA->mt-1), n)
-          -> (type != 0) &&  (descA->mt-1 > k) ? V zttmlq(k, (k+1)..(descA->mt-1), n) [type = LOWER_TILE]
+          -> (type != 0) &&  (descA->mt-1 > k) ? V zttmlq(k, (k+1)..(descA->mt-1), n) [type_remote = LOWER_TILE]
 
-  RW   T  <- descTT(k, n)                                              [type = LITTLE_T]
-          -> descTT(k, n)                                              [type = LITTLE_T]
-          -> (descA->mt-1 > k)? T zttmlq(k, (k+1)..(descA->mt-1), n)     [type = LITTLE_T]
+  RW   T  <- descTT(k, n)                                              /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> descTT(k, n)                                                [type = LITTLE_T type_data = LITTLE_T]
+          -> (descA->mt-1 > k)? T zttmlq(k, (k+1)..(descA->mt-1), n)     [type_remote = LITTLE_T]
 
 ; %{ return type == DPLASMA_QR_KILLED_BY_TS ? GETPRIO_PANEL(k, p) : GETPRIO_PANEL(k, n); %}
 
@@ -255,8 +255,8 @@ zttlqt_out_A1(k) [profile = off]
 
   : descA(k, k)
 
-  RW A <- A1 zttlqt( k, prevp ) [type = LOWER_TILE]
-       -> descA(k, k)           [type = LOWER_TILE]
+  RW A <- A1 zttlqt( k, prevp ) [type_remote = LOWER_TILE]
+       -> descA(k, k)           [type = LOWER_TILE type_data = LOWER_TILE]
 BODY
 {
     /* nothing */
@@ -308,9 +308,9 @@ zttmlq(k, m, n)
           -> ( (type1 == 0 ) && (m> (k+1)) ) ? A2 zttmlq( k+1, m, n )
 
   READ  V <- (type == 0) ? A2 zttlqt(k, n)
-          <- (type != 0) ? A2 zttlqt(k, n) [type = LOWER_TILE]
+          <- (type != 0) ? A2 zttlqt(k, n) [type_remote = LOWER_TILE]
 
-  READ  T <- T  zttlqt(k, n)               [type = LITTLE_T]
+  READ  T <- T  zttlqt(k, n)               [type_remote = LITTLE_T]
 
   ; %{ return type == DPLASMA_QR_KILLED_BY_TS ? GETPRIO_UPDTE(m, p, k) : GETPRIO_UPDTE(m, n, k); %}
 

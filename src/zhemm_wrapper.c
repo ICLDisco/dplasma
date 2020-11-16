@@ -98,7 +98,7 @@ dplasma_zhemm_New( dplasma_enum_t side,
                           B,
                           C);
 
-    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zhemm_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zhemm_DEFAULT_ADT_IDX],
                             C->mb*C->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, C->mb );
@@ -130,7 +130,7 @@ void
 dplasma_zhemm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zhemm_taskpool_t *zhemm_tp = (parsec_zhemm_taskpool_t*)tp;
-    dplasma_matrix_del2arena( &zhemm_tp->arenas_datatypes[PARSEC_zhemm_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &zhemm_tp->arenas_datatypes[PARSEC_zhemm_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
 }
 

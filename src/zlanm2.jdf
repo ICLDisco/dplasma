@@ -61,8 +61,9 @@ STEP1(m,n)
 
     // Parameters
     READ A <- descA(m, n)
-    RW   W <- ( m < (MT-P)) ? W STEP1( m+P, n ) : NEW             [type = DROW]
-           -> ( m > (P -1)) ? W STEP1( m-P, n ) : W STEP2( m, n ) [type = DROW]
+    RW   W <- ( m <  (MT-P)) ? W STEP1( m+P, n )                   [type_remote = DROW]
+           <- ( m >= (MT-P)) ? NEW                                 [type = DROW]
+           -> ( m >  (P -1)) ? W STEP1( m-P, n ) : W STEP2( m, n ) [type_remote = DROW]
 
 BODY
 {
@@ -100,9 +101,10 @@ STEP2(m, n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- (m == 0)      ? NULL : W STEP2(m-1, n)               [type = DROW]
-    RW   W <- (m >  (MT-1)) ? NEW : W STEP1(m, n)                  [type = DROW]
-           -> (m == (P -1)) ? A STEP3(0..P-1, n) : A STEP2(m+1, n) [type = DROW]
+    READ A <- (m == 0)      ? NULL : W STEP2(m-1, n)               [type_remote = DROW]
+    RW   W <- (m >  (MT-1)) ? NEW                                  [type = DROW]
+           <- (m <= (MT-1)) ? W STEP1(m, n)                        [type_remote = DROW]
+           -> (m == (P -1)) ? A STEP3(0..P-1, n) : A STEP2(m+1, n) [type_remote = DROW]
 
 BODY
 {
@@ -141,10 +143,11 @@ STEP3(m, n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- W STEP2(P-1, n)                                      [type = DROW]
-           -> (m < MT)     ? DX SCALEX(1, m, n)                    [type = DROW]
-    RW   W <- (n < (NT-Q)) ? W STEP3( m, n+Q ) : NEW               [type = ELT]
-           -> (n < Q     ) ? W STEP4( m, n   ) : W STEP3( m, n-Q ) [type = ELT]
+    READ A <- W STEP2(P-1, n)                                       [type_remote = DROW]
+           -> (m <  MT)     ? DX SCALEX(1, m, n)                    [type_remote = DROW]
+    RW   W <- (n <  (NT-Q)) ? W STEP3( m, n+Q )                     [type_remote = ELT]
+           <- (n >= (NT-Q)) ? NEW                                   [type = ELT]
+           -> (n <  Q     ) ? W STEP4( m, n   ) : W STEP3( m, n-Q ) [type_remote = ELT]
 
 BODY
 {
@@ -177,9 +180,10 @@ STEP4(m,n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- (n ==  0    ) ? NULL                          : W STEP4(m, n-1) [type = ELT]
-    RW   W <- (n >  (NT-1)) ? NEW                           : W STEP3(m, n  ) [type = ELT]
-           -> (n == (Q-1) ) ? X WRITE_RES(0, m, 0 .. (Q-1)) : A STEP4(m, n+1) [type = ELT]
+    READ A <- (n ==  0    ) ? NULL                          : W STEP4(m, n-1) [type_remote = ELT]
+    RW   W <- (n >  (NT-1)) ? NEW                                             [type = ELT]
+           <- (n <= (NT-1)) ? W STEP3(m, n  )                                 [type_remote = ELT]
+           -> (n == (Q-1) ) ? X WRITE_RES(0, m, 0 .. (Q-1)) : A STEP4(m, n+1) [type_remote = ELT]
 
 BODY
 {
@@ -223,8 +227,8 @@ WRITE_RES(i, m, n)
     :Tdist(m, n)
 
     // Parameters
-    READ X  <- (i == 0) ? W STEP4( m, Q-1 ) : W NORM_X_STEP2(i, 0)  [type = ELT]
-    READ SX <- (i == 0) ? NULL              : W NORM_SX_STEP2(i, 0) [type = ELT]
+    READ X  <- (i == 0) ? W STEP4( m, Q-1 ) : W NORM_X_STEP2(i, 0)  [type_remote = ELT]
+    READ SX <- (i == 0) ? NULL              : W NORM_SX_STEP2(i, 0) [type_remote = ELT]
 
     CTL newiter -> (m < MT) ? newiter SCALEX(i+1, m, n .. NT-1 .. Q)
 
@@ -314,10 +318,10 @@ SCALEX(i, m, n)
     // Parallel partitioning
     :Tdist(m, n)
 
-    READ  DX <- (i == 1) ? A STEP3(m, n)              : NULL    [type = DROW]
-    READ  ZX <- (i != 1) ? W GEMV_X_REDUCE(i-1, n, 0) : NULL    [type = ZROW]
+    READ  DX <- (i == 1) ? A STEP3(m, n)              : NULL    [type_remote = DROW]
+    READ  ZX <- (i != 1) ? W GEMV_X_REDUCE(i-1, n, 0) : NULL    [type_remote = ZROW]
 
-    WRITE ZXO -> loop ? B GEMV_SX_PARTIAL(i, m .. MT-1 .. P, n) [type = ZROW]
+    WRITE ZXO -> loop ? B GEMV_SX_PARTIAL(i, m .. MT-1 .. P, n) [type = ZROW type_remote = ZROW]
 
     CTL newiter <- newiter WRITE_RES(i-1, m, n%Q)
 BODY
@@ -371,13 +375,13 @@ k = 0 .. NT-1
 
 // Parameters
 READ  A  <- descA(m, k)
-READ  B  <- ZXO SCALEX(i, m%P, k)                               [type = ZROW]
+READ  B  <- ZXO SCALEX(i, m%P, k)                               [type_remote = ZROW]
 
 RW    C  <- (k >= (NT-Q)) ? NEW                                 [type = ZCOL]
-         <- (k <  (NT-Q)) ? C GEMV_SX_PARTIAL(i, m, k+Q)        [type = ZCOL]
+         <- (k <  (NT-Q)) ? C GEMV_SX_PARTIAL(i, m, k+Q)        [type_remote = ZCOL]
 
-         -> (k >= Q)             ? C GEMV_SX_PARTIAL(i, m, k-Q) [type = ZCOL]
-         -> (k <  Q) && (k < NT) ? W GEMV_SX_REDUCE( i, m, k  ) [type = ZCOL]
+         -> (k >= Q)             ? C GEMV_SX_PARTIAL(i, m, k-Q) [type_remote = ZCOL]
+         -> (k <  Q) && (k < NT) ? W GEMV_SX_REDUCE( i, m, k  ) [type_remote = ZCOL]
 BODY
 {
     dplasma_complex64_t zbeta = (k >= (NT-Q)) ? 0. : (dplasma_complex64_t)1.0;
@@ -408,13 +412,13 @@ k = 0 .. kmax
 : Tdist(m, k)
 
 // Parameters
-READ A <- ( k == kmax ) ? NULL : W GEMV_SX_REDUCE(i, m, k+1) [type = ZCOL]
+READ A <- ( k == kmax ) ? NULL : W GEMV_SX_REDUCE(i, m, k+1) [type_remote = ZCOL]
 
-RW   W <- C GEMV_SX_PARTIAL(i, m, k)                         [type = ZCOL]
+RW   W <- C GEMV_SX_PARTIAL(i, m, k)                         [type_remote = ZCOL]
 
-       -> ( k != 0 ) ? A GEMV_SX_REDUCE(i, m, k-1)           [type = ZCOL]
-       -> ( k == 0 ) ? B GEMV_X_PARTIAL(i, 0..NT-1, m)       [type = ZCOL]
-       -> ( k == 0 ) ? A NORM_SX_STEP1(i, m)                 [type = ZCOL]
+       -> ( k != 0 ) ? A GEMV_SX_REDUCE(i, m, k-1)           [type_remote = ZCOL]
+       -> ( k == 0 ) ? B GEMV_X_PARTIAL(i, 0..NT-1, m)       [type_remote = ZCOL]
+       -> ( k == 0 ) ? A NORM_SX_STEP1(i, m)                 [type_remote = ZCOL]
 
 
 BODY
@@ -458,13 +462,13 @@ k = 0 .. MT-1
 
 // Parameters
 READ  A <- descA(k, n)
-READ  B <- W GEMV_SX_REDUCE(i, k, 0)                          [type = ZCOL]
+READ  B <- W GEMV_SX_REDUCE(i, k, 0)                          [type_remote = ZCOL]
 
 RW    C <- (k >= (MT-P)) ? NEW                                [type = ZROW]
-        <- (k <  (MT-P)) ? C GEMV_X_PARTIAL(i, n, k+P)        [type = ZROW]
+        <- (k <  (MT-P)) ? C GEMV_X_PARTIAL(i, n, k+P)        [type_remote = ZROW]
 
-        -> (k >= P)             ? C GEMV_X_PARTIAL(i, n, k-P) [type = ZROW]
-        -> (k <  P) && (k < MT) ? W GEMV_X_REDUCE( i, n, k)   [type = ZROW]
+        -> (k >= P)             ? C GEMV_X_PARTIAL(i, n, k-P) [type_remote = ZROW]
+        -> (k <  P) && (k < MT) ? W GEMV_X_REDUCE( i, n, k)   [type_remote = ZROW]
 BODY
 {
     dplasma_complex64_t zbeta = (k >= (MT-P)) ? 0. : (dplasma_complex64_t)1.0;
@@ -495,13 +499,13 @@ k = 0 .. kmax
 : Tdist(k, n)
 
 // Parameters
-READ A <- ( k == kmax ) ? NULL : W GEMV_X_REDUCE(i, n, k+1)       [type = ZROW]
+READ A <- ( k == kmax ) ? NULL : W GEMV_X_REDUCE(i, n, k+1)       [type_remote = ZROW]
 
-RW   W <- C GEMV_X_PARTIAL(i, n, k)                               [type = ZROW]
+RW   W <- C GEMV_X_PARTIAL(i, n, k)                               [type_remote = ZROW]
 
-       -> ( k != 0 ) ? A GEMV_X_REDUCE(i, n, k-1)                 [type = ZROW]
-       -> ( k == 0 ) ? A NORM_X_STEP1(i, n)                       [type = ZROW]
-       -> ( k == 0 ) && (i < maxiter) ? ZX SCALEX(i+1, 0..P-1, n) [type = ZROW]
+       -> ( k != 0 ) ? A GEMV_X_REDUCE(i, n, k-1)                 [type_remote = ZROW]
+       -> ( k == 0 ) ? A NORM_X_STEP1(i, n)                       [type_remote = ZROW]
+       -> ( k == 0 ) && (i < maxiter) ? ZX SCALEX(i+1, 0..P-1, n) [type_remote = ZROW]
 
 BODY
 {
@@ -531,13 +535,13 @@ NORM_SX_STEP1(i, m)
     :Tdist(m, 0)
 
     // Parameters
-    READ  A  <- W GEMV_SX_REDUCE(i, m, 0)               [type = ZCOL]
+    READ  A  <- W GEMV_SX_REDUCE(i, m, 0)               [type_remote = ZCOL]
 
     RW    W  <- (m >= (MT-P)) ? NEW                     [type = ELT]
-             <- (m <  (MT-P)) ? W NORM_SX_STEP1(i, m+P) [type = ELT]
+             <- (m <  (MT-P)) ? W NORM_SX_STEP1(i, m+P) [type_remote = ELT]
 
-             -> (m >= P) ? W NORM_SX_STEP1(i, m-P)      [type = ELT]
-             -> (m <  P) ? A NORM_SX_STEP2(i, m)        [type = ELT]
+             -> (m >= P) ? W NORM_SX_STEP1(i, m-P)      [type_remote = ELT]
+             -> (m <  P) ? A NORM_SX_STEP2(i, m)        [type_remote = ELT]
 
 BODY
 {
@@ -570,11 +574,12 @@ NORM_SX_STEP2(i, m)
     :Tdist(m, 0)
 
     // Parameters
-    READ A <- W NORM_SX_STEP1(i, m)                        [type = ELT]
+    READ A <- W NORM_SX_STEP1(i, m)                        [type_remote = ELT]
 
-    RW   W <- (m == mmax) ? NEW : W NORM_SX_STEP2(i, m+1)  [type = ELT]
-           -> (m == 0) ? SX WRITE_RES(i, 0..P-1, 0..Q-1)   [type = ELT]
-           -> (m != 0) ? W NORM_SX_STEP2(i, m-1)           [type = ELT]
+    RW   W <- (m == mmax) ? NEW                            [type = ELT]
+           <- (m != mmax) ? W NORM_SX_STEP2(i, m+1)        [type_remote = ELT]
+           -> (m == 0) ? SX WRITE_RES(i, 0..P-1, 0..Q-1)   [type_remote = ELT]
+           -> (m != 0) ? W NORM_SX_STEP2(i, m-1)           [type_remote = ELT]
 
 BODY
 {
@@ -617,13 +622,13 @@ NORM_X_STEP1(i, n)
     :Tdist(0, n)
 
     // Parameters
-    READ  A  <- W GEMV_X_REDUCE(i, n, 0)                [type = ZROW]
+    READ  A  <- W GEMV_X_REDUCE(i, n, 0)                [type_remote = ZROW]
 
     RW    W  <- (n >= (NT-Q)) ? NEW                     [type = ELT]
-             <- (n <  (NT-Q)) ? W NORM_X_STEP1(i, n+Q)  [type = ELT]
+             <- (n <  (NT-Q)) ? W NORM_X_STEP1(i, n+Q)  [type_remote = ELT]
 
-             -> (n >= Q) ? W NORM_X_STEP1(i, n-Q)       [type = ELT]
-             -> (n <  Q) ? A NORM_X_STEP2(i, n)         [type = ELT]
+             -> (n >= Q) ? W NORM_X_STEP1(i, n-Q)       [type_remote = ELT]
+             -> (n <  Q) ? A NORM_X_STEP2(i, n)         [type_remote = ELT]
 
 BODY
 {
@@ -656,11 +661,12 @@ NORM_X_STEP2(i, n)
     :Tdist(0, n)
 
     // Parameters
-    READ A <- W NORM_X_STEP1(i, n)                        [type = ELT]
+    READ A <- W NORM_X_STEP1(i, n)                        [type_remote = ELT]
 
-    RW   W <- (n == nmax) ? NEW : W NORM_X_STEP2(i, n+1)  [type = ELT]
-           -> (n == 0) ? X WRITE_RES(i, 0..P-1, 0..Q-1)   [type = ELT]
-           -> (n != 0) ? W NORM_X_STEP2(i, n-1)           [type = ELT]
+    RW   W <- (n == nmax) ? NEW                           [type = ELT]
+           <- (n != nmax) ? W NORM_X_STEP2(i, n+1)        [type_remote = ELT]
+           -> (n == 0) ? X WRITE_RES(i, 0..P-1, 0..Q-1)   [type_remote = ELT]
+           -> (n != 0) ? W NORM_X_STEP2(i, n-1)           [type_remote = ELT]
 
 BODY
 {

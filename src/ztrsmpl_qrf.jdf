@@ -61,8 +61,8 @@ swptrsm_u(k, n)
   /* Locality */
   : descB(k, n)
 
-  READ  A    <- A  swptrsm_u_in(k)                                        [type = LOWER_TILE]
-  READ  IP   <- IP swptrsm_u_in(k)                                        [type = PIVOT]
+  READ  A    <- A  swptrsm_u_in(k)                                        [type_remote = LOWER_TILE]
+  READ  IP   <- IP swptrsm_u_in(k)                                        [type_remote = PIVOT]
   RW    C    <- Bshm selector(k, k, n)
              -> descB(k, n)
              -> ( k < (descB->mt-1) ) ? V zgemm(k, (k+1)..(descB->mt-1), n)
@@ -113,10 +113,10 @@ swptrsm_u_in(k)   [profile = off]
   : descA(k, k)
 
   RW A  <- descA(k,k)
-        -> A swptrsm_u(k, 0..descB->nt-1)  [type = LOWER_TILE]
+        -> A swptrsm_u(k, 0..descB->nt-1)  [type_remote = LOWER_TILE]
 
-  RW IP <- IPIV(k,k)                       [type = PIVOT]
-        -> IP swptrsm_u(k, 0..descB->nt-1)    [type = PIVOT]
+  RW IP <- IPIV(k,k)                       /*[type = PIVOT type_data = PIVOT]*/
+        -> IP swptrsm_u(k, 0..descB->nt-1)   [type_remote = PIVOT]
 
   CTL ctl <- ctl inputs(k)
 
@@ -213,8 +213,8 @@ zunmqr(k, i, n)
 
   : descB(m, n)
 
-  READ  A <- A zunmqr_in(k,i)                                        [type = LOWER_TILE]
-  READ  T <- T zunmqr_in(k,i)                                        [type = LITTLE_T]
+  READ  A <- A zunmqr_in(k,i)                                        [type_remote = LOWER_TILE]
+  READ  T <- T zunmqr_in(k,i)                                        [type_remote = LITTLE_T]
   RW    C <- A selector(k, m, n)
           -> ( k == descA->mt-1 ) ? descB(m, n)
           -> ((k <  descA->mt-1) & (nextm != descA->mt) ) ? A1 zttmqr(k, nextm, n)
@@ -259,11 +259,11 @@ zunmqr_in(k,i)  [profile = off]
 
   : descA(m, k)
 
-  RW A <- descA(m,k)                        [type = LOWER_TILE]
-       -> A zunmqr(k, i, 0..descB->nt-1)    [type = LOWER_TILE]
+  RW A <- descA(m,k)                      /*[type = LOWER_TILE type_data = LOWER_TILE]*/
+       -> A zunmqr(k, i, 0..descB->nt-1)    [type_remote = LOWER_TILE]
 
-  RW T <- TS(m,k)                       [type = LITTLE_T]
-       -> T zunmqr(k, i, 0..descB->nt-1)    [type = LITTLE_T]
+  RW T <- TS(m,k)                         /*[type = LITTLE_T type_data = LITTLE_T]*/
+       -> T zunmqr(k, i, 0..descB->nt-1)    [type_remote = LITTLE_T]
 
   CTL ctl <- ctl inputs(k)
 
@@ -318,9 +318,9 @@ zttmqr(k, m, n)
 
 
   READ V  <- (type == 0) ? A zttmqr_in(k,m)
-          <- (type != 0) ? A zttmqr_in(k,m)                                          [type = UPPER_TILE]
+          <- (type != 0) ? A zttmqr_in(k,m)                                          [type_remote = UPPER_TILE]
 
-  READ T  <- T zttmqr_in(k,m)                                                        [type = LITTLE_T]
+  READ T  <- T zttmqr_in(k,m)                                                        [type_remote = LITTLE_T]
 
   CTL ctl ->  (k < (descB->mt-1)) && (diagdom == 0) ? ctl tile2panel(k, n)
 
@@ -376,10 +376,10 @@ zttmqr_in(k,m)  [profile = off]
 
   RW A <- descA(m,k)
        -> (type == 0) ? V zttmqr(k, m, 0..descB->nt-1)
-       -> (type != 0) ? V zttmqr(k, m, 0..descB->nt-1) [type = UPPER_TILE]
+       -> (type != 0) ? V zttmqr(k, m, 0..descB->nt-1) [type_remote = UPPER_TILE]
 
-  RW T <- TT(m,k)                        [type = LITTLE_T]
-       -> T zttmqr(k, m, 0..descB->nt-1)     [type = LITTLE_T]
+  RW T <- TT(m,k)                        /*[type = LITTLE_T type_data = LITTLE_T]*/
+       -> T zttmqr(k, m, 0..descB->nt-1)   [type_remote = LITTLE_T]
 
   CTL ctl <- ctl inputs(k)
 

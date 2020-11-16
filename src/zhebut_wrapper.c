@@ -25,8 +25,8 @@
 #include "zgebmm.h"
 #include <lapacke.h>
 
-#if (PARSEC_zhebut_ARENA_INDEX_MIN != 0) || (PARSEC_zgebut_ARENA_INDEX_MIN != 0) || (PARSEC_zgebmm_ARENA_INDEX_MIN != 0)
-#error Current zhebut can work only if not using named types.
+#if (PARSEC_zhebut_ADT_IDX_MAX != 1) || (PARSEC_zgebut_ADT_IDX_MAX != 1) || (PARSEC_zgebmm_ADT_IDX_MAX != 1)
+#warning Current zhebut can work only if not using named types.
 #endif
 
 #define CREATE_N_ENQUEUE 0x0
@@ -166,7 +166,7 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
     parsec_zhebut_taskpool_t *obut = (parsec_zhebut_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        dplasma_matrix_del2arena( &obut->arenas_datatypes[i] );
+        parsec_matrix_del2arena( &obut->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);
@@ -385,7 +385,7 @@ int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, dplasm
     int i;
 #endif
     nbge = (levels>0) ? (1<<(levels-1))*((1<<levels)-1) : 0;
-    
+
     if( final_nt == 0 ){
         fprintf(stderr,"Too many butterflies. Death by starvation.\n");
         return -1;

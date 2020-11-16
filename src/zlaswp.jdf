@@ -29,8 +29,8 @@ LASWP_IPIV_in(k) [profile = off]
 
 :dataIP(0, k)
 
-READ IP <- dataIP(0, k)                         [type = PIVOT]
-        -> IPIV LASWP_laswp(k, 0..dataA->nt-1)   [type = PIVOT]
+READ IP <- dataIP(0, k)                        /*[type = PIVOT type_data = PIVOT]*/
+        -> IPIV LASWP_laswp(k, 0..dataA->nt-1)   [type_remote = PIVOT]
 
 BODY
 {
@@ -48,7 +48,7 @@ LASWP_laswp(k, n)
   :dataA(k, n)
 
   READ  A    <- dataA(k, n)
-  READ  IPIV <- IP LASWP_IPIV_in(k)             [type = PIVOT]
+  READ  IPIV <- IP LASWP_IPIV_in(k)             [type_remote = PIVOT]
   CTL   ctl  <- ( (inc > 0) && (k > 0 )          ) ? ctl LASWP_laswp(k-1, n)
              <- ( (inc < 0) && (k < dataIP->nt-1 )) ? ctl LASWP_laswp(k+1, n)
              -> ( (inc > 0) && (k < dataIP->nt-1 )) ? ctl LASWP_laswp(k+1, n)

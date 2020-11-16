@@ -94,22 +94,23 @@ dplasma_ztrsmpl_incpiv_New(const parsec_tiled_matrix_dc_t *A,
                                        B );
 
     /* A */
-    dplasma_add2arena_tile( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* IPIV */
-    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ADT_IDX],
                                  A->mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, A->mb, 1, -1 );
 
     /* L */
-    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ARENA],
+    dplasma_add2arena_rectangle( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ADT_IDX],
                                  L->mb*L->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, L->mb, L->nb, -1);
+
 
     return (parsec_taskpool_t*)parsec_trsmpl_incpiv;
 }
@@ -139,9 +140,9 @@ dplasma_ztrsmpl_incpiv_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrsmpl_incpiv_taskpool_t *parsec_trsmpl_incpiv = (parsec_ztrsmpl_incpiv_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ARENA] );
-    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ARENA  ] );
-    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ARENA] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_DEFAULT_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_PIVOT_ADT_IDX  ] );
+    dplasma_matrix_del2arena( &parsec_trsmpl_incpiv->arenas_datatypes[PARSEC_ztrsmpl_incpiv_SMALL_L_ADT_IDX] );
 
     parsec_taskpool_free(tp);
 }

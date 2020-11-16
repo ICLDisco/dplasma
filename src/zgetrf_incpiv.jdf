@@ -41,7 +41,7 @@ zgetrf_out(k) [profile = off]
   :descA(k, k)
 
   READ A <- A zgetrf(k)
-         -> (k < (descA->nt-1)) ? L zgessm(k, (k+1)..(descA->nt-1))   [type = LOWER_TILE]
+         -> (k < (descA->nt-1)) ? L zgessm(k, (k+1)..(descA->nt-1))   [type_remote = LOWER_TILE]
 BODY
 {
     /* Nothing */
@@ -57,13 +57,13 @@ zgetrf(k)
   :descA(k, k)
 
   RW    A  <- ( k == 0 ) ? descA(k, k) : C zssssm(k-1, k, k)
-           -> (k <  (descA->mt-1)) ? U ztstrf(k, k+1)                 [type = UPPER_TILE]
+           -> (k <  (descA->mt-1)) ? U ztstrf(k, k+1)                 [type_remote = UPPER_TILE]
            -> (k == (descA->mt-1)) ? descA(k, k)
            -> A zgetrf_out(k)
 
-  RW    IP <- dataIP(k, k)                                           [type = PIVOT]
-           -> dataIP(k, k)                                           [type = PIVOT]
-           -> (k < (descA->nt-1)) ? IP zgessm(k, (k+1)..(descA->nt-1)) [type = PIVOT]
+  RW    IP <- dataIP(k, k)                                           /*[type = PIVOT type_data = PIVOT]*/
+           -> dataIP(k, k)                                             [type = PIVOT type_data = PIVOT]
+           -> (k < (descA->nt-1)) ? IP zgessm(k, (k+1)..(descA->nt-1)) [type_remote = PIVOT]
 
   /* Priority */
   ;(descA->nt-k)*(descA->nt-k)*(descA->nt-k)
@@ -107,8 +107,8 @@ zgessm(k, n)
   /* Locality */
   : descA(k, n)
 
-  READ  L  <- A zgetrf_out(k)                                        [type = LOWER_TILE]
-  READ  IP <- IP zgetrf(k)                                           [type = PIVOT]
+  READ  L  <- A zgetrf_out(k)                                        [type_remote = LOWER_TILE]
+  READ  IP <- IP zgetrf(k)                                           [type_remote = PIVOT]
 
   RW    B <- (k == 0) ? descA(k,n) : C zssssm(k-1, k, n)
           -> (k == (descA->mt-1)) ? descA(k, n)
@@ -143,8 +143,8 @@ ztstrf_out(k) [profile = off]
 
   : descA(k, k)
 
-  READ A <- U ztstrf(k, descA->mt-1)       [type = UPPER_TILE]
-         -> descA(k, k)                   [type = UPPER_TILE]
+  READ A <- U ztstrf(k, descA->mt-1)       [type_remote = UPPER_TILE]
+         -> descA(k, k)                   [type = UPPER_TILE type_data = UPPER_TILE]
 
 BODY
 {
@@ -161,20 +161,20 @@ ztstrf(k, m)
   /* Locality */
   : descA(m, k)
 
-  RW    U  <- (m == (k+1))        ? A zgetrf(m-1)   : U ztstrf(k, m-1)    [type = UPPER_TILE]
-           -> (m == (descA->mt-1)) ? A ztstrf_out(k) : U ztstrf(k, m+1)    [type = UPPER_TILE]
+  RW    U  <- (m == (k+1))        ? A zgetrf(m-1)   : U ztstrf(k, m-1)     [type_remote = UPPER_TILE]
+           -> (m == (descA->mt-1)) ? A ztstrf_out(k) : U ztstrf(k, m+1)    [type_remote = UPPER_TILE]
 
   RW    B  <- (k == 0) ? descA(m, k) :  C zssssm(k-1, m, k)
            -> (k < (descA->nt-1)) ? A zssssm(k, m, (k+1)..(descA->nt-1))
            -> descA(m, k)
 
-  RW    L  <- descL(m, k)                                                 [type = SMALL_L]
-           -> descL(m, k)                                                 [type = SMALL_L]
-           -> (k < (descA->nt-1)) ? L  zssssm(k, m, (k+1)..(descA->nt-1))   [type = SMALL_L]
+  RW    L  <- descL(m, k)                                               /*[type = SMALL_L type_data = SMALL_L]*/
+           -> descL(m, k)                                                 [type = SMALL_L type_data = SMALL_L]
+           -> (k < (descA->nt-1)) ? L  zssssm(k, m, (k+1)..(descA->nt-1)) [type_remote = SMALL_L]
 
-  RW    IP <- dataIP(m, k)                                                [type = PIVOT]
-           -> dataIP(m, k)                                                [type = PIVOT]
-           -> (k < (descA->nt-1)) ? IP zssssm(k, m, (k+1)..(descA->nt-1))   [type = PIVOT]
+  RW    IP <- dataIP(m, k)                                              /*[type = PIVOT type_data = PIVOT]*/
+           -> dataIP(m, k)                                                [type = PIVOT type_data = PIVOT]
+           -> (k < (descA->nt-1)) ? IP zssssm(k, m, (k+1)..(descA->nt-1)) [type_remote = PIVOT]
 
   /* Priority */
   ; (descA->mt-k)*(descA->mt-k)*(descA->mt-k)
@@ -251,8 +251,8 @@ zssssm(k, m, n)
           -> ((n == (k+1)) & (m >  (k+1))) ? B ztstrf(n, m)      /* Next Column */
           -> ((n >  (k+1)) & (m >  (k+1))) ? C zssssm(k+1, m, n) /* Trailing submatrix */
 
-  READ  L  <- L ztstrf( k, m )                                   [type = SMALL_L]
-  READ  IP <- IP ztstrf(k, m )                                   [type = PIVOT]
+  READ  L  <- L ztstrf( k, m )                                   [type_remote = SMALL_L]
+  READ  IP <- IP ztstrf(k, m )                                   [type_remote = PIVOT]
 
   /* Priority */
   ; (descA->mt-k)*(descA->mt-n)*(descA->mt-n)
