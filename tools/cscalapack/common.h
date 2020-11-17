@@ -9,10 +9,19 @@
 #define _SCALAPACK_COMMON_H_
 
 #include "../../src/flops.h"
+#include "myscalapack.h"
 
 #ifdef DPLASMA_WRAPPER_ON
+
+#ifdef SCALAPACK_SUP_UNDERSCORE
+    #define parsec_init_wrapper_ parsec_init_wrapper
+    #define parsec_fini_wrapper_ parsec_fini_wrapper
+#endif
+
     extern void parsec_init_wrapper_();
     extern void parsec_fini_wrapper_();
+    extern void parsec_wrapper_devices_release_memory_(void);
+    extern void parsec_wrapper_devices_reset_load_(void);
 #endif
 
 static int i0=0, i1=1;
@@ -34,11 +43,8 @@ typedef enum {
     PARAM_SEED,
     PARAM_VALIDATE,
     PARAM_NRHS,
-    PARAM_EXTRA_ROWS,
     PARAM_NRUNS,
     PARAM_THREAD_MT,
-    PARAM_WAIT,
-    PARAM_OFFSET,
     PARAMS_SIZE
 } params_enum_t;
 

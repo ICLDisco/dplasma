@@ -107,7 +107,6 @@ void print_usage(void)
             " -y --butlvl       : Level of the Butterfly (starting from 0).\n"
             "\n"
             " --nruns            : Number of times to run the kernel.\n"
-            " --offset           : Offset of the matrix default 0.\n"
             "\n"
             " -v --verbose      : extra verbose output\n"
             " -h --help         : this message\n"
@@ -249,7 +248,6 @@ static struct option long_options[] =
     {"h",           no_argument,        0, 'h'},
 
     {"nruns",       required_argument,  0, '3'},
-    {"offset",      required_argument,  0, '4'},
 
     {0, 0, 0, 0}
 };
@@ -270,7 +268,6 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     iparam[IPARAM_RANDOM_SEED] = 3872;
     iparam[IPARAM_MATRIX_INIT] = dplasmaMatrixRandom;
     iparam[IPARAM_NRUNS] = 1;
-    iparam[IPARAM_OFFSET] = 0;
 
     do {
 #if defined(PARSEC_HAVE_GETOPT_LONG)
@@ -286,7 +283,6 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
         {
             case 'c': iparam[IPARAM_NCORES] = atoi(optarg); break;
             case '3': iparam[IPARAM_NRUNS] = atoi(optarg); break;
-            case '4': iparam[IPARAM_OFFSET] = atoi(optarg); break;
             case 'm': iparam[IPARAM_THREAD_MT] = 1; break;
             case 'o':
                 if( !strcmp(optarg, "LFQ") )
@@ -435,7 +431,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
             *_argv = tmp;
         }
     }
-
+    
     /* Set matrices dimensions to default values if not provided */
     /* Search for N as a bare number if not provided by -N */
     if(0 == iparam[IPARAM_N] && optind < argc) {
@@ -659,68 +655,19 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 
     TIME_START();
 
-    parsec_context_t* ctx = NULL;
-
-    char *dev_avail = getenv("PARSEC_WRAPPER_GPUS");
-    int ndev_avail=-1;
-    if(dev_avail!=NULL){
-        ndev_avail = atoi(dev_avail);
-
-        int rank,size;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-        int step = 8/size;
-        int cuda_mask = 1 << (rank*step);
-
-        int parsec_argc = 9;
-        int nargs = parsec_argc+1;
-        char** parsec_argv = (char**)calloc(nargs, sizeof(char*));
-        int i ;
-        for(i=0; i<parsec_argc; i++){
-            parsec_argv[i] = (char*)malloc(sizeof(char)*80);
-        }
-
-        char *home = getenv("HOME");
-
-        sprintf(parsec_argv[0], "wrapper");
-        sprintf(parsec_argv[1], "--parsec_bind");
-        sprintf(parsec_argv[2], "file:%s/binding_test_%dp",home,size);
-        sprintf(parsec_argv[3], "--mca");
-        sprintf(parsec_argv[4], "device_cuda_mask");
-        sprintf(parsec_argv[5], "0x%x",cuda_mask);
-        sprintf(parsec_argv[6], "--mca");
-        sprintf(parsec_argv[7], "device_cuda_enabled");
-        sprintf(parsec_argv[8], "%d",ndev_avail);
-        parsec_argv[parsec_argc]=NULL;
-
-        printf ("PARSEC rank %d args -- %s %s %s %s %s %s (%d) %s %s %s\n",
-                rank, parsec_argv[0], parsec_argv[1], parsec_argv[2], parsec_argv[3],
-                      parsec_argv[4], parsec_argv[5], cuda_mask,
-                      parsec_argv[6], parsec_argv[7], parsec_argv[8]);
-        ctx = parsec_init(iparam[IPARAM_NCORES],
-                          &parsec_argc, &parsec_argv);
-
-        for(i=0; i<parsec_argc; i++){
-            free(parsec_argv[i]);
-        }
-        free(parsec_argv);
-    }else{
-        /* Once we got out arguments, we should pass whatever is left down */
-        int parsec_argc, idx;
-        char** parsec_argv = (char**)calloc(argc, sizeof(char*));
-        parsec_argv[0] = argv[0];  /* the app name */
-        for( idx = parsec_argc = 1;
-             (idx < argc) && (0 != strcmp(argv[idx], "--")); idx++);
-        if( idx != argc ) {
-            for( parsec_argc = 1, idx++; idx < argc;
-                 parsec_argv[parsec_argc] = argv[idx], parsec_argc++, idx++);
-        }
-        ctx = parsec_init(iparam[IPARAM_NCORES],
-                          &parsec_argc, &parsec_argv);
-        free(parsec_argv);
+    /* Once we got out arguments, we should pass whatever is left down */
+    int parsec_argc, idx;
+    char** parsec_argv = (char**)calloc(argc, sizeof(char*));
+    parsec_argv[0] = argv[0];  /* the app name */
+    for( idx = parsec_argc = 1;
+         (idx < argc) && (0 != strcmp(argv[idx], "--")); idx++);
+    if( idx != argc ) {
+        for( parsec_argc = 1, idx++; idx < argc;
+             parsec_argv[parsec_argc] = argv[idx], parsec_argc++, idx++);
     }
-
+    parsec_context_t* ctx = parsec_init(iparam[IPARAM_NCORES],
+                                      &parsec_argc, &parsec_argv);
+    free(parsec_argv);
     if( NULL == ctx ) {
         /* Failed to correctly initialize. In a correct scenario report
          * upstream, but in this particular case bail out.

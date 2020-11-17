@@ -19,6 +19,7 @@ int main( int argc, char **argv ) {
     int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
+    int number_runs;
     int m, n, k, mb, nb, s, mloc, nloc, verif, iseed;
     double *A=NULL, *B=NULL, *C=NULL; int descA[9], descB[9], descC[9];
     double resid = NAN;
@@ -35,7 +36,7 @@ int main( int argc, char **argv ) {
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
     verif = params[PARAM_VALIDATE];
-    int number_runs = params[PARAM_NRUNS];
+    number_runs = params[PARAM_NRUNS];
 
     int Aseed = 3872;
     int Bseed = 4674;
@@ -218,8 +219,6 @@ int main( int argc, char **argv ) {
               pgflops = gflops/(((double)nprow)*((double)npcol));
           }
 
-
-  #ifdef DPLASMA_WRAPPER_ON
           if( 0 == iam ) {
               printf("[****] TIMEHL(s) %12.5f : dgemm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
                     " - ENQ&PROG&DEST %12.5f : %14f gflops"
@@ -230,18 +229,9 @@ int main( int argc, char **argv ) {
                             gflops,
                             0.0,0.0);
           }
+
+  #ifdef DPLASMA_WRAPPER_ON
           parsec_wrapper_devices_reset_load_();
-  #else
-          if( 0 == iam ) {
-              printf("[****] TIME(s) %12.5f : dgemm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
-                    " - ENQ&PROG&DEST %12.5f : %14f gflops"
-                    " - ENQ %12.5f - DEST %12.5f\n",
-                            telapsed, nprow, npcol, nb, n,
-                            gflops,
-                            telapsed,
-                            gflops,
-                            0.0,0.0);
-          }
   #endif
 
       }

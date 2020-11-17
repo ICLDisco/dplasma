@@ -11,130 +11,194 @@
 #include "types.h"
 #include "utils/dplasma_lapack_adtt.h"
 
-static inline
-void SET_UP_ARENA_DTT(parsec_tiled_matrix_dc_t * desc,
-                      parsec_datatype_t parsec_type,
-                      int uplo, int diag,
-                      parsec_arena_datatype_t *adt,
-                      unsigned int rows, unsigned int cols, unsigned int ld,
-                      int location, int shape, int layout, char* name)
-{
-  (void)name;
-  DPLASMA_GET_OR_CONSTRUCT(adt, parsec_type,
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           uplo, diag,
-                           rows, cols, ld,
-                           -1/* resized = -1 for all dplasma types */);
-  dplasma_set_datatype_info(desc, *adt, ld, rows, cols, location, shape, layout);
-  char dtt_name[MPI_MAX_OBJECT_NAME]="NULL";
-  int len;
-  if((adt->opaque_dtt != NULL) && (adt->opaque_dtt != PARSEC_DATATYPE_NULL))MPI_Type_get_name(adt->opaque_dtt, dtt_name, &len);
-  PARSEC_DEBUG_VERBOSE(27, parsec_debug_output, "%d SETUP ADT dtt %p %30s [%s]", getpid(), adt->opaque_dtt, dtt_name, name);
-}
-
-
-/* NOTE: we are operating over the following condition:
+/* Support for TILED/LAPACK matrix with non homogeneous datatypes across tiles.
+ * NOTE: we are operating with the following condition:
  * For a given datacollection, if we reuse the datatype for one shape on different
  * locations, then other shapes will also be reusing a datatype for those locations.
+ * The same happens betweenn layouts.
  *
- * We are enabling lookup by two keys:
- *    shape + loc        --> parsec_datatype_t*
- *          This is fine, the application request shape & locations
- *    parsec_datatype_t* --> lda, loc, shape, adt
- *          This is set once by *dtt for the first location and shape it is used
+ * E.g.:
+ *    if LAPACK ( DFULL_T | DC00 | DTOP) --> dtt1
+ *    then TILE ( DFULL_T | DC00 | DTOP) --> dtt2  & dtt2 is a correct equivalence to dtt1
  *
- * Therefore when translating a dtt to a different shape: we will first get the current
- * shape & location, and then obtain the target shape on that location.
+ * As adtt_info stores key(dtt) -> first info that was set up, when translating that dtt
+ * to the equivalent on a different shape/layout, we reuse the info location.
  *
- * For the usage we are going to give here, this is sufficient.
- * !!!
-  * Otherwise do everything by location, no passing DTT to JDF_C_CODE
-  + would that be enough?
+ * This is sufficient for LAPACK/TILED support.
  *
  */
+
+/* Obtain number of elements rows in tile in matrix tile row m. */
+static inline int dplasma_get_rows(const parsec_tiled_matrix_dc_t *dM, int m)
+{
+  int nrows = dM->mb;
+  if(m == 0)     nrows =   ((dM->i % dM->mb) !=0          ? (dM->mb - (dM->i % dM->mb)) : dM->mb);
+  if(m == dM->m) nrows =  (((dM->i + dM->m) % dM->mb) !=0 ? ((dM->i + dM->m) % dM->mb)  : dM->mb);
+  return (nrows > dM->m) ? dM->m : nrows;
+}
+
+/* Obtain number of elements cols in tile in matrix tile col n. */
+static inline int dplasma_get_cols(const parsec_tiled_matrix_dc_t *dM, int n)
+{
+  int ncols = dM->nb;
+  if(n == 0)     ncols =  ((dM->j % dM->nb) !=0          ? (dM->nb - (dM->j % dM->nb)) : dM->nb);
+  if(n == dM->n) ncols = (((dM->j + dM->n) % dM->nb) !=0 ? ((dM->j + dM->n) % dM->nb)  : dM->nb);
+  return (ncols > dM->n) ? dM->n : ncols;
+}
+
+/**
+ * Setup info for the datatype if we can reuse it, obtain arena and datatype and setup info.
+ */
 static inline
-void SET_UP_ARENA_DATATYPES(dplasma_data_collection_t * ddc, parsec_datatype_t parsec_type,
+void dplasma_setup_adtt_loc(dplasma_data_collection_t * ddc,
+                            parsec_datatype_t parsec_type,
                             int uplo, int diag,
-                            parsec_arena_datatype_t *default_adt, int *shape)
+                            int rows, int cols, int ld,
+                            int loc, int shape, int layout,
+                            parsec_arena_datatype_t *adt_default,
+                            int full_rows, int full_cols)
+{
+    lapack_info_t info;
+    parsec_arena_datatype_t adt;
+
+    info.lda = ld;
+    info.rows = rows;
+    info.cols = cols;
+    info.loc = loc;
+    info.shape = shape;
+    info.layout = layout;
+
+    if ( (adt_default != NULL) && (full_rows == rows) && (full_cols == cols) ){
+        /* Reuse external datatype */
+        /* Reuse arena through dplasma reuse, otherwise we don't know how to release
+         * during destruct.
+         */
+        PARSEC_OBJ_RETAIN(adt_default->arena);
+        dplasma_set_datatype_info(ddc, *adt_default, info);
+    }else{
+        /* Reuse dplasma arena & datatype */
+        dplasma_get_or_construct_adt(&adt, parsec_type,
+                                     PARSEC_ARENA_ALIGNMENT_SSE,
+                                     uplo, diag,
+                                     rows, cols, ld,
+                                     -1/* resized = -1 for all dplasma types */);
+        dplasma_set_datatype_info(ddc, adt, info);
+    }
+}
+
+/**
+ * Setup parsec_arena_datatype_t for all locations for TILED/LAPACK matrix for a shape.
+ * Shape represents an extraction (e.g. rectangle, lower triangle, upper triangle)
+ * for a GIVEN DATACOLLECTION:
+ * - on lapack different matrix can have different shapes (e.g. != LDA)
+ * - always different extractions of data imply different shapes (UPPER, LOWER, etc).
+ * Workarround to deal with external datatype provided on the data collection.
+ * Assuming datatype from the data collection corresponds with the extraction of a full
+ * tile (no upper, lower) and forcing its reusage on that case by checking if uplo & diag.
+ * The other datatypes created by this call use the dplama reuse of datatypes.
+ */
+static inline
+void dplasma_setup_adtt_all_loc(dplasma_data_collection_t * ddc, parsec_datatype_t parsec_type,
+                                int uplo, int diag, int *shape)
 {
     parsec_tiled_matrix_dc_t * desc = ddc->dc_original;
+    parsec_arena_datatype_t *adt_default = NULL;
+    parsec_arena_datatype_t adt;
 
-    int top    = GET_ROWS(desc, 0);
-    int bottom = GET_ROWS(desc, desc->m);
-    int left   = GET_COLS(desc, 0);
-    int right  = GET_COLS(desc, desc->n);
+    int top    = dplasma_get_rows(desc, 0);
+    int bottom = dplasma_get_rows(desc, desc->m);
+    int left   = dplasma_get_cols(desc, 0);
+    int right  = dplasma_get_cols(desc, desc->n);
     int ld     = (desc->storage == matrix_Lapack ) ? desc->llm : desc->mb;
 
-    int full_rows = GET_ROWS(desc, 1); //desc->mb > desc->m ? desc->m : desc->mb;
-    int full_cols = GET_COLS(desc, 1); //desc->nb > desc->n ? desc->n : desc->nb;
-  PARSEC_DEBUG_VERBOSE(23, parsec_debug_output,
-    "SET_UP_ARENA_DATATYPES top %d bottom %d left %d right %d ld %d full %d x %d",
-    top, bottom, left, right, ld, full_rows, full_cols);
+    int full_rows = desc->mb;
+    int full_cols = desc->nb;
+
+    if( uplo == matrix_UpperLower ){
+        /* Generating datatypes for full tiles. No other extraction of data.
+         * Reuse data collection dtt.
+         */
+        ptrdiff_t lb = 0;
+        ptrdiff_t extent;
+        adt.opaque_dtt = ((parsec_data_collection_t *)desc)->default_dtt;
+        parsec_type_extent(adt.opaque_dtt, &lb, &extent);
+        dplasma_get_or_construct_arena(&adt.arena, extent, PARSEC_ARENA_ALIGNMENT_SSE);
+        adt_default = &adt;
+    }
+
 
     if( desc->storage != matrix_Lapack ){ /*TILED DESC*/
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DC00,    (*shape), LAPACK, "ADT_C00_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DC0N,    (*shape), LAPACK, "ADT_C0N_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DCM0,    (*shape), LAPACK, "ADT_CM0_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DCMN,    (*shape), LAPACK, "ADT_CMN_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DTOP,    (*shape), LAPACK, "ADT_TOP_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DBOTTOM, (*shape), LAPACK, "ADT_BOTTOM_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DLEFT,   (*shape), LAPACK, "ADT_LEFT_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DRIGHT,  (*shape), LAPACK, "ADT_RIGHT_ARENA");
-
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DFULL_T, (*shape), TILED, "ADT_TILE_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DC00,    (*shape), TILED, "ADT_TILE_C00_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DC0N,    (*shape), TILED, "ADT_TILE_C0N_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DCM0,    (*shape), TILED, "ADT_TILE_CM0_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DCMN,    (*shape), TILED, "ADT_TILE_CMN_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DTOP,    (*shape), TILED, "ADT_TILE_TOP_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DBOTTOM, (*shape), TILED, "ADT_TILE_BOTTOM_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DLEFT,   (*shape), TILED, "ADT_TILE_LEFT_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, desc->mb, desc->nb, ld,       DRIGHT,  (*shape), TILED, "ADT_TILE_RIGHT_ARENA");
-
+        /* on tile format, data collection dtt is the entire MBxNB even if that memory is not logically on the matrix.
+         * force usage of the data collection dtt.
+         */
+        /* Try to reuse adt_default when not scalapack storage */
+        for(int loc = 0; loc < LOC_SZ; loc++){
+            dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, desc->mb, desc->nb, ld, loc, (*shape), TILED,  adt_default, full_rows, full_cols);
+            dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, desc->mb, desc->nb, ld, loc, (*shape), LAPACK, adt_default, full_rows, full_cols);
+        }
     } else { /*LAPACK DESC*/
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       left,      ld,       DC00,    (*shape), LAPACK, "ADT_C00_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       right,     ld,       DC0N,    (*shape), LAPACK, "ADT_C0N_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    left,      ld,       DCM0,    (*shape), LAPACK, "ADT_CM0_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    right,     ld,       DCMN,    (*shape), LAPACK, "ADT_CMN_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       full_cols, ld,       DTOP,    (*shape), LAPACK, "ADT_TOP_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    full_cols, ld,       DBOTTOM, (*shape), LAPACK, "ADT_BOTTOM_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, left,      ld,       DLEFT,   (*shape), LAPACK, "ADT_LEFT_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, right,     ld,       DRIGHT,  (*shape), LAPACK, "ADT_RIGHT_ARENA");
+        /* on lapack format, dtt is the may never be MBxNB (if not enough rows).
+         */
 
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, full_cols, full_rows, DFULL_T, (*shape), TILED, "ADT_TILE_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       left,      top,       DC00,    (*shape), TILED, "ADT_TILE_C00_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       right,     top,       DC0N,    (*shape), TILED, "ADT_TILE_C0N_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    left,      bottom,    DCM0,    (*shape), TILED, "ADT_TILE_CM0_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    right,     bottom,    DCMN,    (*shape), TILED, "ADT_TILE_CMN_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, top,       full_cols, top,       DTOP,    (*shape), TILED, "ADT_TILE_TOP_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, bottom,    full_cols, bottom,    DBOTTOM, (*shape), TILED, "ADT_TILE_BOTTOM_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, left,      full_rows, DLEFT,   (*shape), TILED, "ADT_TILE_LEFT_ARENA");
-        SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, right,     full_rows, DRIGHT,  (*shape), TILED, "ADT_TILE_RIGHT_ARENA");
+        int full_rows = dplasma_get_rows(desc, 1);
+        int full_cols = dplasma_get_cols(desc, 1);
+
+        /* Try to reuse adt_default for LAPACK layout */
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, full_cols, ld,       DFULL_T,  (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       left,      ld,       DC00,     (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       right,     ld,       DC0N,     (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    left,      ld,       DCM0,     (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    right,     ld,       DCMN,     (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       full_cols, ld,       DTOP,     (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    full_cols, ld,       DBOTTOM,  (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, left,      ld,       DLEFT,    (*shape), LAPACK, adt_default, full_rows, full_cols);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, right,     ld,       DRIGHT,   (*shape), LAPACK, adt_default, full_rows, full_cols);
+
+        /* Always create adt for TILED layout on scalapack storage */
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, full_cols, full_rows, DFULL_T, (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       left,      top,       DC00,    (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       right,     top,       DC0N,    (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    left,      bottom,    DCM0,    (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    right,     bottom,    DCMN,    (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, top,       full_cols, top,       DTOP,    (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, bottom,    full_cols, bottom,    DBOTTOM, (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, left,      full_rows, DLEFT,   (*shape), TILED, NULL, -1, -1);
+        dplasma_setup_adtt_loc(ddc, parsec_type, uplo, diag, full_rows, right,     full_rows, DRIGHT,  (*shape), TILED, NULL, -1, -1);
     }
-    /* keep the default type on default_adt */
-    SET_UP_ARENA_DTT(desc, parsec_type, uplo, diag, default_adt, full_rows, full_cols, ld, DFULL_T, (*shape), LAPACK, "ADT_DEFAULT_ARENA");
+
+    PARSEC_DEBUG_VERBOSE(22, parsec_debug_output,
+    "dplasma_setup_adtt_all_loc top %d bottom %d left %d right %d ld %d full %d x %d",
+    top, bottom, left, right, ld, full_rows, full_cols);
+
     (*shape)++;
 }
 
+
+/**
+ * Clean up parsec_arena_datatype_t for all locations for TILED/LAPACK matrix.
+ * generates base tile types depending on uplo/diag values
+ */
 static inline
-void CLEAN_UP_ARENA_DATATYPES(const dplasma_data_collection_t * ddc, int max_shape)
+void dplasma_clean_adtt_all_loc(const dplasma_data_collection_t * ddc, int max_shape)
 {
-  (void)ddc;
-  /* attempt all different shapes for the ddc */
-  parsec_arena_datatype_t adt;
-  for(int shape = 0; shape < max_shape; shape++){
-    for(int layout = 0; layout < MAX_LAYOUT; layout++){
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DFULL_T, shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DC00,    shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DC0N,    shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DCM0,    shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DCMN,    shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DTOP,    shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DBOTTOM, shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DLEFT,   shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
-      if( dplasma_cleanup_datatype_info(ddc->dc_original, DRIGHT,  shape, layout, &adt) == 0) dplasma_matrix_del2arena( &adt);
+    /* attempt all different shapes for the ddc */
+    parsec_arena_datatype_t adt;
+    lapack_info_t info;
+    for(int shape = 0; shape < max_shape; shape++){
+        for(int layout = 0; layout < MAX_LAYOUT; layout++){
+            for(int loc = 0; loc < LOC_SZ; loc++){
+                info.loc = loc;
+                info.shape = shape;
+                info.layout = layout;
+                if ( dplasma_cleanup_datatype_info(ddc, info, &adt) == 0){
+                    /* Retained when reusing it, not set on JDF array, not release by taskpool destructor */
+                    PARSEC_OBJ_RELEASE(adt.arena);
+                    dplasma_matrix_del2arena( &adt);
+                }
+            }
+        }
     }
-  }
+
 }
 
 #endif  /* DPLASMA_LAPACK_DATATYPE_H_HAS_BEEN_INCLUDED */

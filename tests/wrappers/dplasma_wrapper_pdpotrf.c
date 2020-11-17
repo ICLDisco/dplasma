@@ -142,6 +142,7 @@ void pdpotrf_w(char * UPLO,
 #ifdef COUNT_WRAPPED_CALLS
     count_PDPOTRF++;
 #endif
+
     *info=0;
     if(*N == 0){
       /* NOP */
@@ -152,12 +153,13 @@ void pdpotrf_w(char * UPLO,
     int KQ = 1;
 
     PASTE_SETUP(A);
+
 #ifdef WRAPPER_VERBOSE_CALLS
     if(rank_A == 0){
       printf("V-PDPOTRF N%d "
-                              "IA%d JA%d A%p MBA%d NBA%d %c \n",
-                              *N,
-                              *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_], *UPLO);
+             "IA%d JA%d A%p MBA%d NBA%d %c \n",
+             *N,
+             *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_], *UPLO);
     }
 #endif
 
@@ -171,70 +173,57 @@ void pdpotrf_w(char * UPLO,
     parsec_init_wrapped_call((void*)comm_A);
 
     dplasma_enum_t uplo_parsec = OP_UPLO(*UPLO);
-    int Am = *N;
-    int An = *N;
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcA_lapack, two_dim_block_cyclic, A,
-                                  (&dcA_lapack, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   MB_A, NB_A,
-                                   gM_A, gN_A,
-                                   cIA, cJA,
-                                   *N, *N,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   nloc_A, LDD_A));
+
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                      rank_A,
+                                      MB_A, NB_A,
+                                      gM_A, gN_A,
+                                      cIA, cJA,
+                                      *N, *N,
+                                      P_A, Q_A,
+                                      KP, KQ,
+                                      iP_A, jQ_A,
+                                      LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
 #ifdef CHECK_RESULTS
     int check=1;
     int loud=5;
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_RealDouble, matrix_Tile,
-                                   nodes_A, rank_A, MB_A, NB_A, *N, *N, 0, 0,
-                                   *N, *N,
-                                   KP, KQ,
-                                   0, 0,
-                                   P_A));
+                               rank_A, MB_A, NB_A, *N, *N, 0, 0,
+                               *N, *N,
+                               P_A, Q_A,
+                               KP, KQ,
+                               0, 0));
 
     if( check ) {
         dcopy_lapack_tile(parsec_ctx, &dcA_lapack, &dcA0, mloc_A, nloc_A);
     }
 #endif
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, uplo_parsec, "dcA", *dcA, P_A, Q_A);
-#endif
+    PRINT(parsec_ctx, comm_A, uplo_parsec, "dcA", (&dcA_lapack));
+
+    int redisA = 0;
+    if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
+    assert(redisA == 0); /* not aligned offsets are not supported for POTRF */
+
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
 
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DPOTRF, ((DagDouble_t)*N));
 #endif
 
-    int redisA = 0;
-    if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
-    assert(redisA == 0); /* not aligned offsets are not supported for POTRF */
-    PASTE_CODE_REDIS_INPUT(A, parsec_ctx, redisA, comm_A, DEFAULT_REDIS);
-
-    INI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dpotrf,
+    WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dpotrf,
                               (uplo_parsec, (parsec_tiled_matrix_dc_t*)dcA, info),
                               dplasma_dpotrf_Destruct( PARSEC_dpotrf ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
-#ifndef DO_BLOCKING_REDISTRIBUTION
-    parsec_data_collection_set_owner((parsec_data_collection_t *)dcA, PARSEC_dpotrf);
-#endif
-    PASTE_CODE_REDIS_OUTPUT_INI(A, parsec_ctx, redisA, comm_A, DEFAULT_REDIS);
+    dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 1, comm_A, rank_A, "redisA");
 
-    FINI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dpotrf,
-                              (uplo_parsec, (parsec_tiled_matrix_dc_t*)dcA, info),
-                              dplasma_dpotrf_Destruct( PARSEC_dpotrf ),
-                              rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
-
-    PASTE_CODE_REDIS_OUTPUT_FINI(A, parsec_ctx, redisA, comm_A, DEFAULT_REDIS);
-    PASTE_CODE_CLEANUP_REDIS(A, parsec_ctx, redisA, comm_A);
-
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, uplo_parsec, "dcA", *dcA, P_A, Q_A);
-#endif
+    PRINT(parsec_ctx, comm_A, uplo_parsec, "dcA", dcA);
 
     if( 0 == rank_A && *info != 0 ) {
       printf("-- Factorization is suspicious (info = %d) ! \n", *info);
@@ -243,14 +232,13 @@ void pdpotrf_w(char * UPLO,
 #ifdef CHECK_RESULTS
     if( check ) {
         /* Check the factorization */
-
         PASTE_CODE_ALLOCATE_MATRIX(dcA_out, check,
             two_dim_block_cyclic, (&dcA_out, matrix_RealDouble, matrix_Tile,
-                                       nodes_A, rank_A, MB_A, NB_A, *N, *N, 0, 0,
-                                       *N, *N,
-                                       KP, KQ,
-                                       0, 0,
-                                       P_A));
+                                   rank_A, MB_A, NB_A, *N, *N, 0, 0,
+                                   *N, *N,
+                                   P_A, Q_A,
+                                   KP, KQ,
+                                   0, 0));
         dcopy_lapack_tile(parsec_ctx, dcA, &dcA_out, mloc_A, nloc_A);
 
         int ret = 0;
@@ -265,14 +253,14 @@ void pdpotrf_w(char * UPLO,
         /* Check the solution */
         PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
             two_dim_block_cyclic, (&dcB, matrix_RealDouble, matrix_Tile,
-                                   nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                   *N, NRHS, KP, KQ, 0, 0, P_A));
+                                   rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                                   *N, NRHS, P_A, Q_A, KP, KQ, 0, 0));
         dplasma_dplrnt( parsec_ctx, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
             two_dim_block_cyclic, (&dcX, matrix_RealDouble, matrix_Tile,
-                                   nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                   *N, NRHS, KP, KQ, 0, 0, P_A));
+                                   rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                                   *N, NRHS, P_A, Q_A, KP, KQ, 0, 0));
         dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 
@@ -301,7 +289,7 @@ void pdpotrf_w(char * UPLO,
 }
 
 GENERATE_F77_BINDINGS (PDPOTRF,
-                       pdpotrf_,
+                       pdpotrf,
                        pdpotrf_,
                        pdpotrf__,
                        pdpotrf_w,

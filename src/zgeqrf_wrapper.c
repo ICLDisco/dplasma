@@ -147,29 +147,27 @@ dplasma_zgeqrf_New( parsec_tiled_matrix_dc_t *A,
     parsec_private_memory_init( tp->_g_p_work, ib * T->nb * sizeof(dplasma_complex64_t) );
 
 
-    parsec_arena_datatype_t default_adt;
     int shape = 0;
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
 
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_Lower/*uplo*/, 0/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_Lower/*uplo*/, 0/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_Upper/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_Upper/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    SET_UP_ARENA_DATATYPES( ddc_T,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
-
+    dplasma_setup_adtt_all_loc( ddc_T,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
     assert(shape == MAX_SHAPES);
 
@@ -200,8 +198,8 @@ void
 dplasma_zgeqrf_Destruct( parsec_taskpool_t *tp)
 {
     parsec_zgeqrf_taskpool_t *parsec_zgeqrf = (parsec_zgeqrf_taskpool_t *)tp;
-    CLEAN_UP_ARENA_DATATYPES(parsec_zgeqrf->_g_ddescA, MAX_SHAPES);
-    CLEAN_UP_ARENA_DATATYPES(parsec_zgeqrf->_g_ddescT, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(parsec_zgeqrf->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(parsec_zgeqrf->_g_ddescT, MAX_SHAPES);
 
     dplasma_data_collection_t * ddc_A = parsec_zgeqrf->_g_ddescA;
     dplasma_data_collection_t * ddc_T = parsec_zgeqrf->_g_ddescT;

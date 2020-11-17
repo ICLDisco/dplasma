@@ -48,7 +48,7 @@ zgetrf_nopiv(k) [flops = inline_c%{ return FLOPS_ZGETRF(CLEAN_MB(descA, k), CLEA
   k = 0 .. KT
 
 /* Track the origin of the datacopy */
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
+loc_A = %{ return LOC(descA, k, k); %}
 
   /* Locality */
   : descA(k,k)
@@ -89,9 +89,9 @@ ztrsm_l(k, m) [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_MB(descA
   m = (k+1) .. (descA->mt-1)
 
 /* Track the origin of the datacopy */
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
+loc_A = %{ return LOC(descA, k, k); %}
 /* Track the origin of the datacopy */
-loc_B = %{ return LOC_TYPE(descA, m, k); %}
+loc_B = %{ return LOC(descA, m, k); %}
 
   /* Locality */
   : descA(m, k)
@@ -131,9 +131,9 @@ ztrsm_u(k, n) [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(descA,
   n = (k+1) .. (descA->nt-1)
 
 /* Track the origin of the datacopy */
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
+loc_A = %{ return LOC(descA, k, k); %}
 /* Track the origin of the datacopy */
-loc_B = %{ return LOC_TYPE(descA, k, n); %}
+loc_B = %{ return LOC(descA, k, n); %}
 
   /* Locality */
   : descA(k,n)
@@ -173,11 +173,11 @@ zgemm(k, m, n) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), CLEAN_
   n = (k+1) .. (descA->nt-1)
 
 /* Track the origin of the datacopy */
-loc_A = %{ return LOC_TYPE(descA, m, k); %}
+loc_A = %{ return LOC(descA, m, k); %}
 /* Track the origin of the datacopy */
-loc_B = %{ return LOC_TYPE(descA, k, n); %}
+loc_B = %{ return LOC(descA, k, n); %}
 /* Track the origin of the datacopy */
-loc_C = %{ return LOC_TYPE(descA, m, n); %}
+loc_C = %{ return LOC(descA, m, n); %}
 
   /* Locality */
   : descA(m, n)
@@ -201,7 +201,7 @@ BODY [type=CUDA
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
-      A.dc=descA B.dc=descA C.dc=descA
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
       stage_in=stage_in_lapack
       stage_out=stage_out_lapack]
 {

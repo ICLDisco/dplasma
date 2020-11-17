@@ -67,7 +67,7 @@ option(BUILD_SHARED_LIBS
 
 option(SUPPORT_FORTRAN
        "Enable support for Fortran bindings (default ON)" ON)
-# In CMake 3.12, enable_language OPTIONAL has no effect and will still 
+# In CMake 3.12, enable_language OPTIONAL has no effect and will still
 # enable the language for a compiler that does not work/is not present
 # causing all sort of problems downstream. For now use CheckLanguage before.
 include(CheckLanguage)
@@ -211,7 +211,7 @@ endif( APPLE )
 # Find or Build PaRSEC package
 option(DPLASMA_FORCE_INTERNAL_PARSEC "Force using the internal PaRSEC submodule" OFF)
 if(NOT DPLASMA_FORCE_INTERNAL_PARSEC AND EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
-    # We were not instructed to ignore external PaRSEC during the fist configuration, but we did 
+    # We were not instructed to ignore external PaRSEC during the fist configuration, but we did
     # use the submodule in the past. Keep doing so now, except if a PaRSEC_ROOT has been supplied
     # explicit, in which case we will be noisy about this being unusual.
     if(PaRSEC_ROOT)
@@ -289,6 +289,13 @@ ENDIF( BUILD_TESTING )
 Add_Subdirectory(examples)
 Add_Subdirectory(docs)
 
+
+if(DPLASMA_SCALAPACK_WRAPPER)
+  # Generate ScaLAPACK wrappers provided by DPLASMA
+  add_subdirectory(tests/wrappers)
+endif(DPLASMA_SCALAPACK_WRAPPER)
+
+
 # Configuration header
 configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/src/include/dplasma/config.h.in"
@@ -309,7 +316,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(cmake_modules/dplasma-config.cmake.in
   ${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma
-  PATH_VARS 
+  PATH_VARS
     CMAKE_INSTALL_INCLUDEDIR
     CMAKE_INSTALL_DATADIR
     CMAKE_INSTALL_LIBDIR

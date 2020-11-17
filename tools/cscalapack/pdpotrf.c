@@ -16,17 +16,16 @@
 
 static double check_solution( int params[], double *Allt );
 
-char TYPE[10]="U";
-//char TYPE[10]="U";
+#define TYPE "U"
 
 int main( int argc, char **argv ) {
     int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
+    int number_runs;
     int m, n, nb, s, mloc, nloc, verif, iseed;
     int descA[9];
     double *A = NULL;
-    double *X = NULL;
     double resid, telapsed, gflops, pgflops;
 
     setup_params( params, argc, argv );
@@ -38,7 +37,7 @@ int main( int argc, char **argv ) {
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
     verif = params[PARAM_VALIDATE];
-    int number_runs = params[PARAM_NRUNS];
+    number_runs = params[PARAM_NRUNS];
 
 #ifdef DPLASMA_WRAPPER_ON
     parsec_init_wrapper_();
@@ -50,8 +49,7 @@ int main( int argc, char **argv ) {
     descinit_( descA, &m, &n, &nb, &nb, &i0, &i0, &ictxt, &mloc, &info );
     assert( 0 == info );
 
-    size_t sz_loc = sizeof(double)*((size_t)mloc)*((size_t)nloc);
-    A = malloc( sz_loc );
+    A = malloc( sizeof(double)*mloc*nloc );
 
     int t;
     for(t = 0; t < number_runs; t++) {
@@ -63,24 +61,14 @@ int main( int argc, char **argv ) {
                mloc,
                iseed );
 
-#ifdef VERBOSE
-        char name[10]="A";
-        double * pwork = malloc( sizeof(double)*mloc*nloc);
-        int nout=6;
-        pdlaprnt_(&m, &n, A, &i1, &i1, descA, &i0, &i0, name, &nout, pwork);
-#endif
-
 #ifdef DPLASMA_WRAPPER_ON
         parsec_wrapper_devices_release_memory_();
 #endif
 
         double t1, t2;
         t1 = MPI_Wtime();
-
         pdpotrf_( TYPE, &n, A, &i1, &i1, descA, &info );
-
         assert( 0 == info );
-
         t2 = MPI_Wtime();
         telapsed = t2-t1;
         if( 0 != iam ) {
@@ -92,7 +80,6 @@ int main( int argc, char **argv ) {
             pgflops = gflops/(((double)nprow)*((double)npcol));
         }
 
-#ifdef DPLASMA_WRAPPER_ON
         if( 0 == iam ) {
             printf("[****] TIMEHL(s) %12.5f : dpotrf \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
                   " - ENQ&PROG&DEST %12.5f : %14f gflops"
@@ -103,21 +90,9 @@ int main( int argc, char **argv ) {
                           gflops,
                           0.0,0.0);
         }
+#ifdef DPLASMA_WRAPPER_ON
         parsec_wrapper_devices_reset_load_();
-#else
-        if( 0 == iam ) {
-            printf("[****] TIME(s) %12.5f : dpotrf \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
-                  " - ENQ&PROG&DEST %12.5f : %14f gflops"
-                  " - ENQ %12.5f - DEST %12.5f\n",
-                          telapsed, nprow, npcol, nb, n,
-                          gflops,
-                          telapsed,
-                          gflops,
-                          0.0,0.0);
-        }
 #endif
-
-
     }
 
     if ( verif ) {
@@ -125,11 +100,11 @@ int main( int argc, char **argv ) {
     } else {
         resid = -1;
     }
-
-#ifdef VERBOSE
-    pdlaprnt_(&m, &n, A, &i1, &i1, descA, &i0, &i0, name, &nout, pwork);
-#endif
-
+    if( 0 == iam ) {
+        printf( "### PDPOTRF ###\n"
+                "#%4sx%-4s %7s %7s %4s %4s # %10s \n", "P", "Q", "M", "N", "NB", "NRHS", "resid");
+        printf( " %4d %-4d %7d %7d %4d %4d   %10.3e \n", nprow, npcol, m, n, nb, s, resid );
+    }
 #ifdef DPLASMA_WRAPPER_ON
     parsec_fini_wrapper_();
 #endif

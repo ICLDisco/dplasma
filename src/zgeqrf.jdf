@@ -44,7 +44,7 @@ extern "C" %{
  * the number of tile conversions performed, it is critical to
  * determined the correct location on the matrix where the tile was
  * originated from.
- * Note that the LOC_TYPE parameters do not correspond to the binding of the
+ * Note that the LOC parameters do not correspond to the binding of the
  * task to the matrix (although sometimes they match). These parameters
  * correspond to the location were the datacopy was originate on the matrix (maybe
  * it was read on another task).
@@ -73,7 +73,7 @@ zgeqrt_typechange(k)  [profile = off]
   /* Execution space */
   k = 0 .. %{ return dplasma_imin((descA->nt-1),(descA->mt-1)); %}
 
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
+loc_A = %{ return LOC(descA, k, k); %}
 
   : descA(k,k)
 
@@ -95,8 +95,8 @@ zgeqrt(k)
   /* Execution space */
   k = 0 .. %{ return dplasma_imin((descA->nt-1),(descA->mt-1)); %}
 
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
-loc_T = %{ return LOC_TYPE(descT, k, k); %}
+loc_A = %{ return LOC(descA, k, k); %}
+loc_T = %{ return LOC(descT, k, k); %}
 
   SIMCOST 4
 
@@ -197,9 +197,9 @@ zunmqr(k,n)
   k = 0   .. %{ return dplasma_imin((descA->nt-2),(descA->mt-1)); %}
   n = k+1 .. descA->nt-1
 
-loc_A = %{ return LOC_TYPE(descA, k, k); %}
-loc_T = %{ return LOC_TYPE(descT, k, k); %}
-loc_C = %{ return LOC_TYPE(descA, k, n); %}
+loc_A = %{ return LOC(descA, k, k); %}
+loc_T = %{ return LOC(descT, k, k); %}
+loc_C = %{ return LOC(descA, k, n); %}
 
   SIMCOST 6
 
@@ -292,7 +292,7 @@ END
 ztsqrt_out_Ak(k) [profile = off]
   k = 0..( (descA->mt <= descA->nt) ? descA->mt-2 : descA->nt-1 )
 
-loc_A1 = %{ return LOC_TYPE(descA, k, k); %}
+loc_A1 = %{ return LOC(descA, k, k); %}
 
   : descA(k, k)
 
@@ -314,9 +314,9 @@ ztsqrt(k,m)
   k = 0   .. %{ return dplasma_imin((descA->nt-1),(descA->mt-2)); %}
   m = k+1 .. descA->mt-1
 
-loc_A1 = %{ return LOC_TYPE(descA, k, k); %}
-loc_A2 = %{ return LOC_TYPE(descA, m, k); %}
-loc_T  = %{ return LOC_TYPE(descT, m, k); %}
+loc_A1 = %{ return LOC(descA, k, k); %}
+loc_A2 = %{ return LOC(descA, m, k); %}
+loc_T  = %{ return LOC(descT, m, k); %}
 
   SIMCOST 6
 
@@ -422,7 +422,7 @@ ztsmqr_out_A1(k, n) [profile = off]
   k = 0   .. %{ return dplasma_imin((descA->nt-2),(descA->mt-2)); %}
   n = k+1 .. descA->nt-1
 
-loc_A1 = %{ return LOC_TYPE(descA, k, n); %}
+loc_A1 = %{ return LOC(descA, k, n); %}
 
   : descA(k, n)
 
@@ -445,10 +445,10 @@ ztsmqr(k,m,n)
   m = (k+1) .. (descA->mt-1)
   n = (k+1) .. (descA->nt-1)
 
-loc_A1 = %{ return LOC_TYPE(descA, k, n); %}
-loc_A2 = %{ return LOC_TYPE(descA, m, n); %}
-loc_V  = %{ return LOC_TYPE(descA, m, k); %}
-loc_T  = %{ return LOC_TYPE(descT, m, k); %}
+loc_A1 = %{ return LOC(descA, k, n); %}
+loc_A2 = %{ return LOC(descA, m, n); %}
+loc_V  = %{ return LOC(descA, m, k); %}
+loc_T  = %{ return LOC(descT, m, k); %}
 
   SIMCOST 12
 
@@ -476,7 +476,7 @@ BODY [type=CUDA device=%{ return n; %}
       A2.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       V.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       T.size=%{ return descT->mb*descT->nb*parsec_datadist_getsizeoftype(descT->mtype);%}
-      A1.dc=descA A2.dc=descA V.dc=descA T.dc=descT
+      A1.dc=ddescA A2.dc=ddescA V.dc=ddescA T.dc=ddescT
       stage_in=stage_in_lapack
       stage_out=stage_out_lapack]
 {

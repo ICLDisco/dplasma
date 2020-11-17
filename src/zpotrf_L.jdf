@@ -40,7 +40,7 @@ extern "C" %{
  * the number of tile conversions performed, it is critical to
  * determined the correct location on the matrix where the tile was
  * originated from.
- * Note that the LOC_TYPE parameters do not correspond to the binding of the
+ * Note that the LOC parameters do not correspond to the binding of the
  * task to the matrix (although sometimes they match). These parameters
  * correspond to the location were the datacopy was originate on the matrix (maybe
  * it was read on another task).
@@ -85,7 +85,7 @@ potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLE
 // Execution space
 k = 0 .. descA->mt-1
 
-loc_T = %{ return LOC_TYPE(descA, k, k); %}
+loc_T = %{ return LOC(descA, k, k); %}
 
 // Parallel partitioning
 :descA(k, k)
@@ -155,8 +155,8 @@ potrf_ztrsm(m, k) [high_priority = on flops = inline_c %{ return FLOPS_ZTRSM(Pla
 m = 1 .. descA->mt-1
 k = 0 .. m-1
 
-loc_T = %{ return LOC_TYPE(descA, k, k); %}
-loc_C = %{ return LOC_TYPE(descA, m, k); %}
+loc_T = %{ return LOC(descA, k, k); %}
+loc_C = %{ return LOC(descA, m, k); %}
 
 // Parallel partitioning
 : descA(m, k)
@@ -242,8 +242,8 @@ potrf_zherk(k, m) [high_priority = on flops = inline_c %{ return FLOPS_ZHERK(CLE
 k = 0   .. descA->mt-2
 m = k+1 .. descA->mt-1
 
-loc_A = %{ return LOC_TYPE(descA, m, k); %}
-loc_T = %{ return LOC_TYPE(descA, m, m); %}
+loc_A = %{ return LOC(descA, m, k); %}
+loc_T = %{ return LOC(descA, m, m); %}
 
 // Parallel partitioning
 : descA(m, m)
@@ -321,9 +321,9 @@ k = 0   .. descA->mt-3
 m = k+2 .. descA->mt-1
 n = k+1 .. m-1
 
-loc_A = %{ return LOC_TYPE(descA, m, k); %}
-loc_B = %{ return LOC_TYPE(descA, n, k); %}
-loc_C = %{ return LOC_TYPE(descA, m, n); %}
+loc_A = %{ return LOC(descA, m, k); %}
+loc_B = %{ return LOC(descA, n, k); %}
+loc_C = %{ return LOC(descA, m, n); %}
 
 // Parallel partitioning
 : descA(m, n)
@@ -344,7 +344,7 @@ BODY [type=CUDA
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
-      A.dc=descA B.dc=descA C.dc=descA
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
       stage_in=stage_in_lapack
       stage_out=stage_out_lapack]
 {

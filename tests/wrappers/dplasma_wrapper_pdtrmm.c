@@ -221,7 +221,6 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
       return;
     }
 
-    int i0=0;
     int KP = 1;
     int KQ = 1;
 
@@ -235,19 +234,19 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
 
 #ifdef WRAPPER_VERBOSE_CALLS
     if(rank_A == 0){
-      PARSEC_DEBUG_VERBOSE(0, parsec_debug_output,  "PDTRMM M%d N%d "
-                              "IA%d JA%d A%p MBA%d NBA%d "
-                              "IB%d JB%d B%p MBB%d NBB%d %c%c%c%c ",
-                              *M, *N,
-                              *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
-                              *IB, *JB, B, DESCB[WRAPPER_MB1_], DESCB[WRAPPER_NB1_],
-                              *SIDE, *UPLO, *TRANS, *DIAG);
+        printf("V-PDTRMM M%d N%d "
+               "IA%d JA%d A%p MBA%d NBA%d "
+               "IB%d JB%d B%p MBB%d NBB%d %c%c%c%c \n",
+               *M, *N,
+               *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
+               *IB, *JB, B, DESCB[WRAPPER_MB1_], DESCB[WRAPPER_NB1_],
+               *SIDE, *UPLO, *TRANS, *DIAG);
     }
 #endif
 
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  " M%d N%d IA%d JA%d (ictxt)DESCA[WRAPPER_CTXT1_] %d, "
           "(gM)DESCA[WRAPPER_M1_] %d, (gN)DESCA[WRAPPER_N1_] %d, (MB)DESCA[WRAPPER_MB1_] %d, (NB)DESCA[WRAPPER_NB1_] %d, "
-          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LDD)DESCA[WRAPPER_LLD1_] %d "
+          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LLD)DESCA[WRAPPER_LLD1_] %d "
           "SIDE %c, UPLO %c, TRANS %c, DIAG %c mloc_A %d nloc_A %d\n",
           *M, *N, *IA, *JA, DESCA[WRAPPER_CTXT1_],
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
@@ -255,7 +254,7 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
           *SIDE, *UPLO, *TRANS, *DIAG, mloc_A, nloc_A);
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  " M%d N%d IB%d JB%d (ictxt)DESCB[WRAPPER_CTXT1_] %d, "
           "(gM)DESCB[WRAPPER_M1_] %d, (gN)DESCB[WRAPPER_N1_] %d, (MB)DESCB[WRAPPER_MB1_] %d, (NB)DESCB[WRAPPER_NB1_] %d, "
-          "DESCB[WRAPPER_RSRC1_] %d, DESCB[WRAPPER_CSRC1_] %d, (LDD)DESCB[WRAPPER_LLD1_] %d "
+          "DESCB[WRAPPER_RSRC1_] %d, DESCB[WRAPPER_CSRC1_] %d, (LLD)DESCB[WRAPPER_LLD1_] %d "
           "SIDE %c, UPLO %c, TRANS %c, DIAG %c mloc_B %d nloc_B %d\n",
           *M, *N, *IB, *JB, DESCB[WRAPPER_CTXT1_],
           DESCB[WRAPPER_M1_], DESCB[WRAPPER_N1_], DESCB[WRAPPER_MB1_], DESCB[WRAPPER_NB1_],
@@ -266,8 +265,6 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
     parsec_init_wrapped_call((void*)comm_A);
 
     int Am, An, Bm, Bn;
-    int Am_loc, An_loc, Bm_loc, Bn_loc;
-    int AGm, AGn, BGm, BGn;
 
     if ( side == dplasmaLeft ) {
         Am = *M; An = *M;
@@ -280,73 +277,68 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
         "A-%c %dx%d TRMM B %dx%d",
         *TRANS, Am, An, Bm, Bn);
 
-    // Am_loc = mloc_A/*LDD_A*/; An_loc = nloc_A;
-    // Bm_loc = mloc_B/*LDD_B*/; Bn_loc = nloc_B;
-    Am_loc = LDD_A; An_loc = nloc_A;
-    Bm_loc = LDD_B; Bn_loc = nloc_B;
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_A, NB_A,
+                                     gM_A, gN_A,
+                                     cIA, cJA,
+                                     Am, An,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
-    AGm = gM_A; AGn = gN_A;
-    BGm = gM_B; BGn = gN_B;
+    two_dim_block_cyclic_t dcB_lapack;
+    two_dim_block_cyclic_lapack_init(&dcB_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_B,
+                                     MB_B, NB_B,
+                                     gM_B, gN_B,
+                                     cIB, cJB,
+                                     Bm, Bn,
+                                     P_B, Q_B,
+                                     KP, KQ,
+                                     iP_B, jQ_B,
+                                     LLD_B, nloc_B);
+    dcB_lapack.mat = B;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcB_lapack, "dcB_lapack");
 
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcA_lapack, two_dim_block_cyclic, A,
-                                  (&dcA_lapack, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   MB_A, NB_A,
-                                   AGm, AGn,
-                                   cIA, cJA,
-                                   Am, An,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   An_loc, Am_loc));
-
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcB_lapack, two_dim_block_cyclic, B,
-                                  (&dcB_lapack, matrix_RealDouble, matrix_Lapack,
-                                   nodes_B, rank_B,
-                                   MB_B, NB_B,
-                                   BGm, BGn,
-                                   cIB, cJB,
-                                   Bm, Bn,
-                                   KP, KQ,
-                                   iP_B, jQ_B,
-                                   P_B,
-                                   Bn_loc, Bm_loc));
-
-#ifdef WRAPPER_VERBOSE
-    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", *dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", *dcB, P_B, Q_B);
-#endif
+    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", (&dcA_lapack));
+    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", (&dcB_lapack));
 
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DTRMM, (side, (DagDouble_t)*M, (DagDouble_t)*N))
 #endif
-    int P = P_A;
-    int Q = Q_A;
-    int gN = gN_A;
-    int NB = NB_A;
 
-
-    // int redisA = 1, redisB = 1;
     /* Redistribute if:
-     * - Unaligned offsets with blocks
-     * TODO check for tile compatibility and redistribute better
+     * - Unaligned offsets with blocks.
+     * - Different block sizes.
      */
     int redisA = 0, redisB = 0;
-    if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
-    if( (cIB % MB_B != 0) || ( cJB % NB_B != 0)) redisB = 1;
+    /* Non aligned offsets? */
+    redisA = ( (cIA % MB_A != 0) || ( cJA % NB_A != 0) );
+    redisB = ( (cIB % MB_B != 0) || ( cJB % NB_B != 0) );
 
-    if( (MB_A != MB_B)
-        ||(NB_A != NB_B)) {
-      /* redistribute all, there are internal calls with different block sizes */
-        redisA = 1;
-        redisB = 1;
-        MB_A = MB_B = NB_A = NB_B = REDIS_BLOCKSZ;
+    /* Different block sizes? */
+    if( (MB_A != MB_B) || (NB_A != NB_B) ) {
+        /* redistribute all, different internal block sizes */
+        redisA = redisB = 1;
     }
 
-    PASTE_CODE_REDIS_INPUT(A, parsec_ctx, redisA, comm_A, BLOCKING_REDIS);
-    PASTE_CODE_REDIS_INPUT(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS); /*We can't force BLOCKING and then set owners once datacopies created*/
+    /* If redistributing one matrix, redistribute all
+     * TODO optimization: check for tile compatibility and avoid redistributions?
+     */
+    if( redisA || redisB ) {
+        /* redistribute all, different internal block sizes */
+        redisA = redisB = 1;
+    }
 
-    INI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrmm,
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
+    two_dim_block_cyclic_t *dcB = redistribute_lapack_input(&dcB_lapack, redisB, comm_B, rank_B, "redisB");
+
+    WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrmm,
                               ( side, uplo,
                                 trans, diag,
                                 *ALPHA,
@@ -355,70 +347,51 @@ void pdtrmm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
                               dplasma_dtrmm_Destruct( PARSEC_dtrmm ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
-#ifndef DO_BLOCKING_REDISTRIBUTION
-#ifdef ALL_REDIS_NONBLOCKING
-    parsec_data_collection_set_owner((parsec_data_collection_t *)dcA, PARSEC_dtrmm);
-#endif
-    parsec_data_collection_set_owner((parsec_data_collection_t *)dcB, PARSEC_dtrmm);
-#endif
-    PASTE_CODE_REDIS_OUTPUT_INI(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS);
+    dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 0, comm_A, rank_A, "redisA");
+    dcB = redistribute_lapack_output_cleanup(&dcB_lapack, dcB, 1, comm_B, rank_B, "redisB");
 
-    FINI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrmm,
-                              ( side, uplo,
-                                trans, diag,
-                                *ALPHA,
-                               (parsec_tiled_matrix_dc_t *)dcA,
-                               (parsec_tiled_matrix_dc_t *)dcB ),
-                              dplasma_dtrmm_Destruct( PARSEC_dtrmm ),
-                              rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
-
-    PASTE_CODE_CLEANUP_REDIS(A, parsec_ctx, redisA, comm_A);
-    PASTE_CODE_REDIS_OUTPUT_FINI(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS);
-    PASTE_CODE_CLEANUP_REDIS(B, parsec_ctx, redisB, comm_B);
-
-#ifdef WRAPPER_VERBOSE
-    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", *dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", *dcB, P_B, Q_B);
-#endif
+    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA);
+    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", dcB);
 
 #ifdef CHECK_RESULTS
-    {
-      int check=1;
-      int loud=5;
-      int rank;
-      MPI_Comm_rank(comm_A, &rank);
-      /* Only our checking */
-      int Aseed = 3872;
-      int Bseed = 2873;
+    /* Initialization routines used in dplasma not avail on tools/cscalapack*/
+    // {
+    //   int check=1;
+    //   int loud=5;
+    //   int rank;
+    //   MPI_Comm_rank(comm_A, &rank);
+    //   /* Only our checking */
+    //   int Aseed = 3872;
+    //   int Bseed = 2873;
 
-      /* Check the factorization */
-      PASTE_CODE_ALLOCATE_MATRIX(dcB_out, check,
-          two_dim_block_cyclic, (&dcB_out, matrix_RealDouble, matrix_Tile,
-                  nodes_B, rank_B, MB_B, NB_B, BGm, BGn, 0, 0,
-                  Bm, Bn, KP, KQ, 0, 0, P_B));
-      dcopy_lapack_tile(parsec_ctx, dcB, &dcB_out, mloc_B, nloc_B);
+    //   /* Check the factorization */
+    //   PASTE_CODE_ALLOCATE_MATRIX(dcB_out, check, two_dim_block_cyclic,
+    //                              (&dcB_out, matrix_RealDouble, matrix_Tile,
+    //                               rank_B, MB_B, NB_B, gM_B, gN_B, 0, 0,
+    //                               Bm, Bn, P_B, Q_B, KP, KQ, 0, 0));
+    //   dcopy_lapack_tile(parsec_ctx, dcB, &dcB_out, mloc_B, nloc_B);
 
-      int info_solution = check_solution(parsec_ctx, rank == 0 ? loud : 0,
-                                         side, uplo, trans, diag,
-                                         *ALPHA, Am, An, Aseed,
-                                                 *M, *N, Bseed,
-                                         &dcB_out);
+    //   int info_solution = check_solution(parsec_ctx, rank == 0 ? loud : 0,
+    //                                      side, uplo, trans, diag,
+    //                                      *ALPHA, Am, An, Aseed,
+    //                                              *M, *N, Bseed,
+    //                                      &dcB_out);
 
-      if ( rank == 0 ) {
-          if (info_solution == 0) {
-              printf(" ---- TESTING ZTRMM (%c, %c, %c, %c) ...... PASSED !\n",
-                     *SIDE, *UPLO, *TRANS, *DIAG);
-          }
-          else {
-              printf(" ---- TESTING ZTRMM (%c, %c, %c, %c) ... FAILED !\n",
-                     *SIDE, *UPLO, *TRANS, *DIAG);
-          }
-          printf("***************************************************\n");
-      }
-      /* Cleanup */
-      parsec_data_free(dcB_out.mat);
-      parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcB_out);
-    }
+    //   if ( rank == 0 ) {
+    //       if (info_solution == 0) {
+    //           printf(" ---- TESTING ZTRMM (%c, %c, %c, %c) ...... PASSED !\n",
+    //                  *SIDE, *UPLO, *TRANS, *DIAG);
+    //       }
+    //       else {
+    //           printf(" ---- TESTING ZTRMM (%c, %c, %c, %c) ... FAILED !\n",
+    //                  *SIDE, *UPLO, *TRANS, *DIAG);
+    //       }
+    //       printf("***************************************************\n");
+    //   }
+    //   /* Cleanup */
+    //   parsec_data_free(dcB_out.mat);
+    //   parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcB_out);
+    // }
 #endif
 
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
@@ -447,12 +420,12 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_RealDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDA, An, 0, 0,
-                               Am, An, 1, 1, 0, 0, 1));
+                               rank, MB, NB, LDA, An, 0, 0,
+                               Am, An, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_RealDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, 1, 1, 0, 0, 1));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, 1, 1, 1, 1, 0, 0));
 
     dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );

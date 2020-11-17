@@ -145,12 +145,11 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     if(0 == parsec_zpotrf->_g_PRI_CHANGE)
       parsec_zpotrf->_g_PRI_CHANGE = A->nt;
 
-    parsec_arena_datatype_t default_adt;
     int shape = 0;
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
     assert(shape == MAX_SHAPES);
     return tp;
@@ -180,7 +179,7 @@ void
 dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = (parsec_zpotrf_L_taskpool_t *)tp;
-    CLEAN_UP_ARENA_DATATYPES(parsec_zpotrf->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(parsec_zpotrf->_g_ddescA, MAX_SHAPES);
     dplasma_data_collection_t * ddc_A = parsec_zpotrf->_g_ddescA;
     parsec_taskpool_free(tp);
     /* free the dplasma_data_collection_t */

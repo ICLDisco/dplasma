@@ -12,8 +12,6 @@
 #include <mpi.h>
 #include <math.h>
 #include "common.h"
-#include "myscalapack.h"
-#include <unistd.h>
 
 void setup_params( int params[], int argc, char* argv[] )
 {
@@ -29,11 +27,8 @@ void setup_params( int params[], int argc, char* argv[] )
     params[PARAM_SEED]      = 3872;
     params[PARAM_VALIDATE]  = 0;
     params[PARAM_NRHS]      = 1;
-    params[PARAM_EXTRA_ROWS]= 0;
     params[PARAM_NRUNS]     = 1;
     params[PARAM_THREAD_MT] = 0;
-    params[PARAM_WAIT] = 0;
-    params[PARAM_OFFSET] = 1;
 
     for( i = 1; i < argc; i++ ) {
         if( strcmp( argv[i], "-P" ) == 0 ) {
@@ -90,23 +85,9 @@ void setup_params( int params[], int argc, char* argv[] )
             i++;
             continue;
         }
-        if( strcmp( argv[i], "-extra_rows" ) == 0 ) {
-            params[PARAM_EXTRA_ROWS] = atoi(argv[i+1]);
-            i++;
-            continue;
-        }
         if( strcmp( argv[i], "-nruns" ) == 0 ) {
             params[PARAM_NRUNS] = atoi(argv[i+1]);
             i++;
-            continue;
-        }
-        if( strcmp( argv[i], "-offset" ) == 0 ) {
-            params[PARAM_OFFSET] = atoi(argv[i+1]);
-            i++;
-            continue;
-        }
-        if( strcmp( argv[i], "-w" ) == 0 ) {
-            params[PARAM_WAIT] = 1;
             continue;
         }
         if( strcmp( argv[i], "-seed" ) == 0 ) {
@@ -122,17 +103,10 @@ void setup_params( int params[], int argc, char* argv[] )
                          "#     -t         : block size (NB)\n"
                          "#     -s | -NRHS : number of right hand sides for backward error computation (NRHS)\n"
                          "#     -x         : enable verification\n"
-                         "#     -extra_rows: allocated rows below the submatrix to work on\n"
                          "#     -nruns     : number of times to run the kernel\n"
                          "#     -seed      : change the seed\n"
-                         "#     -m         : initialize MPI_THREAD_MULTIPLE (default: no)\n"
-                         "#     -offset   : offset start matrix (default: 1)\n"
-                         "#     -w         : sleep 10 seconds (default: no)\n", argv[0] );
+                         "#     -m         : initialize MPI_THREAD_MULTIPLE (default: no)\n", argv[0] );
         Cblacs_abort( ictxt, i );
-    }
-
-    if(params[PARAM_WAIT]){
-        sleep(10);
     }
 
     int requested = params[PARAM_THREAD_MT]? MPI_THREAD_MULTIPLE: MPI_THREAD_SERIALIZED;
@@ -143,19 +117,21 @@ void setup_params( int params[], int argc, char* argv[] )
         exit(2);
     }
 
-    fprintf(stderr, "Level of thread provided is %s\n",
-        provided == MPI_THREAD_MULTIPLE   ? "MPI_THREAD_MULTIPLE" :
-        provided == MPI_THREAD_SERIALIZED ? "MPI_THREAD_SERIALIZED" :
-        provided == MPI_THREAD_FUNNELED   ? "MPI_THREAD_FUNNELED" :
-        provided == MPI_THREAD_SINGLE     ? "MPI_THREAD_SINGLE" : "UNKNOWN" );
-
     Cblacs_pinfo( &iam, &nprocs );
     Cblacs_get( -1, 0, &ictxt );
 
+    if( 0 == iam ){
+        printf("Level of thread provided is %s\n",
+            provided == MPI_THREAD_MULTIPLE   ? "MPI_THREAD_MULTIPLE" :
+            provided == MPI_THREAD_SERIALIZED ? "MPI_THREAD_SERIALIZED" :
+            provided == MPI_THREAD_FUNNELED   ? "MPI_THREAD_FUNNELED" :
+            provided == MPI_THREAD_SINGLE     ? "MPI_THREAD_SINGLE" : "UNKNOWN" );
+    }
+
     /* Validity checks etc. */
-// NURIA: comment out this, changing tile dimension not correct for wrapped version
-//    if( params[PARAM_NB] > params[PARAM_N] )
-//        params[PARAM_NB] = params[PARAM_N];
+    /* Enable runs with tiles larger than matrix dimmension */
+    /* if( params[PARAM_NB] > params[PARAM_N] )*/
+    /*     params[PARAM_NB] = params[PARAM_N];*/
     if( 0 == params[PARAM_M] )
         params[PARAM_M] = params[PARAM_N];
     if( p*q > nprocs ) {
@@ -167,7 +143,7 @@ void setup_params( int params[], int argc, char* argv[] )
     if( params[PARAM_VALIDATE] && (params[PARAM_M] != params[PARAM_N]) ) {
         if( 0 == iam )
             fprintf( stderr, "### WARNING: Unable to validate on a non-square matrix. Canceling validation.\n" );
-        //params[PARAM_VALIDATE] = 0;
+        params[PARAM_VALIDATE] = 0;
     }
     Cblacs_gridinit( &ictxt, "Row", p, q );
     params[PARAM_BLACS_CTX] = ictxt;

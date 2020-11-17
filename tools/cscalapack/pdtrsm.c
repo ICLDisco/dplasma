@@ -21,7 +21,6 @@ int main( int argc, char **argv ) {
     int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
-    int number_runs;
     int m, n, mb, nb, s, mloc, nloc, verif, iseed;
     double *A=NULL, *B=NULL; int descA[9], descB[9];
     double resid = NAN;
@@ -37,7 +36,7 @@ int main( int argc, char **argv ) {
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
     verif = params[PARAM_VALIDATE];
-    number_runs = params[PARAM_NRUNS];
+    int number_runs = params[PARAM_NRUNS];
 
     int Aseed = 3872;
     int Bseed = 2873;
@@ -55,21 +54,26 @@ int main( int argc, char **argv ) {
       int Am, An, Ai, Aj, Amb, Anb;
       int Bm, Bn, Bi, Bj, Bmb, Bnb;
 
-      char side  = 'L';
-      char uplo  = 'L';
+      char side  = 'R';
+      char uplo  = 'U';
       char trans = 'N';
-      char diag  = 'U';
+      char diag  = 'N';
+
+      // char side  = 'L';
+      // char uplo  = 'L';
+      // char trans = 'N';
+      // char diag  = 'U';
 
       // char side  = 'L';
       // char uplo  = 'U';
       // char trans = 'N';
       // char diag  = 'N';
 
-      printf("TRMM side %c uplo %c trans %c diag %c \n", side, uplo, trans, diag);
+      printf("TRSM side %c uplo %c trans %c diag %c \n", side, uplo, trans, diag);
       if ( side == 'L' ) {
           Am = m; An = m;
       } else {
-          Am = m; An = n;
+          Am = n; An = n;
       }
       Bm = m; Bn = n;
       Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
@@ -113,9 +117,9 @@ int main( int argc, char **argv ) {
           double t1, t2;
           t1 = MPI_Wtime();
 
-          pdtrmm_(&side, &uplo, &trans, &diag,
-                  &m, &n, &alpha,
-                  A, &i1, &i1, descA,
+          pdtrsm_(&side, &uplo, &trans, &diag,
+                   &m, &n, &alpha,
+                   A, &i1, &i1, descA,
                   B, &i1, &i1, descB);
 
           t2 = MPI_Wtime();
@@ -125,12 +129,12 @@ int main( int argc, char **argv ) {
           }
           else {
               MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-              gflops = FLOPS_DTRMM((side=='L'? dplasmaLeft : dplasmaRight), (double)m, (double)n)/1e+9/telapsed;
+              gflops = FLOPS_DTRSM((side=='L'? dplasmaLeft : dplasmaRight), (double)m, (double)n)/1e+9/telapsed;
               pgflops = gflops/(((double)nprow)*((double)npcol));
           }
 
           if( 0 == iam ) {
-              printf("[****] TIMEHL(s) %12.5f : dtrmm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+              printf("[****] TIMEHL(s) %12.5f : dtrsm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
                     " - ENQ&PROG&DEST %12.5f : %14f gflops"
                     " - ENQ %12.5f - DEST %12.5f\n",
                             telapsed, nprow, npcol, nb, n,

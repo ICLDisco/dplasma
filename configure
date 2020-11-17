@@ -61,6 +61,9 @@ cat <<EOF
                 s: float, d: double, c: single complex, z: double complex
                 (default, enable all)
 
+--enable-scalapack-wrapper
+                Build the ScaLAPACK wrapper provided by DPLASMA
+
 ############################################################################
   The following options control the PaRSEC submodule and have no effect
   when using an external PaRSEC package (e.g., --with-parsec=DIR) and using
@@ -212,6 +215,9 @@ while [ "x$1" != x ]; do
         --with-external-parsec) with_parsec=yes; shift;;
         --without-external-parsec) with_parsec=no; shift;;
         --without-parsec) with_parsec=no; shift;;
+
+# DPLAMA's ScaLAPACK wrapper
+        --enable-scalapack-wrapper) enable_scalapack=yes; shift;;
 
 ##########################################################
 # Options common with submodule PaRSEC
@@ -494,6 +500,11 @@ xyes) CMAKE_DEFINES+=" -DPaRSEC_ROOT=NOTFOUND";;
 xno) CMAKE_DEFINES+=" -DDPLASMA_FORCE_INTERNAL_PARSEC=ON"; echo >&2 "Forcing DPLASMA to use the internal submodule PaRSEC.";;
 x) ;;
 *) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
+esac
+
+case x$enable_scalapack in
+xyes) CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=ON";;
+*) CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=OFF";;
 esac
 
 ##########################################################

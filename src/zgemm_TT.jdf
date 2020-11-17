@@ -39,7 +39,7 @@ extern "C" %{
  * the number of tile conversions performed, it is critical to
  * determined the correct location on the matrix where the tile was
  * originated from.
- * Note that the LOC_TYPE parameters do not correspond to the binding of the
+ * Note that the LOC parameters do not correspond to the binding of the
  * task to the matrix (although sometimes they match). These parameters
  * correspond to the location were the datacopy was originate on the matrix (maybe
  * it was read on another task).
@@ -90,7 +90,7 @@ READ_A(k, m)  [profile = off]
 k = 0 .. descA->mt-1
 m = 0 .. descA->nt-1
 
-loc_A = %{ return LOC_TYPE(descA, k, m); %}
+loc_A = %{ return LOC(descA, k, m); %}
 
 : descA(k, m)
 
@@ -114,7 +114,7 @@ READ_B(n, k) [profile = off]
 n = 0 .. descB->mt-1
 k = 0 .. descB->nt-1
 
-loc_B = %{ return LOC_TYPE(descB, n, k); %}
+loc_B = %{ return LOC(descB, n, k); %}
 
 : descB(n, k)
 
@@ -140,9 +140,9 @@ m = 0 .. descC->mt-1
 n = 0 .. descC->nt-1
 k = 0 .. descA->mt-1
 
-loc_A = %{ return LOC_TYPE(descA, k, m); %}
-loc_B = %{ return LOC_TYPE(descB, n, k); %}
-loc_C = %{ return LOC_TYPE(descC, m, n); %}
+loc_A = %{ return LOC(descA, k, m); %}
+loc_B = %{ return LOC(descB, n, k); %}
+loc_C = %{ return LOC(descC, m, n); %}
 
 // Parallel partitioning
 : descC(m, n)
@@ -166,7 +166,7 @@ BODY [type=CUDA
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
       C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
-      A.dc=descA B.dc=descB C.dc=descC
+      A.dc=ddescA B.dc=ddescB C.dc=ddescC
       stage_in=stage_in_lapack
       stage_out=stage_out_lapack]
 {

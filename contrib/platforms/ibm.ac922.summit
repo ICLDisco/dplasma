@@ -14,7 +14,7 @@ _EOF
 [ -n "$OLCF_CMAKE_ROOT" ] || module load cmake
 echo -e "Using CMake\tfrom\t$OLCF_CMAKE_ROOT"
 
-# The following unload has to be done externally as it modifies the internal 
+# The following unload has to be done externally as it modifies the internal
 # behavior of mpicc, which cannot be cached by CMake
 #  module unload xalt
 [ -n "$XALT_OLCF" ] && (echo "XALT module detected; this may cause 'ld' to misbehave: perform 'module unload xalt' before invoking configure."; exit 1)
@@ -47,6 +47,9 @@ with_blas=IBMESSL
 with_cuda=$OLCF_CUDA_ROOT
 with_mpi=yes
 with_hwloc=yes # system default works fine
+
+# Build DPLASMA wrapper for ScaLAPACK
+CMAKE_DEFINES+=" -DSCALAPACK_SUP_UNDERSCORE=ON"
 
 # Let's have configure do the rest as usual now
 

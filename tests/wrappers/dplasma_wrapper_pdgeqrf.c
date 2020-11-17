@@ -1,4 +1,11 @@
 #include "common.h"
+  /************************************************************************
+    Version not compliant with scalapack.
+    LAPACK 3.7.0 introduces the LATSQR routine implementing the
+    sequential TSQR (Tall Skinny QR) factorization algorithm which
+    corresponds to the DPLASMA implementation of the QR factorization in the GEQRF
+    Wrapper would need to use CORHR reconstruct the results expected by scalapack (not release).
+  ************************************************************************/
 
 /*
 *  -- ScaLAPACK routine (version 1.7) --
@@ -201,14 +208,23 @@ void pdgeqrf_w(int * M,
 
     PASTE_SETUP(A);
 
+#ifdef WRAPPER_VERBOSE_CALLS
+    if(rank_A == 0){
+      printf("V-PDGEQRF M%d N%d "
+             "IA%d JA%d A%p MBA%d NBA%d \n",
+             *M, *N,
+             *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_]);
+    }
+#endif
+
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  "M%d N%d IA%d JA%d (ictxt)DESCA[WRAPPER_CTXT1_] %d, "
           "(gM)DESCA[WRAPPER_M1_] %d, (gN)DESCA[WRAPPER_N1_] %d, (MB)DESCA[WRAPPER_MB1_] %d, (NB)DESCA[WRAPPER_NB1_] %d, "
-          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LDD)DESCA[WRAPPER_LLD1_] %d\n",
+          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LLD)DESCA[WRAPPER_LLD1_] %d\n",
           *M, *N, *IA, *JA, DESCA[WRAPPER_CTXT1_],
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
           DESCA[WRAPPER_RSRC1_], DESCA[WRAPPER_CSRC1_], DESCA[WRAPPER_LLD1_]);
 
-    //TODO I'm not doing all the check done in scalapack
+    //TODO Not doing all the check done in scalapack
     WORK[0]= (double)(NB_A * ( mloc_A + nloc_A + NB_A ));
     if(*LWORK==-1){
         *info = 0;
@@ -217,17 +233,19 @@ void pdgeqrf_w(int * M,
 
     parsec_init_wrapped_call((void*)comm_A);
 
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
-                                  (&dcA, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   MB_A, NB_A,
-                                   gM_A, gN_A,
-                                   cIA, cJA,
-                                   *M, *N,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   nloc_A, LDD_A));
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_A, NB_A,
+                                     gM_A, gN_A,
+                                     cIA, cJA,
+                                     *M, *N,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
     int IB = 1;
     char *var_IB= getenv("PARSEC_WRAPPER_IB");
@@ -235,35 +253,43 @@ void pdgeqrf_w(int * M,
         IB = atoi(var_IB);
     }
 
-    int MT = dcA.super.lmt;
-    /*# of local row tiles A: mloc != llm because llm is stored not submatrix */
-    int lrowtiles = (mloc_A % MB_A == 0) ? mloc_A/MB_A : (mloc_A / MB_A) + 1;
-    assert( cIA == 0 );/*otherwise previous nrowtiles will incorrect*/
-    assert( cJA == 0 );/*otherwise previous nrowtiles will incorrect*/
-    int LDT = lrowtiles*IB;
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcT, two_dim_block_cyclic, NULL,
-                                  (&dcT, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   IB, NB_A,
-                                   MT*IB, gN_A,
-                                   0, 0,
-                                   MT*IB, *N,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   nloc_A, LDT));
+ /* @param[out] T
+  *          Descriptor of the matrix T distributed exactly as the A matrix. T.mb
+  *          defines the IB parameter of tile QR algorithm. This matrix must be
+  *          of size A.mt * T.mb - by - A.nt * T.nb, with T.nb == A.nb.
+  *          On exit, contains auxiliary information required to compute the Q
+  *          matrix, and/or solve the problem.
+  */
+    int MB_T = IB;
+    int NB_T = NB_A;
+    int MT = dcA_lapack.super.mt;
+    int M_T = MB_T * MT;
+    int N_T = NB_T * dcA_lapack.super.nt;
+    int nloc_T = NB_T * dcA_lapack.super.lnt;
+    int LLD_T = MB_T * dcA_lapack.super.lmt;
 
-    dcT.mat = malloc( (size_t)LDT * (size_t)nloc_A *
-            (size_t)parsec_datadist_getsizeoftype(dcT.super.mtype));
+    two_dim_block_cyclic_t dcT_lapack;
+    two_dim_block_cyclic_lapack_init(&dcT_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_T, NB_T,
+                                     M_T, N_T,
+                                     cIA, cJA,
+                                     M_T, N_T,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_T, nloc_T);
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcT_lapack, "dcT_lapack");
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcT", dcT, P_A, Q_A);
-#endif
+    dcT_lapack.mat = malloc( (size_t)LLD_T * (size_t)nloc_T *
+            (size_t)parsec_datadist_getsizeoftype(dcT_lapack.super.mtype));
+
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", (&dcA_lapack));
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcT", (&dcT_lapack));
 
 #ifdef CHECK_RESULTS
     dplasma_dlaset( parsec_ctx, PlasmaUpperLower,
-            0., 0., (parsec_tiled_matrix_dc_t *)&dcT);
+            0., 0., (parsec_tiled_matrix_dc_t *)&dcT_lapack);
 #endif
 
 #ifdef CHECK_RESULTS
@@ -273,56 +299,58 @@ void pdgeqrf_w(int * M,
     int LDB   = *M;//max(*M, LDB);no in case submatrix
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         two_dim_block_cyclic, (&dcA0, matrix_RealDouble, matrix_Tile,
-                                nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                               *M, *N, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                               *M, *N, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcA_out, check,
         two_dim_block_cyclic, (&dcA_out, matrix_RealDouble, matrix_Tile,
-                                nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                               *M, *N, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                               *M, *N, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcT_out, check,
         two_dim_block_cyclic, (&dcT_out, matrix_RealDouble, matrix_Tile,
-                                nodes_A, rank_A, IB, NB_A, MT*IB, gN_A, 0, 0,
-                                MT*IB, *N, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_T, NB_T, M_T, N_T, 0, 0,
+                               M_T, N_T, P_A, Q_A, KP, KQ, 0, 0));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcQ, check,
         two_dim_block_cyclic, (&dcQ, matrix_RealDouble, matrix_Tile,
-                               nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                               *M, *N, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                               *M, *N, P_A, Q_A, KP, KQ, 0, 0));
 
     /* Check the solution */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_RealDouble, matrix_Tile,
-                               nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                               *M, NRHS, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                               *M, NRHS, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_RealDouble, matrix_Tile,
-                               nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                               *M, NRHS, KP, KQ, 0, 0, P_A));
+                               rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                               *M, NRHS, P_A, Q_A, KP, KQ, 0, 0));
 
     if( check ){
-        dcopy_lapack_tile(parsec_ctx, &dcA, &dcA0, mloc_A, nloc_A);
+        dcopy_lapack_tile(parsec_ctx, &dcA_lapack, &dcA0, mloc_A, nloc_A);
     }
 #endif
+
+    int redisA = 0, redisT = 0;
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
+    two_dim_block_cyclic_t *dcT = redistribute_lapack_input(&dcT_lapack, redisT, comm_A, rank_A, "redisT");
 
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DGEQRF, ((DagDouble_t)*M, (DagDouble_t)*N));
 #endif
 
     WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dgeqrf,
-                              ((parsec_tiled_matrix_dc_t*)&dcA,
-                               (parsec_tiled_matrix_dc_t*)&dcT),
+                              ((parsec_tiled_matrix_dc_t*)dcA,
+                               (parsec_tiled_matrix_dc_t*)dcT),
                               dplasma_dgeqrf_Destruct( PARSEC_dgeqrf ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcT", dcT, P_A, Q_A);
-#endif
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA);
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcT", dcT);
 
 #ifdef CHECK_RESULTS
     if( check ) {
-        dcopy_lapack_tile(parsec_ctx, &dcA, &dcA_out, mloc_A, nloc_A);
-        dcopy_lapack_tile(parsec_ctx, &dcT, &dcT_out, dcT.super.llm, dcT.super.lln);
+        dcopy_lapack_tile(parsec_ctx, dcA, &dcA_out, mloc_A, nloc_A);
+        dcopy_lapack_tile(parsec_ctx, dcT, &dcT_out, dcT->super.llm, dcT->super.lln);
         int loud=5;
         int ret;
         if (*M >= *N) {
@@ -377,9 +405,9 @@ void pdgeqrf_w(int * M,
 
 #endif
 
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_data_free(dcT.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
+    parsec_data_free(dcT->mat);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcT);
 }
 
 
@@ -400,10 +428,10 @@ static int check_orthogonality(parsec_context_t *parsec, int loud, parsec_tiled_
 
     PASTE_CODE_ALLOCATE_MATRIX(Id, 1,
         two_dim_block_cyclic, (&Id, matrix_RealDouble, matrix_Tile,
-                               Q->super.nodes, twodQ->grid.rank,
+                               twodQ->grid.rank,
                                Q->mb, Q->nb, minMN, minMN, 0, 0,
-                               minMN, minMN, twodQ->grid.krows, twodQ->grid.kcols,
-                               twodQ->grid.i, twodQ->grid.j, twodQ->grid.rows));
+                               minMN, minMN,
+                               twodQ->grid.rows, twodQ->grid.cols, twodQ->grid.krows, twodQ->grid.kcols, twodQ->grid.ip, twodQ->grid.jq));
 
     dplasma_dlaset( parsec, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
 
@@ -460,19 +488,19 @@ check_factorization(parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(Residual, 1,
         two_dim_block_cyclic, (&Residual, matrix_RealDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, M, N, 0, 0,
-                               M, N, twodA->grid.krows, twodA->grid.kcols,
-                               twodA->grid.i, twodA->grid.j, twodA->grid.rows));
-    WRAPPER_DUMP_TILE_MATRIX("Residual", Residual, 0, 0, parsec_ctx, "");
+                               M, N,
+                               twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols,
+                               twodA->grid.ip, twodA->grid.jq));
 
     PASTE_CODE_ALLOCATE_MATRIX(R, 1,
         two_dim_block_cyclic, (&R, matrix_RealDouble, matrix_Tile,
-                               A->super.nodes, twodA->grid.rank,
+                               twodA->grid.rank,
                                A->mb, A->nb, N, N, 0, 0,
-                               N, N, twodA->grid.krows, twodA->grid.kcols,
-                               twodA->grid.i, twodA->grid.j, twodA->grid.rows));
-    WRAPPER_DUMP_TILE_MATRIX("R", R, 0, 0, parsec_ctx, "");
+                               N, N,
+                               twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols,
+                               twodA->grid.ip, twodA->grid.jq));
 
     /* Copy the original A in Residual */
     dplasma_dlacpy( parsec, PlasmaUpperLower, Aorig, (parsec_tiled_matrix_dc_t *)&Residual );

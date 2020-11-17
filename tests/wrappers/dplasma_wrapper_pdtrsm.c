@@ -210,7 +210,6 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
     count_PDTRSM++;
 #endif
 
-    int i0=0;
     int KP = 1;
     int KQ = 1;
 
@@ -236,7 +235,7 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
 
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  " M%d N%d IA%d JA%d (ictxt)DESCA[WRAPPER_CTXT1_] %d, "
           "(gM)DESCA[WRAPPER_M1_] %d, (gN)DESCA[WRAPPER_N1_] %d, (MB)DESCA[WRAPPER_MB1_] %d, (NB)DESCA[WRAPPER_NB1_] %d, "
-          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LDD)DESCA[WRAPPER_LLD1_] %d "
+          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LLD)DESCA[WRAPPER_LLD1_] %d "
           "SIDE %c, UPLO %c, TRANS %c, DIAG %c mloc_A %d nloc_A %d\n",
           *M, *N, *IA, *JA, DESCA[WRAPPER_CTXT1_],
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
@@ -244,7 +243,7 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
           *SIDE, *UPLO, *TRANS, *DIAG, mloc_A, nloc_A);
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  " M%d N%d IB%d JB%d (ictxt)DESCB[WRAPPER_CTXT1_] %d, "
           "(gM)DESCB[WRAPPER_M1_] %d, (gN)DESCB[WRAPPER_N1_] %d, (MB)DESCB[WRAPPER_MB1_] %d, (NB)DESCB[WRAPPER_NB1_] %d, "
-          "DESCB[WRAPPER_RSRC1_] %d, DESCB[WRAPPER_CSRC1_] %d, (LDD)DESCB[WRAPPER_LLD1_] %d "
+          "DESCB[WRAPPER_RSRC1_] %d, DESCB[WRAPPER_CSRC1_] %d, (LLD)DESCB[WRAPPER_LLD1_] %d "
           "SIDE %c, UPLO %c, TRANS %c, DIAG %c mloc_B %d nloc_B %d\n",
           *M, *N, *IB, *JB, DESCB[WRAPPER_CTXT1_],
           DESCB[WRAPPER_M1_], DESCB[WRAPPER_N1_], DESCB[WRAPPER_MB1_], DESCB[WRAPPER_NB1_],
@@ -252,12 +251,10 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
           *SIDE, *UPLO, *TRANS, *DIAG, mloc_B, nloc_B);
 
     assert(comm_index_A == comm_index_B);
+
     parsec_init_wrapped_call((void*)comm_A);
 
     int Am, An, Bm, Bn;
-    int Am_loc, An_loc, Bm_loc, Bn_loc;
-    int AGm, AGn, BGm, BGn;
-
     if ( side == dplasmaLeft ) {
         Am = *M; An = *M;
     } else {
@@ -266,74 +263,45 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
 
     Bm = *M; Bn = *N;
 
-    // Am_loc = mloc_A/*LDD_A*/; An_loc = nloc_A;
-    // Bm_loc = mloc_B/*LDD_B*/; Bn_loc = nloc_B;
-    Am_loc = LDD_A; An_loc = nloc_A;
-    Bm_loc = LDD_B; Bn_loc = nloc_B;
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_A, NB_A,
+                                     gM_A, gN_A,
+                                     cIA, cJA,
+                                     Am, An,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
-    AGm = gM_A; AGn = gN_A;
-    BGm = gM_B; BGn = gN_B;
-
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcA_lapack, two_dim_block_cyclic, A,
-                                  (&dcA_lapack, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   MB_A, NB_A,
-                                   AGm, AGn,
-                                   cIA, cJA,
-                                   Am, An,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   An_loc, Am_loc));
-
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcB_lapack, two_dim_block_cyclic, B,
-                                  (&dcB_lapack, matrix_RealDouble, matrix_Lapack,
-                                   nodes_B, rank_B,
-                                   MB_B, NB_B,
-                                   BGm, BGn,
-                                   cIB, cJB,
-                                   Bm, Bn,
-                                   KP, KQ,
-                                   iP_B, jQ_B,
-                                   P_B,
-                                   Bn_loc, Bm_loc));
-
-#ifdef WRAPPER_VERBOSE
-    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "*dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", *dcB, P_B, Q_B);
-#endif
+    two_dim_block_cyclic_t dcB_lapack;
+    two_dim_block_cyclic_lapack_init(&dcB_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_B,
+                                     MB_B, NB_B,
+                                     gM_B, gN_B,
+                                     cIB, cJB,
+                                     Bm, Bn,
+                                     P_B, Q_B,
+                                     KP, KQ,
+                                     iP_B, jQ_B,
+                                     LLD_B, nloc_B);
+    dcB_lapack.mat = B;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcB_lapack, "dcB_lapack");
 
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DTRSM, (side, (DagDouble_t)*M, (DagDouble_t)*N))
 #endif
-    int P = P_A;
-    int Q = Q_A;
-    int gN = gN_A;
-    int NB = NB_A;
 
-   // int redisA = 1, redisB = 1;
-    /* Redistribute if:
-     * - Unaligned offsets with blocks
-     * TODO check for tile compatibility and redistribute better
-     */
-    int redisA = 0, redisB = 0;
-    // if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
-    // if( (cIB % MB_B != 0) || ( cJB % NB_B != 0)) redisB = 1;
+    /* TRSM doesn't support native ScaLAPACK: always redistribute */
+    int redisA = 1, redisB = 1;
 
-    // if( (MB_A != MB_B)
-    //     ||(NB_A != NB_B)) {
-    //   /* redistribute all, there are internal calls with different block sizes */
-    //     redisA = 1;
-    //     redisB = 1;
-    //     MB_A = MB_B = NB_A = NB_B = REDIS_BLOCKSZ;
-    // }
-    /*Always redis*/
-    MB_A = MB_B = NB_A = NB_B = REDIS_BLOCKSZ;
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
+    two_dim_block_cyclic_t *dcB = redistribute_lapack_input(&dcB_lapack, redisB, comm_B, rank_B, "redisB");
 
-    PASTE_CODE_REDIS_INPUT(A, parsec_ctx, redisA, comm_A, BLOCKING_REDIS);
-    PASTE_CODE_REDIS_INPUT(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS); /*We can't force BLOCKING and then set owners once datacopies created*/
-
-    INI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrsm,
+    WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrsm,
                               ( side, uplo,
                                 trans, diag,
                                 *ALPHA,
@@ -342,31 +310,8 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
                               dplasma_dtrsm_Destruct( PARSEC_dtrsm ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
-#ifndef DO_BLOCKING_REDISTRIBUTION
-#ifdef ALL_REDIS_NONBLOCKING
-    parsec_data_collection_set_owner((parsec_data_collection_t *)dcA, PARSEC_dtrsm);
-#endif
-    parsec_data_collection_set_owner((parsec_data_collection_t *)dcB, PARSEC_dtrsm);
-#endif
-    PASTE_CODE_REDIS_OUTPUT_INI(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS);
-
-    FINI_WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrsm,
-                              ( side, uplo,
-                                trans, diag,
-                                *ALPHA,
-                               (parsec_tiled_matrix_dc_t *)dcA,
-                               (parsec_tiled_matrix_dc_t *)dcB ),
-                              dplasma_dtrsm_Destruct( PARSEC_dtrsm ),
-                              rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
-
-    PASTE_CODE_CLEANUP_REDIS(A, parsec_ctx, redisA, comm_A);
-    PASTE_CODE_REDIS_OUTPUT_FINI(B, parsec_ctx, redisB, comm_B, DEFAULT_REDIS);
-    PASTE_CODE_CLEANUP_REDIS(B, parsec_ctx, redisB, comm_B);
-
-#ifdef WRAPPER_VERBOSE
-    //PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_B, PlasmaUpperLower, "dcB", *dcB, P_B, Q_B);
-#endif
+    dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 0, comm_A, rank_A, "redisA");
+    dcB = redistribute_lapack_output_cleanup(&dcB_lapack, dcB, 1, comm_B, rank_B, "redisB");
 
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcB);

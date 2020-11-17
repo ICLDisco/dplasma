@@ -33,7 +33,7 @@ extern "C" %{
  * the number of tile conversions performed, it is critical to
  * determined the correct location on the matrix where the tile was
  * originated from.
- * Note that the LOC_TYPE parameters do not correspond to the binding of the
+ * Note that the LOC parameters do not correspond to the binding of the
  * task to the matrix (although sometimes they match). These parameters
  * correspond to the location were the datacopy was originate on the matrix (maybe
  * it was read on another task).
@@ -61,7 +61,7 @@ read_A(m, k) [profile = off]
   m = 0..(descB->mt-1)
   k = 0..(descB->mt-m-1)
 
-loc_A = %{ return LOC_TYPE(descA, (descB->mt-1)-m, k); %}
+loc_A = %{ return LOC(descA, (descB->mt-1)-m, k); %}
 
   /* Locality */
   : descA((descB->mt-1)-m, k)
@@ -82,7 +82,7 @@ read_B(n, k) [profile = off]
   n = 0..(descB->nt-1)
   k = 0..(descB->mt-2)
 
-loc_B = %{ return LOC_TYPE(descB, k, n); %}
+loc_B = %{ return LOC(descB, k, n); %}
 
   /* Locality */
   : descB(k,n)
@@ -102,8 +102,8 @@ ztrmm(m, n) [ flops = inline_c %{ return FLOPS_ZTRMM(side, CLEAN_MB(descB, m), C
   m = 0..(descB->mt-1)
   n = 0..(descB->nt-1)
 
-loc_A = %{ return LOC_TYPE(descA, (descB->mt-1)-m, (descB->mt-1)-m); %}
-loc_B = %{ return LOC_TYPE(descB, (descB->mt-1)-m, n); %}
+loc_A = %{ return LOC(descA, (descB->mt-1)-m, (descB->mt-1)-m); %}
+loc_B = %{ return LOC(descB, (descB->mt-1)-m, n); %}
 
   /* Locality */
   : descB((descB->mt-1)-m,n)
@@ -139,9 +139,9 @@ zgemm(m, n, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEA
   n = 0..(descB->nt-1)
   k = 0..(descB->mt-m-2)
 
-loc_A = %{ return LOC_TYPE(descA, (descB->mt-1)-m,k); %}
-loc_B = %{ return LOC_TYPE(descB, k, n); %}
-loc_C = %{ return LOC_TYPE(descB, (descB->mt-1)-m, n); %}
+loc_A = %{ return LOC(descA, (descB->mt-1)-m,k); %}
+loc_B = %{ return LOC(descB, k, n); %}
+loc_C = %{ return LOC(descB, (descB->mt-1)-m, n); %}
 
   /* Locality */
   : descB((descB->mt-1)-m,n)

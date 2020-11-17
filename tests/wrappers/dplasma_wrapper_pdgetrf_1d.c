@@ -1,4 +1,9 @@
 #include "common.h"
+  /************************************************************************
+    DPLASMA GETRF_1D doesn't support 2D block cyclic.
+    We redistribute to 1D when lapack matrix A is 2DBC.
+    Wrapper uses its own temporary IPIV in TILED format.
+  ************************************************************************/
 
 /*     SUBROUTINE PDGETRF( M, N, A, IA, JA, DESCA, IPIV, INFO )
  *
@@ -166,58 +171,91 @@ void pdgetrf_w(int * M,
       return;
     }
 
+    /* Current DPLASMA GETRF_1D doesn't support 2D block cyclic.
+     * We redistribute to 1D when lapack matrix A is 2DBC.
+     * Wrapper uses its own temporary IPIV in TILED format.
+     */
+
     int KP = 1;
     int KQ = 1;
     PASTE_SETUP(A);
 
-    /* Current DPLASMA GETRF doesn't support 2D block cyclic. */
-    if ( P_A > 1 ) {
-        fprintf(stderr, "This function cannot be used with a 2D block cyclic distribution for now\n");
-        return;
+#ifdef WRAPPER_VERBOSE_CALLS
+    if(rank_A == 0){
+      printf("V-PDGETRF_1D M%d N%d "
+             "IA%d JA%d A%p MBA%d NBA%d \n",
+             *M, *N,
+             *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_]);
     }
+#endif
+
+    PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  "M%d N%d IA%d JA%d (ictxt)DESCA[WRAPPER_CTXT1_] %d, "
+          "(gM)DESCA[WRAPPER_M1_] %d, (gN)DESCA[WRAPPER_N1_] %d, (MB)DESCA[WRAPPER_MB1_] %d, (NB)DESCA[WRAPPER_NB1_] %d, "
+          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LLD)DESCA[WRAPPER_LLD1_] %d\n",
+          *M, *N, *IA, *JA, DESCA[WRAPPER_CTXT1_],
+          DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
+          DESCA[WRAPPER_RSRC1_], DESCA[WRAPPER_CSRC1_], DESCA[WRAPPER_LLD1_]);
 
     parsec_init_wrapped_call((void*)comm_A);
 
-PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
-                              (&dcA, matrix_RealDouble, matrix_Lapack,
-                               nodes_A, rank_A,
-                               MB_A, NB_A,
-                               gM_A, gN_A,
-                               cIA, cJA,
-                               *M, *N,
-                               KP, KQ,
-                               iP_A, jQ_A,
-                               P_A,
-                               nloc_A, LDD_A));
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_A, NB_A,
+                                     gM_A, gN_A,
+                                     cIA, cJA,
+                                     *M, *N,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
-    /*
+    /* SCALAPACK:
      *  IPIV    (local output) INTEGER array, dimension ( LOCr(M_A)+MB_A )
      *          This array contains the pivoting information.
      *          IPIV(i) -> The global row local row i was swapped with.
      *          This array is tied to the distributed matrix A.
      *  However, in the original ScaLAPACK GETRF every process has the full
-     *  IPIV containing global row indexes, therefore, we  build it.
+     *  IPIV containing global row indexes, therefore, the wrapper needs to rebuild it.
+     *
+     * DPLASMA:
+     * @param[out] IPIV
+     *          Descriptor of the IPIV matrix. Should be of size 1-by-min(M,N).
+     *          On exit, contains the pivot indices; for 1 <= i <= min(M,N), row i
+     *          of the matrix was interchanged with row IPIV(i).
      */
-    int gN_IPIV = dplasma_imin(*M, *N);
-    int nloc_IPIV = nloc_A;
-    int LD_IPIV = 1;/*assuming this is not a submatrix and that it is a row*/
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcIPIV, two_dim_block_cyclic, IPIV,
-                                  (&dcIPIV, matrix_Integer, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   1, NB_A,
-                                   1, gN_IPIV,
-                                   cIA, cJA,
-                                   1, gN_IPIV,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   nloc_IPIV, LD_IPIV));
-    dcIPIV.mat = (void*)IPIV;
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcIPIV", dcIPIV, P_A, Q_A);
-#endif
+    int redisA = 0;
+    if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
+
+    int redisP = 1;
+    int redisQ = dcA_lapack.grid.rows*dcA_lapack.grid.cols;
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input_1D(&dcA_lapack, redisA, comm_A, rank_A, "redisA", redisP, redisQ);
+    /* Matrix A is only redistributed to lapack if redisA or P_A != 1*/
+
+    int redisMB = dcA->super.mb;
+    (void)redisMB;
+    int redisNB = dcA->super.nb;
+    int gN_IPIV = dplasma_imin(*M, *N);
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcIPIV_tmp, 1,
+                               two_dim_block_cyclic,
+                               (&dcIPIV_tmp, matrix_Integer, matrix_Tile,
+                                rank_A,
+                                1, redisNB,
+                                1, gN_IPIV,
+                                0, 0,
+                                1, gN_IPIV,
+                                redisP, redisQ,
+                                KP, KQ,
+                                0, 0));
+
+    two_dim_block_cyclic_t *dcIPIV = &dcIPIV_tmp;
+
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA);
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcIPIV", dcIPIV);
 
 #ifdef CHECK_RESULTS
     int check = 1;
@@ -228,55 +266,47 @@ PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
         check = 0;
     }
 
-    int cLDA = *M;// max(M, iparam[IPARAM_LDA])
-    //cLDA = max(*M, LDA); no in case submatrix
-
+    int cLDA = *M;
     int NRHS  = KP;
-    //iparam[IPARAM_LDB] = -'m';
-    int LDB   = -'m';//max(N, iparam[IPARAM_LDB]);
-    LDB = *M;//max(*M, LDB);no in case submatrix
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcA_out, check,
-                               two_dim_block_cyclic, (&dcA_out, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
-    two_dim_block_cyclic_t  dcIPIV_out;
-    if(check) {
-        two_dim_block_cyclic_init  (&dcIPIV_out, matrix_Integer, matrix_Tile,
-                                                  nodes_A, rank_A, 1, NB_A, 1, gN_IPIV, 0, 0,
-                                                  1, gN_IPIV, KP, KQ, P_A);
-        dcIPIV_out.mat = dcIPIV.mat; /*array 1D no need to allocate extra*/
-    }
+    int LDB   = *M;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
                                two_dim_block_cyclic, (&dcA0, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
-
+                                                      rank_A, redisMB, redisNB, cLDA, *N, 0, 0,
+                                                      *M, *N, redisP, redisQ, KP, KQ, 0, 0));
+    PASTE_CODE_ALLOCATE_MATRIX(dcA_out, check,
+                               two_dim_block_cyclic, (&dcA_out, matrix_RealDouble, matrix_Tile,
+                                                      rank_A, redisMB, redisNB, cLDA, *N, 0, 0,
+                                                      *M, *N, redisP, redisQ, KP, KQ, 0, 0));
     /* Random B check */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
                                two_dim_block_cyclic, (&dcB, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                                      *M, NRHS, KP, KQ, 0, 0, P_A));
+                                                      rank_A, redisMB, redisNB, LDB, NRHS, 0, 0,
+                                                      *M, NRHS, redisP, redisQ, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
                                two_dim_block_cyclic, (&dcX, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                                      *M, NRHS, KP, KQ, 0, 0, P_A));
+                                                      rank_A, redisMB, redisNB, LDB, NRHS, 0, 0,
+                                                      *M, NRHS, redisP, redisQ, KP, KQ, 0, 0));
     /* Inverse check */
     PASTE_CODE_ALLOCATE_MATRIX(dcInvA, check_inv,
                                two_dim_block_cyclic, (&dcInvA, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, redisMB, redisNB, cLDA, *N, 0, 0,
+                                                      *M, *N, redisP, redisQ, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcI, check_inv,
                                two_dim_block_cyclic, (&dcI, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, redisMB, redisNB, cLDA, *N, 0, 0,
+                                                      *M, *N, redisP, redisQ, KP, KQ, 0, 0));
 
 
     if ( check ) {
-        dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcA,
-                        (parsec_tiled_matrix_dc_t *)&dcA0 );
+        if(dcA == &dcA_lapack){
+            dcopy_lapack_tile(parsec_ctx, dcA, &dcA0, mloc_A, nloc_A);
+        }else{
+            dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
+                            (parsec_tiled_matrix_dc_t *)dcA,
+                            (parsec_tiled_matrix_dc_t *)&dcA0 );
+        }
+
         dplasma_dplrnt( parsec_ctx, 0, (parsec_tiled_matrix_dc_t *)&dcB, 2354);
         dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
@@ -289,31 +319,33 @@ PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
 
 #endif
 
+
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DGETRF, ((DagDouble_t)*M,(DagDouble_t)*N));
 #endif
     WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dgetrf_1d,
-                          ((parsec_tiled_matrix_dc_t*)&dcA,
-                           (parsec_tiled_matrix_dc_t*)&dcIPIV, info),
+                          ((parsec_tiled_matrix_dc_t*)dcA,
+                           (parsec_tiled_matrix_dc_t*)dcIPIV, info),
                           dplasma_dgetrf_1d_Destruct( PARSEC_dgetrf_1d ),
-                          rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
-
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcIPIV", dcIPIV, P_A, Q_A);
-#endif
+                          rank_A, redisP, redisQ, NB_A, gN_A, comm_A);
 
 #ifdef CHECK_RESULTS
+    /* check before redistributing back to lapack format */
     int loud=5;
     if ( check ) {
-        dcopy_lapack_tile(parsec_ctx, &dcA, &dcA_out, mloc_A, nloc_A);
-
+        if(dcA == &dcA_lapack){
+            dcopy_lapack_tile(parsec_ctx, dcA, &dcA_out, mloc_A, nloc_A);
+        }else{
+            dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
+                            (parsec_tiled_matrix_dc_t *)dcA,
+                            (parsec_tiled_matrix_dc_t *)&dcA_out );
+        }
         /*
          * First check with a right hand side
          */
         dplasma_dgetrs(parsec_ctx, PlasmaNoTrans,
                        (parsec_tiled_matrix_dc_t *)&dcA_out,
-                       (parsec_tiled_matrix_dc_t *)&dcIPIV_out,
+                       (parsec_tiled_matrix_dc_t *)dcIPIV,
                        (parsec_tiled_matrix_dc_t *)&dcX );
 
         /* Check the solution */
@@ -328,7 +360,7 @@ PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
         if ( check_inv ) {
             dplasma_dgetrs(parsec_ctx, PlasmaNoTrans,
                            (parsec_tiled_matrix_dc_t *)&dcA_out,
-                           (parsec_tiled_matrix_dc_t *)&dcIPIV_out,
+                           (parsec_tiled_matrix_dc_t *)dcIPIV,
                            (parsec_tiled_matrix_dc_t *)&dcInvA );
 
             /* Check the solution */
@@ -340,11 +372,10 @@ PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
     }
 
     if ( check ) {
-        parsec_data_free(dcA_out.mat);
-        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA_out);
-
         parsec_data_free(dcA0.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0);
+        parsec_data_free(dcA_out.mat);
+        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA_out);
         parsec_data_free(dcB.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcB);
         parsec_data_free(dcX.mat);
@@ -362,77 +393,138 @@ PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
     }
 #endif
 
-    /*This will fail if 2D block cyclic but also the tiled algorithm */
-    assert(P_A==1);
+    dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 1, comm_A, rank_A, "redisA");
 
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA);
+
+    /* SCALAPACK IPIV:
+     * looking at checking on pdegtrf, the IPIV is passed to
+     *   pdgetrs_( "N", &n, &s, Alu, &i1, &i1, descA, ippiv, X, &i1, &i1, descB, &info );
+     * which invokes
+     *   CALL pdlapiv( 'Forward', 'Row', 'Col', n, nrhs, b, ib, jb,
+     *  $                descb, ipiv, ia, 1, descip, idum1 )
+     * on pdlapiv documentation:
+     *  DIREC   (global input) CHARACTER*1
+     *          Specifies in which order the permutation is applied:
+     *            = 'F' (Forward) Applies pivots Forward from top of matrix.
+     *                  Computes P*sub( A ).
+     *            = 'B' (Backward) Applies pivots Backward from bottom of
+     *                  matrix. Computes inv( P )*sub( A ).
+     *
+     *  ROWCOL  (global input) CHARACTER*1
+     *          Specifies if the rows or columns are to be permuted:
+     *             = 'R' Rows will be permuted,
+     *             = 'C' Columns will be permuted.
+     *
+     *  PIVROC  (global input) CHARACTER*1
+     *          Specifies whether IPIV is distributed over a process row
+     *          or column:
+     *          = 'R' IPIV distributed over a process row
+     *          = 'C' IPIV distributed over a process column
+     *
+     *  IPIV    (local input) INTEGER array, dimension (LIPIV) where LIPIV is
+     *          when ROWCOL='R' or 'r':
+     *             >= LOCr( IA+M-1 ) + MB_A      if PIVROC='C' or 'c',
+     *             >= LOCc( M + MOD(JP-1,NB_P) ) if PIVROC='R' or 'r', and,
+     *          when ROWCOL='C' or 'c':
+     *             >= LOCr( N + MOD(IP-1,MB_P) ) if PIVROC='C' or 'c',
+     *             >= LOCc( JA+N-1 ) + NB_A      if PIVROC='R' or 'r'.
+     *          This array contains the pivoting information. IPIV(i) is the
+     *          global row (column), local row (column) i was swapped with.
+     *          When ROWCOL='R' or 'r' and PIVROC='C' or 'c', or ROWCOL='C'
+     *          or 'c' and PIVROC='R' or 'r', the last piece of this array of
+     *          size MB_A (resp. NB_A) is used as workspace. In those cases,
+     *          this array is tied to the distributed matrix A.
+     */
+
+    /* Translate to global rows naming expected by scalapack */
+    for(int n = 0; n < dcIPIV->super.lln; n++){
+        int local_tile_row = (n / dcIPIV->super.nb);
+        int global_tile_row = local_tile_row * (dcIPIV->grid.cols) + dcIPIV->grid.crank;
+        int global_row_offset = global_tile_row * dcIPIV->super.nb;
+        int global_row = global_row_offset + n % dcIPIV->super.nb;
+        if(((int*)dcIPIV->mat)[ n ] == 0) { /* no swap */
+            ((int*)dcIPIV->mat)[ n ] = global_row;
+        }else{
+            ((int*)dcIPIV->mat)[ n ] = ((int*)dcIPIV->mat)[ n ] + global_row_offset;
+        }
+    }
+
+    /* For the output ScaLAPACK IPIV every process has the IPIV for its local rows.
+     * therefore, it's not a vector representing row or a column, it's a matrix.
+     * distributed 2dbc.
+     * On dplasma it's a vector 1xM distributed among 1xP*Q processes.
+     * On ScaLAPACK it's a matrix distributed amon PxQ processes where each
+     * process has a vector 1xmloc.
+     * Therefore, we can't redistribute dplasma IPIV to ScaLAPACK IPIV.
+     * We reconstructed gathering first a rank 0.
+     */
+
+    /* Reconstruct IPIV local rows as requiered by the spec.
+     * We ran 1D 1xP*Q getrf_1D.
+     * DPLASMA IPIV is spread across the 1xQ*P column processes.
+     * --> Gather global IPIV on rank 0.
+     */
     int *recv_count = (int*) malloc(sizeof(int)*nodes_A);
     int *displs = (int*) malloc(sizeof(int)*nodes_A);
-    int last_tile_sz = (*M % MB_A == 0)? MB_A :
-        /*last IPIV col (aka last rows A)?*/(((dcIPIV.super.lnt % Q_A) -1) == dcIPIV.grid.crank) ?
-                (*M - (dcA.super.lmt - 1)*MB_A) : MB_A;
-    recv_count[rank_A] = dcIPIV.super.nb_local_tiles;//( (dcIPIV.super.nb_local_tiles-1) * dcIPIV.super.bsiz ) + last_tile_sz;
+    recv_count[rank_A] = dcIPIV->super.nb_local_tiles;
+    MPI_Allgather(&(recv_count[rank_A]), 1, MPI_INT, recv_count, 1, MPI_INT, comm_A);
 
     MPI_Datatype dt_ipiv, tmp_dt_ipiv;
     MPI_Type_vector(1,
-                    NB_A,
-                    Q_A*NB_A,
+                    redisNB,
+                    redisQ*redisNB,
                     MPI_INT,
                     &tmp_dt_ipiv);
     MPI_Aint ub, lb, extent;
     MPI_Type_get_extent(tmp_dt_ipiv, &lb, &extent);
-    ub = (lb + extent)*(Q_A);
+    ub = (lb + extent)*(redisQ);
     MPI_Type_create_resized(tmp_dt_ipiv, 0, ub, &dt_ipiv);
     MPI_Type_commit(&dt_ipiv);
 
-    MPI_Allgather(&(recv_count[rank_A]), 1, MPI_INT,
-                recv_count, 1, MPI_INT, comm_A);
 
     int r;
     displs[0] = 0;
-    for(r=1; r<nodes_A; r++){
-        displs[r] = displs[r-1] + NB_A;
+    for(r = 1; r < nodes_A; r++){
+        displs[r] = displs[r-1] + redisNB;
     }
 
+    /* send/recv redis tiles info */
+    int ipiv_size_redis = (rank_A == 0)?
+                          dcIPIV->super.n * dcIPIV->super.nb: /* gather all IPIV: dcIPIV->super.nb=redisNB & TILED matrix: sending FULL tile */
+                          gN_IPIV; /* rest of ranks only care about the relevant part of the global IPIV*/
+    int *tmp_ipiv = (int*)malloc(sizeof(int)*(ipiv_size_redis));
     if(rank_A == 0){
         MPI_Request req;
-        MPI_Isend(IPIV, recv_count[rank_A]*NB_A, MPI_INT, 0,
+        MPI_Isend(dcIPIV->mat, recv_count[rank_A]*redisNB, MPI_INT, 0,
                  rank_A, comm_A, &req);
-        for(r=0; r<nodes_A; r++){
-            MPI_Recv(&(IPIV[r*NB_A]), recv_count[r], dt_ipiv, r,
+        for(r = 0; r < nodes_A; r++){
+            MPI_Recv(&(tmp_ipiv[r*redisNB]), recv_count[r], dt_ipiv, r,
                      r, comm_A, MPI_STATUS_IGNORE);
         }
         MPI_Wait(&req, MPI_STATUS_IGNORE);
     }else{
-        MPI_Send(IPIV, recv_count[rank_A]*NB_A, MPI_INT, 0,
+        MPI_Send(dcIPIV->mat, recv_count[rank_A]*redisNB, MPI_INT, 0,
                  rank_A, comm_A);
     }
+    MPI_Type_free(&tmp_dt_ipiv);
+    MPI_Type_free(&dt_ipiv);
 
-    MPI_Bcast(IPIV, *M, MPI_INT, 0, comm_A);
+    /* Broadcast only the relevant part of the global IPIV */
+    MPI_Bcast(tmp_ipiv, gN_IPIV, MPI_INT, 0, comm_A);
 
-    /* Conversion from local tile rows to global tile rows */
-    /* cyclid distribution: same distance between my tiles */
-    int offset_row=0;
-    int i;
-    int ntile = 0;
-    int grow = 0;
-    for(i = 0 ; i< gM_A; i++){
-        if((i % dcA.super.mb) == 0){
-            /*update offset*/
-            offset_row = ntile*dcA.super.mb ;
-            ntile++;
-            grow = offset_row + 1;
-        }
-        if(IPIV[i]==0){
-            /*row is local in ScaLAPACK*/
-            IPIV[i]  = grow;
-        }else{
-            IPIV[i] += offset_row;
-        }
-        grow++;
+    for(int m = 0; m < mloc_A; m++){ /* for each local row of the original lapack matrix*/
+        int local_tile_row = (m / dcA_lapack.super.mb);
+        int global_tile_row = local_tile_row * (dcA_lapack.grid.rows) + dcA_lapack.grid.rrank;
+        int global_row = global_tile_row * dcA_lapack.super.mb + m % dcA_lapack.super.mb;
+        IPIV[m] = tmp_ipiv[global_row];
     }
 
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcIPIV);
+    free(tmp_ipiv);
+
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
+    parsec_data_free(dcIPIV->mat);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcIPIV);
 }
 
  /*-------------------------------------------------------------------*/

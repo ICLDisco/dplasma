@@ -1,5 +1,11 @@
 #include "common.h"
 
+  /************************************************************************
+    Version not compliant with scalapack.
+    Only for diagonal dominant matrixes. Can not be generally used.
+  ************************************************************************/
+
+
 /*     SUBROUTINE PDGETRF( M, N, A, IA, JA, DESCA, IPIV, INFO )
  *
  *  -- ScaLAPACK routine (version 1.7) --
@@ -171,26 +177,37 @@ void pdgetrf_w(int * M,
 
     PASTE_SETUP(A);
 
+
+#ifdef WRAPPER_VERBOSE_CALLS
+    if(rank_A == 0){
+      printf("V-PDGETRF_NOPIV M%d N%d "
+             "IA%d JA%d A%p MBA%d NBA%d \n",
+             *M, *N,
+             *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_]);
+    }
+#endif
     PARSEC_DEBUG_VERBOSE(3, parsec_debug_output,  "M%d N%d IA%d JA%d (ictxt)DESCA[WRAPPER_CTXT1_] %d, "
           "(gM)DESCA[WRAPPER_M1_] %d, (gN)DESCA[WRAPPER_N1_] %d, (MB)DESCA[WRAPPER_MB1_] %d, (NB)DESCA[WRAPPER_NB1_] %d, "
-          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LDD)DESCA[WRAPPER_LLD1_] %d\n",
+          "DESCA[WRAPPER_RSRC1_] %d, DESCA[WRAPPER_CSRC1_] %d, (LLD)DESCA[WRAPPER_LLD1_] %d\n",
           *M, *N, *IA, *JA, DESCA[WRAPPER_CTXT1_],
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
           DESCA[WRAPPER_RSRC1_], DESCA[WRAPPER_CSRC1_], DESCA[WRAPPER_LLD1_]);
 
     parsec_init_wrapped_call((void*)comm_A);
 
-    PASTE_CODE_INIT_LAPACK_MATRIX(dcA, two_dim_block_cyclic, A,
-                                  (&dcA, matrix_RealDouble, matrix_Lapack,
-                                   nodes_A, rank_A,
-                                   MB_A, NB_A,
-                                   gM_A, gN_A,
-                                   cIA, cJA,
-                                   *M, *N,
-                                   KP, KQ,
-                                   iP_A, jQ_A,
-                                   P_A,
-                                   nloc_A, LDD_A));
+    two_dim_block_cyclic_t dcA_lapack;
+    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+                                     rank_A,
+                                     MB_A, NB_A,
+                                     gM_A, gN_A,
+                                     cIA, cJA,
+                                     *M, *N,
+                                     P_A, Q_A,
+                                     KP, KQ,
+                                     iP_A, jQ_A,
+                                     LLD_A, nloc_A);
+    dcA_lapack.mat = A;
+    parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
 #ifdef CHECK_RESULTS
     int check = 1;
@@ -201,47 +218,42 @@ void pdgetrf_w(int * M,
         check = 0;
     }
 
-    int cLDA = *M;// max(M, iparam[IPARAM_LDA])
-    //cLDA = max(*M, LDA); no in case submatrix
-
+    int cLDA = *M;
     int NRHS  = KP;
-    //iparam[IPARAM_LDB] = -'m';
-    int LDB   = -'m';//max(N, iparam[IPARAM_LDB]);
-    LDB = *M;//max(*M, LDB);no in case submatrix
+    int LDB   = *M;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA_out, check,
                                two_dim_block_cyclic, (&dcA_out, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                                                      *M, *N, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
                                two_dim_block_cyclic, (&dcA0, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                                                      *M, *N, P_A, Q_A, KP, KQ, 0, 0));
 
     /* Random B check */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
                                two_dim_block_cyclic, (&dcB, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                                      *M, NRHS, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                                                      *M, NRHS, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
                                two_dim_block_cyclic, (&dcX, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
-                                                      *M, NRHS, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, LDB, NRHS, 0, 0,
+                                                      *M, NRHS, P_A, Q_A, KP, KQ, 0, 0));
     /* Inverse check */
     PASTE_CODE_ALLOCATE_MATRIX(dcInvA, check_inv,
                                two_dim_block_cyclic, (&dcInvA, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                                                      *M, *N, P_A, Q_A, KP, KQ, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcI, check_inv,
                                two_dim_block_cyclic, (&dcI, matrix_RealDouble, matrix_Tile,
-                                                      nodes_A, rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
-                                                      *M, *N, KP, KQ, 0, 0, P_A));
+                                                      rank_A, MB_A, NB_A, cLDA, *N, 0, 0,
+                                                      *M, *N, P_A, Q_A, KP, KQ, 0, 0));
 
 
     if ( check ) {
-        dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcA,
-                        (parsec_tiled_matrix_dc_t *)&dcA0 );
+        dcopy_lapack_tile(parsec_ctx, &dcA_lapack, &dcA0, mloc_A, nloc_A);
+
         dplasma_dplrnt( parsec_ctx, 0, (parsec_tiled_matrix_dc_t *)&dcB, 2354);
         dplasma_dlacpy( parsec_ctx, PlasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
@@ -251,27 +263,30 @@ void pdgetrf_w(int * M,
         dplasma_dlaset( parsec_ctx, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
         dplasma_dlaset( parsec_ctx, PlasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
     }
-
 #endif
 
+    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", (&dcA_lapack));
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-#endif
+    int redisA = 0;
+    if( (cIA % MB_A != 0) || ( cJA % NB_A != 0)) redisA = 1;
+    assert(redisA == 0); /* not aligned offsets are not supported for GETRF */
+
+    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
 
 #ifdef MEASURE_INTERNAL_TIMES
     PASTE_CODE_FLOPS(FLOPS_DGETRF, ((DagDouble_t)*M,(DagDouble_t)*N));
 #endif
     WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dgetrf_nopiv,
-                              ((parsec_tiled_matrix_dc_t*)&dcA, info),
+                              ((parsec_tiled_matrix_dc_t*)dcA, info),
                               dplasma_dgetrf_nopiv_Destruct( PARSEC_dgetrf_nopiv ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
+    dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 0, comm_A, rank_A, "redisA");
 
 #ifdef CHECK_RESULTS
     int loud=5;
     if ( check ) {
-        dcopy_lapack_tile(parsec_ctx, &dcA, &dcA_out, mloc_A, nloc_A);
+        dcopy_lapack_tile(parsec_ctx, dcA, &dcA_out, mloc_A, nloc_A);
 
         dplasma_dtrsm( parsec_ctx, PlasmaLeft, PlasmaLower, PlasmaNoTrans, PlasmaUnit,    1.0,
                        (parsec_tiled_matrix_dc_t*)&dcA_out,
@@ -341,36 +356,7 @@ void pdgetrf_w(int * M,
         }
     }
 
-#ifdef WRAPPER_VERBOSE
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcA", dcA, P_A, Q_A);
-    /*
-     *  IPIV    (local output) INTEGER array, dimension ( LOCr(M_A)+MB_A )
-     *          This array contains the pivoting information.
-     *          IPIV(i) -> The global row local row i was swapped with.
-     *          This array is tied to the distributed matrix A.
-     *  However, in the original ScaLAPACK GETRF every process has the full
-     *  IPIV containing global row indexes, therefore, we  build it.
-     */
-    int gN_IPIV = dplasma_imin(*M, *N);
-    int nloc_IPIV = nloc_A;//mloc + MB;//LETS TRY //+ MB;
-    int LD_IPIV = 1;/*assuming this is not a submatrix and that it is a row*/
-    two_dim_block_cyclic_t  dcIPIV;
-    two_dim_block_cyclic_lapack_init(&dcIPIV, matrix_Integer, matrix_Lapack,
-                               nodes_A, rank_A,
-                               1, NB_A,
-                               1, gN_IPIV,
-                               cIA, cJA,
-                               1, gN_IPIV,
-                               KP, KQ,
-                               iP_A, jQ_A,
-                               P_A,
-                               nloc_IPIV, LD_IPIV);
-    dcIPIV.mat = (void*)IPIV;
-    PRINT(parsec_ctx, comm_A, PlasmaUpperLower, "dcIPIV", dcIPIV, P_A, Q_A);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcIPIV);
-#endif
-
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
 }
 
  /*-------------------------------------------------------------------*/

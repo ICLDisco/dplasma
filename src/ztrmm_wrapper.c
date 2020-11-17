@@ -170,17 +170,16 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
     /* When supporting LAPACK we can't assume both matrixes have the same layout, e.g. LDA.
      * Therefore, generate types for both.
      */
-    parsec_arena_datatype_t default_adt;
     int shape = 0;
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    SET_UP_ARENA_DATATYPES( ddc_B,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_B,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
     assert(shape == MAX_SHAPES);
 
@@ -211,8 +210,8 @@ void
 dplasma_ztrmm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrmm_LLN_taskpool_t *otrmm = (parsec_ztrmm_LLN_taskpool_t *)tp;
-    CLEAN_UP_ARENA_DATATYPES(otrmm->_g_ddescA, MAX_SHAPES);
-    CLEAN_UP_ARENA_DATATYPES(otrmm->_g_ddescB, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(otrmm->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(otrmm->_g_ddescB, MAX_SHAPES);
     dplasma_data_collection_t * ddc_A = otrmm->_g_ddescA;
     dplasma_data_collection_t * ddc_B = otrmm->_g_ddescB;
 

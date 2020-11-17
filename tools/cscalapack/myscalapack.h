@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 The University of Tennessee and The University
+ * Copyright (c) 2009-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -8,48 +8,58 @@
 #ifndef MYSCALAPACK_H
 #define MYSCALAPACK_H
 
-#ifdef SUP_
-#define pdpotrf_  pdpotrf
-#define pdpotri_  pdpotri
-#define pdpotrs_  pdpotrs
-#define pdsymm_   pdsymm
-#define pdgetrf_  pdgetrf
-#define pdlansy_  pdlansy
-#define pdmatgen_ pdmatgen
-#define pdtrsm_   pdtrsm
-#define pdtrmm_   pdtrmm
-#define psgesv_   psgesv
-#define pdgesv_   pdgesv
-#define psgemm_   psgemm
-#define pdgemm_   pdgemm
-#define numroc_   numroc
-#define pslange_  pslange
-#define pdlange_  pdlange
-#define pslacpy_  pslacpy
-#define pdlacpy_  pdlacpy
-#define pdgeqrf_  pdgeqrf
-#define pdormqr_  pdormqr
-#define psgesvd_  psgesvd
-#define pdgesvd_  pdgesvd
-#define pslaset_  pslaset
-#define pdlaset_  pdlaset
-#define pselset_  pselset
-#define pdelset_  pdelset
-#define pslamch_  pslamch
-#define pdlamch_  pdlamch
-#define indxg2p_  indxg2p
-#define indxg2l_  indxg2l
-#define descinit_ descinit
-#define pslawrite_ pslawrite
-#define pdlawrite_ pdlawrite
-#define pdlaprnt_ pdlaprnt
+#ifdef SCALAPACK_SUP_UNDERSCORE
 
-#define blacs_get_      blacs_get
-#define blacs_pinfo_    blacs_pinfo
-#define blacs_gridinit_ blacs_gridinit
-#define blacs_gridinfo_ blacs_gridinfo
-#define blacs_gridexit_ blacs_gridexit
-#define blacs_exit_     blacs_exit
+#define pdgeqrf_         pdgeqrf
+#define pdormqr_         pdormqr
+#define pdtrsm_          pdtrsm
+#define pdtrmm_          pdtrmm
+#define pslange_         pslange
+#define pdlange_         pdlange
+#define pslacpy_         pslacpy
+#define pdlacpy_         pdlacpy
+#define psgesv_          psgesv
+#define pdgesv_          pdgesv
+#define psgemm_          psgemm
+#define pdgemm_          pdgemm
+#define pssyev_          pssyev
+#define pdsyev_          pdsyev
+#define psgesvd_         psgesvd
+#define pdgesvd_         pdgesvd
+#define pslaset_         pslaset
+#define pdlaset_         pdlaset
+#define pselset_         pselset
+#define pdelset_         pdelset
+#define pslawrite_       pslawrite
+#define pdlawrite_       pdlawrite
+#define pdlaprnt_        pdlaprnt
+#define pslamch_         pslamch
+#define pdlamch_         pdlamch
+#define ilcm_            ilcm
+#define indxg2p_         indxg2p
+#define indxg2l_         indxg2l
+#define numroc_          numroc
+#define descinit_        descinit
+#define pdgetrf_         pdgetrf
+#define pdgetrs_         pdgetrs
+#define pdlansy_         pdlansy
+#define pslansy_         pslansy
+#define pdmatgen_        pdmatgen
+#define pdpotrf_         pdpotrf
+#define pspotrf_         pspotrf
+#define pdpotri_         pdpotri
+#define pdpotrs_         pdpotrs
+#define pspotrs_         pspotrs
+#define pdsymm_          pdsymm
+#define pssymm_          pssymm
+
+#define blacs_pinfo_     blacs_pinfo
+#define blacs_get_       blacs_get
+#define blacs_gridinit_  blacs_gridinit
+#define blacs_gridinfo_  blacs_gridinfo
+#define blacs_gridexit_  blacs_gridexit
+#define blacs_exit_      blacs_exit
+
 #endif
 
 extern void Cblacs_pinfo( int* mypnum, int* nprocs );

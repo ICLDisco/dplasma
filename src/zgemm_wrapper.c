@@ -206,22 +206,21 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
         }
     }
 
-    parsec_arena_datatype_t default_adt;
     int shape = 0;
-    SET_UP_ARENA_DATATYPES( ddc_A,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    SET_UP_ARENA_DATATYPES( ddc_B,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_B,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    SET_UP_ARENA_DATATYPES( ddc_C,
-                            parsec_datatype_double_complex_t,
-                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
-                            &default_adt, &shape);
+    dplasma_setup_adtt_all_loc( ddc_C,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
     assert(shape == MAX_SHAPES);
 
@@ -252,9 +251,9 @@ void
 dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgemm_NN_summa_taskpool_t *zgemm_tp = (parsec_zgemm_NN_summa_taskpool_t *)tp;
-    CLEAN_UP_ARENA_DATATYPES(zgemm_tp->_g_ddescA, MAX_SHAPES);
-    CLEAN_UP_ARENA_DATATYPES(zgemm_tp->_g_ddescB, MAX_SHAPES);
-    CLEAN_UP_ARENA_DATATYPES(zgemm_tp->_g_ddescC, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescB, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescC, MAX_SHAPES);
 
     dplasma_data_collection_t * ddc_A = zgemm_tp->_g_ddescA;
     dplasma_data_collection_t * ddc_B = zgemm_tp->_g_ddescB;
