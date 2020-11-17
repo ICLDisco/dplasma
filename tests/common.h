@@ -73,6 +73,7 @@ enum iparam_t {
   IPARAM_BUT_LEVEL,    /* Butterfly level */
   IPARAM_SCHEDULER,    /* User-selected scheduler */
   IPARAM_NRUNS,        /* Number of times to run the kernel */
+  IPARAM_OFFSET,       /* Offset matrixes  */
   IPARAM_SIZEOF
 };
 
@@ -115,6 +116,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int HMB   = iparam[IPARAM_HMB];                                     \
     int HNB   = iparam[IPARAM_HNB];                                     \
     int nruns = iparam[IPARAM_NRUNS];                                   \
+    int offset  = iparam[IPARAM_OFFSET];                                \
     int MT    = (M%MB==0) ? (M/MB) : (M/MB+1);                          \
     int NT    = (N%NB==0) ? (N/NB) : (N/NB+1);                          \
     int KT    = (K%MB==0) ? (K/MB) : (K/MB+1);                          \
@@ -129,7 +131,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     (void)rank;(void)nodes;(void)cores;(void)gpus;(void)P;(void)Q;(void)M;(void)N;(void)K;(void)NRHS; \
     (void)LDA;(void)LDB;(void)LDC;(void)IB;(void)MB;(void)NB;(void)MT;(void)NT;(void)KT; \
     (void)KP;(void)KQ;(void)IP;(void)JQ;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
-    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
+    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;(void)offset;
 
 /* Define a double type which not pass through the precision generation process */
 typedef double DagDouble_t;
@@ -228,7 +230,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_QR_DOMINO", iparam[IPARAM_QR_DOMINO]);  \
     PROFILING_SAVE_iINFO("PARAM_QR_TSRR", iparam[IPARAM_QR_TSRR]);      \
     PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
-    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  
+    PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);
 
 #define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
     SYNC_TIME_START();                                                  \

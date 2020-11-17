@@ -17,6 +17,7 @@
 #define pdlansy_  pdlansy
 #define pdmatgen_ pdmatgen
 #define pdtrsm_   pdtrsm
+#define pdtrmm_   pdtrmm
 #define psgesv_   psgesv
 #define pdgesv_   pdgesv
 #define psgemm_   psgemm
@@ -41,6 +42,8 @@
 #define descinit_ descinit
 #define pslawrite_ pslawrite
 #define pdlawrite_ pdlawrite
+#define pdlaprnt_ pdlaprnt
+
 #define blacs_get_      blacs_get
 #define blacs_pinfo_    blacs_pinfo
 #define blacs_gridinit_ blacs_gridinit
@@ -68,6 +71,8 @@ extern void pdgeqrf_( int *m, int *n, double *a, int *ia, int *ja, int *desca, d
 extern void pdormqr_( char *side, char *trans, int *m, int *n, int *k, double *a, int *ia,
                       int *ja, int *desca, double *tau, double *c, int *ic, int *jc, int *descc, double *work, int *lwork, int *info );
 extern void pdtrsm_ ( char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *a, int *ia,
+                      int *ja, int *desca, double *b, int *ib, int *jb, int *descb );
+extern void pdtrmm_ ( char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *a, int *ia,
                       int *ja, int *desca, double *b, int *ib, int *jb, int *descb );
 
 extern float  pslange_( char *norm, int *m, int *n, float     *A, int *ia, int *ja, int *descA, float *work);
@@ -129,6 +134,7 @@ extern void pdelset_( double    *A, int *ia, int *ja, int *descA, double    *alp
 
 extern void pslawrite_( char **filenam, int *m, int *n, float  *A, int *ia, int *ja, int *descA, int *irwrit, int *icwrit, float  *work);
 extern void pdlawrite_( char **filenam, int *m, int *n, double *A, int *ia, int *ja, int *descA, int *irwrit, int *icwrit, double *work);
+extern void pdlaprnt_(int *m, int *n, double *a, int *ia, int *ja, int *desca, int *irprnt, int *icprnt, char *cmatnm, int *nout, double *work);
 
 extern float pslamch_( int *ictxt, char *cmach);
 extern double pdlamch_( int *ictxt, char *cmach);

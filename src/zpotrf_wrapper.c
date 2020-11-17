@@ -11,10 +11,13 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"
+
+#define MAX_SHAPES 1
 
 /**
  *******************************************************************************
@@ -44,7 +47,6 @@ void
 dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = (parsec_zpotrf_L_taskpool_t*)tp;
-
     if (hmb > 0) {
         parsec_zpotrf->_g_smallnb = hmb;
     }
@@ -121,8 +123,8 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A,
                     int *info )
 {
-    parsec_zpotrf_L_taskpool_t *parsec_zpotrf = NULL;
     parsec_taskpool_t *tp = NULL;
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection(A);
 
     /* Check input arguments */
     if ((uplo != dplasmaUpper) && (uplo != dplasmaLower)) {
@@ -131,22 +133,26 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     }
 
     *info = 0;
-    if ( uplo == dplasmaUpper ) {
-        tp = (parsec_taskpool_t*)parsec_zpotrf_U_new( uplo, A, info);
-    } else {
-        tp = (parsec_taskpool_t*)parsec_zpotrf_L_new( uplo, A, info);
-    }
 
-    parsec_zpotrf = (parsec_zpotrf_L_taskpool_t*)tp;
+    if ( uplo == dplasmaUpper ) {
+        tp = (parsec_taskpool_t*)parsec_zpotrf_U_new( uplo, ddc_A, info);
+    } else {
+        tp = (parsec_taskpool_t*)parsec_zpotrf_L_new( uplo, ddc_A, info);
+    }
+    parsec_zpotrf_L_taskpool_t *parsec_zpotrf =  (parsec_zpotrf_L_taskpool_t*)tp;
+
     parsec_zpotrf->_g_PRI_CHANGE = dplasma_aux_get_priority_limit( "POTRF", A );
     if(0 == parsec_zpotrf->_g_PRI_CHANGE)
       parsec_zpotrf->_g_PRI_CHANGE = A->nt;
-    dplasma_add2arena_tile( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ADT_IDX],
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
 
+    parsec_arena_datatype_t default_adt;
+    int shape = 0;
+    SET_UP_ARENA_DATATYPES( ddc_A,
+                            parsec_datatype_double_complex_t,
+                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                            &default_adt, &shape);
 
+    assert(shape == MAX_SHAPES);
     return tp;
 }
 
@@ -174,9 +180,11 @@ void
 dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = (parsec_zpotrf_L_taskpool_t *)tp;
-
-    dplasma_matrix_del2arena( &parsec_zpotrf->arenas_datatypes[PARSEC_zpotrf_L_DEFAULT_ADT_IDX] );
+    CLEAN_UP_ARENA_DATATYPES(parsec_zpotrf->_g_ddescA, MAX_SHAPES);
+    dplasma_data_collection_t * ddc_A = parsec_zpotrf->_g_ddescA;
     parsec_taskpool_free(tp);
+    /* free the dplasma_data_collection_t */
+    dplasma_unwrap_data_collection(ddc_A);
 }
 
 /**

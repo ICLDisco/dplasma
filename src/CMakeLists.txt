@@ -22,6 +22,7 @@ set(EXTRA_SOURCES
   map2_wrapper.c
   butterfly_map.c
   utils/dplasma_arena_datatype.c
+  utils/dplasma_lapack_adtt.c
 )
 if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)

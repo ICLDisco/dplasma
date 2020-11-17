@@ -12,6 +12,35 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
+/* Define the different shapes this JDF is using */
+#define A_SHAPE 0
+#define B_SHAPE 1
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+/* Note: with this approach to support LAPACK format and minimize
+ * the number of tile conversions performed, it is critical to
+ * determined the correct location on the matrix where the tile was
+ * originated from.
+ * Note that the LOC_TYPE parameters do not correspond to the binding of the
+ * task to the matrix (although sometimes they match). These parameters
+ * correspond to the location were the datacopy was originate on the matrix (maybe
+ * it was read on another task).
+ * If there is no possibility to determine it (datacopy passed along multiple
+ * tasks and that information is lost) the approach is to force a reshapping.
+ *
+ */
+
 %}
 
 side      [type = "dplasma_enum_t"]
@@ -19,20 +48,27 @@ uplo      [type = "dplasma_enum_t"]
 trans     [type = "dplasma_enum_t"]
 diag      [type = "dplasma_enum_t"]
 alpha     [type = "dplasma_complex64_t"]
-descA     [type = "const parsec_tiled_matrix_dc_t*"]
-descB     [type = "parsec_tiled_matrix_dc_t*"]
+
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "const parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+
+ddescB     [type = "dplasma_data_collection_t*"]
+descB      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescB)->dc_original" aligned=ddescB]
 
 read_A(n, k) [profile = off]
   /* Execution Space */
   n = 0 .. (descB->nt-1)
   k = 0 .. (descB->nt-n-1)
 
+loc_A = %{ return LOC_TYPE(descA, k, (descB->nt-1)-n); %}
+
   /* Locality */
   : descA(k, (descB->nt-1)-n)
 
-  READ  A    <- descA(k,(descB->nt-1)-n)
-             -> (k == (descB->nt-1-n)) ? A ztrmm(n, 0..(descB->mt-1))
-             -> (k != (descB->nt-1-n)) ? B zgemm(n, 0..(descB->mt-1), k)
+  READ  A    <- ddescA(k,(descB->nt-1)-n)                                [ type        = %{ return ADTT_READ(ddescA, loc_A, A_SHAPE, TILED); %}
+                                                                           type_data   = %{ return ADTT_READ(ddescA, loc_A, A_SHAPE, LAPACK); %} ]
+             -> (k == (descB->nt-1-n)) ? A ztrmm(n, 0..(descB->mt-1))    /* dep OUT: rely on datacopy dtt for sending */
+             -> (k != (descB->nt-1-n)) ? B zgemm(n, 0..(descB->mt-1), k) /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
@@ -45,11 +81,14 @@ read_B(m, k) [profile = off]
   m = 0 .. (descB->mt-1)
   k = 0 .. (descB->nt-2)
 
+loc_B = %{ return LOC_TYPE(descB, m, k); %}
+
   /* Locality */
   : descB(m,k)
 
-  READ  B    <- descB(m,k)
-             -> A zgemm(0 .. (descB->nt-k-2), m, k)
+  READ  B    <- ddescB(m,k)                         [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
+                                                      type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
+             -> A zgemm(0 .. (descB->nt-k-2), m, k) /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
@@ -62,21 +101,26 @@ ztrmm(n, m) [ flops = inline_c %{ return FLOPS_ZTRMM(side, CLEAN_MB(descB, m), C
   n = 0 .. (descB->nt-1)
   m = 0 .. (descB->mt-1)
 
+loc_A = %{ return LOC_TYPE(descA, (descB->nt-1)-n,(descB->nt-1)-n); %}
+loc_B = %{ return LOC_TYPE(descB, m,             (descB->nt-1)-n); %}
+
   /* Locality */
   : descB(m,(descB->nt-1)-n)
 
   CTL   ctl0 <- ctl0 zgemm(0..n-1, m, descB->nt-n-1)
-  READ  A    <- A read_A(n, descB->nt-1-n)
-  RW    B    <- descB(m,(descB->nt-1)-n)
-             -> (n <  (descB->nt-1)) ? C zgemm(n, m, 0)
-             -> (n == (descB->nt-1)) ? descB(m,(descB->nt-1)-n)
+  READ  A    <- A read_A(n, descB->nt-1-n)                       [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
+  RW    B    <- ddescB(m,(descB->nt-1)-n)                        [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
+                                                                   type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
+             -> (n <  (descB->nt-1)) ? C zgemm(n, m, 0)          /* dep OUT: rely on datacopy dtt for sending */
+             -> (n == (descB->nt-1)) ? ddescB(m,(descB->nt-1)-n) [ type        = %{ return ADTT_CP(_f_B, ddescB, loc_B, B_SHAPE); %}
+                                                                   type_data   = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
 
 BODY
 {
     int tempmm = ((m)==(descB->mt-1)) ? (descB->m-(m*descB->mb)) : descB->mb;
     int tempnn = (((descB->nt-1)-n)==(descB->nt-1)) ? (descB->n-(((descB->nt-1)-n)*descB->nb)) : descB->nb;
-    int lda = BLKLDD( descA, (descB->nt-1)-n );
-    int ldb = BLKLDD( descB, m );
+    int lda = LDA(ddescA, A);
+    int ldb = LDA(ddescB, B);
 
     printlog("CORE_ztrmm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
@@ -94,30 +138,37 @@ zgemm(n, m, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEA
   m = 0 .. (descB->mt-1)
   k = 0 .. (descB->nt-n-2)
 
+loc_A = %{ return LOC_TYPE(descB, m, k ); %}
+loc_B = %{ return LOC_TYPE(descA, k, (descB->nt-1)-n ); %}
+loc_C = %{ return LOC_TYPE(descB, m, (descB->nt-1)-n ); %}
+
   /* Locality */
   : descB(m,(descB->nt-1)-n)
 
   CTL   ctl0 -> ctl0 ztrmm(descB->nt-k-1, m)
-  READ  A    <- B read_B(m, k)
-  READ  B    <- A read_A(n, k)
-  RW    C    <- (k >  0) ? C zgemm(n, m, k-1)
-             <- (k == 0) ? B ztrmm(n, m)
-             -> ((n+k) == (descB->nt-2)) ? descB(m,(descB->nt-1)-n)
-             -> ((n+k) <  (descB->nt-2)) ? C zgemm(n, m, k+1)
+  READ  A    <- B read_B(m, k)                                       [ type_remote = %{ return ADTT_DC(ddescB, loc_A, B_SHAPE, TILED); %} ]
+  READ  B    <- A read_A(n, k)                                       [ type_remote = %{ return ADTT_DC(ddescA, loc_B, A_SHAPE, TILED); %} ]
+  RW    C    <- (k >  0) ? C zgemm(n, m, k-1)                        [ type_remote = %{ return ADTT_DC(ddescB, loc_C, B_SHAPE, TILED); %} ]
+             <- (k == 0) ? B ztrmm(n, m)                             [ type_remote = %{ return ADTT_DC(ddescB, loc_C, B_SHAPE, TILED); %} ]
+             -> ((n+k) == (descB->nt-2)) ? ddescB(m,(descB->nt-1)-n) [ type        = %{ return ADTT_CP(_f_C, ddescB, loc_C, B_SHAPE); %}
+                                                                       type_data   = %{ return ADTT_DC(ddescB, loc_C, B_SHAPE, LAPACK); %} ]
+             -> ((n+k) <  (descB->nt-2)) ? C zgemm(n, m, k+1)         /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
     int tempmm = ((m)==(descB->mt-1)) ? (descB->m-(m*descB->mb)) : descB->mb;
     int tempnn = (((descB->nt-1)-n)==(descB->nt-1)) ? (descB->n-(((descB->nt-1)-n)*descB->nb)) : descB->nb;
-    int ldb = BLKLDD( descB, m );
+    int lda = LDA(ddescB, A);
+    int ldb = LDA(ddescA, B);
+    int ldc = LDA(ddescB, C);
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], descA->mb, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, k, (descB->nt-1)-n, B, m, (descB->nt-1)-n, C);
 
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
-               alpha, A /* descB(m,k) */, ldb,
-                      B /* descA(k,(descB->nt-1)-n) */, descA->mb,
-               1.0,   C /* descB(m,(descB->nt-1)-n) */, ldb );
+               alpha, A /* descB(m,k) */, lda,
+                      B /* descA(k,(descB->nt-1)-n) */, ldb,
+               1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
 }
 END

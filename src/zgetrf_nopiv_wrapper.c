@@ -11,9 +11,12 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 
 #include "zgetrf_nopiv.h"
+
+#define MAX_SHAPES 1
 
 /**
  *******************************************************************************
@@ -68,17 +71,20 @@ parsec_taskpool_t*
 dplasma_zgetrf_nopiv_New( parsec_tiled_matrix_dc_t *A,
                           int *INFO )
 {
+
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection(A);
+
     parsec_zgetrf_nopiv_taskpool_t *parsec_getrf_nopiv;
+    parsec_getrf_nopiv = parsec_zgetrf_nopiv_new( ddc_A, INFO );
 
-    parsec_getrf_nopiv = parsec_zgetrf_nopiv_new( A, INFO );
+    parsec_arena_datatype_t default_adt;
+    int shape = 0;
+    SET_UP_ARENA_DATATYPES( ddc_A,
+                            parsec_datatype_double_complex_t,
+                            matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                            &default_adt, &shape);
 
-    /* A */
-    dplasma_add2arena_tile( &parsec_getrf_nopiv->arenas_datatypes[PARSEC_zgetrf_nopiv_DEFAULT_ADT_IDX],
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
-
-
+    assert(shape == MAX_SHAPES);
     return (parsec_taskpool_t*)parsec_getrf_nopiv;
 }
 
@@ -106,10 +112,14 @@ void
 dplasma_zgetrf_nopiv_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgetrf_nopiv_taskpool_t *parsec_zgetrf_nopiv = (parsec_zgetrf_nopiv_taskpool_t *)tp;
-
-    dplasma_matrix_del2arena( &parsec_zgetrf_nopiv->arenas_datatypes[PARSEC_zgetrf_nopiv_DEFAULT_ADT_IDX] );
+    CLEAN_UP_ARENA_DATATYPES(parsec_zgetrf_nopiv->_g_ddescA, MAX_SHAPES);
+    dplasma_data_collection_t * ddc_A = parsec_zgetrf_nopiv->_g_ddescA;
 
     parsec_taskpool_free(tp);
+
+    /* free the dplasma_data_collection_t */
+    dplasma_unwrap_data_collection(ddc_A);
+
 }
 
 /**

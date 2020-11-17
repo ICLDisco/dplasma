@@ -16,13 +16,17 @@
 
 static double check_solution( int params[], double *Allt );
 
+char TYPE[10]="U";
+//char TYPE[10]="U";
+
 int main( int argc, char **argv ) {
-    int params[8];
+    int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
     int m, n, nb, s, mloc, nloc, verif, iseed;
     int descA[9];
     double *A = NULL;
+    double *X = NULL;
     double resid, telapsed, gflops, pgflops;
 
     setup_params( params, argc, argv );
@@ -34,6 +38,11 @@ int main( int argc, char **argv ) {
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
     verif = params[PARAM_VALIDATE];
+    int number_runs = params[PARAM_NRUNS];
+
+#ifdef DPLASMA_WRAPPER_ON
+    parsec_init_wrapper_();
+#endif
 
     Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
     mloc = numroc_( &m, &nb, &myrow, &i0, &nprow );
@@ -41,43 +50,91 @@ int main( int argc, char **argv ) {
     descinit_( descA, &m, &n, &nb, &nb, &i0, &i0, &ictxt, &mloc, &info );
     assert( 0 == info );
 
-    A = malloc( sizeof(double)*mloc*nloc );
-    scalapack_pdplghe( A,
-                       m, n,
-                       nb, nb,
-                       myrow, mycol,
-                       nprow, npcol,
-                       mloc,
-                       iseed );
+    size_t sz_loc = sizeof(double)*((size_t)mloc)*((size_t)nloc);
+    A = malloc( sz_loc );
 
-    {
+    int t;
+    for(t = 0; t < number_runs; t++) {
+        scalapack_pdplghe( A,
+               m, n,
+               nb, nb,
+               myrow, mycol,
+               nprow, npcol,
+               mloc,
+               iseed );
+
+#ifdef VERBOSE
+        char name[10]="A";
+        double * pwork = malloc( sizeof(double)*mloc*nloc);
+        int nout=6;
+        pdlaprnt_(&m, &n, A, &i1, &i1, descA, &i0, &i0, name, &nout, pwork);
+#endif
+
+#ifdef DPLASMA_WRAPPER_ON
+        parsec_wrapper_devices_release_memory_();
+#endif
+
         double t1, t2;
         t1 = MPI_Wtime();
-        pdpotrf_( "L", &n, A, &i1, &i1, descA, &info );
+
+        pdpotrf_( TYPE, &n, A, &i1, &i1, descA, &info );
+
         assert( 0 == info );
+
         t2 = MPI_Wtime();
         telapsed = t2-t1;
+        if( 0 != iam ) {
+            MPI_Reduce( &telapsed, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+        }
+        else {
+            MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+            gflops = FLOPS_DPOTRF((double)n)/1e+9/telapsed;
+            pgflops = gflops/(((double)nprow)*((double)npcol));
+        }
+
+#ifdef DPLASMA_WRAPPER_ON
+        if( 0 == iam ) {
+            printf("[****] TIMEHL(s) %12.5f : dpotrf \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+                  " - ENQ&PROG&DEST %12.5f : %14f gflops"
+                  " - ENQ %12.5f - DEST %12.5f\n",
+                          telapsed, nprow, npcol, nb, n,
+                          gflops,
+                          telapsed,
+                          gflops,
+                          0.0,0.0);
+        }
+        parsec_wrapper_devices_reset_load_();
+#else
+        if( 0 == iam ) {
+            printf("[****] TIME(s) %12.5f : dpotrf \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+                  " - ENQ&PROG&DEST %12.5f : %14f gflops"
+                  " - ENQ %12.5f - DEST %12.5f\n",
+                          telapsed, nprow, npcol, nb, n,
+                          gflops,
+                          telapsed,
+                          gflops,
+                          0.0,0.0);
+        }
+#endif
+
+
     }
+
     if ( verif ) {
         resid = check_solution( params, A );
     } else {
         resid = -1;
     }
 
-    if( 0 != iam ) {
-        MPI_Reduce( &telapsed, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-    }
-    else {
-        MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-        gflops = FLOPS_DPOTRF((double)n)/1e+9/telapsed;
-        pgflops = gflops/(((double)nprow)*((double)npcol));
-        printf( "### PDPOTRF ###\n"
-                "#%4sx%-4s %7s %7s %4s %4s # %10s %10s %10s %11s\n", "P", "Q", "M", "N", "NB", "NRHS", "resid", "time(s)", "gflops", "gflops/PxQ" );
-        printf( " %4d %-4d %7d %7d %4d %4d   %10.3e %10.3g %10.3g %11.3g\n", nprow, npcol, m, n, nb, s, resid, telapsed, gflops, pgflops );
-    }
+#ifdef VERBOSE
+    pdlaprnt_(&m, &n, A, &i1, &i1, descA, &i0, &i0, name, &nout, pwork);
+#endif
+
+#ifdef DPLASMA_WRAPPER_ON
+    parsec_fini_wrapper_();
+#endif
 
     free( A ); A = NULL;
-
     Cblacs_exit( 0 );
     return 0;
 }

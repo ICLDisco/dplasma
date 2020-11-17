@@ -16,11 +16,11 @@
 
 
 int main( int argc, char **argv ) {
-    int params[8];
+    int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
-    int m, n, nb, s, mloc, nloc, iseed;
-    double *A=NULL, *B=NULL, *C=NULL; int descA[9];
+    int m, n, k, mb, nb, s, mloc, nloc, verif, iseed;
+    double *A=NULL, *B=NULL, *C=NULL; int descA[9], descB[9], descC[9];
     double resid = NAN;
     double telapsed, gflops, pgflops;
 
@@ -29,66 +29,230 @@ int main( int argc, char **argv ) {
     iam   = params[PARAM_RANK];
     m     = params[PARAM_M];
     n     = params[PARAM_N];
+    k     = params[PARAM_K];
+    mb    = params[PARAM_MB];
     nb    = params[PARAM_NB];
     s     = params[PARAM_NRHS];
     iseed = params[PARAM_SEED];
+    verif = params[PARAM_VALIDATE];
+    int number_runs = params[PARAM_NRUNS];
+
+    int Aseed = 3872;
+    int Bseed = 4674;
+    int Cseed = 2873;
+    double alpha =  0.51;
+    double beta  = -0.42;
+
+#ifdef DPLASMA_WRAPPER_ON
+    parsec_init_wrapper_();
+#endif
 
     Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
-    mloc = numroc_( &m, &nb, &myrow, &i0, &nprow );
-    nloc = numroc_( &n, &nb, &mycol, &i0, &npcol );
-    descinit_( descA, &m, &n, &nb, &nb, &i0, &i0, &ictxt, &mloc, &info );
-    assert( 0 == info );
-    A = malloc( sizeof(double)*mloc*nloc );
-    B = malloc( sizeof(double)*mloc*nloc );
-    C = malloc( sizeof(double)*mloc*nloc );
 
-    scalapack_pdplrnt(A,
-                       m, n,
-                       nb, nb,
-                       myrow, mycol,
-                       nprow, npcol,
-                       mloc,
-                       iseed);
-    scalapack_pdplrnt(B,
-                       m, n,
-                       nb, nb,
-                       myrow, mycol,
-                       nprow, npcol,
-                       mloc,
-                       iseed);
-    scalapack_pdplrnt(C,
-                       m, n,
-                       nb, nb,
-                       myrow, mycol,
-                       nprow, npcol,
-                       mloc,
-                       iseed);
+    if(verif){
+        int tA; int tB;
+        char aTA[3] = "nt";
+        char aTB[3] = "nt";
 
-    {
-        double t1, t2;
-        t1 = MPI_Wtime();
-        pdgemm_( "n", "n", &m, &n, &n, &p1, A, &i1, &i1, descA,
-                                            B, &i1, &i1, descA,
-                                       &p1, C, &i1, &i1, descA );
-        t2 = MPI_Wtime();
-        telapsed = t2-t1;
+        for(tA=0; tA<2; tA++) {
+          for(tB=0; tB<2; tB++) {
+            char TA = aTA[tA];
+            char TB = aTB[tB];
+            int Am, An, Ai, Aj, Amb, Anb;
+            int Bm, Bn, Bi, Bj, Bmb, Bnb;
+            int Cm, Cn;
+            if ( TA == 'n') {
+                Am  = m;
+                An  = k;
+            } else {
+                Am  = k;
+                An  = m;
+            }
+            if ( TB == 'n') {
+                Bm  = k;
+                Bn  = n;
+            } else {
+                Bm  = k;
+                Bn  = n;
+            }
+
+            Cm = m;
+            Cn = n;
+
+            mloc = numroc_( &Am, &mb, &myrow, &i0, &nprow );
+            nloc = numroc_( &An, &nb, &mycol, &i0, &npcol );
+            descinit_( descA, &Am, &An, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+            assert( 0 == info );
+            A = malloc( sizeof(double)*mloc*nloc );
+            scalapack_pdplrnt(A,
+                               Am, An,
+                               mb, nb,
+                               myrow, mycol,
+                               nprow, npcol,
+                               mloc,
+                               Aseed);
+
+            mloc = numroc_( &Bm, &mb, &myrow, &i0, &nprow );
+            nloc = numroc_( &Bn, &nb, &mycol, &i0, &npcol );
+            descinit_( descB, &Bm, &Bn, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+            assert( 0 == info );
+            B = malloc( sizeof(double)*mloc*nloc );
+            scalapack_pdplrnt(B,
+                               Bm, Bn,
+                               mb, nb,
+                               myrow, mycol,
+                               nprow, npcol,
+                               mloc,
+                               Bseed);
+
+            mloc = numroc_( &Cm, &mb, &myrow, &i0, &nprow );
+            nloc = numroc_( &Cn, &nb, &mycol, &i0, &npcol );
+            descinit_( descC, &Cm, &Cn, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+            C = malloc( sizeof(double)*mloc*nloc );
+            scalapack_pdplrnt(C,
+                               Cm, Cn,
+                               mb, nb,
+                               myrow, mycol,
+                               nprow, npcol,
+                               mloc,
+                               Cseed);
+            pdgemm_( &TA, &TB, &m, &n, &k, &alpha, A, &i1, &i1, descA,
+                                            B, &i1, &i1, descB,
+                                     &beta, C, &i1, &i1, descC );
+
+            MPI_Barrier(MPI_COMM_WORLD);
+            if( 0 == iam ) {
+              printf("[****] completed dgemm [%c %c] \tPxQ= %3d %-3d NB= %4d N= %7d\n",
+                        TA, TB, nprow, npcol, nb, n);
+            }
+            free( A ); A = NULL;
+            free( B ); B = NULL;
+            free( C ); C = NULL;
+          }
+        }
+
+    }else{// NOT VERIF
+      char TA = 'n';
+      char TB = 'n';
+      int Am, An, Ai, Aj, Amb, Anb;
+      int Bm, Bn, Bi, Bj, Bmb, Bnb;
+      int Cm, Cn;
+      if ( TA == 'n') {
+          Am  = m;
+          An  = k;
+      } else {
+          Am  = k;
+          An  = m;
+      }
+      if ( TB == 'n') {
+          Bm  = k;
+          Bn  = n;
+      } else {
+          Bm  = k;
+          Bn  = n;
+      }
+
+      Cm = m;
+      Cn = n;
+
+      Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
+      mloc = numroc_( &Am, &mb, &myrow, &i0, &nprow );
+      nloc = numroc_( &An, &nb, &mycol, &i0, &npcol );
+      descinit_( descA, &Am, &An, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+      assert( 0 == info );
+      A = malloc( sizeof(double)*mloc*nloc );
+      scalapack_pdplrnt(A,
+                         Am, An,
+                         mb, nb,
+                         myrow, mycol,
+                         nprow, npcol,
+                         mloc,
+                         Aseed);
+
+      mloc = numroc_( &Bm, &mb, &myrow, &i0, &nprow );
+      nloc = numroc_( &Bn, &nb, &mycol, &i0, &npcol );
+      descinit_( descB, &Bm, &Bn, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+      assert( 0 == info );
+      B = malloc( sizeof(double)*mloc*nloc );
+      scalapack_pdplrnt(B,
+                         Bm, Bn,
+                         mb, nb,
+                         myrow, mycol,
+                         nprow, npcol,
+                         mloc,
+                         Bseed);
+
+      mloc = numroc_( &Cm, &mb, &myrow, &i0, &nprow );
+      nloc = numroc_( &Cn, &nb, &mycol, &i0, &npcol );
+      descinit_( descC, &Cm, &Cn, &mb, &nb, &i0, &i0, &ictxt, &mloc, &info );
+      C = malloc( sizeof(double)*mloc*nloc );
+      scalapack_pdplrnt(C,
+                         Cm, Cn,
+                         mb, nb,
+                         myrow, mycol,
+                         nprow, npcol,
+                         mloc,
+                         Cseed);
+
+      int t;
+      for(t = 0; t < number_runs; t++) {
+
+  #ifdef DPLASMA_WRAPPER_ON
+          parsec_wrapper_devices_release_memory_();
+  #endif
+          double t1, t2;
+          t1 = MPI_Wtime();
+
+          pdgemm_( &TA, &TB, &m, &n, &k, &alpha, A, &i1, &i1, descA,
+                                          B, &i1, &i1, descB,
+                                   &beta, C, &i1, &i1, descC );
+
+          t2 = MPI_Wtime();
+          telapsed = t2-t1;
+          if( 0 != iam ) {
+              MPI_Reduce( &telapsed, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+          }
+          else {
+              MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+              gflops = FLOPS_DGEMM((double)m, (double)n, (double)n)/1e+9/telapsed;
+              pgflops = gflops/(((double)nprow)*((double)npcol));
+          }
+
+
+  #ifdef DPLASMA_WRAPPER_ON
+          if( 0 == iam ) {
+              printf("[****] TIMEHL(s) %12.5f : dgemm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+                    " - ENQ&PROG&DEST %12.5f : %14f gflops"
+                    " - ENQ %12.5f - DEST %12.5f\n",
+                            telapsed, nprow, npcol, nb, n,
+                            gflops,
+                            telapsed,
+                            gflops,
+                            0.0,0.0);
+          }
+          parsec_wrapper_devices_reset_load_();
+  #else
+          if( 0 == iam ) {
+              printf("[****] TIME(s) %12.5f : dgemm \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+                    " - ENQ&PROG&DEST %12.5f : %14f gflops"
+                    " - ENQ %12.5f - DEST %12.5f\n",
+                            telapsed, nprow, npcol, nb, n,
+                            gflops,
+                            telapsed,
+                            gflops,
+                            0.0,0.0);
+          }
+  #endif
+
+      }
+      free( A ); A = NULL;
+      free( B ); B = NULL;
+      free( C ); C = NULL;
     }
 
-    if( 0 != iam ) {
-        MPI_Reduce( &telapsed, NULL, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-    }
-    else {
-        MPI_Reduce( MPI_IN_PLACE, &telapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-        gflops = FLOPS_DGEMM((double)m, (double)n, (double)n)/1e+9/telapsed;
-        pgflops = gflops/(((double)nprow)*((double)npcol));
-        printf( "### PDGEMM ###\n"
-                "#%4sx%-4s %7s %7s %4s %4s # %10s %10s %10s %11s\n", "P", "Q", "M", "N", "NB", "NRHS", "resid", "time(s)", "gflops", "gflops/pxq" );
-        printf( " %4d %-4d %7d %7d %4d %4d   %10.3e %10.3g %10.3g %11.3g\n", nprow, npcol, m, n, nb, s, resid, telapsed, gflops, pgflops );
-    }
-
-    free( A ); A = NULL;
-    free( B ); B = NULL;
-    free( C ); C = NULL;
+#ifdef DPLASMA_WRAPPER_ON
+    parsec_fini_wrapper_();
+#endif
 
     Cblacs_exit( 0 );
     return 0;

@@ -8,8 +8,12 @@
 #ifndef _SCALAPACK_COMMON_H_
 #define _SCALAPACK_COMMON_H_
 
-#include "../../tests/flops.h"
+#include "../../src/flops.h"
 
+#ifdef DPLASMA_WRAPPER_ON
+    extern void parsec_init_wrapper_();
+    extern void parsec_fini_wrapper_();
+#endif
 
 static int i0=0, i1=1;
 static double m1=-1e0, p0=0e0, p1=1e0;
@@ -24,10 +28,18 @@ typedef enum {
     PARAM_RANK,
     PARAM_M,
     PARAM_N,
+    PARAM_K,
     PARAM_NB,
+    PARAM_MB,
     PARAM_SEED,
     PARAM_VALIDATE,
-    PARAM_NRHS
+    PARAM_NRHS,
+    PARAM_EXTRA_ROWS,
+    PARAM_NRUNS,
+    PARAM_THREAD_MT,
+    PARAM_WAIT,
+    PARAM_OFFSET,
+    PARAMS_SIZE
 } params_enum_t;
 
 void setup_params( int params[], int argc, char* argv[] );

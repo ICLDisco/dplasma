@@ -17,9 +17,28 @@ extern "C" %{
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
+/* Define the different shapes this JDF is using */
+#define DEFAULT 0
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+#include "zgetrf_nopiv.h"
+
 %}
 
-descA     [type = "parsec_tiled_matrix_dc_t*"]
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+
 ib        [type = "int" hidden=on default="(32)" ]
 KT        [type = "int" hidden=on default="(dplasma_imin( descA->mt, descA->nt )-1)" ]
 INFO      [type = "int*" ]
@@ -28,23 +47,28 @@ zgetrf_nopiv(k) [flops = inline_c%{ return FLOPS_ZGETRF(CLEAN_MB(descA, k), CLEA
   /* Execution Space */
   k = 0 .. KT
 
+/* Track the origin of the datacopy */
+loc_A = %{ return LOC_TYPE(descA, k, k); %}
+
   /* Locality */
   : descA(k,k)
 
-  RW    A    <- (k == 0) ? descA(k,k)
-             <- (k >  0) ? C zgemm(k-1, k, k)
-             -> descA(k,k)
-             -> (k < (descA->mt-1)) ? A ztrsm_l(k, (k+1)..(descA->mt-1))
-             -> (k < (descA->nt-1)) ? A ztrsm_u(k, (k+1)..(descA->nt-1))
+  RW  A <- (k == 0) ? ddescA(k,k)                                   [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                                                      type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+        <- (k >  0) ? C zgemm(k-1, k, k)                            [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+        -> ddescA(k,k)                                              [ type        = %{ return ADTT_CP(_f_A, ddescA, loc_A, DEFAULT); %}
+                                                                      type_data   = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+        -> (k < (descA->mt-1)) ? A ztrsm_l(k, (k+1)..(descA->mt-1)) /* dep OUT: rely on datacopy dtt for sending */
+        -> (k < (descA->nt-1)) ? A ztrsm_u(k, (k+1)..(descA->nt-1)) /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
     int tempkm = ((k)==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int tempkn = ((k)==(descA->nt-1)) ? (descA->n-(k*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
+    int ldak = LDA(ddescA, A);
     printlog("CORE_zgetrf_nopiv(%d)\n"
-             "\t(tempkm, tempkn, ib, A(%d,%d)[%p], ldak, sequence, request, descA->mb*k)\n",
-             k, k, k, A);
+             "\t(tempkm, tempkn, ib, A(%d,%d)[%p], ldak %d, sequence, request, descA->mb*k)\n",
+             k, k, k, A, ldak);
 
     {
         int iinfo = 0;
@@ -64,25 +88,33 @@ ztrsm_l(k, m) [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_MB(descA
   k = 0     .. KT
   m = (k+1) .. (descA->mt-1)
 
+/* Track the origin of the datacopy */
+loc_A = %{ return LOC_TYPE(descA, k, k); %}
+/* Track the origin of the datacopy */
+loc_B = %{ return LOC_TYPE(descA, m, k); %}
+
   /* Locality */
   : descA(m, k)
 
-  READ  A    <- A zgetrf_nopiv(k)
-  RW    B    <- (k == 0) ? descA(m, k)
-             <- (k >  0) ? C zgemm(k-1, m, k)
-             -> (k < (descA->nt-1)) ? A zgemm(k, m, (k+1)..(descA->nt-1))
-             -> descA(m,k)
+  READ  A   <- A zgetrf_nopiv(k)                                         [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+
+  RW    B   <- (k == 0) ? ddescA(m, k)                                   [ type        = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, TILED); %}
+                                                                           type_data   = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, LAPACK); %} ]
+            <- (k >  0) ? C zgemm(k-1, m, k)                             [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
+            -> (k < (descA->nt-1)) ? A zgemm(k, m, (k+1)..(descA->nt-1)) /* dep OUT: rely on datacopy dtt for sending */
+            -> ddescA(m,k)                                               [ type        = %{ return ADTT_CP(_f_B, ddescA, loc_B, DEFAULT); %}
+                                                                           type_data   = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, LAPACK); %} ]
 
 BODY
 {
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempkn = ((k)==(descA->nt-1)) ? (descA->n-(k*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak = LDA(ddescA, A);
+    int ldam = LDA(ddescA, B);
 
     printlog("CORE_ztrsm_l(%d, %d)\n"
-             "\t(dplasmaRight, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, tempmm, tempkn, 1.000000, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldam)\n",
-             k, m, k, k, A, m, k, B);
+             "\t(dplasmaRight, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, tempmm, tempkn, 1.000000, A(%d,%d)[%p], ldak %d, A(%d,%d)[%p], ldam %d)\n",
+             k, m, k, k, A, ldak, m, k, B, ldam);
 
     CORE_ztrsm(dplasmaRight, dplasmaUpper,
                dplasmaNoTrans, dplasmaNonUnit,
@@ -98,29 +130,39 @@ ztrsm_u(k, n) [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(descA,
   k = 0     .. KT
   n = (k+1) .. (descA->nt-1)
 
+/* Track the origin of the datacopy */
+loc_A = %{ return LOC_TYPE(descA, k, k); %}
+/* Track the origin of the datacopy */
+loc_B = %{ return LOC_TYPE(descA, k, n); %}
+
   /* Locality */
   : descA(k,n)
 
-  READ  A    <- A zgetrf_nopiv(k)
-  RW    B    <- (k == 0) ? descA(k, n)
-             <- (k >  0) ? C zgemm(k-1, k, n)
-             -> (k < (descA->mt-1)) ? B zgemm(k, (k+1)..(descA->mt-1), n)
-             -> descA(k, n)
+  READ  A   <- A zgetrf_nopiv(k)                                         [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+
+  RW    B   <- (k == 0) ? ddescA(k, n)                                   [ type        = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, TILED); %}
+                                                                           type_data   = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, LAPACK); %} ]
+            <- (k >  0) ? C zgemm(k-1, k, n)                             [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+            -> (k < (descA->mt-1)) ? B zgemm(k, (k+1)..(descA->mt-1), n) /* dep OUT: rely on datacopy dtt for sending */
+            -> ddescA(k, n)                                              [ type        = %{ return ADTT_CP(_f_B, ddescA, loc_B, DEFAULT); %}
+                                                                           type_data   = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, LAPACK); %} ]
 
 BODY
 {
     int tempkm = ((k)==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
+    int ldak_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
+
 
     printlog("CORE_ztrsm_u(%d, %d)\n"
-             "\t(dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit, tempkm, tempnn, 1.000000, A(%d,%d)[%p], ldak, A(%d,%d)[%p], ldak)\n",
-             k, n, k, k, A, k, n, B);
+             "\t(dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit, tempkm, tempnn, 1.000000, A(%d,%d)[%p], ldak %d, A(%d,%d)[%p], ldak %d)\n",
+             k, n, k, k, A, ldak_A, k, n, B, ldak_B);
 
     CORE_ztrsm(dplasmaLeft, dplasmaLower, dplasmaNoTrans,
                dplasmaUnit, tempkm, tempnn,
-               1., A /* descA(k,k) */, ldak,
-                   B /* descA(k,n) */, ldak );
+               1., A /* descA(k,k) */, ldak_A,
+                   B /* descA(k,n) */, ldak_B );
 }
 END
 
@@ -130,21 +172,38 @@ zgemm(k, m, n) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), CLEAN_
   m = (k+1) .. (descA->mt-1)
   n = (k+1) .. (descA->nt-1)
 
-  /* Locality */
-  : descA(m,n)
+/* Track the origin of the datacopy */
+loc_A = %{ return LOC_TYPE(descA, m, k); %}
+/* Track the origin of the datacopy */
+loc_B = %{ return LOC_TYPE(descA, k, n); %}
+/* Track the origin of the datacopy */
+loc_C = %{ return LOC_TYPE(descA, m, n); %}
 
-  READ  A    <- B ztrsm_l(k, m)
-  READ  B    <- B ztrsm_u(k, n)
-  RW    C    <- (k == 0) ? descA(m, n)
-             <- (k >  0) ? C zgemm(k-1, m, n)
-             -> ((m == (k+1)) && (n == (k+1))) ? A zgetrf_nopiv(k+1)
-             -> ((m >  (k+1)) && (n == (k+1))) ? B ztrsm_l(k+1, m)
-             -> ((m == (k+1)) && (n >  (k+1))) ? B ztrsm_u(k+1, n)
-             -> ((m >  (k+1)) && (n >  (k+1))) ? C zgemm(k+1, m, n)
+  /* Locality */
+  : descA(m, n)
+
+
+  READ  A   <- B ztrsm_l(k, m)                                      [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+
+  READ  B   <- B ztrsm_u(k, n)                                      [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
+
+  RW    C   <- (k == 0) ? ddescA(m, n)                              [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
+                                                                      type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+            <- (k >  0) ? C zgemm(k-1, m, n)                        [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
+            -> ((m == (k+1)) && (n == (k+1))) ? A zgetrf_nopiv(k+1) /* dep OUT: rely on datacopy dtt for sending */
+            -> ((m >  (k+1)) && (n == (k+1))) ? B ztrsm_l(k+1, m)   /* dep OUT: rely on datacopy dtt for sending */
+            -> ((m == (k+1)) && (n >  (k+1))) ? B ztrsm_u(k+1, n)   /* dep OUT: rely on datacopy dtt for sending */
+            -> ((m >  (k+1)) && (n >  (k+1))) ? C zgemm(k+1, m, n)  /* dep OUT: rely on datacopy dtt for sending */
 
 BODY [type=CUDA
       dyld=cublasZgemm dyldtype=cublas_zgemm_t
-      weight="dplasma_imin( m-k, n-k )"]
+      weight="dplasma_imin( m-k, n-k )"
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=descA B.dc=descA C.dc=descA
+      stage_in=stage_in_lapack
+      stage_out=stage_out_lapack]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -156,20 +215,22 @@ BODY [type=CUDA
 
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldam = BLKLDD( descA, m );
-    int ldak = BLKLDD( descA, k );
+    int ldam_A = descA->mb;
+    int ldak_B = descA->mb;
+    int ldam_C = descA->mb;
+
     cublasStatus_t status;
 
     printlogcuda("CUDA_zgemm(%d, %d, %d)\n"
-                 "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, 1.000000, A(%d,%d)[%p], ldam)\n",
-                 k, n, m, m, k, A, k, n, B, m, n, C);
+                 "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam %d, A(%d,%d)[%p], ldak %d, 1.000000, A(%d,%d)[%p], ldam %d)\n",
+                 k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 
     cublasSetKernelStream( parsec_body.stream );
     parsec_body.dyld_fn( 'N', 'N',
              tempmm, tempnn, descA->mb,
-             mzone, (cuDoubleComplex*)A, ldam,
-                    (cuDoubleComplex*)B, ldak,
-             zone,  (cuDoubleComplex*)C, ldam );
+             mzone, (cuDoubleComplex*)A, ldam_A,
+                    (cuDoubleComplex*)B, ldak_B,
+             zone,  (cuDoubleComplex*)C, ldam_C);
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
                             {return -1;} );
@@ -180,18 +241,19 @@ BODY
 {
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldam = BLKLDD( descA, m );
-    int ldak = BLKLDD( descA, k );
+    int ldam_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
-             "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam, A(%d,%d)[%p], ldak, 1.000000, A(%d,%d)[%p], ldam)\n",
-             k, n, m, m, k, A, k, n, B, m, n, C);
+             "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam %d, A(%d,%d)[%p], ldak %d, 1.000000, A(%d,%d)[%p], ldam %d)\n",
+             k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 
     CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                tempmm, tempnn, descA->mb,
-               -1., A /* descA(m,k) */, ldam,
-                    B /* descA(k,n) */, ldak,
-                1., C /* descA(m,n) */, ldam );
+               -1., A /* descA(m,k) */, ldam_A,
+                    B /* descA(k,n) */, ldak_B,
+                1., C /* descA(m,n) */, ldam_C);
 }
 END
 

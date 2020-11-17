@@ -37,15 +37,20 @@ static inline double get_cur_time(void)
 } while(0)
 
 #ifdef PARSEC_HAVE_MPI
-# define SYNC_TIME_START() do {                 \
-        MPI_Barrier(MPI_COMM_WORLD);            \
-        PARSEC_PROFILING_START();                \
-        sync_time_elapsed = get_cur_time();     \
+# define SYNC_TIME_START_COMM(COMM) do {\
+        MPI_Barrier(COMM);\
+        PARSEC_PROFILING_START();\
+        sync_time_elapsed = get_cur_time();\
     } while(0)
-# define SYNC_TIME_STOP() do {                                  \
-        MPI_Barrier(MPI_COMM_WORLD);                            \
-        sync_time_elapsed = get_cur_time() - sync_time_elapsed; \
+
+# define SYNC_TIME_STOP_COMM(COMM) do {\
+        MPI_Barrier(COMM);\
+        sync_time_elapsed = get_cur_time() - sync_time_elapsed;\
     } while(0)
+
+# define SYNC_TIME_START() SYNC_TIME_START_COMM(MPI_COMM_WORLD)
+# define SYNC_TIME_STOP() SYNC_TIME_STOP_COMM(MPI_COMM_WORLD)
+
 # define SYNC_TIME_PRINT(rank, print) do {                          \
         SYNC_TIME_STOP();                                           \
         if(0 == rank) {                                             \
@@ -57,7 +62,7 @@ static inline double get_cur_time(void)
 /* overload exit in MPI mode */
 #   define exit(ret) MPI_Abort(MPI_COMM_WORLD, ret)
 
-#else 
+#else
 # define SYNC_TIME_START() do { sync_time_elapsed = get_cur_time(); } while(0)
 # define SYNC_TIME_STOP() do { sync_time_elapsed = get_cur_time() - sync_time_elapsed; } while(0)
 # define SYNC_TIME_PRINT(rank, print) do {                           \

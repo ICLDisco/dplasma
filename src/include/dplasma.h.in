@@ -7,8 +7,11 @@
 #ifndef _DPLASMA_H_
 #define _DPLASMA_H_
 
+
 #include "parsec/runtime.h"
 #include "parsec/data_dist/matrix/matrix.h"
+#include "parsec/data_distribution.h"
+#include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 #define DPLASMA_VERSION_MAJOR @DPLASMA_VERSION_MAJOR@
 #define DPLASMA_VERSION_MINOR @DPLASMA_VERSION_MINOR@
@@ -17,6 +20,8 @@
 #include "dplasma/config.h"
 
 BEGIN_C_DECLS
+
+typedef struct dplasma_data_collection_s dplasma_data_collection_t;
 
 /**
  * Helper for computing integer max/min and round down, as this

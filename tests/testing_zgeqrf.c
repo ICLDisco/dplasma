@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 32, 200, 200);
-    iparam[IPARAM_KP] = 4;
+    iparam[IPARAM_KP] = 1; //ORIG CODE iparam[IPARAM_KP] = 4;
     iparam[IPARAM_KQ] = 1;
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = -'m';
