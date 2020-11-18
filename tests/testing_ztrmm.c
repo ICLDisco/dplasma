@@ -45,12 +45,12 @@ int main(int argc, char ** argv)
     LDC = max(LDC, M);
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, Am, 0, 0,
-                               Am, Am, KP, KQ, P));
+                               rank, MB, NB, LDA, Am, 0, 0,
+                               Am, Am, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     if(!check)
     {
@@ -93,8 +93,8 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_ALLOCATE_MATRIX(dcC2, 1,
             two_dim_block_cyclic, (&dcC2, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDC, N, 0, 0,
-                                   M, N, KP, KQ, P));
+                                   rank, MB, NB, LDC, N, 0, 0,
+                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
 
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC2, Cseed);
 
@@ -200,12 +200,12 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDA, An, 0, 0,
-                               Am, An, 1, 1, 1));
+                               rank, MB, NB, LDA, An, 0, 0,
+                               Am, An, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, 1, 1, 1));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, 1, 1, 1, 1, 0, 0));
 
     dplasma_zplghe( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );

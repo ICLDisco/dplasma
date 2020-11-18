@@ -50,35 +50,35 @@ int main(int argc, char ** argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   N, N, P, uplo));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   N, N, P, nodes/P, uplo));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
         sym_two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   N, N, P, uplo));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   N, N, P, nodes/P, uplo));
 
 #if defined(CHECK_B)
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, KP, KQ, P));
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, KP, KQ, P));
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 #endif
 
     PASTE_CODE_ALLOCATE_MATRIX(dcInvA, check_inv,
         two_dim_block_cyclic, (&dcInvA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               N, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               N, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcI, check_inv,
         two_dim_block_cyclic, (&dcI, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               N, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               N, N, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

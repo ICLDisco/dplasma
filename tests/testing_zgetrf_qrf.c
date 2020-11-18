@@ -59,42 +59,42 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                                two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, P));
+                                                      rank, MB, NB, LDA, N, 0, 0,
+                                                      M, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcTS, 1,
                                two_dim_block_cyclic, (&dcTS, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                                                      MT*IB, N, KP, KQ, P));
+                                                      rank, IB, NB, MT*IB, N, 0, 0,
+                                                      MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcTT, 1,
                                two_dim_block_cyclic, (&dcTT, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                                                      MT*IB, N, KP, KQ, P));
+                                                      rank, IB, NB, MT*IB, N, 0, 0,
+                                                      MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
                                two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
-                                                      nodes, rank, MB, 1, M, NT, 0, 0,
-                                                      M, NT, KP, KQ, P));
+                                                      rank, MB, 1, M, NT, 0, 0,
+                                                      M, NT, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
                                two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, P));
+                                                      rank, MB, NB, LDA, N, 0, 0,
+                                                      M, N, P, nodes/P, KP, KQ, IP, JQ));
     /* Random B check */
     PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
                                two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                                      M, NRHS, KP, KQ, P));
+                                                      rank, MB, NB, LDB, NRHS, 0, 0,
+                                                      M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
                                two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                                      M, NRHS, KP, KQ, P));
+                                                      rank, MB, NB, LDB, NRHS, 0, 0,
+                                                      M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
     /* Inverse check */
     PASTE_CODE_ALLOCATE_MATRIX(dcInvA, check_inv,
                                two_dim_block_cyclic, (&dcInvA, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, P));
+                                                      rank, MB, NB, LDA, N, 0, 0,
+                                                      M, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcI, check_inv,
                                two_dim_block_cyclic, (&dcI, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, P));
+                                                      rank, MB, NB, LDA, N, 0, 0,
+                                                      M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     lu_tab = (int *)malloc( dplasma_imin(MT, NT)*sizeof(int) );
     for(i=0; i< dplasma_imin(MT, NT); i++)

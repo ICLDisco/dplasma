@@ -348,8 +348,8 @@ int main(int argc, char **argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   N, N, P, uplo));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   N, N, P, nodes/P, uplo));
 
     parsec_dtd_data_collection_init((parsec_data_collection_t *)&dcA);
 
@@ -425,8 +425,8 @@ int main(int argc, char **argv)
         /* Check the factorization */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
             sym_two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble,
-                                       nodes, rank, MB, NB, LDA, N, 0, 0,
-                                       N, N, P, uplo));
+                                       rank, MB, NB, LDA, N, 0, 0,
+                                       N, N, P, nodes/P, uplo));
         dplasma_zplghe( parsec, (double)(N), uplo,
                         (parsec_tiled_matrix_dc_t *)&dcA0, random_seed);
 
@@ -437,14 +437,14 @@ int main(int argc, char **argv)
         /* Check the solution */
         PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
             two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, KP, KQ, P));
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
             two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                                   N, NRHS, KP, KQ, P));
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
 

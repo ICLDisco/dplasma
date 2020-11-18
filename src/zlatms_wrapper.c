@@ -112,7 +112,7 @@ dplasma_zlatms( parsec_context_t *parsec,
                 unsigned long long int seed)
 {
     two_dim_block_cyclic_t Q, T;
-    int nodes, rank, mb, nb, m, n, mt, nt, P;
+    int nodes, rank, mb, nb, m, n, mt, nt, P, IP, JQ;
 
     /* Init the diagonal of A */
     {
@@ -142,9 +142,13 @@ dplasma_zlatms( parsec_context_t *parsec,
 
     if ( A->dtype & two_dim_block_cyclic_type ) {
         P = ((two_dim_block_cyclic_t*)A)->grid.rows;
+        IP = ((two_dim_block_cyclic_t*)A)->grid.ip;
+        JQ = ((two_dim_block_cyclic_t*)A)->grid.jq;
     }
     else if ( A->dtype & sym_two_dim_block_cyclic_type ) {
         P = ((sym_two_dim_block_cyclic_t*)A)->grid.rows;
+        IP = ((sym_two_dim_block_cyclic_t*)A)->grid.ip;
+        JQ = ((sym_two_dim_block_cyclic_t*)A)->grid.jq;
     }
     else {
         P = 1;
@@ -152,7 +156,7 @@ dplasma_zlatms( parsec_context_t *parsec,
 
     /* Init the random matrix R */
     two_dim_block_cyclic_init( &Q, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, mb, nb, m, n, 0, 0, m, n, 1, 1, P );
+                               rank, mb, nb, m, n, 0, 0, m, n, P, nodes/P, 1, 1, IP, JQ );
     Q.mat = parsec_data_allocate((size_t)Q.super.nb_local_tiles *
                                 (size_t)Q.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(Q.super.mtype));
@@ -160,7 +164,7 @@ dplasma_zlatms( parsec_context_t *parsec,
 
     /* Init the T matrix */
     two_dim_block_cyclic_init( &T, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, 32, nb, mt*32, n, 0, 0, mt*32, n, 1, 1, P );
+                               rank, 32, nb, mt*32, n, 0, 0, mt*32, n, P, nodes/P, 1, 1, IP, JQ );
     T.mat = parsec_data_allocate((size_t)T.super.nb_local_tiles *
                                 (size_t)T.super.bsiz *
                                 (size_t)parsec_datadist_getsizeoftype(T.super.mtype));

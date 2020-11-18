@@ -56,8 +56,8 @@ int main(int argc, char ** argv)
         /* initializing matrix structure */
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDA, allN[ nbN-1 ], 0, 0,
-                                   allM[ nbM-1 ], allN[ nbN-1 ], KP, KQ, P));
+                                   rank, MB, NB, LDA, allN[ nbN-1 ], 0, 0,
+                                   allM[ nbM-1 ], allN[ nbN-1 ], P, nodes/P, KP, KQ, IP, JQ));
 
         /*
          *
@@ -168,8 +168,8 @@ int main(int argc, char ** argv)
         /* initializing matrix structure */
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, KP, KQ, P));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
 
 #if defined(SYSTOLIC)
         dplasma_systolic_init( &qrtree,

@@ -45,12 +45,12 @@ int main(int argc, char *argv[])
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               N, N, KP, KP, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               N, N, P, nodes/P, KP, KP, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
         two_dim_block_cyclic, (&dcT, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, KP, KP, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, KP, KP, IP, JQ));
 
     /* Fill A with randomness */
     dplasma_zplghe( parsec, (double)N, uplo,
@@ -76,8 +76,8 @@ goto fin;
     /* Step 2 - Conversion of the tiled band to 1D band storage */
     PASTE_CODE_ALLOCATE_MATRIX(dcBAND, 1,
         two_dim_block_cyclic, (&dcBAND, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
-                               MB+1, (NB+2)*(NT+1), 1, KQ, 1 /* 1D cyclic */ ));
+                               rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
+                               MB+1, (NB+2)*(NT+1), 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
     SYNC_TIME_START();
     parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)&dcA, &dcBAND,
                                                                                             MT, NT, MB, NB, sizeof(dplasma_complex64_t));
@@ -118,12 +118,12 @@ goto fin;
             /* LAcpy doesn't taskpool differing tile sizes, so lets get simple here */
             PASTE_CODE_ALLOCATE_MATRIX(dcW, 1,
                                        two_dim_block_cyclic, (&dcW, matrix_ComplexDouble, matrix_Tile,
-                                                              nodes, rank, 2, N, 1, 1, 0, 0, 2, N, 1, 1, 1)); /* on rank 0 only */
+                                                              rank, 2, N, 1, 1, 0, 0, 2, N, 1, nodes, 1, 1, IP, JQ)); /* on rank 0 only */
 #else
             PASTE_CODE_ALLOCATE_MATRIX(dcW, 1,
                                        two_dim_block_cyclic, (&dcW, matrix_ComplexDouble, matrix_Tile,
-                                                              1, rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
-                                                              MB+1, (NB+2)*NT, 1, 1, 1 /* rank0 only */ ));
+                                                              rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
+                                                              MB+1, (NB+2)*NT, 1, 1, 1, 1, IP, JQ/* rank0 only */ ));
 #endif
             dplasma_zlacpy(parsec, dplasmaUpperLower, &dcBAND.super, &dcW.super);
             band = dcW.mat;
@@ -172,16 +172,16 @@ goto fin;
         /* Regenerate A (same random generator) into A0 */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0t, 1,
                                    two_dim_block_cyclic, (&dcA0t, matrix_ComplexDouble, matrix_Tile,
-                                                          1, rank, MB, NB, LDA, N, 0, 0,
-                                                          N, N, 1, 1, 1));
+                                                          rank, MB, NB, LDA, N, 0, 0,
+                                                          N, N, 1, 1, 1, 1, IP, JQ));
         /* Fill A0 again */
         dplasma_zlaset( parsec, dplasmaUpperLower, 0.0, 0.0, &dcA0t.super);
         dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_dc_t *)&dcA0t, 3872);
         /* Convert into Lapack format */
-        PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1, 
+        PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
                                    two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Lapack,
-                                                          1, rank, MB, NB, LDA, N, 0, 0,
-                                                          N, N, 1, 1, 1));
+                                                          rank, MB, NB, LDA, N, 0, 0,
+                                                          N, N, 1, 1, 1, 1, IP, JQ));
         dplasma_zlacpy( parsec, uplo, &dcA0t.super, &dcA0.super);
         parsec_data_free(dcA0t.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0t);

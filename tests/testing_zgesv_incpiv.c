@@ -36,33 +36,33 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDA, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, 1,
         two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, KP, KQ, P));
+                               rank, MB, NB, LDB, NRHS, 0, 0,
+                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcL, 1,
         two_dim_block_cyclic, (&dcL, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, KP, KQ, P));
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
         two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
-                               nodes, rank, MB, 1, M, NT, 0, 0,
-                               M, NT, KP, KQ, P));
+                               rank, MB, 1, M, NT, 0, 0,
+                               M, NT, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");

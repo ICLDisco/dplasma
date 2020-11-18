@@ -37,8 +37,8 @@ int main(int argc, char ** argv)
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
         two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDA, An, 0, 0,
-                               M, An, KP, KQ, 1));
+                               rank, MB, NB, LDA, An, 0, 0,
+                               M, An, 1, 1, KP, KQ, IP, JQ));
 
     if( rank == 0 ) {
         work = (double *)malloc( max(M,N) * sizeof(double));
@@ -50,8 +50,8 @@ int main(int argc, char ** argv)
     {
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, KP, KQ, P));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
@@ -133,8 +133,8 @@ int main(int argc, char ** argv)
         /* Computing the norm */
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   M, N, KP, KQ, P));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
 
         for(u=0; u<2; u++) {
             dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_dc_t *)&dcA, 3872);
@@ -219,8 +219,8 @@ int main(int argc, char ** argv)
             /* Computing the norm */
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                 sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                           nodes, rank, MB, NB, LDA, N, 0, 0,
-                                           M, N, P, uplo[u]));
+                                           rank, MB, NB, LDA, N, 0, 0,
+                                           M, N, P, nodes/P, uplo[u]));
 
             dplasma_zplgsy( parsec, 0., uplo[u], (parsec_tiled_matrix_dc_t *)&dcA, 3872);
 
@@ -299,8 +299,8 @@ int main(int argc, char ** argv)
             /* Computing the norm */
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                 sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                           nodes, rank, MB, NB, LDA, N, 0, 0,
-                                           M, N, P, uplo[u]));
+                                           rank, MB, NB, LDA, N, 0, 0,
+                                           M, N, P, nodes/P, uplo[u]));
 
             dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_dc_t *)&dcA, 3872);
 

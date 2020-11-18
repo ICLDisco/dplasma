@@ -38,8 +38,8 @@ int main(int argc, char ** argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                   nodes, rank, MB, NB, LDA, N, 0, 0,
-                                   N, N, P, uplo));
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   N, N, P, nodes/P, uplo));
 
     /* matrix generation */
     if(loud > 3) printf("+++ Generate matrices ... ");
@@ -68,8 +68,8 @@ int main(int argc, char ** argv)
     if( !info && check ) {
         /* Check the factorization */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
-            two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile, nodes, rank,
-                                   MB, NB, LDA, N, 0, 0, N, N, 1, 1, P));
+            two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile, rank,
+                                   MB, NB, LDA, N, 0, 0, N, N, P, nodes/P, 1, 1, IP, JQ));
         dplasma_zplghe( parsec, (double)(N), dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA0, random_seed);
 

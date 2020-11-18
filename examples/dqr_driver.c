@@ -133,8 +133,8 @@ int main(int argc, char ** argv)
      *  for documentation on all parameters.
      */
     two_dim_block_cyclic_init(&dcA, matrix_RealDouble, matrix_Tile,
-                              world, rank, mb, nb, M, N, 0, 0,
-                              M, N, 4, 1, P);
+                              rank, mb, nb, M, N, 0, 0,
+                              M, N, P, world/P, 4, 1, 0, 0);
     /** Give a name to this matrix, for debugging and tracing purposes */
     parsec_data_collection_set_key((parsec_data_collection_t*)&dcA, "A");
     /** Allocate memory for the local view of the matrix.
@@ -150,8 +150,8 @@ int main(int argc, char ** argv)
      *  That matrix is distributed over the same process grid as A.
      */
     two_dim_block_cyclic_init(&dcWork, matrix_RealDouble, matrix_Tile,
-                              world, rank, ib, nb, dcA.super.lmt*ib, N, 0, 0,
-                              dcA.super.lmt*ib, N, 4, 1, P);
+                              rank, ib, nb, dcA.super.lmt*ib, N, 0, 0,
+                              dcA.super.lmt*ib, P, world/P, N, 4, 1, 0, 0);
     /** Give a name to this matrix, for debugging and tracing purposes */
     parsec_data_collection_set_key((parsec_data_collection_t*)&dcWork, "Work");
     /** Allocate memory for the workspace */

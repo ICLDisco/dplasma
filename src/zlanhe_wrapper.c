@@ -80,7 +80,7 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
                     const parsec_tiled_matrix_dc_t *A,
                     double *result )
 {
-    int P, Q, mb, nb, elt, m;
+    int P, Q, IP, JQ, mb, nb, elt, m;
     two_dim_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlanhe = NULL;
 
@@ -100,6 +100,8 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
 
     P = ((sym_two_dim_block_cyclic_t*)A)->grid.rows;
     Q = ((sym_two_dim_block_cyclic_t*)A)->grid.cols;
+    IP = ((two_dim_block_cyclic_t*)A)->grid.ip;
+    JQ = ((two_dim_block_cyclic_t*)A)->grid.jq;
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     switch( norm ) {
@@ -130,12 +132,12 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
 
     two_dim_block_cyclic_init(
         Tdist, matrix_RealDouble, matrix_Tile,
-        A->super.nodes, A->super.myrank,
+        A->super.myrank,
         1, 1,   /* Dimensions of the tiles              */
         m, P*Q, /* Dimensions of the matrix             */
         0, 0,   /* Starting points (not important here) */
         m, P*Q, /* Dimensions of the submatrix          */
-        1, 1, P);
+        P, Q, 1, 1, IP, JQ);
     Tdist->super.super.data_of = fake_data_of;
 
     /* Create the DAG */

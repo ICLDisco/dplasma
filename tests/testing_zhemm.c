@@ -42,18 +42,18 @@ int main(int argc, char ** argv)
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDB, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDB, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcC2, check,
         two_dim_block_cyclic, (&dcC2, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, KP, KQ, P));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     if (loud > 2) printf("Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB,  Bseed);
@@ -73,8 +73,8 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                       nodes, rank, MB, NB, LDA, Am, 0, 0,
-                                       Am, Am, P, uplo));
+                                       rank, MB, NB, LDA, Am, 0, 0,
+                                       Am, Am, P, nodes/P, uplo));
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
@@ -110,8 +110,8 @@ int main(int argc, char ** argv)
 
                 PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                     sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
-                                               nodes, rank, MB, NB, LDA, Am, 0, 0,
-                                               Am, Am, P, uplo[u]));
+                                               rank, MB, NB, LDA, Am, 0, 0,
+                                               Am, Am, P, nodes/P, uplo[u]));
 
                 if (loud > 2) printf("Generate matrices ... ");
                 dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
@@ -194,16 +194,16 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDA, An, 0, 0,
-                               Am, An, 1, 1, 1));
+                               rank, MB, NB, LDA, An, 0, 0,
+                               Am, An, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
         two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, 1, 1, 1));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, 1, 1, 1, 1, 0, 0));
     PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
         two_dim_block_cyclic, (&dcC, matrix_ComplexDouble, matrix_Lapack,
-                               1, rank, MB, NB, LDC, N, 0, 0,
-                               M, N, 1, 1, 1));
+                               rank, MB, NB, LDC, N, 0, 0,
+                               M, N, 1, 1, 1, 1, 0, 0));
 
     dplasma_zplghe( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, Bseed );
