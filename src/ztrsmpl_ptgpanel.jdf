@@ -328,7 +328,7 @@ k = 0 .. minmnt
 height = inline_c %{ return dplasma_imin( descA->mt-k, P ); %}
 depth  = inline_c %{ return (int)ceil( log ( dplasma_imax(height,2) ) / log(2.) ); %}
 l = 1 .. depth
-i = 0 .. inline_c %{ return dplasma_imin( ((1 << (depth - l)) - 1), height / 2 ); %}
+i = 0 .. inline_c %{ return dplasma_imin( ((1 << (depth - l)) - 1), (height - 1) / 2 ); %}
 n = 0 .. descB->nt-1
 
 size = inline_c %{ return 1<<(l-1); %}
