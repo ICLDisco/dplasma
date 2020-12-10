@@ -29,7 +29,7 @@ trtri_ztrsmR(k, m) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_M
 
   CTL   ctl  -> (k == 0) ? ctlr trtri_ztrtri(0)
 
-  READ  A    <- A ztrsm_in_A(k)        [type = LOWER_TILE]
+  READ  A    <- A ztrsm_in_A(k)        [type_remote = LOWER_TILE]
 
   RW    B    <- descA(m, k)
                  /* Read Only tasks */
@@ -128,7 +128,7 @@ trtri_ztrsmL(k, n) [ flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB
     /* Release the trtri_ztrtri on A(k,k) */
   CTL   ctl  -> ctll trtri_ztrtri(k)
 
-  READ  A    <- A ztrsm_in_A(k)        [type = LOWER_TILE]
+  READ  A    <- A ztrsm_in_A(k)        [type_remote = LOWER_TILE]
   RW    B    <- (k == (n+1)) ? B trtri_ztrsmR(k-1, k)
              <- (k >  (n+1)) ? C trtri_zgemm(k-1, k, n)
              -> descA(k, n)
@@ -156,9 +156,9 @@ ztrsm_in_A(k) [profile = off]
   /* Locality */
   : descA(k,k)
 
-  READ  A    <- descA(k,k)                                                [type = LOWER_TILE]
-             -> (k < descA->mt-1) ? A trtri_ztrsmR(k, (k+1)..(descA->mt-1)) [type = LOWER_TILE]
-             -> (k > 0)          ? A trtri_ztrsmL(k, 0..(k-1))            [type = LOWER_TILE]
+  READ  A    <- descA(k,k)                                                /*[type = LOWER_TILE type_data = LOWER_TILE]*/
+             -> (k < descA->mt-1) ? A trtri_ztrsmR(k, (k+1)..(descA->mt-1)) [type_remote = LOWER_TILE]
+             -> (k > 0)          ? A trtri_ztrsmL(k, 0..(k-1))              [type_remote = LOWER_TILE]
 
 BODY
 {
@@ -176,8 +176,8 @@ trtri_ztrtri(k) [ flops = inline_c %{ return FLOPS_ZTRTRI(CLEAN_NB(descA, k)); %
   CTL   ctlr  <- ((k == 0)  && (descA->mt > 1)) ? ctl trtri_ztrsmR(0, 1 .. descA->mt-1)
   CTL   ctll  <-  (k > 0)                      ? ctl trtri_ztrsmL(k, 0 .. k-1)
 
-  RW    A    <- descA(k,k)     [type = LOWER_TILE]
-             -> descA(k,k)     [type = LOWER_TILE]
+  RW    A    <- descA(k,k)   /*[type = LOWER_TILE type_data = LOWER_TILE]*/
+             -> descA(k,k)     [type = LOWER_TILE type_data = LOWER_TILE]
 
 BODY
 {

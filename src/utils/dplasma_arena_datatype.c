@@ -134,7 +134,7 @@ int dplasma_get_or_construct_arena(parsec_arena_t** parena,
 void dplasma_cleanup_arenas(parsec_arena_t** arenas,
                            int count)
 {
-    int i; 
+    int i;
     parsec_key_t k;
     dplasma_arena_t * arena_entry;
     if(dplasma_arenas == NULL)
@@ -146,7 +146,7 @@ void dplasma_cleanup_arenas(parsec_arena_t** arenas,
     }
 
     for(i = 0; i < count; i++){
-        k = (parsec_key_t) arenas[i]->elem_size; 
+        k = (parsec_key_t) arenas[i]->elem_size;
         arena_entry = (dplasma_arena_t *)parsec_hash_table_nolock_find(dplasma_arenas, k);
         if(arena_entry != NULL){
             dplasma_arenas_release( (void *)arena_entry, NULL);
@@ -183,8 +183,8 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
     }
     /* New dtt entry */
     rc = parsec_matrix_define_datatype( newtype, oldtype,
-                                            uplo, diag, m, n, ld,
-                                            resized, extent);
+                                        uplo, diag, m, n, ld,
+                                        resized, extent);
 
     if( 0 == rc ) {
         dtt_entry = (dplasma_datatype_t *)malloc(sizeof(dplasma_datatype_t));
@@ -196,8 +196,8 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
 #else
     /* New dtt */
     rc = parsec_matrix_define_datatype( newtype, oldtype,
-                                            uplo, diag, m, n, ld,
-                                            resized, extent);
+                                        uplo, diag, m, n, ld,
+                                        resized, extent);
 #endif
     return rc;
 
@@ -206,11 +206,11 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
 int dplasma_cleanup_datatype( parsec_datatype_t *dtt )
 {
 #ifdef REUSE_ARENA_DATATYPE
-    /* The key of a datatype can only be constructed with the arguments used during creation. 
+    /* The key of a datatype can only be constructed with the arguments used during creation.
      * Thus, datatypes will be cleaned during callback during parsec context at fini.
      */
     (void)dtt;
-    return 0; 
+    return 0;
 #else
     return parsec_type_free( dtt );
 #endif

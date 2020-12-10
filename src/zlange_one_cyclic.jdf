@@ -70,8 +70,9 @@ STEP1(m,n)
 
     // Parameters
     READ A <-  descA(m, n)
-    RW   W <-  ( m < (mmax+1-P)) ? W STEP1( m+P, n ) : NEW               [type = COL]
-           ->  ( m < (mmin+P)  ) ? W STEP2( m%P, n ) : W STEP1( m-P, n ) [type = COL]
+    RW   W <-  ( m <  (mmax+1-P)) ? W STEP1( m+P, n )                     [type_remote = COL]
+           <-  ( m >= (mmax+1-P)) ? NEW                                   [type = COL]
+           ->  ( m <  (mmin+P)  ) ? W STEP2( m%P, n ) : W STEP1( m-P, n ) [type_remote = COL]
 
 BODY
 {
@@ -123,9 +124,10 @@ STEP2(m, n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- ( m   == 0    ) ? NULL               : W STEP2(m-1, n) [type = COL]
-    RW   W <- ( row >  mmax ) ? NEW                : W STEP1(row, n) [type = COL]
-           -> ( m   == (P-1)) ? A STEP3(0..P-1, n) : A STEP2(m+1, n) [type = COL]
+    READ A <- ( m   == 0    ) ? NULL               : W STEP2(m-1, n) [type_remote = COL]
+    RW   W <- ( row >  mmax ) ? NEW                                  [type = COL]
+           <- ( row <= mmax ) ? W STEP1(row, n)                      [type_remote = COL]
+           -> ( m   == (P-1)) ? A STEP3(0..P-1, n) : A STEP2(m+1, n) [type_remote = COL]
 
 BODY
 {
@@ -163,9 +165,10 @@ STEP3(m, n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- W STEP2(P-1, n)                                      [type = COL]
-    RW   W <- (n < (NT-Q)) ? W STEP3( m, n+Q ) : NEW               [type = ELT]
-           -> (n < Q     ) ? W STEP4( m, n   ) : W STEP3( m, n-Q ) [type = ELT]
+    READ A <- W STEP2(P-1, n)                                       [type_remote = COL]
+    RW   W <- (n <  (NT-Q)) ? W STEP3( m, n+Q )                     [type_remote = ELT]
+           <- (n >= (NT-Q)) ? NEW                                   [type = ELT]
+           -> (n <  Q     ) ? W STEP4( m, n   ) : W STEP3( m, n-Q ) [type_remote = ELT]
 
 BODY
 {
@@ -205,9 +208,10 @@ STEP4(m,n)
     :Tdist(m, n)
 
     // Parameters
-    READ A <- ( n ==  0     ) ? NULL                   : W STEP4(m, n-1) [type = ELT]
-    RW   W <- ( n >  (NT-1) ) ? NEW                    : W STEP3(m, n  ) [type = ELT]
-           -> ( n == (Q-1)  ) ? W WRITE_RES(m, 0..Q-1) : A STEP4(m, n+1) [type = ELT]
+    READ A <- ( n ==  0     ) ? NULL                   : W STEP4(m, n-1) [type_remote = ELT]
+    RW   W <- ( n >  (NT-1) ) ? NEW                                      [type = ELT]
+           <- ( n <= (NT-1) ) ? W STEP3(m, n  )                          [type_remote = ELT]
+           -> ( n == (Q-1)  ) ? W WRITE_RES(m, 0..Q-1) : A STEP4(m, n+1) [type_remote = ELT]
 
 BODY
 {
@@ -237,7 +241,7 @@ WRITE_RES(m,n)
     :Tdist(m, n)
 
     // Parameters
-    READ W <- W STEP4( m, Q-1 )   [type = ELT]
+    READ W <- W STEP4( m, Q-1 )   [type_remote = ELT]
 
 BODY
 {

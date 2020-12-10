@@ -27,8 +27,8 @@ readA(m, n) [profile = off]
   : descA(m,n)
 
   READ  A    <- descA(m,n)
-             -> (m == n)           ? A lauum_zlauum(m)                 [type = LOWER_TILE]
-             -> (m == n) & (m > 0) ? A lauum_ztrmm(n, 0 .. (n-1))      [type = LOWER_TILE]
+             -> (m == n)           ? A lauum_zlauum(m)                 [type_remote = LOWER_TILE]
+             -> (m == n) & (m > 0) ? A lauum_ztrmm(n, 0 .. (n-1))      [type_remote = LOWER_TILE]
              -> (m >  n)           ? A lauum_zherk(m, n)
              -> (m >  n)           ? B lauum_ztrmm(m, n)
              -> (m >  n) & (n > 0) ? A lauum_zgemm(m, 0..(n-1), n)
@@ -51,10 +51,10 @@ lauum_zherk(k, n) [flops = inline_c %{ return FLOPS_ZHERK(descA->mb, CLEAN_MB(de
 
   READ  A    <- A readA(k, n)
 
-  RW    C    <- (k == (n+1)) ? A lauum_zlauum(n)                       [type = LOWER_TILE]
-             <- (k >  (n+1)) ? C lauum_zherk(k-1, n)                   [type = LOWER_TILE]
-             -> (k <  (descA->mt-1)) ? C lauum_zherk(k+1, n)            [type = LOWER_TILE]
-             -> (k == (descA->mt-1)) ? descA(n, n)                [type = LOWER_TILE]
+  RW    C    <- (k == (n+1)) ? A lauum_zlauum(n)                       [type_remote = LOWER_TILE]
+             <- (k >  (n+1)) ? C lauum_zherk(k-1, n)                   [type_remote = LOWER_TILE]
+             -> (k <  (descA->mt-1)) ? C lauum_zherk(k+1, n)           [type_remote = LOWER_TILE]
+             -> (k == (descA->mt-1)) ? descA(n, n)                     [type = LOWER_TILE type_data = LOWER_TILE]
 
 BODY
 {
@@ -123,7 +123,7 @@ lauum_ztrmm(k, n) [ flops = inline_c %{ return FLOPS_ZTRMM(PlasmaLeft, CLEAN_MB(
   CTL   ctl2 <- ctl2 lauum_zgemm(k, 0..(n-1), n)
   CTL   ctl3 -> ctl3 lauum_zlauum(k)
 
-  READ  A    <- A readA(k, k)                              [type = LOWER_TILE]
+  READ  A    <- A readA(k, k)                              [type_remote = LOWER_TILE]
   RW    B    <- A readA(k, n)
              -> (k <  (descA->mt-1)) ? C lauum_zgemm(k+1, n, k)
              -> (k == (descA->mt-1)) ? descA(k, n)
@@ -153,9 +153,9 @@ lauum_zlauum(k)
 
   CTL   ctl3 <- ctl3 lauum_ztrmm(k, 0..(k-1))
 
-  RW    A    <- A readA(k,k)                           [type = LOWER_TILE]
-             -> (k <  (descA->mt-1)) ? C lauum_zherk(k+1, k)  [type = LOWER_TILE]
-             -> (k == (descA->mt-1)) ? descA(k, k)      [type = LOWER_TILE]
+  RW    A    <- A readA(k,k)                                  [type_remote = LOWER_TILE]
+             -> (k <  (descA->mt-1)) ? C lauum_zherk(k+1, k)  [type_remote = LOWER_TILE]
+             -> (k == (descA->mt-1)) ? descA(k, k)            [type = LOWER_TILE type_data = LOWER_TILE]
 
 BODY
 {

@@ -38,9 +38,9 @@ ztsqrt_ztsqrt(k)
           -> (k < (descA2->nt-1)) ? V ztsqrt_ztsmqr(k, k+1 ..  descA2->nt-1)
           -> descA2(0, k)
 
-  RW    T <- descT(0, k)                                                   [type = LITTLE_T]
-          -> (k < (descA2->nt-1)) ? T ztsqrt_ztsmqr(k, k+1 ..  descA2->nt-1) [type = LITTLE_T]
-          -> descT(0, k)                                                   [type = LITTLE_T]
+  RW    T <- descT(0, k)                                                   /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> (k < (descA2->nt-1)) ? T ztsqrt_ztsmqr(k, k+1 ..  descA2->nt-1) [type_remote = LITTLE_T]
+          -> descT(0, k)                                                     [type = LITTLE_T type_data = LITTLE_T]
 
 BODY
 {
@@ -85,7 +85,7 @@ ztsqrt_ztsmqr(k, n)
           -> (n >  (k+1)) ? A2 ztsqrt_ztsmqr(k+1, n)
 
   READ  V <- A2 ztsqrt_ztsqrt(k)
-  READ  T <- T  ztsqrt_ztsqrt(k)             [type = LITTLE_T]
+  READ  T <- T  ztsqrt_ztsqrt(k)             [type_remote = LITTLE_T]
 
 BODY
 {
@@ -193,13 +193,13 @@ dplasma_zgeqrfr_tsqrt_New( parsec_tiled_matrix_dc_t *A1,
                                      (parsec_memory_pool_t*) tau );
 
     /* Default type */
-    dplasma_add2arena_rectangle( &tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_DEFAULT_ARENA],
+    dplasma_add2arena_rectangle( &tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_DEFAULT_ADT_IDX],
                                  A1->mb*A1->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, A1->mb, A1->nb, -1 );
 
     /* Little T */
-    dplasma_add2arena_rectangle( &tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ARENA],
+    dplasma_add2arena_rectangle( &tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ADT_IDX],
                                  T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
@@ -231,8 +231,8 @@ dplasma_zgeqrfr_tsqrt_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgeqrfr_tsqrt_taskpool_t *parsec_zgeqrfr_tsqrt = (parsec_zgeqrfr_tsqrt_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_DEFAULT_ARENA ] );
-    dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ARENA] );
+    dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_DEFAULT_ADT_IDX ] );
+    dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ADT_IDX] );
 
     tp->destructor(tp);
 }

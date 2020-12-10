@@ -32,8 +32,8 @@ m = 0 .. descX->mt-1
 
 : descX(m)
 
-READ X <- descX(m)                  [type = VECTOR]
-       -> X GER(m, 0..descA->nt-1)   [type = VECTOR]
+READ X <- descX(m)                 /*[type = VECTOR type_data = VECTOR]*/
+       -> X GER(m, 0..descA->nt-1)   [type_remote = VECTOR]
 BODY
 {
     printlog("X(%d)\n", m );
@@ -49,8 +49,8 @@ m = 0 .. descY->mt-1
 
 : descY(m)
 
-READ Y <- descY(m)                  [type = VECTOR]
-       -> Y GER(0..descA->mt-1, m)   [type = VECTOR]
+READ Y <- descY(m)                  /*[type = VECTOR type_data = VECTOR]*/
+       -> Y GER(0..descA->mt-1, m)   [type_remote = VECTOR]
 BODY
 {
     printlog("read Y(%d)\n", m );
@@ -70,8 +70,8 @@ n = 0 .. descA->nt-1
 : descA(m, n)
 
 // Parameters
-READ X <- X READ_X(m)  [type = VECTOR]
-READ Y <- Y READ_Y(n)  [type = VECTOR]
+READ X <- X READ_X(m)  [type_remote = VECTOR]
+READ Y <- Y READ_Y(n)  [type_remote = VECTOR]
 RW   A <- descA(m, n)
        -> descA(m, n)
 BODY

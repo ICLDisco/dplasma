@@ -190,46 +190,47 @@ dplasma_zgebrd_ge2gbx_New( int ib,
     parsec_private_memory_init( tp->_g_p_tau, A->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
-    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_DEFAULT_ADT_IDX],
                             A->mb * A->nb * sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Upper triangular part Non-Unit (QR) */
-    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_NON_UNIT_ARENA],
+    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_NON_UNIT_ADT_IDX],
                              A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Upper triangular part Unit (LQ) */
-    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_UNIT_ARENA],
+    dplasma_add2arena_upper( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_UNIT_ADT_IDX],
                              A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Lower triangular part Non-Unit (LQ) */
-    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_NON_UNIT_ARENA],
+    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_NON_UNIT_ADT_IDX],
                              A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 1 );
 
     /* Lower triangular part Unit (QR) */
-    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_UNIT_ARENA],
+    dplasma_add2arena_lower( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_UNIT_ADT_IDX],
                              A->mb * A->nb * sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Little T */
-    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LITTLE_T_ARENA],
+    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_LITTLE_T_ADT_IDX],
                                  ib * A->nb * sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, ib, A->nb, -1);
 
     /* Band */
-    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_BAND_ARENA],
+    dplasma_add2arena_rectangle( &tp->arenas_datatypes[PARSEC_zgebrd_ge2gb_BAND_ADT_IDX],
                                  Band->mb * Band->nb * sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, Band->mb, Band->nb, -1);
+
 
     return (parsec_taskpool_t*)tp;
 }
@@ -408,13 +409,13 @@ dplasma_zgebrd_ge2gbx_Destruct( parsec_taskpool_t *tp)
 {
     parsec_zgebrd_ge2gb_taskpool_t *parsec_zgebrd_ge2gb = (parsec_zgebrd_ge2gb_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_DEFAULT_ARENA       ] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_NON_UNIT_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_UNIT_ARENA    ] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_NON_UNIT_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_UNIT_ARENA    ] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LITTLE_T_ARENA      ] );
-    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_BAND_ARENA          ] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_DEFAULT_ADT_IDX       ] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_NON_UNIT_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LOWER_UNIT_ADT_IDX    ] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_NON_UNIT_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_UPPER_UNIT_ADT_IDX    ] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_LITTLE_T_ADT_IDX      ] );
+    dplasma_matrix_del2arena( &parsec_zgebrd_ge2gb->arenas_datatypes[PARSEC_zgebrd_ge2gb_BAND_ADT_IDX          ] );
 
     parsec_private_memory_fini( parsec_zgebrd_ge2gb->_g_p_work );
     parsec_private_memory_fini( parsec_zgebrd_ge2gb->_g_p_tau  );

@@ -116,10 +116,11 @@ dplasma_zsyrk_New( dplasma_enum_t uplo,
         }
     }
 
-    dplasma_add2arena_tile( &((parsec_zsyrk_LN_taskpool_t*)tp)->arenas_datatypes[PARSEC_zsyrk_LN_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &((parsec_zsyrk_LN_taskpool_t*)tp)->arenas_datatypes[PARSEC_zsyrk_LN_DEFAULT_ADT_IDX],
                             C->mb*C->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, C->mb );
+
 
     return tp;
 }
@@ -148,7 +149,7 @@ void
 dplasma_zsyrk_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zsyrk_LN_taskpool_t *zsyrk_tp = (parsec_zsyrk_LN_taskpool_t*)tp;
-    dplasma_matrix_del2arena( &zsyrk_tp->arenas_datatypes[PARSEC_zsyrk_LN_DEFAULT_ARENA] );
+    dplasma_matrix_del2arena( &zsyrk_tp->arenas_datatypes[PARSEC_zsyrk_LN_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
 }
 

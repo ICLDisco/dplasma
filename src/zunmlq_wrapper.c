@@ -160,22 +160,23 @@ dplasma_zunmlq_New( dplasma_enum_t side, dplasma_enum_t trans,
     parsec_private_memory_init( ((parsec_zunmlq_LC_taskpool_t*)tp)->_g_pool_0, ib * T->nb * sizeof(dplasma_complex64_t) );
 
     /* Default type */
-    dplasma_add2arena_tile( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_DEFAULT_ARENA],
+    dplasma_add2arena_tile( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
     /* Lower triangular part of tile without diagonal */
-    dplasma_add2arena_upper( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_UPPER_TILE_ARENA],
+    dplasma_add2arena_upper( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_UPPER_TILE_ADT_IDX],
                              A->mb*A->nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, A->mb, 0 );
 
     /* Little T */
-    dplasma_add2arena_rectangle( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_LITTLE_T_ARENA],
+    dplasma_add2arena_rectangle( &((parsec_zunmlq_LC_taskpool_t*)tp)->arenas_datatypes[PARSEC_zunmlq_LC_LITTLE_T_ADT_IDX],
                                  T->mb*T->nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, T->mb, T->nb, -1);
+
 
     return tp;
 }
@@ -205,9 +206,9 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zunmlq_LC_taskpool_t *parsec_zunmlq = (parsec_zunmlq_LC_taskpool_t *)tp;
 
-    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_DEFAULT_ARENA   ] );
-    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_UPPER_TILE_ARENA] );
-    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_LITTLE_T_ARENA  ] );
+    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_DEFAULT_ADT_IDX   ] );
+    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_UPPER_TILE_ADT_IDX] );
+    dplasma_matrix_del2arena( &parsec_zunmlq->arenas_datatypes[PARSEC_zunmlq_LC_LITTLE_T_ADT_IDX  ] );
 
     parsec_private_memory_fini( parsec_zunmlq->_g_pool_0 );
     free( parsec_zunmlq->_g_pool_0 );

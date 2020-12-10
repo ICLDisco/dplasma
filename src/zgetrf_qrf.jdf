@@ -83,11 +83,11 @@ zgetrf(k)
   RW    A    <- A selector(k,k,k)
              -> descA(k, k)
              -> A zgetrf_typechange(k)
-             -> (k < descA->nt-1) ? A  swptrsm_u(k, (k+1)..(descA->nt-1))         [type = LOWER_TILE]
+             -> (k < descA->nt-1) ? A  swptrsm_u(k, (k+1)..(descA->nt-1))         [type_remote = LOWER_TILE]
 
-  RW    IP   <- IP selector(k,k,k)                                          [type = PIVOT]
-             -> IPIV(k, k)                                                  [type = PIVOT]
-             -> (k < descA->nt-1) ? IP swptrsm_u(k, (k+1)..(descA->nt-1))         [type = PIVOT]
+  RW    IP   <- IP selector(k,k,k)                                                [type_remote = PIVOT]
+             -> IPIV(k, k)                                                        [type = PIVOT type_data = PIVOT]
+             -> (k < descA->nt-1) ? IP swptrsm_u(k, (k+1)..(descA->nt-1))         [type_remote = PIVOT]
 
 ; descA->nt - k - 1
 BODY
@@ -105,7 +105,7 @@ zgetrf_typechange(k) [profile = off]
   : descA(k, k)
 
   RW A <- A zgetrf(k)
-       -> ( k < (descA->mt-1) ) ? A ztrsm_l(k, k+1..descA->mt-1)       [type = UPPER_TILE]
+       -> ( k < (descA->mt-1) ) ? A ztrsm_l(k, k+1..descA->mt-1)       [type_remote = UPPER_TILE]
 
 ; descA->nt - k - 1
 BODY
@@ -130,8 +130,8 @@ swptrsm_u(k, n)
   /* Locality */
   : descA(k, n)
 
-  READ  A    <- A  zgetrf(k)                                       [type = LOWER_TILE]
-  READ  IP   <- IP zgetrf(k)                                       [type = PIVOT]
+  READ  A    <- A  zgetrf(k)                                       [type_remote = LOWER_TILE]
+  READ  IP   <- IP zgetrf(k)                                       [type_remote = PIVOT]
   RW    C    <- Ashm selector(k, k, n)
              -> descA(k, n)
              -> ( k < (descA->mt-1) ) ? V zgemm(k, (k+1)..(descA->mt-1), n)
@@ -183,7 +183,7 @@ ztrsm_l(k, m)
 
   : descA(m, k)
 
-  READ A  <- A zgetrf_typechange(k)                                     [type = UPPER_TILE]
+  READ A  <- A zgetrf_typechange(k)                                     [type_remote = UPPER_TILE]
 
   RW   C  <- A selector(k, m, k)
           -> descA(m, k)
@@ -285,13 +285,13 @@ zgeqrt(k, i)
 
   RW    A <- A selector(k, m, k )
           -> A zgeqrt_typechange(k, i)
-          ->  (k == (descA->mt-1)) ? descA(m, k)                                 [type = UPPER_TILE]
-          -> ((k <  (descA->mt-1)) & (nextm != descA->mt)) ? A1 zttqrt(k, nextm) [type = UPPER_TILE]
-          -> ((k <  (descA->mt-1)) & (nextm == descA->mt)) ? A2 zttqrt(k, m)     [type = UPPER_TILE]
+          ->  (k == (descA->mt-1)) ? descA(m, k)                                 [type = UPPER_TILE type_data = UPPER_TILE]
+          -> ((k <  (descA->mt-1)) & (nextm != descA->mt)) ? A1 zttqrt(k, nextm) [type_remote = UPPER_TILE]
+          -> ((k <  (descA->mt-1)) & (nextm == descA->mt)) ? A2 zttqrt(k, m)     [type_remote = UPPER_TILE]
 
-  RW    T <- TS(m, k)                                                     [type = LITTLE_T]
-          -> TS(m, k)                                                     [type = LITTLE_T]
-          -> ((descA->nt-1) > k) ? T zunmqr(k, i, (k+1)..(descA->nt-1))          [type = LITTLE_T]
+  RW    T <- TS(m, k)                                                          /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> TS(m, k)                                                            [type = LITTLE_T type_data = LITTLE_T]
+          -> ((descA->nt-1) > k) ? T zunmqr(k, i, (k+1)..(descA->nt-1))          [type_remote = LITTLE_T]
 
   ; descA->nt - k - 1
 
@@ -330,8 +330,8 @@ zgeqrt_typechange(k, i) [profile = off]
   : descA(m, k)
 
   RW A <- A zgeqrt(k, i)
-       -> ( (descA->nt-1) > k ) ? A zunmqr(k, i, (k+1)..(descA->nt-1)) [type = LOWER_TILE]
-       -> descA(m, k)                                               [type = LOWER_TILE]
+       -> ( (descA->nt-1) > k ) ? A zunmqr(k, i, (k+1)..(descA->nt-1)) [type_remote = LOWER_TILE]
+       -> descA(m, k)                                                  [type = LOWER_TILE type_data = LOWER_TILE]
 
   ; descA->nt - k - 1
 
@@ -356,8 +356,8 @@ zunmqr(k, i, n)
 
   : descA(m, n)
 
-  READ  A <- A zgeqrt_typechange(k, i)                              [type = LOWER_TILE]
-  READ  T <- T zgeqrt(k, i)                                         [type = LITTLE_T]
+  READ  A <- A zgeqrt_typechange(k, i)                              [type_remote = LOWER_TILE]
+  READ  T <- T zgeqrt(k, i)                                         [type_remote = LITTLE_T]
 
   RW    C <- A selector(k, m, n)
           -> (  k == (descA->mt-1) ) ? descA(m, n)
@@ -419,24 +419,24 @@ zttqrt(k, m)
 
   : descA(m, k)
 
-  RW   A1 <- (   prevp == descA->mt ) ? A  zgeqrt(k, ip ) : A1 zttqrt(k, prevp ) [type = UPPER_TILE]
-          -> (   nextp != descA->mt ) ? A1 zttqrt(k, nextp )                     [type = UPPER_TILE]
-          -> ( ( nextp == descA->mt ) & (p == k) ) ? A zttqrt_out_A1(k)          [type = UPPER_TILE]
-          -> ( ( nextp == descA->mt ) & (p != k) ) ? A2 zttqrt(k, p)             [type = UPPER_TILE]
+  RW   A1 <- (   prevp == descA->mt ) ? A  zgeqrt(k, ip ) : A1 zttqrt(k, prevp ) [type_remote = UPPER_TILE]
+          -> (   nextp != descA->mt ) ? A1 zttqrt(k, nextp )                     [type_remote = UPPER_TILE]
+          -> ( ( nextp == descA->mt ) & (p == k) ) ? A zttqrt_out_A1(k)          [type_remote = UPPER_TILE]
+          -> ( ( nextp == descA->mt ) & (p != k) ) ? A2 zttqrt(k, p)             [type_remote = UPPER_TILE]
 
   RW   A2 <-   (type == 0)                           ? A selector(k, m, k )
-          <- ( (type != 0) && (prevm == descA->mt ) ) ? A zgeqrt(k, im )         [type = UPPER_TILE]
-          <- ( (type != 0) && (prevm != descA->mt ) ) ? A1 zttqrt(k, prevm )     [type = UPPER_TILE]
+          <- ( (type != 0) && (prevm == descA->mt ) ) ? A zgeqrt(k, im )         [type_remote = UPPER_TILE]
+          <- ( (type != 0) && (prevm != descA->mt ) ) ? A1 zttqrt(k, prevm )     [type_remote = UPPER_TILE]
 
           -> (type == 0 ) ? descA(m, k)
-          -> (type != 0 ) ? descA(m, k)                                          [type = UPPER_TILE]
+          -> (type != 0 ) ? descA(m, k)                                          [type = UPPER_TILE type_data = UPPER_TILE]
 
           -> (type == 0) && ((descA->nt-1) > k) ? V zttmqr(k, m, (k+1)..(descA->nt-1))
-          -> (type != 0) && ((descA->nt-1) > k) ? V zttmqr(k, m, (k+1)..(descA->nt-1)) [type = UPPER_TILE]
+          -> (type != 0) && ((descA->nt-1) > k) ? V zttmqr(k, m, (k+1)..(descA->nt-1)) [type_remote = UPPER_TILE]
 
-  RW   T  <- TT(m, k)                                             [type = LITTLE_T]
-          -> TT(m, k)                                             [type = LITTLE_T]
-          -> ((descA->nt-1) > k ) ? T zttmqr(k, m, (k+1)..(descA->nt-1)) [type = LITTLE_T]
+  RW   T  <- TT(m, k)                                                  /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> TT(m, k)                                                    [type = LITTLE_T type_data = LITTLE_T]
+          -> ((descA->nt-1) > k ) ? T zttmqr(k, m, (k+1)..(descA->nt-1)) [type_remote = LITTLE_T]
 
  ; descA->nt - k - 1
 
@@ -480,8 +480,8 @@ zttqrt_out_A1(k) [profile = off]
 
   : descA(k, k)
 
-  RW A <- A1 zttqrt( k, prevp ) [type = UPPER_TILE]
-       -> descA(k, k)              [type = UPPER_TILE]
+  RW A <- A1 zttqrt( k, prevp ) [type_remote = UPPER_TILE]
+       -> descA(k, k)           [type = UPPER_TILE type_data = UPPER_TILE]
 
   ; descA->nt - k - 1
 
@@ -534,9 +534,9 @@ zttmqr(k, m, n)
           -> (n == (k+1)) ? A copypanel(k+1, m) : A selector(k+1, m, n)
 
   READ  V <- (type == 0) ? A2 zttqrt(k, m)
-          <- (type != 0) ? A2 zttqrt(k, m) [type = UPPER_TILE]
+          <- (type != 0) ? A2 zttqrt(k, m) [type_remote = UPPER_TILE]
 
-  READ  T <- T  zttqrt(k, m) [type = LITTLE_T]
+  READ  T <- T  zttqrt(k, m) [type_remote = LITTLE_T]
 
   CTL  ctl -> ( (diagdom == 0) && (n > (k+1)) ) ? ctl tile2panel(k, n)
 
@@ -748,9 +748,9 @@ zlufacto(k, t)
   RW    A    <- B copypanel(k, k)
              -> (t == 0) ? A selector(k, k, k)
 
-  RW    IP   <- IPIV(k, k)                                  [type = PIVOT]
-             -> (t == 0) ? IPIV(k, k)                       [type = PIVOT]
-             -> (t == 0) ? IP selector(k, k, k)             [type = PIVOT]
+  RW    IP   <- IPIV(k, k)                                /*[type = PIVOT type_data = PIVOT]*/
+             -> (t == 0) ? IPIV(k, k)                       [type = PIVOT type_data = PIVOT]
+             -> (t == 0) ? IP selector(k, k, k)             [type_remote = PIVOT]
 
   CTL   ctl  <- ctl copypanel(k, k..descA->mt-1..param_p)
              -> (t == 0) ? ctl reduce_norm(k, 0)
@@ -854,8 +854,8 @@ reduce_norm(k, p)
 
   : descA(k+p, k)
 
-  WRITE W1 -> T setchoice(k, p,          0) [type = ReduceVec]
-  WRITE W2 -> B setchoice(k, (p+1)%pmax, 0) [type = ReduceVec]
+  WRITE W1 -> T setchoice(k, p,          0) [type = ReduceVec type_remote = ReduceVec]
+  WRITE W2 -> B setchoice(k, (p+1)%pmax, 0) [type = ReduceVec type_remote = ReduceVec]
 
   CTL ctl <- (p == 0) ? ctl zlufacto(k, 0) : ctl copypanel(k, k+p..descA->mt-1..param_p)
 
@@ -949,18 +949,18 @@ setchoice(k, p, h)
   : descA(k+p, k)
 
         /* Local forward of T */
-  RW T <- (h == 0) ? W1 reduce_norm(k, p)                       [type = ReduceVec]
-       <- (h >  0) ? T setchoice(k, p, h-1)                     [type = ReduceVec]
+  RW T <- (h == 0) ? W1 reduce_norm(k, p)                       [type_remote = ReduceVec]
+       <- (h >  0) ? T setchoice(k, p, h-1)                     [type_remote = ReduceVec]
 
-       -> (h <  hmax) ? T setchoice(k, p, h+1)                  [type = ReduceVec]     /* Send T to the bottom */
+       -> (h <  hmax) ? T setchoice(k, p, h+1)                  [type_remote = ReduceVec]     /* Send T to the bottom */
 
-  RW B <- (h == 0) ? W2 reduce_norm(k, (pmax+p-pui)%pmax)       [type = ReduceVec]
-       <- (h != 0) ? B setchoice(k, (pmax+p-pui)%pmax, h-1 )    [type = ReduceVec]
+  RW B <- (h == 0) ? W2 reduce_norm(k, (pmax+p-pui)%pmax)       [type_remote = ReduceVec]
+       <- (h != 0) ? B setchoice(k, (pmax+p-pui)%pmax, h-1 )    [type_remote = ReduceVec]
 
-       -> (h <  hmax) ? B setchoice(k, (p+2*pui)%pmax, h+1)     [type = ReduceVec]
+       -> (h <  hmax) ? B setchoice(k, (p+2*pui)%pmax, h+1)     [type_remote = ReduceVec]
 
        /* Broadcast the information to the row */
-  WRITE choice -> (h == hmax) ? B setchoice_update(k, p, 1..param_q-1)  [type = CHOICE]
+  WRITE choice -> (h == hmax) ? B setchoice_update(k, p, 1..param_q-1)  [type = CHOICE type_remote = CHOICE]
 
   /*
    * Release local choice
@@ -1167,7 +1167,7 @@ setchoice_update(k, p, q)
 
   : descA(k+p, k+q)
 
-  READ B <- choice setchoice(k, p, hmax)   [type = CHOICE]
+  READ B <- choice setchoice(k, p, hmax)   [type_remote = CHOICE]
 
   /*
    * Release local choice
@@ -1224,9 +1224,9 @@ selector(k,m,n)
            -> ( (do_lu != 1) && (k != n) && (type != 0) ) ? C  zunmqr(k,i,n)
            -> ( (do_lu != 1) && (k != n) && (type == 0) ) ? A2 zttmqr(k,m,n)
 
-  RW   IP  <- ((k == m) && (k == n)) ? IP zlufacto(k, 0)               [type = PIVOT]
-           <- ((k != m) || (k != n)) ? IPIV(m,n) /* unused */          [type = PIVOT]
-           -> ((k == m) && (k == n) && (do_lu == 1) ) ? IP zgetrf(k)   [type = PIVOT]
+  RW   IP  <- ((k == m) && (k == n)) ? IP zlufacto(k, 0)               [type_remote = PIVOT]
+           <- ((k != m) || (k != n)) ? IPIV(m,n) /* unused */        /*[type = PIVOT type_data = PIVOT]*/
+           -> ((k == m) && (k == n) && (do_lu == 1) ) ? IP zgetrf(k)   [type_remote = PIVOT]
 
   READ Acpy <- ( panel) ? Acpy copypanel(k, m)
             <- (!panel) ? descA(m, n) /* unused */  /* TODO: Mathieu should this be NULL? */

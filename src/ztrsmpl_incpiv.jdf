@@ -38,8 +38,8 @@ zgessm_inAIPIV(k) [profile = off]
 
   READ A  <- descA(k, k)
           -> L  zgessm(k, 0..descB->nt-1)
-  READ IP <- dataIP(k, k)                             [type = PIVOT]
-          -> IP zgessm(k, 0..descB->nt-1)              [type = PIVOT]
+  READ IP <- dataIP(k, k)                            /*[type = PIVOT type_data = PIVOT]*/
+          -> IP zgessm(k, 0..descB->nt-1)              [type_remote = PIVOT]
 
 BODY
 {
@@ -56,7 +56,7 @@ zgessm(k, n)
   :descB(k, n)
 
   READ  L  <- A  zgessm_inAIPIV(k)
-  READ  IP <- IP zgessm_inAIPIV(k)                     [type = PIVOT]
+  READ  IP <- IP zgessm_inAIPIV(k)                     [type_remote = PIVOT]
 
   RW    B  <- (k == 0) ? descB(k, n) : C zssssm(k-1, k, n)
            -> (k == (descA->mt-1)) ? descB(k, n)
@@ -99,10 +99,10 @@ zssssm_inALIPIV(k, m) [profile = off]
 
   READ A  <- descA(m, k)
           -> A  zssssm(k, m, 0..descB->nt-1)
-  READ L  <- descL(m, k)                     [type = SMALL_L]
-          -> L  zssssm(k, m, 0..descB->nt-1)  [type = SMALL_L]
-  READ IP <- dataIP(m, k)                    [type = PIVOT]
-          -> IP zssssm(k, m, 0..descB->nt-1)  [type = PIVOT]
+  READ L  <- descL(m, k)                    /*[type = SMALL_L type_data = SMALL_L]*/
+          -> L  zssssm(k, m, 0..descB->nt-1)  [type_remote = SMALL_L]
+  READ IP <- dataIP(m, k)                   /*[type = PIVOT type_data = PIVOT]*/
+          -> IP zssssm(k, m, 0..descB->nt-1)  [type_remote = PIVOT]
 
 BODY
 {
@@ -144,8 +144,8 @@ zssssm(k,m,n)
           -> ((k <  (descA->nt-1)) & (m == (k+1))) ? B zgessm(k+1, n)    /* Next Row */
           -> ((k <  (descA->nt-1)) & (m >  (k+1))) ? C zssssm(k+1, m, n) /* Trailing submatrix */
 
-  READ  L  <- L  zssssm_inALIPIV(k, m)      [type = SMALL_L]
-  READ  IP <- IP zssssm_inALIPIV(k, m)      [type = PIVOT]
+  READ  L  <- L  zssssm_inALIPIV(k, m)      [type_remote = SMALL_L]
+  READ  IP <- IP zssssm_inALIPIV(k, m)      [type_remote = PIVOT]
 
 BODY
 {

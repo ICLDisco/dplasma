@@ -39,8 +39,8 @@ zgeqrt_typechange(k)  [profile = off]
   : descA(k,k)
 
 RW A <- A zgeqrt(k)
-     -> (k < (descA->nt-1)) ? A zunmqr(k, (k+1)..(descA->nt-1)) [type = LOWER_TILE]
-     -> descA(k, k)                                           [type = LOWER_TILE]
+     -> (k < (descA->nt-1)) ? A zunmqr(k, (k+1)..(descA->nt-1)) [type_remote = LOWER_TILE]
+     -> descA(k, k)                                             [type = LOWER_TILE type_data = LOWER_TILE]
 
 BODY
 {
@@ -60,13 +60,13 @@ zgeqrt(k)
   : descA(k,k)
 
   RW    A <- (0 == k) ? descA(k, k) : A2 ztsmqr(k-1, k, k)
-          -> (descA->mt==(k+1)) ? descA(k,k)                      [type = UPPER_TILE]
-          -> (descA->mt>=(k+2)) ? A1 ztsqrt(k, k+1)               [type = UPPER_TILE]
+          -> (descA->mt==(k+1)) ? descA(k,k)                      [type = UPPER_TILE type_data = UPPER_TILE]
+          -> (descA->mt>=(k+2)) ? A1 ztsqrt(k, k+1)               [type_remote = UPPER_TILE]
           -> A zgeqrt_typechange(k)
 
-  RW    T <- descT(k, k)                                         [type = LITTLE_T]
-          -> descT(k, k)                                         [type = LITTLE_T]
-          -> (descA->nt-1 > k) ? T zunmqr(k, (k+1)..(descA->nt-1)) [type = LITTLE_T]
+  RW    T <- descT(k, k)                                         /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> descT(k, k)                                           [type = LITTLE_T type_data = LITTLE_T]
+          -> (descA->nt-1 > k) ? T zunmqr(k, (k+1)..(descA->nt-1)) [type_remote = LITTLE_T]
 
   /* Priority */
   ;(descA->nt-k)*(descA->nt-k)*(descA->nt-k)
@@ -153,8 +153,8 @@ zunmqr(k,n)
 
   : descA(k,n)
 
-  READ  A <- A zgeqrt_typechange(k)                        [type = LOWER_TILE]
-  READ  T <- T zgeqrt(k)                                   [type = LITTLE_T]
+  READ  A <- A zgeqrt_typechange(k)                        [type_remote = LOWER_TILE]
+  READ  T <- T zgeqrt(k)                                   [type_remote = LITTLE_T]
   RW    C <- (k == 0) ? descA(k, n) : A2 ztsmqr(k-1, k, n)
           -> (k == (descA->mt-1)) ? descA(k, n)
           -> (k <  (descA->mt-1)) ? A1 ztsmqr(k, k+1, n)
@@ -236,8 +236,8 @@ ztsqrt_out_Ak(k) [profile = off]
 
   : descA(k, k)
 
-  RW A1 <- A1 ztsqrt(k, descA->mt-1) [type = UPPER_TILE]
-        -> descA(k, k)              [type = UPPER_TILE]
+  RW A1 <- A1 ztsqrt(k, descA->mt-1) [type_remote = UPPER_TILE]
+        -> descA(k, k)               [type = UPPER_TILE type_data = UPPER_TILE]
 BODY
 {
     /* nothing */
@@ -256,16 +256,16 @@ ztsqrt(k,m)
 
   : descA(m, k)
 
-  RW   A1 <- ( m == (k+1)        ) ? A zgeqrt(m-1) : A1 ztsqrt(k, m-1)       [type = UPPER_TILE]
-          -> ( m == (descA->mt-1)) ? A1 ztsqrt_out_Ak(k) : A1 ztsqrt(k, m+1) [type = UPPER_TILE]
+  RW   A1 <- ( m == (k+1)        ) ? A zgeqrt(m-1) : A1 ztsqrt(k, m-1)       [type_remote = UPPER_TILE]
+          -> ( m == (descA->mt-1)) ? A1 ztsqrt_out_Ak(k) : A1 ztsqrt(k, m+1) [type_remote = UPPER_TILE]
 
   RW   A2 <- (k == 0) ? descA(m, k) : A2 ztsmqr(k-1, m, k)
           -> descA(m, k)
           -> (k < (descA->nt-1)) ? V ztsmqr(k, m, (k+1)..(descA->nt-1))
 
-  RW   T  <- descT(m, k)                                                    [type = LITTLE_T]
-          -> descT(m, k)                                                    [type = LITTLE_T]
-          -> (k < (descA->nt-1)) ? T ztsmqr(k, m, (k+1)..(descA->nt-1))     [type = LITTLE_T]
+  RW   T  <- descT(m, k)                                                  /*[type = LITTLE_T type_data = LITTLE_T]*/
+          -> descT(m, k)                                                    [type = LITTLE_T type_data = LITTLE_T]
+          -> (k < (descA->nt-1)) ? T ztsmqr(k, m, (k+1)..(descA->nt-1))     [type_remote = LITTLE_T]
 
     /* Priority */
 ; (descA->mt-k)*(descA->mt-k)*(descA->mt-k)
@@ -383,7 +383,7 @@ ztsmqr(k,m,n)
           -> (((k+1) <  n) & ((1+k) < m )) ? A2 ztsmqr(k+1, m, n)    /* trailing submatrix */
 
   READ V  <- A2 ztsqrt(k, m)
-  READ T  <- T  ztsqrt(k, m)   [type = LITTLE_T]
+  READ T  <- T  ztsqrt(k, m)   [type_remote = LITTLE_T]
 
     /* Priority */
 ; (descA->mt-k)*(descA->mt-n)*(descA->mt-n)

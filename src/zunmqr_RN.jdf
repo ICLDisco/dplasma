@@ -33,8 +33,8 @@ zunmqr(k, m)
   /* Locality */
   : descB(m,k)
 
-  READ  A    <- A zunmqr_in_data_A0(k)   [type = LOWER_TILE]
-  READ  T    <- T zunmqr_in_data_T1(k)   [type = LITTLE_T]
+  READ  A    <- A zunmqr_in_data_A0(k)   [type_remote = LOWER_TILE]
+  READ  T    <- T zunmqr_in_data_T1(k)   [type_remote = LITTLE_T]
   RW    C    <- ( k == 0 ) ? descB(m,k)
              <- ( k >  0 ) ? A2 ztsmqr(k-1, k, m)
              -> ( k <  (descB->nt-1)) ? A1 ztsmqr(k, k+1, m)
@@ -72,8 +72,8 @@ zunmqr_in_data_T1(k) [profile = off]
   /* Locality */
   : descT(k, k)
 
-  READ  T    <- descT(k,k)                      [type = LITTLE_T]
-             -> T zunmqr(k, 0 .. descB->mt-1)    [type = LITTLE_T]
+  READ  T    <- descT(k,k)                     /*[type = LITTLE_T type_data = LITTLE_T]*/
+             -> T zunmqr(k, 0 .. descB->mt-1)    [type_remote = LITTLE_T]
 
 BODY
 {
@@ -88,8 +88,8 @@ zunmqr_in_data_A0(k) [profile = off]
   /* Locality */
   : descA(k, k)
 
-  READ  A    <- descA(k,k)                      [type = LOWER_TILE]
-             -> A zunmqr(k, 0 .. (descB->mt-1))  [type = LOWER_TILE]
+  READ  A    <- descA(k,k)                     /*[type = LOWER_TILE type_data = LOWER_TILE]*/
+             -> A zunmqr(k, 0 .. (descB->mt-1))  [type_remote = LOWER_TILE]
 
 BODY
 {
@@ -116,7 +116,7 @@ ztsmqr(k, n, m)
              -> ((k <  (descA->nt-1)) & (n == (k+1))) ? C  zunmqr(k+1, m)
              -> ((k <  (descA->nt-1)) & (n >  (k+1))) ? A2 ztsmqr(k+1, n, m)
   READ  V    <- V ztsmqr_in_data_A1(k, n)
-  READ  T    <- T ztsmqr_in_data_T2(k, n)  [type = LITTLE_T]
+  READ  T    <- T ztsmqr_in_data_T2(k, n)  [type_remote = LITTLE_T]
 
 BODY
 {
@@ -153,8 +153,8 @@ ztsmqr_in_data_T2(k, n) [profile = off]
   /* Locality */
   : descT(n,k)
 
-  READ  T    <- descT(n,k)                        [type = LITTLE_T]
-             -> T ztsmqr(k, n, 0 .. descB->mt-1)   [type = LITTLE_T]
+  READ  T    <- descT(n,k)                       /*[type = LITTLE_T type_data = LITTLE_T]*/
+             -> T ztsmqr(k, n, 0 .. descB->mt-1)   [type_remote = LITTLE_T]
 
 BODY
 {
