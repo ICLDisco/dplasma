@@ -6,7 +6,6 @@ if(NOT DPLASMA_BUILD_INPLACE)
   include_directories(BEFORE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 endif(NOT DPLASMA_BUILD_INPLACE)
 Add_Subdirectory(include)
-Add_Subdirectory(cores)
 
 include(PrecisionGenerator)
 include(ParsecCompilePTG)
@@ -211,6 +210,8 @@ target_sources(dplasma PRIVATE
 target_ptg_sources(dplasma PRIVATE
   ${generated_jdf})
 
+Add_Subdirectory(cores)
+
 target_include_directories(dplasma
     INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
@@ -225,8 +226,6 @@ target_include_directories(dplasma
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
 target_link_libraries(dplasma
-  PRIVATE
-  dplasma_cores
   PUBLIC
   PaRSEC::parsec
   LAPACKE::LAPACKE
