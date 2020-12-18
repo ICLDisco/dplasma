@@ -21,15 +21,7 @@ static void parsec_init_wrapper_internal(){
     if(var_ncores!=NULL){
         ncores = atoi(var_ncores);
     }
-
-    // char *dev_avail = getenv("PARSEC_WRAPPER_GPUS");
-    // int ndev_avail=-1;
-
     int parsec_argc = 1;
-
-    // if(dev_avail!=NULL){
-    //     parsec_argc = 9;
-    // }
 
     char** parsec_argv = (char**)calloc(parsec_argc+1, sizeof(char*));
     int i;
@@ -42,30 +34,6 @@ static void parsec_init_wrapper_internal(){
     int rank,size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    // if(dev_avail != NULL){ /* using file binding to bind GPUs by proc*/
-    //     ndev_avail = atoi(dev_avail);
-
-    //     int step = 8/size;
-    //     int cuda_mask = 1 << (rank*step);
-
-    //     char *home = getenv("HOME");
-
-    //     sprintf(parsec_argv[1], "--parsec_bind");
-    //     sprintf(parsec_argv[2], "file:%s/binding_test_%dp",home,size);
-    //     sprintf(parsec_argv[3], "--mca");
-    //     sprintf(parsec_argv[4], "device_cuda_mask");
-    //     sprintf(parsec_argv[5], "0x%x",cuda_mask);
-    //     sprintf(parsec_argv[6], "--mca");
-    //     sprintf(parsec_argv[7], "device_cuda_enabled");
-    //     sprintf(parsec_argv[8], "%d",ndev_avail);
-    //     parsec_argv[parsec_argc]=NULL;
-
-    //     printf ("PARSEC rank %d args -- %s %s %s %s %s %s (%d) %s %s %s\n",
-    //             rank, parsec_argv[0], parsec_argv[1], parsec_argv[2], parsec_argv[3],
-    //                   parsec_argv[4], parsec_argv[5], cuda_mask,
-    //                   parsec_argv[6], parsec_argv[7], parsec_argv[8]);
-    // }
 
 #ifdef MEASURE_INTERNAL_TIMES
     SYNC_TIME_START();
@@ -142,7 +110,7 @@ GENERATE_F77_BINDINGS (PARSEC_FINI_WRAPPER,
                            (void), ())
 
 void parsec_init_wrapped_call(MPI_Comm comm){
-    parsec_remote_dep_set_blacs_ctx(parsec_ctx, (intptr_t)comm);
+    parsec_remote_dep_set_ctx(parsec_ctx, (intptr_t)comm);
 }
 
 void parsec_wrapper_devices_release_memory_(void){
