@@ -332,9 +332,13 @@ dplasma_data_collection_t *dplasma_wrap_data_collection(parsec_tiled_matrix_dc_t
                                  A->super.myrank );
 
 #if defined(PARSEC_PROF_TRACE)
-    asprintf(&((parsec_data_collection_t *)ddc)->key_dim, "%s_dplasmawrapped", ((parsec_data_collection_t *)A)->key_dim);
+    if(NULL != A->super.key_dim) {
+        asprintf(&ddc->super.key_dim, "%s_dplasmawrapped", A->super.key_dim);
+    }
 #endif
-    parsec_data_collection_set_key((parsec_data_collection_t*)ddc, ((parsec_data_collection_t *)A)->key_base);
+    if(NULL != A->super.key_base) {
+        parsec_data_collection_set_key((parsec_data_collection_t*)ddc, A->super.key_base);
+    }
 
     ddc->dc_original = A;
     parsec_data_collection_t * dc   = (parsec_data_collection_t *)ddc;
