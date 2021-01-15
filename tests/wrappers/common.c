@@ -66,7 +66,9 @@ redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
                     (size_t)dc_out->super.nb_local_tiles *
                     (size_t)dc_out->super.bsiz *
                     (size_t)parsec_datadist_getsizeoftype(dc_out->super.mtype));
-        parsec_data_collection_set_key((parsec_data_collection_t*)&dc_out, name);
+        if(NULL != name) {
+            parsec_data_collection_set_key((parsec_data_collection_t*)&dc_out, name);
+        }
 
         REDIS_TIME_INI(comm);
 
