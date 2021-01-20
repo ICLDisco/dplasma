@@ -87,6 +87,9 @@ else (SUPPORT_C11)
 endif( SUPPORT_C11 )
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+option(DPLASMA_SCALAPACK_WRAPPER
+  "Build a ScaLAPACK compatible API to DPLASMA" ON)
+
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" ON)
 

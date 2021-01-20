@@ -208,6 +208,10 @@ while [ "x$1" != x ]; do
         --enable-precisions) enable_precisions=yes; shift;;
         --disable-precisions=*) disable_precisions="${1#*=}"; shift;;
         --disable-precisions) disable_precisions=yes; shift;;
+# DPLAMA's ScaLAPACK wrapper
+        --enable-scalapack-wrapper) enable_scalapack=yes; shift;;
+        --disable-scalapack-wrapper) enable_scalapack=no; shift;;
+
 
 # External PaRSEC selection
         --with-parsec=*) with_parsec="${1#*=}"; shift;;
@@ -215,9 +219,6 @@ while [ "x$1" != x ]; do
         --with-external-parsec) with_parsec=yes; shift;;
         --without-external-parsec) with_parsec=no; shift;;
         --without-parsec) with_parsec=no; shift;;
-
-# DPLAMA's ScaLAPACK wrapper
-        --enable-scalapack-wrapper) enable_scalapack=yes; shift;;
 
 ##########################################################
 # Options common with submodule PaRSEC
@@ -502,10 +503,8 @@ x) ;;
 *) CMAKE_DEFINES+=" -DPaRSEC_ROOT=$with_parsec";;
 esac
 
-case x$enable_scalapack in
-xyes) CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=ON";;
-*) CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=OFF";;
-esac
+[ x$enable_scalapack = xyes ] && CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=ON"
+[ x$enable_scalapack = xno ] && CMAKE_DEFINES+=" -DDPLASMA_SCALAPACK_WRAPPER=OFF"
 
 ##########################################################
 # Options common with submodule PaRSEC
