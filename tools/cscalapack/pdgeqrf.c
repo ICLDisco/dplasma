@@ -60,9 +60,9 @@ int main( int argc, char **argv ) {
 
     int t;
     for(t = 0; t < number_runs; t++) {
-  #ifdef DPLASMA_WRAPPER_ON
-          parsec_wrapper_devices_release_memory_();
-  #endif
+#ifdef DPLASMA_WRAPPER_ON
+        parsec_wrapper_devices_release_memory_();
+#endif
         scalapack_pdplrnt( A,
                            m, n,
                            mb, nb,
@@ -85,19 +85,19 @@ int main( int argc, char **argv ) {
             pgflops = gflops/(((double)nprow)*((double)npcol));
         }
 
-            if( 0 == iam ) {
-                printf("[****] TIMEHL(s) %12.5f : PDGEQRF \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
-                      " - ENQ&PROG&DEST %12.5f : %14f gflops"
-                      " - ENQ %12.5f - DEST %12.5f\n",
-                              telapsed, nprow, npcol, nb, n,
-                              gflops,
-                              telapsed,
-                              gflops,
-                              0.0,0.0);
-            }
-    #ifdef DPLASMA_WRAPPER_ON
-            parsec_wrapper_devices_reset_load_();
-    #endif
+        if( 0 == iam ) {
+            printf("[****] TIMEHL(s) %12.5f : PDGEQRF \tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"
+                   " - ENQ&PROG&DEST %12.5f : %14f gflops"
+                   " - ENQ %12.5f - DEST %12.5f\n",
+                   telapsed, nprow, npcol, nb, n,
+                   gflops,
+                   telapsed,
+                   gflops,
+                   0.0, 0.0);
+        }
+#ifdef DPLASMA_WRAPPER_ON
+        parsec_wrapper_devices_reset_load_();
+#endif
     }
 
     if ( verif ) {

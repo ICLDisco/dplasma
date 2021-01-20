@@ -13,7 +13,7 @@ CUDA_DIR=/sw/summit/cuda/11.0.3/lib64/
 LAPACK_DIR=/ccs/home/bouteilla/parsec/dplasma/lapack/
 SCALAPACK_DIR=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/xl-16.1.1-5/netlib-scalapack-2.0.2-xo4jhy4ydnx3qqmnegbzfrvz4am6q2v6/lib
 
-ORIG_SMKL=-Wl,-rpath,$(PARSEC_DIR):$(ESSL_DIR):$(CUDA_DIR) \
+SLIBS=-Wl,-rpath,$(PARSEC_DIR):$(ESSL_DIR):$(CUDA_DIR) \
 $(ESSL_DIR)/libessl.so $(CUDA_DIR)/libcublas.so $(CUDA_DIR)/libcudart_static.a \
 /usr/lib64/libhwloc.so \
 -ldl /usr/lib64/librt.so $(LAPACK_DIR)liblapacke.a \
@@ -21,25 +21,20 @@ $(LAPACK_DIR)liblapack.a \
 -L$(SCALAPACK_DIR) -lscalapack \
 -Wl,-rpath,$(DPLASMA_DIR) -L$(DPLASMA_DIR) -ldplasma
 
-SLIBS=$(SMKL)
 
-ORIG_SLIBS=$(ORIG_SMKL)
-
-WRAP_SLIBS=-L$(DPLASMA_WRAPPER) -Wl,-rpath,$(DPLASMA_WRAPPER) -ldplasma_scalapack $(ORIG_SLIBS)
+WLIBS=-L$(DPLASMA_WRAPPER) -Wl,-rpath,$(DPLASMA_WRAPPER) -ldplasma_scalapack $(SLIBS)
 
 TARGETS= \
-pdpotrf \
-pdpotrf_wrapped \
-pdgeqrf \
-pdgeqrf_wrapped \
-pdgetrf \
-pdgetrf_wrapped \
-pdgemm \
-pdgemm_wrapped \
-pdtrmm \
-pdtrmm_wrapped \
-pdtrsm \
-pdtrsm_wrapped
+pdpotrf tpdpotrf pdpotrf_wrapped \
+pdgeqrf tpdgeqrf pdgeqrf_wrapped \
+pdgetrf tpdgetrf pdgetrf_wrapped \
+pdgemm tpdgemm pdgemm_wrapped \
+pdtrmm tpdtrmm pdtrmm_wrapped \
+pdtrsm tpdtrsm pdtrsm_wrapped \
+#pdsyev tpdsyev \
+pdgebrd tpdgebrd \
+pdpotri tpdpotrfi \
+
 
 all: $(TARGETS)
 
@@ -50,7 +45,7 @@ p%.o: p%.c
 	$(CC) ${CFLAGS}  -DSCALAPACK_SUP_UNDERSCORE -o $@ -c $<
 
 p%: p%.o common.o
-	$(LD) $(LDFLAGS) -DSCALAPACK_SUP_UNDERSCORE -o $@ $^ $(ORIG_SLIBS)
+	$(LD) $(LDFLAGS) -DSCALAPACK_SUP_UNDERSCORE -o $@ $^ $(SLIBS)
 
 #WRAPPED VERSION
 common_wrapped.o: common.c
@@ -60,7 +55,7 @@ p%_wrapped.o: p%.c
 	$(CC) ${CFLAGS} -DDPLASMA_WRAPPER_ON -DSCALAPACK_SUP_UNDERSCORE -o $@ -c $<
 
 p%_wrapped: p%_wrapped.o common_wrapped.o
-	$(LD) $(LDFLAGS) -DSCALAPACK_SUP_UNDERSCORE -o $@ $^ $(WRAP_SLIBS)
+	$(LD) $(LDFLAGS) -DSCALAPACK_SUP_UNDERSCORE -o $@ $^ $(WLIBS)
 
 clean:
 	$(RM) *.o $(TARGETS)

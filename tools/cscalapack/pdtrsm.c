@@ -48,9 +48,9 @@ int main( int argc, char **argv ) {
 
     Cblacs_gridinfo( ictxt, &nprow, &npcol, &myrow, &mycol );
 
-    if(verif){
+    if( verif ) {
         /* TODO: check devel on wrapper  */
-    }else{// NOT VERIF
+    } else { // NOT VERIF
       int Am, An, Ai, Aj, Amb, Anb;
       int Bm, Bn, Bi, Bj, Bmb, Bnb;
 
@@ -109,7 +109,7 @@ int main( int argc, char **argv ) {
                          Bseed);
 
       int t;
-      for(t = 0; t < number_runs; t++) {
+      for( t = 0; t < number_runs; t++ ) {
 
   #ifdef DPLASMA_WRAPPER_ON
           parsec_wrapper_devices_release_memory_();

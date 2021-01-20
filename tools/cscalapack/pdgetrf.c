@@ -14,7 +14,7 @@
 #include "myscalapack.h"
 #include "common.h"
 
-static double check_solution( int params[], double *Alu, int *ippiv);
+static double check_solution( int params[], double *Alu, int *ippiv );
 
 // #define DIAG_DOM
 
@@ -54,16 +54,16 @@ int main( int argc, char **argv ) {
     A = malloc( sizeof(double)*mloc*nloc );
 
     ippiv = malloc( sizeof(int)*2*n );
-    for(int i = 0; i<2*n; i++){
-      ((int*)ippiv)[i]=-1;
+    for( int i = 0; i < 2*n; i++ ) {
+      ippiv[i] = -1;
     }
 
     int t;
     for(t = 0; t < number_runs; t++) {
 #ifdef DIAG_DOM
-    int min_mn = (m<n) ? m : n;
-    if(m!=n){
-          scalapack_pdplrnt( A,
+    int min_mn = dplasma_imin(m, n);
+    if(m != n) {
+        scalapack_pdplrnt( A,
                        m, n,
                        mb, nb,
                        myrow, mycol,
