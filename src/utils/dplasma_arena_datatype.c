@@ -168,18 +168,26 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
     parsec_key_t k = (uint64_t)static_desc;
 
     if( NULL == dplasma_datatypes ) {
-        dplasma_datatypes = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(dplasma_datatypes,
+        parsec_hash_table_t *new_ht;
+        new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
+        parsec_hash_table_init(new_ht,
                                offsetof(dplasma_datatype_t, ht_item),
                                16, dtt_key_fns, NULL);
-        parsec_context_at_fini(dplasma_datatypes_fini, NULL);
-    } else {
-        dtt_entry = (dplasma_datatype_t *)parsec_hash_table_nolock_find(dplasma_datatypes, k);
-        if( NULL != dtt_entry ) {
-            *newtype = dtt_entry->dtt;
-            *extent = dtt_entry->extent;
-            return 0;
-        }
+	if(parsec_atomic_cas_ptr(&dplasma_datatypes, NULL, new_ht)) {
+            parsec_context_at_fini(dplasma_datatypes_fini, NULL);
+	} else {
+  	    parsec_hash_table_fini(new_ht);
+	    PARSEC_OBJ_RELEASE(new_ht);
+	}
+    }
+
+    parsec_hash_table_lock_bucket(dplasma_datatypes, k);
+    dtt_entry = (dplasma_datatype_t *)parsec_hash_table_nolock_find(dplasma_datatypes, k);
+    if( NULL != dtt_entry ) {
+      *newtype = dtt_entry->dtt;
+      *extent = dtt_entry->extent;
+      parsec_hash_table_unlock_bucket(dplasma_datatypes, k);
+      return 0;
     }
     /* New dtt entry */
     rc = parsec_matrix_define_datatype( newtype, oldtype,
@@ -193,6 +201,7 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
         dtt_entry->extent = *extent;
         parsec_hash_table_nolock_insert(dplasma_datatypes, &dtt_entry->ht_item);
     }
+    parsec_hash_table_unlock_bucket(dplasma_datatypes, k);
 #else
     /* New dtt */
     rc = parsec_matrix_define_datatype( newtype, oldtype,
