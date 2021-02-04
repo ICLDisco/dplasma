@@ -295,7 +295,7 @@ Add_Subdirectory(docs)
 
 if(DPLASMA_SCALAPACK_WRAPPER)
   # Generate ScaLAPACK wrappers provided by DPLASMA
-  add_subdirectory(tests/wrappers)
+  add_subdirectory(src/wrappers)
 endif(DPLASMA_SCALAPACK_WRAPPER)
 
 

@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../common.h"
-#include "../common_timing.h"
+#include "../../tests/common.h"
+#include "../../tests/common_timing.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/redistribute/redistribute_internal.h"
