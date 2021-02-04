@@ -27,7 +27,7 @@ pdtrmm tpdtrmm pdtrmm_wrapped \
 pdtrsm tpdtrsm pdtrsm_wrapped \
 pdsyev tpdsyev \
 pdgebrd tpdgebrd \
-pdpotri tpdpotrfi \
+pdpotri tpdpotri \
 
 
 all: $(TARGETS)

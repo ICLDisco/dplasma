@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -23,6 +23,7 @@ void setup_params( int params[], int argc, char* argv[] )
     params[PARAM_M]         = 0;
     params[PARAM_N]         = 1000;
     params[PARAM_K]         = 0;
+    params[PARAM_MB]        = 64;
     params[PARAM_NB]        = 64;
     params[PARAM_SEED]      = 3872;
     params[PARAM_VALIDATE]  = 0;

@@ -50,7 +50,9 @@ int main( int argc, char **argv ) {
 
     if( verif ) {
         /* TODO: check devel on wrapper  */
-    } else { // NOT VERIF
+        if(0 == iam) fprintf(stderr, "Verification not supported in this test\n");
+    } //else { // NOT VERIF
+    {
       int Am, An, Ai, Aj, Amb, Anb;
       int Bm, Bn, Bi, Bj, Bmb, Bnb;
 
