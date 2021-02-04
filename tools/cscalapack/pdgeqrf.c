@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -53,7 +53,11 @@ int main( int argc, char **argv ) {
 
     double *work=NULL; int lwork=-1; double getlwork;
     double t1, t2;
+#ifdef DPLASMA_WRAPPER_ON
+    pdlatsqr_( &m, &n, A, &i1, &i1, descA, tau, &getlwork, &lwork, &info );
+#else
     pdgeqrf_( &m, &n, A, &i1, &i1, descA, tau, &getlwork, &lwork, &info );
+#endif
     assert( 0 == info );
     lwork = (int)getlwork;
     work = malloc( sizeof(double)*lwork );
@@ -71,7 +75,11 @@ int main( int argc, char **argv ) {
                            mloc,
                            iseed );
         t1 = MPI_Wtime();
+#ifdef DPLASMA_WRAPPER_ON
+        pdlatsqr_( &m, &n, A, &i1, &i1, descA, tau, work, &lwork, &info );
+#else
         pdgeqrf_( &m, &n, A, &i1, &i1, descA, tau, work, &lwork, &info );
+#endif
         assert( 0 == info );
         t2 = MPI_Wtime();
         telapsed = t2-t1;

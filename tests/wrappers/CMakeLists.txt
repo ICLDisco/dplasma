@@ -24,10 +24,10 @@ set(SOURCES
   dplasma_wrapper_pdpotrf.c
   dplasma_wrapper_pdtrmm.c
   dplasma_wrapper_pdtrsm.c
+  dplasma_wrapper_pdlatsqr.c
 )
 # NOT COMPLIANT:
 #  dplasma_wrapper_pdgetrf_nopiv.c --> only diagonal dominant matrices
-#  dplasma_wrapper_pdgeqrf.c --> DPLASMA's algorithm is LATSQR
 
 ### Generate the lib
 if(NOT TARGET dplasma_scalapack)

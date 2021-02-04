@@ -58,9 +58,9 @@ static void parsec_fini_wrapper_internal(){
 #ifdef COUNT_WRAPPED_CALLS
     PARSEC_DEBUG_VERBOSE(1, parsec_debug_output,
       " WRAPPED CALLS "
-      "count_PDGEMM %d count_PDPOTRF %d count_PDTRMM %d count_PDTRSM %d  count_PDGEQRF %d count_PDGETRF_1D %d count_PDGETRF_NOPIV %d"
+      "count_PDGEMM %d count_PDPOTRF %d count_PDTRMM %d count_PDTRSM %d  count_PDLATSQR %d count_PDGETRF_1D %d count_PDGETRF_NOPIV %d"
       "REDIS [ IN %d, OUT %d]",
-       count_PDGEMM,   count_PDPOTRF,   count_PDTRMM,   count_PDTRSM,    count_PDGEQRF,   count_PDGETRF_1D,   count_PDGETRF_NOPIV,
+       count_PDGEMM,   count_PDPOTRF,   count_PDTRMM,   count_PDTRSM,    count_PDLATSQR,   count_PDGETRF_1D,   count_PDGETRF_NOPIV,
        count_REDIS_IN, count_REDIS_OUT);
 #endif
 

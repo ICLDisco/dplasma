@@ -89,7 +89,7 @@ extern parsec_context_t* parsec_ctx;
 extern int count_REDIS_IN;
 extern int count_REDIS_OUT;
 extern int count_PDGEMM;
-extern int count_PDGEQRF;
+extern int count_PDLATSQR;
 extern int count_PDGETRF_1D;
 extern int count_PDGETRF_NOPIV;
 extern int count_PDPOTRF;

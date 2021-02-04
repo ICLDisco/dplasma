@@ -1,10 +1,10 @@
 #include "common.h"
   /************************************************************************
-    Version not compliant with scalapack.
     LAPACK 3.7.0 introduces the LATSQR routine implementing the
     sequential TSQR (Tall Skinny QR) factorization algorithm which
-    corresponds to the DPLASMA implementation of the QR factorization in the GEQRF
-    Wrapper would need to use CORHR reconstruct the results expected by scalapack (not release).
+    corresponds to the DPLASMA implementation of the QR factorization
+    The GEQRF wrapper would need to use CORHR reconstruct the results
+    expected by scalapack QR (not released).
   ************************************************************************/
 
 /*
@@ -24,8 +24,22 @@
 *  Purpose
 *  =======
 *
-*  PDGEQRF computes a QR factorization of a real distributed M-by-N
-*  matrix sub( A ) = A(IA:IA+M-1,JA:JA+N-1) = Q * R.
+*  DLATSQR computes a blocked Tall-Skinny QR factorization of
+*  a real distributed M-by-N matrix sub(A) for M >= N:
+*
+*     A(IA:IA+M-1,JA:JA+N-1) = Q * ( R ),
+*                                  ( 0 )
+*
+*  where:
+*
+*     Q is a M-by-M orthogonal matrix, stored on exit in an implicit
+*     form in the elements below the digonal of the array A and in
+*     the elements of the array T;
+*
+*     R is an upper-triangular N-by-N matrix, stored on exit in
+*     the elements on and above the diagonal of the array A.
+*
+*     0 is a (M-N)-by-N zero matrix, and is not stored.
 *
 *  Notes
 *  =====
@@ -153,17 +167,32 @@
 *  Further Details
 *  ===============
 *
-*  The matrix Q is represented as a product of elementary reflectors
+*  Tall-Skinny QR (TSQR) performs QR by a sequence of orthogonal transformations,
+*  representing Q as a product of other orthogonal matrices
+*    Q = Q(1) * Q(2) * . . . * Q(k)
+*  where each Q(i) zeros out subdiagonal entries of a block of MB rows of A:
+*    Q(1) zeros out the subdiagonal entries of rows 1:MB of A
+*    Q(2) zeros out the bottom MB-N rows of rows [1:N,MB+1:2*MB-N] of A
+*    Q(3) zeros out the bottom MB-N rows of rows [1:N,2*MB-N+1:3*MB-2*N] of A
+*    . . .
 *
-*     Q = H(ja) H(ja+1) . . . H(ja+k-1), where k = min(m,n).
+*  Q(1) is computed by GEQRT, which represents Q(1) by Householder vectors
+*  stored under the diagonal of rows 1:MB of A, and by upper triangular
+*  block reflectors, stored in array T(1:LDT,1:N).
+*  For more information see Further Details in GEQRT.
 *
-*  Each H(i) has the form
+*  Q(i) for i>1 is computed by TPQRT, which represents Q(i) by Householder vectors
+*  stored in rows [(i-1)*(MB-N)+N+1:i*(MB-N)+N] of A, and by upper triangular
+*  block reflectors, stored in array T(1:LDT,(i-1)*N+1:i*N).
+*  The last Q(k) may use fewer rows.
+*  For more information see Further Details in TPQRT.
 *
-*     H(j) = I - tau * v * v'
+*  For more details of the overall algorithm, see the description of
+*  Sequential TSQR in Section 2.2 of [1].
 *
-*  where tau is a real scalar, and v is a real vector with v(1:i-1) = 0
-*  and v(i) = 1; v(i+1:m) is stored on exit in A(ia+i:ia+m-1,ja+i-1),
-*  and tau in TAU(ja+i-1).
+*  [1] “Communication-Optimal Parallel and Sequential QR and LU Factorizations,”
+*      J. Demmel, L. Grigori, M. Hoemmen, J. Langou,
+*      SIAM J. Sci. Comput, vol. 34, no. 1, 2012
 *
 *  =====================================================================
 *
@@ -182,7 +211,7 @@ static int check_solution( parsec_context_t *parsec, int loud,
                            parsec_tiled_matrix_dc_t *dcX );
 #endif
 
-void pdgeqrf_w(int * M,
+void pdlatsqr_w(int * M,
               int * N,
               double * A,
               int * IA,
@@ -195,7 +224,7 @@ void pdgeqrf_w(int * M,
 
 
 #ifdef COUNT_WRAPPED_CALLS
-    count_PDGEQRF++;
+    count_PDLATSQR++;
 #endif
     *info=0;
     if( (*M == 0) || (*N == 0)){
@@ -210,7 +239,7 @@ void pdgeqrf_w(int * M,
 
 #ifdef WRAPPER_VERBOSE_CALLS
     if(rank_A == 0){
-      printf("V-PDGEQRF M%d N%d "
+      printf("V-PDLATSQR M%d N%d "
              "IA%d JA%d A%p MBA%d NBA%d \n",
              *M, *N,
              *IA, *JA, A, DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_]);
@@ -600,10 +629,10 @@ static int check_solution( parsec_context_t *parsec, int loud,
 
 #endif
 
-GENERATE_F77_BINDINGS (PDGEQRF,
-                       pdgeqrf,
-                       pdgeqrf_,
-                       pdgeqrf__,
-                       pdgeqrf_w,
+GENERATE_F77_BINDINGS (PDLATSQR,
+                       pdlatsqr,
+                       pdlatsqr_,
+                       pdlatsqr__,
+                       pdlatsqr_w,
                        (int * M, int * N, double * A, int * IA, int * JA, int * DESCA, double * TAU, double * WORK, int * LWORK, int * info),
                        (M, N, A, IA, JA, DESCA, TAU, WORK, LWORK, info))

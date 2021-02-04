@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -11,6 +11,7 @@
 #ifdef SCALAPACK_SUP_UNDERSCORE
 
 #define pdgeqrf_         pdgeqrf
+#define pdlatsqr_        pdlatsqr
 #define pdormqr_         pdormqr
 #define pdtrsm_          pdtrsm
 #define pdtrmm_          pdtrmm
@@ -78,6 +79,7 @@ extern void blacs_gridexit_( int *context);
 extern void blacs_exit_( int *error_code);
 
 extern void pdgeqrf_( int *m, int *n, double *a, int *ia, int *ja, int *desca, double *tau, double *work, int *lwork, int *info );
+extern void pdlatsqr_( int *m, int *n, double *a, int *ia, int *ja, int *desca, double *tau, double *work, int *lwork, int *info );
 extern void pdormqr_( char *side, char *trans, int *m, int *n, int *k, double *a, int *ia,
                       int *ja, int *desca, double *tau, double *c, int *ic, int *jc, int *descc, double *work, int *lwork, int *info );
 extern void pdtrsm_ ( char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *a, int *ia,
