@@ -74,16 +74,18 @@ int main(int argc, char ** argv)
         dplasma_zplrnt( parsec, 0,        (parsec_tiled_matrix_dc_t *)&dcC, Cseed);
         if(loud > 2) printf("Done\n");
 
-        /* Create PaRSEC */
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, ztrmm,
-                                  (side, uplo, trans, diag,
-                                   1.0, dcA,
-                                   (parsec_tiled_matrix_dc_t *)&dcC));
+        int t;
+        for(t = 0; t < nruns; t++) {
+            parsec_devices_release_memory();
+            /* Create PaRSEC */
+            PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, ztrmm,
+                                      (side, uplo, trans, diag,
+                                       1.0, dcA,
+                                       (parsec_tiled_matrix_dc_t *)&dcC),
+                                      dplasma_ztrmm_Destruct( PARSEC_ztrmm ));
 
-        /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, ztrmm);
-
-        dplasma_ztrmm_Destruct( PARSEC_ztrmm );
+            parsec_devices_reset_load(parsec);
+        }
         free(dcA);
     }
     else
@@ -108,7 +110,6 @@ int main(int argc, char ** argv)
                 dcA = tiled_matrix_submatrix( (parsec_tiled_matrix_dc_t *)&dcA0, 0, 0, N, N );
             }
             dplasma_zplghe( parsec, 0., dplasmaUpperLower, dcA, Aseed);
-
             for (u=0; u<2; u++) {
 #if defined(PRECISION_z) || defined(PRECISION_c)
                 for (t=0; t<3; t++) {

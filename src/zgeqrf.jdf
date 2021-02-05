@@ -22,10 +22,47 @@ extern "C" %{
 #include "cores/dplasma_zcores.h"
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
+/* Define the different shapes this JDF is using */
+#define DEFAULT  0
+#define LOWER    1
+#define UPPER    2
+#define LITTLE_T 3
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+/* Note: with this approach to support LAPACK format and minimize
+ * the number of tile conversions performed, it is critical to
+ * determined the correct location on the matrix where the tile was
+ * originated from.
+ * Note that the LOC parameters do not correspond to the binding of the
+ * task to the matrix (although sometimes they match). These parameters
+ * correspond to the location were the datacopy was originate on the matrix (maybe
+ * it was read on another task).
+ * If there is no possibility to determine it (datacopy passed along multiple
+ * tasks and that information is lost) the approach is to force a reshapping.
+ *
+ */
+
+#include "zgeqrf.h"
+
 %}
 
-descA  [type = "parsec_tiled_matrix_dc_t*"]
-descT  [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+
+ddescT     [type = "dplasma_data_collection_t*" aligned=ddescA]
+descT      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescT)->dc_original" aligned=ddescA]
+
 ib     [type = "int"]
 p_work [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*descT->nb)"]
 p_tau  [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *descT->nb)"]
@@ -36,11 +73,14 @@ zgeqrt_typechange(k)  [profile = off]
   /* Execution space */
   k = 0 .. %{ return dplasma_imin((descA->nt-1),(descA->mt-1)); %}
 
+loc_A = %{ return LOC(descA, k, k); %}
+
   : descA(k,k)
 
-RW A <- A zgeqrt(k)
-     -> (k < (descA->nt-1)) ? A zunmqr(k, (k+1)..(descA->nt-1)) [type_remote = LOWER_TILE]
-     -> descA(k, k)                                             [type = LOWER_TILE type_data = LOWER_TILE]
+RW A <- A zgeqrt(k)                                             [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+     -> (k < (descA->nt-1)) ? A zunmqr(k, (k+1)..(descA->nt-1)) [ type_remote = %{ return ADTT_CP(_f_A, ddescA, loc_A, LOWER); %} ]
+     -> ddescA(k, k)                                            [ type        = %{ return ADTT_CP(_f_A, ddescA, loc_A, LOWER); %}
+                                                                  type_data   = %{ return ADTT_DC(ddescA, loc_A, LOWER, LAPACK); %} ]
 
 BODY
 {
@@ -55,18 +95,26 @@ zgeqrt(k)
   /* Execution space */
   k = 0 .. %{ return dplasma_imin((descA->nt-1),(descA->mt-1)); %}
 
+loc_A = %{ return LOC(descA, k, k); %}
+loc_T = %{ return LOC(descT, k, k); %}
+
   SIMCOST 4
 
   : descA(k,k)
 
-  RW    A <- (0 == k) ? descA(k, k) : A2 ztsmqr(k-1, k, k)
-          -> (descA->mt==(k+1)) ? descA(k,k)                      [type = UPPER_TILE type_data = UPPER_TILE]
-          -> (descA->mt>=(k+2)) ? A1 ztsqrt(k, k+1)               [type_remote = UPPER_TILE]
-          -> A zgeqrt_typechange(k)
+  RW    A <- (0 == k) ? ddescA(k, k)                [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                                      type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+          <- (0 != k) ? A2 ztsmqr(k-1, k, k)        [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+          -> (descA->mt==(k+1)) ? ddescA(k,k)       [ type        = %{ return ADTT_CP(_f_A, ddescA, loc_A, DEFAULT); %}
+                                                      type_data   = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+          -> (descA->mt>=(k+2)) ? A1 ztsqrt(k, k+1) [ type_remote = %{ return ADTT_CP(_f_A, ddescA, loc_A, UPPER); %} ]
+          -> A zgeqrt_typechange(k)                 /* dep OUT: rely on datacopy dtt for sending */
 
-  RW    T <- descT(k, k)                                         /*[type = LITTLE_T type_data = LITTLE_T]*/
-          -> descT(k, k)                                           [type = LITTLE_T type_data = LITTLE_T]
-          -> (descA->nt-1 > k) ? T zunmqr(k, (k+1)..(descA->nt-1)) [type_remote = LITTLE_T]
+  RW    T <- ddescT(k, k)                           [ type        = %{ return ADTT_READ(ddescT, loc_T, LITTLE_T, TILED); %}
+                                                      type_data   = %{ return ADTT_READ(ddescT, loc_T, LITTLE_T, LAPACK); %} ]
+          -> ddescT(k, k)                           [ type        = %{ return ADTT_CP(_f_T, ddescT, loc_T, LITTLE_T); %}
+                                                      type_data   = %{ return ADTT_DC(ddescT, loc_T, LITTLE_T, LAPACK); %} ]
+          -> (descA->nt-1 > k) ? T zunmqr(k, (k+1)..(descA->nt-1)) /* dep OUT: rely on datacopy dtt for sending */
 
   /* Priority */
   ;(descA->nt-k)*(descA->nt-k)*(descA->nt-k)
@@ -118,8 +166,8 @@ BODY
 {
     int tempkm = ((k)==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int tempkn = ((k)==(descA->nt-1)) ? (descA->n-(k*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
-
+    int ldak_A = LDA(ddescA, A);
+    int ldak_T = LDA(ddescT, T);
 
     printlog("CORE_zgeqrt(%d)\n"
              "\t(tempkm, tempkn, ib, A(%d,%d)[%p], ldak, T(%d,%d)[%p], descT->mb, p_elem_A, p_elem_B)\n",
@@ -130,8 +178,8 @@ BODY
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
     CORE_zgeqrt(tempkm, tempkn, ib,
-                A /* descA(k,k) */, ldak,
-                T /* descT(k,k) */, descT->mb,
+                A /* descA(k,k) */, ldak_A,
+                T /* descT(k,k) */, ldak_T,
                 p_elem_A, p_elem_B );
 
     parsec_private_memory_push( p_tau,  p_elem_A );
@@ -149,15 +197,22 @@ zunmqr(k,n)
   k = 0   .. %{ return dplasma_imin((descA->nt-2),(descA->mt-1)); %}
   n = k+1 .. descA->nt-1
 
+loc_A = %{ return LOC(descA, k, k); %}
+loc_T = %{ return LOC(descT, k, k); %}
+loc_C = %{ return LOC(descA, k, n); %}
+
   SIMCOST 6
 
   : descA(k,n)
 
-  READ  A <- A zgeqrt_typechange(k)                        [type_remote = LOWER_TILE]
-  READ  T <- T zgeqrt(k)                                   [type_remote = LITTLE_T]
-  RW    C <- (k == 0) ? descA(k, n) : A2 ztsmqr(k-1, k, n)
-          -> (k == (descA->mt-1)) ? descA(k, n)
-          -> (k <  (descA->mt-1)) ? A1 ztsmqr(k, k+1, n)
+  READ  A <- A zgeqrt_typechange(k)                        [ type_remote = %{ return ADTT_DC(ddescA, loc_A, LOWER, TILED); %} ]
+  READ  T <- T zgeqrt(k)                                   [ type_remote = %{ return ADTT_DC(ddescT, loc_T, LITTLE_T, TILED); %} ]
+  RW    C <- (k == 0) ? ddescA(k, n)                       [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
+                                                             type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+          <- (k != 0) ? A2 ztsmqr(k-1, k, n)               [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
+          -> (k == (descA->mt-1)) ? ddescA(k, n)           [ type        = %{ return ADTT_CP(_f_C, ddescA, loc_C, DEFAULT); %}
+                                                             type_data   = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+          -> (k <  (descA->mt-1)) ? A1 ztsmqr(k, k+1, n)   /* dep OUT: rely on datacopy dtt for sending */
 
 BODY [type=RECURSIVE]
 {
@@ -208,7 +263,9 @@ BODY
 {
     int tempkm = ((k)==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
+    int ldak_A = LDA(ddescA, A);
+    int ldak_T = LDA(ddescT, T);
+    int ldak_C = LDA(ddescA, C);
 
 
     printlog("CORE_zunmqr(%d, %d)\n"
@@ -220,10 +277,11 @@ BODY
 
     CORE_zunmqr(dplasmaLeft, dplasmaConjTrans,
                 tempkm, tempnn, tempkm, ib,
-                A /* descA(k,k) */, ldak,
-                T /* descT(k,k) */, descT->mb,
-                C /* descA(k,n) */, ldak,
+                A /* descA(k,k) */, ldak_A,
+                T /* descT(k,k) */, ldak_T,
+                C /* descA(k,n) */, ldak_C,
                 p_elem_A, descT->nb );
+
 
     parsec_private_memory_push( p_work, p_elem_A );
 
@@ -234,13 +292,17 @@ END
 ztsqrt_out_Ak(k) [profile = off]
   k = 0..( (descA->mt <= descA->nt) ? descA->mt-2 : descA->nt-1 )
 
+loc_A1 = %{ return LOC(descA, k, k); %}
+
   : descA(k, k)
 
-  RW A1 <- A1 ztsqrt(k, descA->mt-1) [type_remote = UPPER_TILE]
-        -> descA(k, k)               [type = UPPER_TILE type_data = UPPER_TILE]
+  RW A1 <- A1 ztsqrt(k, descA->mt-1)   [ type_remote = %{ return ADTT_DC(ddescA, loc_A1, UPPER, TILED); %} ]
+        -> ddescA(k, k)                [ type        = %{ return ADTT_CP(_f_A1, ddescA, loc_A1, UPPER); %}
+                                         type_data   = %{ return ADTT_DC(ddescA, loc_A1, UPPER, LAPACK); %} ]
 BODY
 {
     /* nothing */
+    //int ldak_A1 =  LDA(ddescA, A1);
 }
 END
 
@@ -252,20 +314,30 @@ ztsqrt(k,m)
   k = 0   .. %{ return dplasma_imin((descA->nt-1),(descA->mt-2)); %}
   m = k+1 .. descA->mt-1
 
+loc_A1 = %{ return LOC(descA, k, k); %}
+loc_A2 = %{ return LOC(descA, m, k); %}
+loc_T  = %{ return LOC(descT, m, k); %}
+
   SIMCOST 6
 
   : descA(m, k)
 
-  RW   A1 <- ( m == (k+1)        ) ? A zgeqrt(m-1) : A1 ztsqrt(k, m-1)       [type_remote = UPPER_TILE]
-          -> ( m == (descA->mt-1)) ? A1 ztsqrt_out_Ak(k) : A1 ztsqrt(k, m+1) [type_remote = UPPER_TILE]
+  RW   A1 <- ( m == (k+1)        ) ? A zgeqrt(m-1) : A1 ztsqrt(k, m-1)       [ type_remote = %{ return ADTT_DC(ddescA, loc_A1, UPPER, TILED); %} ]
+          -> ( m == (descA->mt-1)) ? A1 ztsqrt_out_Ak(k) : A1 ztsqrt(k, m+1) [ type_remote = %{ return ADTT_DC(ddescA, loc_A1, UPPER, TILED); %} ]
+                                                                             /* can't rely on datacopy dtt: != shape from datacollection only if remote */
 
-  RW   A2 <- (k == 0) ? descA(m, k) : A2 ztsmqr(k-1, m, k)
-          -> descA(m, k)
-          -> (k < (descA->nt-1)) ? V ztsmqr(k, m, (k+1)..(descA->nt-1))
+  RW   A2 <- (k == 0) ? ddescA(m, k)                                         [ type        = %{ return ADTT_READ(ddescA, loc_A2, DEFAULT, TILED); %}
+                                                                               type_data   = %{ return ADTT_READ(ddescA, loc_A2, DEFAULT, LAPACK); %} ]
+          <- (k != 0) ? A2 ztsmqr(k-1, m, k)                                 /* dep OUT: rely on datacopy dtt for sending */
+          -> ddescA(m, k)                                                    [ type        = %{ return ADTT_CP(_f_A2, ddescA, loc_A2, DEFAULT); %}
+                                                                               type_data   = %{ return ADTT_DC(ddescA, loc_A2, DEFAULT, LAPACK); %} ]
+          -> (k < (descA->nt-1)) ? V ztsmqr(k, m, (k+1)..(descA->nt-1))      /* dep OUT: rely on datacopy dtt for sending */
 
-  RW   T  <- descT(m, k)                                                  /*[type = LITTLE_T type_data = LITTLE_T]*/
-          -> descT(m, k)                                                    [type = LITTLE_T type_data = LITTLE_T]
-          -> (k < (descA->nt-1)) ? T ztsmqr(k, m, (k+1)..(descA->nt-1))     [type_remote = LITTLE_T]
+  RW   T  <- ddescT(m, k)                                                    [ type        = %{ return ADTT_READ(ddescT, loc_T, LITTLE_T, TILED); %}
+                                                                               type_data   = %{ return ADTT_READ(ddescT, loc_T, LITTLE_T, LAPACK); %} ]
+          -> ddescT(m, k)                                                    [ type        = %{ return ADTT_CP(_f_T, ddescT, loc_T, LITTLE_T); %}
+                                                                               type_data   = %{ return ADTT_DC(ddescT, loc_T, LITTLE_T, LAPACK); %} ]
+          -> (k < (descA->nt-1)) ? T ztsmqr(k, m, (k+1)..(descA->nt-1))      /* dep OUT: rely on datacopy dtt for sending */
 
     /* Priority */
 ; (descA->mt-k)*(descA->mt-k)*(descA->mt-k)
@@ -320,8 +392,9 @@ BODY
 {
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempkn = ((k)==(descA->nt-1)) ? (descA->n-(k*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak_A1 = LDA(ddescA, A1);
+    int ldam_A2 = LDA(ddescA, A2);
+    int ldam_T  = LDA(ddescT, T);
 
 
     printlog("CORE_ztsqrt(%d, %d)\n"
@@ -333,9 +406,9 @@ BODY
     void *p_elem_B = parsec_private_memory_pop( p_work );
 
     CORE_ztsqrt(tempmm, tempkn, ib,
-                A1 /* descA(k,k) */, ldak,
-                A2 /* descA(m,k) */, ldam,
-                T  /* descT(m,k) */, descT->mb,
+                A1 /* descA(k,k) */, ldak_A1,
+                A2 /* descA(m,k) */, ldam_A2,
+                T  /* descT(m,k) */, ldam_T,
                 p_elem_A, p_elem_B );
 
     parsec_private_memory_push( p_tau,  p_elem_A );
@@ -349,10 +422,13 @@ ztsmqr_out_A1(k, n) [profile = off]
   k = 0   .. %{ return dplasma_imin((descA->nt-2),(descA->mt-2)); %}
   n = k+1 .. descA->nt-1
 
+loc_A1 = %{ return LOC(descA, k, n); %}
+
   : descA(k, n)
 
-  RW A1 <- A1 ztsmqr(k, descA->mt-1, n)
-       -> descA(k, n)
+  RW A1 <- A1 ztsmqr(k, descA->mt-1, n) [ type_remote = %{ return ADTT_DC(ddescA, loc_A1, DEFAULT, TILED); %} ]
+        -> ddescA(k, n)                 [ type        = %{ return ADTT_CP(_f_A1, ddescA, loc_A1, DEFAULT); %}
+                                          type_data   = %{ return ADTT_DC(ddescA, loc_A1, DEFAULT, LAPACK); %} ]
 BODY
 {
     /* nothing */
@@ -369,42 +445,58 @@ ztsmqr(k,m,n)
   m = (k+1) .. (descA->mt-1)
   n = (k+1) .. (descA->nt-1)
 
+loc_A1 = %{ return LOC(descA, k, n); %}
+loc_A2 = %{ return LOC(descA, m, n); %}
+loc_V  = %{ return LOC(descA, m, k); %}
+loc_T  = %{ return LOC(descT, m, k); %}
+
   SIMCOST 12
 
   : descA(m, n)
 
-  RW   A1 <- ( (k+1) == m ) ? C zunmqr(m-1, n) : A1 ztsmqr(k, m-1, n)
-          -> ( m == (descA->mt-1) ) ? A1 ztsmqr_out_A1(k, n) : A1 ztsmqr(k, m+1, n)
+  RW   A1 <- ( (k+1) == m ) ? C zunmqr(m-1, n) : A1 ztsmqr(k, m-1, n)                     [ type_remote = %{ return ADTT_DC(ddescA, loc_A1, DEFAULT, TILED); %} ]
+          -> ( m == (descA->mt-1) ) ? A1 ztsmqr_out_A1(k, n) : A1 ztsmqr(k, m+1, n)       /* dep OUT: rely on datacopy dtt for sending */
 
-  RW   A2 <- (0==k) ? descA(m, n) : A2 ztsmqr(k-1, m, n)
-          -> (((k+1) == n) & ((k+1) == m)) ? A  zgeqrt(n)            /* Diagonal */
-          -> (((k+1) == m) & (    n > m )) ? C  zunmqr(k+1, n)       /* Next row */
-          -> (((k+1) == n) & (    m > n )) ? A2 ztsqrt(n, m)         /* Next column */
-          -> (((k+1) <  n) & ((1+k) < m )) ? A2 ztsmqr(k+1, m, n)    /* trailing submatrix */
+  RW   A2 <- (0==k) ? ddescA(m, n)                                                        [ type        = %{ return ADTT_READ(ddescA, loc_A2, DEFAULT, TILED); %}
+                                                                                            type_data   = %{ return ADTT_READ(ddescA, loc_A2, DEFAULT, LAPACK); %} ]
+          <- (0!=k) ? A2 ztsmqr(k-1, m, n)                                                [ type_remote = %{ return ADTT_DC(ddescA, loc_A2, DEFAULT, TILED); %} ]
+          -> (((k+1) == n) & ((k+1) == m)) ? A  zgeqrt(n)        /* Diagonal */           /* dep OUT: rely on datacopy dtt for sending */
+          -> (((k+1) == m) & (    n > m )) ? C  zunmqr(k+1, n)   /* Next row */           /* dep OUT: rely on datacopy dtt for sending */
+          -> (((k+1) == n) & (    m > n )) ? A2 ztsqrt(n, m)     /* Next column */        /* dep OUT: rely on datacopy dtt for sending */
+          -> (((k+1) <  n) & ((1+k) < m )) ? A2 ztsmqr(k+1, m, n)/* trailing submatrix */ /* dep OUT: rely on datacopy dtt for sending */
 
-  READ V  <- A2 ztsqrt(k, m)
-  READ T  <- T  ztsqrt(k, m)   [type_remote = LITTLE_T]
+  READ V  <- A2 ztsqrt(k, m)                                                              [ type_remote = %{ return ADTT_DC(ddescA, loc_V, DEFAULT, TILED); %} ]
+  READ T  <- T  ztsqrt(k, m)                                                              [ type_remote = %{ return ADTT_DC(ddescT, loc_T, LITTLE_T, TILED); %} ]
 
     /* Priority */
 ; (descA->mt-k)*(descA->mt-n)*(descA->mt-n)
 
-BODY [type=CUDA device=%{ return n; %}]
+BODY [type=CUDA device=%{ return n; %}
+      A1.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A2.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      V.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      T.size=%{ return descT->mb*descT->nb*parsec_datadist_getsizeoftype(descT->mtype);%}
+      A1.dc=ddescA A2.dc=ddescA V.dc=ddescA T.dc=ddescT
+      stage_in=stage_in_lapack
+      stage_out=stage_out_lapack]
 {
     dplasma_complex64_t *WORK, *WORKC;
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak_A1 = descA->mb;
+    int ldam_A2 = descA->mb;
+    int ldam_V  = descA->mb;
+    int ldam_T  = descT->mb;
 
     WORK  = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
     WORKC = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
 
     dplasma_cuda_ztsmqr( dplasmaLeft, dplasmaConjTrans,
                          descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
-                         A1 /* descA(k,n) */, ldak,
-                         A2 /* descA(m,n) */, ldam,
-                         V  /* descA(m,k) */, ldam,
-                         T  /* descT(m,k) */, descT->mb,
+                         A1 /* descA(k,n) */, ldak_A1,
+                         A2 /* descA(m,n) */, ldam_A2,
+                         V  /* descA(m,k) */, ldam_V,
+                         T  /* descT(m,k) */, ldam_T,
                          WORK,  ib,
                          WORKC, descA->mb,
                          parsec_body.stream );
@@ -467,8 +559,10 @@ BODY
 {
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak_A1 = LDA(ddescA, A1);
+    int ldam_A2 = LDA(ddescA, A2);
+    int ldam_V  = LDA(ddescA, V);
+    int ldam_T  = LDA(ddescT, T);
     int ldwork = ib;
 
 
@@ -480,10 +574,10 @@ BODY
 
     CORE_ztsmqr(dplasmaLeft, dplasmaConjTrans,
                 descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
-                A1 /* descA(k,n) */, ldak,
-                A2 /* descA(m,n) */, ldam,
-                V  /* descA(m,k) */, ldam,
-                T  /* descT(m,k) */, descT->mb,
+                A1 /* descA(k,n) */, ldak_A1,
+                A2 /* descA(m,n) */, ldam_A2,
+                V  /* descA(m,k) */, ldam_V,
+                T  /* descT(m,k) */, ldam_T,
                 p_elem_A, ldwork );
 
     parsec_private_memory_push( p_work, p_elem_A );

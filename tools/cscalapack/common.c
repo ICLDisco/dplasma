@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2010      University of Denver, Colorado.
@@ -12,68 +12,82 @@
 #include <mpi.h>
 #include <math.h>
 #include "common.h"
-#include "myscalapack.h"
 
 void setup_params( int params[], int argc, char* argv[] )
 {
     int i;
     int ictxt, iam, nprocs, p, q;
-    int provided;
-    MPI_Init_thread( &argc, &argv, MPI_THREAD_FUNNELED, &provided );
-
-#if 0
-    fprintf(stderr, "Level of thread provided is %s\n",
-	    provided == MPI_THREAD_MULTIPLE   ? "MPI_THREAD_MULTIPLE" :
-	    provided == MPI_THREAD_SERIALIZED ? "MPI_THREAD_SERIALIZED" :
-	    provided == MPI_THREAD_FUNNELED   ? "MPI_THREAD_FUNNELED" :
-	    provided == MPI_THREAD_SINGLE     ? "MPI_THREAD_SINGLE" : "UNKNOWN" );
-#endif
-
-    Cblacs_pinfo( &iam, &nprocs );
-    Cblacs_get( -1, 0, &ictxt );
 
     p = 1;
     q = 1;
     params[PARAM_M]         = 0;
     params[PARAM_N]         = 1000;
+    params[PARAM_K]         = 0;
+    params[PARAM_MB]        = 64;
     params[PARAM_NB]        = 64;
     params[PARAM_SEED]      = 3872;
-    params[PARAM_VALIDATE]  = 1;
+    params[PARAM_VALIDATE]  = 0;
     params[PARAM_NRHS]      = 1;
+    params[PARAM_NRUNS]     = 1;
+    params[PARAM_THREAD_MT] = 0;
 
     for( i = 1; i < argc; i++ ) {
-        if( strcmp( argv[i], "-p" ) == 0 ) {
+        if( strcmp( argv[i], "-P" ) == 0 ) {
             p = atoi(argv[i+1]);
             i++;
             continue;
         }
-        if( strcmp( argv[i], "-q" ) == 0 ) {
+        if( strcmp( argv[i], "-Q" ) == 0 ) {
             q = atoi(argv[i+1]);
             i++;
             continue;
         }
-        if( strcmp( argv[i], "-m" ) == 0 ) {
+        if( strcmp( argv[i], "-M" ) == 0 ) {
             params[PARAM_M] = atoi(argv[i+1]);
             i++;
             continue;
         }
-        if( strcmp( argv[i], "-n" ) == 0 ) {
+        if( strcmp( argv[i], "-N" ) == 0 ) {
             params[PARAM_N] = atoi(argv[i+1]);
             i++;
             continue;
         }
-        if( strcmp( argv[i], "-b" ) == 0 ) {
+        if( strcmp( argv[i], "-K" ) == 0 ) {
+            params[PARAM_K] = atoi(argv[i+1]);
+            i++;
+            continue;
+        }
+        if( strcmp( argv[i], "-t" ) == 0 ) {
+            params[PARAM_NB] = params[PARAM_MB] = atoi(argv[i+1]);
+            i++;
+            continue;
+        }
+        if( strcmp( argv[i], "-MB" ) == 0 ) {
+            params[PARAM_MB] = atoi(argv[i+1]);
+            i++;
+            continue;
+        }
+        if( strcmp( argv[i], "-NB" ) == 0 ) {
             params[PARAM_NB] = atoi(argv[i+1]);
             i++;
             continue;
         }
         if( strcmp( argv[i], "-x" ) == 0 ) {
-            params[PARAM_VALIDATE] = 0;
+            params[PARAM_VALIDATE] = 1;
+            continue;
+        }
+        if( strcmp( argv[i], "-m" ) == 0 ) {
+            params[PARAM_THREAD_MT] = 1;
             continue;
         }
         if(( strcmp( argv[i], "-s" ) == 0 ) ||
-           ( strcmp( argv[i], "-nrhs" ) == 0 )) {
+           ( strcmp( argv[i], "-NRHS" ) == 0 )) {
             params[PARAM_NRHS] = atoi(argv[i+1]);
+            i++;
+            continue;
+        }
+        if( strcmp( argv[i], "-nruns" ) == 0 ) {
+            params[PARAM_NRUNS] = atoi(argv[i+1]);
             i++;
             continue;
         }
@@ -82,19 +96,43 @@ void setup_params( int params[], int argc, char* argv[] )
             i++;
         }
         fprintf( stderr, "### USAGE: %s [-p NUM][-q NUM][-m NUM][-n NUM][-b NUM][-x][-s NUM]\n"
-                         "#     -p         : number of rows in the PxQ process grid\n"
-                         "#     -q         : number of columns in the PxQ process grid\n"
-                         "#     -m         : dimension of the matrix (MxN)\n"
-                         "#     -n         : dimension of the matrix (MxN)\n"
-                         "#     -b         : block size (NB)\n"
-                         "#     -s | -nrhs : number of right hand sides for backward error computation (NRHS)\n"
-                         "#     -x         : disable verification\n"
-                         "#          -seed : Change the seed\n", argv[0] );
+                         "#     -P         : number of rows in the PxQ process grid\n"
+                         "#     -Q         : number of columns in the PxQ process grid\n"
+                         "#     -M         : dimension of the matrix A: M x K, B: K x N, C: M x N\n"
+                         "#     -N         : dimension of the matrix A: M x K, B: K x N, C: M x N\n"
+                         "#     -K         : dimension of the matrix A: M x K, B: K x N, C: M x N\n"
+                         "#     -t         : block size (NB)\n"
+                         "#     -s | -NRHS : number of right hand sides for backward error computation (NRHS)\n"
+                         "#     -x         : enable verification\n"
+                         "#     -nruns     : number of times to run the kernel\n"
+                         "#     -seed      : change the seed\n"
+                         "#     -m         : initialize MPI_THREAD_MULTIPLE (default: no)\n", argv[0] );
         Cblacs_abort( ictxt, i );
     }
+
+    int requested = params[PARAM_THREAD_MT]? MPI_THREAD_MULTIPLE: MPI_THREAD_SERIALIZED;
+    int provided;
+    MPI_Init_thread(&argc, &argv, requested, &provided);
+    if( requested > provided ) {
+        fprintf(stderr, "#XXXXX User requested %s but the implementation returned a lower thread\n", requested==MPI_THREAD_MULTIPLE? "MPI_THREAD_MULTIPLE": "MPI_THREAD_SERIALIZED");
+        exit(2);
+    }
+
+    Cblacs_pinfo( &iam, &nprocs );
+    Cblacs_get( -1, 0, &ictxt );
+
+    if( 0 == iam ){
+        printf("Level of thread provided is %s\n",
+            provided == MPI_THREAD_MULTIPLE   ? "MPI_THREAD_MULTIPLE" :
+            provided == MPI_THREAD_SERIALIZED ? "MPI_THREAD_SERIALIZED" :
+            provided == MPI_THREAD_FUNNELED   ? "MPI_THREAD_FUNNELED" :
+            provided == MPI_THREAD_SINGLE     ? "MPI_THREAD_SINGLE" : "UNKNOWN" );
+    }
+
     /* Validity checks etc. */
-    if( params[PARAM_NB] > params[PARAM_N] )
-        params[PARAM_NB] = params[PARAM_N];
+    /* Enable runs with tiles larger than matrix dimmension */
+    /* if( params[PARAM_NB] > params[PARAM_N] )*/
+    /*     params[PARAM_NB] = params[PARAM_N];*/
     if( 0 == params[PARAM_M] )
         params[PARAM_M] = params[PARAM_N];
     if( p*q > nprocs ) {
@@ -241,7 +279,8 @@ void scalapack_pdplrnt( double *A,
                         int seed )
 {
     int i, j;
-    int idum1, idum2, iloc, jloc, i0=0;
+    int idum1, idum2, i0=0;
+    size_t index, iloc, jloc;
     int tempm, tempn;
     double *Ab;
 
@@ -251,8 +290,8 @@ void scalapack_pdplrnt( double *A,
                  ( mycol == indxg2p_( &j, &nb, &idum1, &i0, &npcol ) ) ){
                 iloc = indxg2l_( &i, &mb, &idum1, &idum2, &nprow );
                 jloc = indxg2l_( &j, &nb, &idum1, &idum2, &npcol );
-
-                Ab =  &A[ (jloc-1)*mloc + (iloc-1) ];
+                index = (jloc-1)*((size_t)mloc) + (iloc-1);
+                Ab =  &A[ index ];
                 tempm = (m - i +1) > mb ? mb : (m-i + 1);
                 tempn = (n - j +1) > nb ? nb : (n-j + 1);
                 CORE_dplrnt( tempm, tempn, Ab, mloc,
@@ -271,7 +310,8 @@ void scalapack_pdplghe( double *A,
                         int seed )
 {
     int i, j;
-    int idum1, idum2, iloc, jloc, i0=0;
+    int idum1, idum2, i0=0;
+    size_t index, iloc, jloc;
     int tempm, tempn;
     double *Ab;
 
@@ -281,8 +321,8 @@ void scalapack_pdplghe( double *A,
                  ( mycol == indxg2p_( &j, &nb, &idum1, &i0, &npcol ) ) ){
                 iloc = indxg2l_( &i, &mb, &idum1, &idum2, &nprow );
                 jloc = indxg2l_( &j, &nb, &idum1, &idum2, &npcol );
-
-                Ab =  &A[ (jloc-1)*mloc + (iloc-1) ];
+                index = (jloc-1)*((size_t)mloc) + (iloc-1);
+                Ab =  &A[ index ];
                 tempm = (m - i +1) > mb ? mb : (m-i + 1);
                 tempn = (n - j +1) > nb ? nb : (n-j + 1);
                 CORE_dplghe( (double)m, tempm, tempn, Ab, mloc,

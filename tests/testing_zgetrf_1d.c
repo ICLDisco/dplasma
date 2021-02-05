@@ -58,9 +58,9 @@ int main(int argc, char ** argv)
                                                       rank, MB, NB, LDA, N, 0, 0,
                                                       M, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
-        two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
-                               rank, 1, NB, 1, dplasma_imin(M, N), 0, 0,
-                               1, dplasma_imin(M, N), P, nodes/P, KP, KQ, IP, JQ));
+                               two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
+                                                      rank, 1, NB, 1, dplasma_imin(M, N), 0, 0,
+                                                      1, dplasma_imin(M, N), P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
                                two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,

@@ -8,6 +8,7 @@
  */
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 #include "cores/core_blas.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
@@ -20,6 +21,8 @@
 #include "ztrmm_RLT.h"
 #include "ztrmm_RUN.h"
 #include "ztrmm_RUT.h"
+
+#define MAX_SHAPES 2
 
 /**
  *******************************************************************************
@@ -97,6 +100,8 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                    parsec_tiled_matrix_dc_t *B )
 {
     parsec_taskpool_t *parsec_trmm = NULL;
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
+    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)B);
 
     /* Check input arguments */
     if (side != dplasmaLeft && side != dplasmaRight) {
@@ -121,21 +126,21 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
             if ( trans == dplasmaNoTrans ) {
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_LLN_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_LLT_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             }
         } else { /* uplo = dplasmaUpper */
             if ( trans == dplasmaNoTrans ) {
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_LUN_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_LUT_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             }
         }
     } else { /* side == dplasmaRight */
@@ -143,29 +148,40 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
             if ( trans == dplasmaNoTrans ) {
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_RLN_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_RLT_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             }
         } else { /* uplo = dplasmaUpper */
             if ( trans == dplasmaNoTrans ) {
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_RUN_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trmm = (parsec_taskpool_t*)parsec_ztrmm_RUT_new(
                     side, uplo, trans, diag, alpha,
-                    A, B);
+                    ddc_A, ddc_B);
             }
         }
     }
 
-    dplasma_add2arena_tile( &((parsec_ztrmm_LLN_taskpool_t*)parsec_trmm)->arenas_datatypes[PARSEC_ztrmm_LLN_DEFAULT_ADT_IDX],
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
+    /* When supporting LAPACK we can't assume both matrixes have the same layout, e.g. LDA.
+     * Therefore, generate types for both.
+     */
+    int shape = 0;
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
+
+    dplasma_setup_adtt_all_loc( ddc_B,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
+
+    assert(shape == MAX_SHAPES);
 
     return parsec_trmm;
 }
@@ -194,9 +210,17 @@ void
 dplasma_ztrmm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrmm_LLN_taskpool_t *otrmm = (parsec_ztrmm_LLN_taskpool_t *)tp;
+    dplasma_clean_adtt_all_loc(otrmm->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(otrmm->_g_ddescB, MAX_SHAPES);
+    dplasma_data_collection_t * ddc_A = otrmm->_g_ddescA;
+    dplasma_data_collection_t * ddc_B = otrmm->_g_ddescB;
 
-    dplasma_matrix_del2arena( &otrmm->arenas_datatypes[PARSEC_ztrmm_LLN_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
+
+    /* free the dplasma_data_collection_t */
+    dplasma_unwrap_data_collection(ddc_A);
+    dplasma_unwrap_data_collection(ddc_B);
+
 }
 
 /**

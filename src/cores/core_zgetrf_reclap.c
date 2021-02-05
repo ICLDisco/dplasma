@@ -126,7 +126,8 @@ int CORE_zgetrf_reclap(CORE_zgetrf_data_t *data,
                        int *IPIV, int *info)
 {
     int thidx = info[1];
-    int thcnt = min( info[2], M / N );
+    int divmn = M / N;
+    int thcnt = min( info[2], ((divmn == 0) && (M != 0))? 1 : divmn );
     int minMN = min(M, N);
 
     info[0] = 0;

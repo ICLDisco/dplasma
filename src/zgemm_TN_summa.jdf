@@ -17,6 +17,39 @@ extern "C" %{
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+
+/* Define the different shapes this JDF is using */
+#define A_SHAPE 0
+#define B_SHAPE 1
+#define C_SHAPE 2
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+/* Note: with this approach to support LAPACK format and minimize
+ * the number of tile conversions performed, it is critical to
+ * determined the correct location on the matrix where the tile was
+ * originated from.
+ * Note that the LOC parameters do not correspond to the binding of the
+ * task to the matrix (although sometimes they match). These parameters
+ * correspond to the location were the datacopy was originate on the matrix (maybe
+ * it was read on another task).
+ * If there is no possibility to determine it (datacopy passed along multiple
+ * tasks and that information is lost) the approach is to force a reshapping.
+ *
+ */
+
+#include "zgemm_TN_summa.h"
+
 %}
 
 /*
@@ -28,9 +61,15 @@ transB [type = int]
 alpha  [type = dplasma_complex64_t]
 beta   [type = dplasma_complex64_t]
 
-descA  [type = "const parsec_tiled_matrix_dc_t*"]
-descB  [type = "const parsec_tiled_matrix_dc_t*"]
-descC  [type = "parsec_tiled_matrix_dc_t*"]
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+
+ddescB     [type = "dplasma_data_collection_t*"]
+descB      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescB)->dc_original" aligned=ddescB]
+
+ddescC     [type = "dplasma_data_collection_t*"]
+descC      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescC)->dc_original" aligned=ddescC]
+
 Cdist  [type = "parsec_data_collection_t *"]
 
 P      [type = "int" hidden=on default="((two_dim_block_cyclic_t*)descC)->grid.rows"]
@@ -48,10 +87,13 @@ READ_A(k, m)  [profile = off]
 k = 0 .. descA->mt-1
 m = 0 .. descA->nt-1
 
+loc_A = %{ return LOC(descA, k, m); %}
+
 : descA(k, m)
 
-READ A <- descA(k, m)
-       -> A RING_A(k, m, k%Q)
+READ A <- ddescA(k, m)        [ type        = %{ return ADTT_READ(ddescA, loc_A, A_SHAPE, TILED); %}
+                                type_data   = %{ return ADTT_READ(ddescA, loc_A, A_SHAPE, LAPACK); %} ]
+       -> A RING_A(k, m, k%Q) /* dep OUT: rely on datacopy dtt for sending */
 BODY
 {
     printlog("rank %u <- A(%d,%d)\n", ((parsec_data_collection_t*)descA)->myrank, k, m);
@@ -66,11 +108,13 @@ q = 0 .. Q-1
 prevq = (q-1+Q)%Q
 nextq = (q+1)%Q
 
+loc_A = %{ return LOC(descA, k, m); %}
+
 : Cdist(m, q)
 
-READ A <- (k%Q == q) ? A READ_A(k, m) : A RING_A(k, m, prevq)
-       -> A GEMM(m, q .. descC->nt-1 .. Q, k)
-       -> (nextq != (k%Q)) ? A RING_A(k, m, nextq)
+READ A <- (k%Q == q) ? A READ_A(k, m) : A RING_A(k, m, prevq) [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
+       -> A GEMM(m, q .. descC->nt-1 .. Q, k)                 /* dep OUT: rely on datacopy dtt for sending */
+       -> (nextq != (k%Q)) ? A RING_A(k, m, nextq)            /* dep OUT: rely on datacopy dtt for sending */
 
 CTL ctla <- (k >= lookQ) ? ctla GEMM(m, q .. descC->nt-1 .. Q, k-lookQ)
 
@@ -88,10 +132,13 @@ READ_B(k, n) [profile = off]
 k = 0 .. descB->mt-1
 n = 0 .. descB->nt-1
 
+loc_B = %{ return LOC(descB, k, n); %}
+
 : descB(k, n)
 
-READ B <- descB(k, n)
-       -> B RING_B(k, n, k%P)
+READ B <- ddescB(k, n)        [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
+                                type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
+       -> B RING_B(k, n, k%P) /* dep OUT: rely on datacopy dtt for sending */
 BODY
 {
      printlog("rank %u <- B(%d,%d)\n", ((parsec_data_collection_t*)descB)->myrank, k, n);
@@ -106,11 +153,13 @@ p = 0 .. P-1
 prevp = (p-1+P)%P
 nextp = (p+1)%P
 
+loc_B = %{ return LOC(descB, k, n); %}
+
 : Cdist(p, n)
 
-READ B <- (k%P == p) ? B READ_B(k, n) : B RING_B(k, n, prevp)
-       -> B GEMM(p .. descC->mt-1 .. P, n, k)
-       -> (nextp != (k%P)) ? B RING_B(k, n, nextp)
+READ B <- (k%P == p) ? B READ_B(k, n) : B RING_B(k, n, prevp) [ type_remote = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, TILED); %} ]
+       -> B GEMM(p .. descC->mt-1 .. P, n, k)                 /* dep OUT: rely on datacopy dtt for sending */
+       -> (nextp != (k%P)) ? B RING_B(k, n, nextp)            /* dep OUT: rely on datacopy dtt for sending */
 
 CTL ctlb <- (k >= lookP) ? ctlb GEMM(p .. descC->mt-1 .. P, n, k-lookP)
 
@@ -130,21 +179,35 @@ m = 0 .. descC->mt-1
 n = 0 .. descC->nt-1
 k = 0 .. descA->mt-1
 
+loc_A = %{ return LOC(descA, k, m); %}
+loc_B = %{ return LOC(descB, k, n); %}
+loc_C = %{ return LOC(descC, m, n); %}
+
 // Parallel partitioning
 : descC(m, n)
 
 // Parameters
-READ A <- A RING_A(k, m, n%Q)
-READ B <- B RING_B(k, n, m%P)
-RW   C <- (k == 0)             ? descC(m, n) : C GEMM( m, n, k-1 )
-       -> (k == (descA->mt-1)) ? descC(m, n) : C GEMM( m, n, k+1 )
+READ A <- A RING_A(k, m, n%Q)                         [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
+READ B <- B RING_B(k, n, m%P)                         [ type_remote = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, TILED); %} ]
+RW   C <- (k == 0)             ? ddescC(m, n)         [ type        = %{ return ADTT_READ(ddescC, loc_C, C_SHAPE, TILED); %}
+                                                        type_data   = %{ return ADTT_READ(ddescC, loc_C, C_SHAPE, LAPACK); %} ]
+       <- (k != 0)             ? C GEMM( m, n, k-1 )  [ type_remote = %{ return ADTT_DC(ddescC, loc_C, C_SHAPE, TILED); %} ]
+       -> (k == (descA->mt-1)) ? ddescC(m, n)         [ type        = %{ return ADTT_CP(_f_C, ddescC, loc_C, C_SHAPE); %}
+                                                        type_data   = %{ return ADTT_DC(ddescC, loc_C, C_SHAPE, LAPACK); %} ]
+       -> (k != (descA->mt-1)) ? C GEMM( m, n, k+1 )  /* dep OUT: rely on datacopy dtt for sending */
 
 CTL ctla -> (k < (descA->mt-lookQ)) ? ctla RING_A(k+lookQ, m, n%Q)
 CTL ctlb -> (k < (descA->mt-lookP)) ? ctlb RING_B(k+lookP, n, m%P)
 
 BODY [type=CUDA
       dyld=cublasZgemm dyldtype=cublas_zgemm_t
-      weight=(descA->mt-k)]
+      weight=(descA->mt-k)
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
+      C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
+      A.dc=ddescA B.dc=ddescB C.dc=ddescC
+      stage_in=stage_in_lapack
+      stage_out=stage_out_lapack]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex lalpha = make_cuDoubleComplex(creal(alpha), cimag(alpha));
@@ -157,9 +220,9 @@ BODY [type=CUDA
     int tempmm = m == descC->mt-1 ? descC->m - m * descC->mb : descC->mb;
     int tempnn = n == descC->nt-1 ? descC->n - n * descC->nb : descC->nb;
     int tempkk = k == descA->mt-1 ? descA->m - k * descA->mb : descA->mb;
-    int ldak = BLKLDD(descA, k);
-    int ldbk = BLKLDD(descB, k);
-    int ldcm = BLKLDD(descC, m);
+    int ldak = descA->mb;
+    int ldbk = descB->mb;
+    int ldcm = descC->mb;
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
@@ -180,9 +243,9 @@ BODY
     int tempmm = m == descC->mt-1 ? descC->m - m * descC->mb : descC->mb;
     int tempnn = n == descC->nt-1 ? descC->n - n * descC->nb : descC->nb;
     int tempkk = k == descA->mt-1 ? descA->m - k * descA->mb : descA->mb;
-    int ldak = BLKLDD(descA, k);
-    int ldbk = BLKLDD(descB, k);
-    int ldcm = BLKLDD(descC, m);
+    int ldak = LDA(ddescA, A);
+    int ldbk = LDA(ddescB, B);
+    int ldcm = LDA(ddescC, C);
 
     CORE_zgemm(transA, transB,
                tempmm, tempnn, tempkk,

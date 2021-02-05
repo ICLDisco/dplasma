@@ -15,11 +15,47 @@ extern "C" %{
 
 #define nbthreads( __k ) (dplasma_imin( ((descA->mt - (__k)) + 3 )/  4, nbmaxthrd) - 1)
 
+
+/* Define the different shapes this JDF is using */
+#define DEFAULT 0
+#define PIVOT   1
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+/* Note: with this approach to support LAPACK format and minimize
+ * the number of tile conversions performed, it is critical to
+ * determined the correct location on the matrix where the tile was
+ * originated from.
+ * Note that the LOC parameters do not correspond to the binding of the
+ * task to the matrix (although sometimes they match). These parameters
+ * correspond to the location were the datacopy was originate on the matrix (maybe
+ * it was read on another task).
+ * If there is no possibility to determine it (datacopy passed along multiple
+ * tasks and that information is lost) the approach is to force a reshapping.
+ *
+ */
+
 %}
 
 /** Globals */
-descA     [type = "parsec_tiled_matrix_dc_t*"]
-dataIP    [type = "parsec_data_collection_t *"]
+
+
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+
+ddescIPIV   [type = "dplasma_data_collection_t*"]
+descIPIV    [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescIPIV)->dc_original" aligned=ddescIPIV]
+
 INFO      [type = "int*"]
 
 nbmaxthrd [type = "int" hidden=on default="( dplasma_imax( 1, dplasma_imin( vpmap_get_nb_threads_in_vp(0) - 1, 48 ) ) )" ] /* 48 is the actual limit of the kernel */
@@ -59,10 +95,13 @@ IPIV_in(k) [profile = off]
   k     = 0 .. KT
   nbtrd = %{ return nbthreads( k ); %}
 
-  : dataIP(0, k)
+loc_IPIV = %{ return LOC(descIPIV, 0, k); %}
 
-READ IP <- dataIP(0, k)            /*[type = PIVOT type_data = PIVOT]*/
-        -> IPIV getrf(k, 0..nbtrd)   [type_remote = PIVOT]
+  : descIPIV(0, k)
+
+READ IPIV <- ddescIPIV(0, k)         [ type        = %{ return ADTT_READ(ddescIPIV, loc_IPIV, PIVOT, TILED); %}
+                                       type_data   = %{ return ADTT_READ(ddescIPIV, loc_IPIV, PIVOT, LAPACK); %} ]
+          -> IPIV getrf(k, 0..nbtrd)   /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
@@ -73,10 +112,13 @@ END
 IPIV_out(k) [profile = off]
   k = 0 .. KT
 
-  : dataIP(0, k)
+loc_IPIV = %{ return LOC(descIPIV, 0, k); %}
 
-  READ IP <- IPIV getrf(k, 0)        [type_remote = PIVOT]
-          -> dataIP(0, k)            [type = PIVOT type_data = PIVOT]
+  : descIPIV(0, k)
+
+  READ IPIV <- IPIV getrf(k, 0)        [ type_remote = %{ return ADTT_DC(ddescIPIV, loc_IPIV, PIVOT, TILED); %} ]
+            -> ddescIPIV(0, k)         [ type        = %{ return ADTT_CP(_f_IPIV, ddescIPIV, loc_IPIV, PIVOT); %}
+                                         type_data   = %{ return ADTT_DC(ddescIPIV, loc_IPIV, PIVOT, LAPACK); %} ]
 
 BODY
 {
@@ -94,17 +136,23 @@ getrf(k, t) [high_priority = on flops = inline_c%{ return t == 0 ? FLOPS_ZGETRF(
   m1 = %{ return k + t * 4; %}
   m2 = %{ return dplasma_imin( k + (t+1) * 4 - 1, descA->mt-1); %}
 
+loc_A  = %{ return LOC(descA, k, k); %}
+loc_IPIV = %{ return LOC(descIPIV, 0, k); %}
+
   /* Locality */
   :descA(k, k)
 
-  RW    A    <- (k == 0) ? descA(k, k) : C gemm(k-1, k, k)
-             -> (t == 0) && (k < (descA->nt-1)) ? A swptrsm(k, k+1..descA->nt-1)
-             -> (t == 0) ? descA(k, k)
+  RW    A    <- (k == 0) ? ddescA(k, k)                                               [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                                                                        type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+             <- (k != 0) ? C gemm(k-1, k, k)                                          [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+             -> (t == 0) && (k < (descA->nt-1)) ? A swptrsm(k, k+1..descA->nt-1)      /* dep OUT: rely on datacopy dtt for sending */
+             -> (t == 0) ? ddescA(k, k)                                               [ type        = %{ return ADTT_CP(_f_A, ddescA, loc_A, DEFAULT); %}
+                                                                                        type_data   = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, LAPACK); %} ]
 
-  RW    IPIV <- IP IPIV_in(k)                                                         [type_remote = PIVOT]
-             -> ( t==0 ) ? IP IPIV_out(k)                                             [type_remote = PIVOT]
-             -> ((t==0) && (k < (descA->nt-1))) ? IPIV swptrsm(k, k+1 .. descA->nt-1) [type_remote = PIVOT]
-             -> ((t==0) && (k > 0))            ? IPIV swpback(k, 0 .. k-1)            [type_remote = PIVOT]
+  RW    IPIV <- IPIV IPIV_in(k)                                                       [ type_remote = %{ return ADTT_DC(ddescIPIV, loc_IPIV, PIVOT, TILED); %} ]
+             -> ( t==0 ) ? IPIV IPIV_out(k)                                           /* dep OUT: rely on datacopy dtt for sending */
+             -> ((t==0) && (k < (descA->nt-1))) ? IPIV swptrsm(k, k+1 .. descA->nt-1) /* dep OUT: rely on datacopy dtt for sending */
+             -> ((t==0) && (k > 0))            ? IPIV swpback(k, 0 .. k-1)            /* dep OUT: rely on datacopy dtt for sending */
 
   CTL   ctl  <- (k > 0) ? ctl tile2panel(k-1, k)
              -> (t == 0) && (k < descA->mt-1) ? ctl GEMM_A_in(k, k+1..descA->mt-1)
@@ -117,10 +165,10 @@ BODY
     int tempk  = k * descA->mb;
     int tempm  = descA->m - tempk;
     int tempkn = k == descA->nt-1 ? descA->n-k*descA->nb : descA->nb;
-    int ldak = BLKLDD(descA, k);
+    int ldak = LDA(ddescA, A);
 
     printlog("CORE_zgetrf_rec(%d)\n"
-             "\t(%d, %d, dataA(%d,%d)[%p], %d, dataIP(%d)[%p])",
+             "\t(%d, %d, dataA(%d,%d)[%p], %d, descIPIV(%d)[%p])",
              k, tempm, tempkn, k, k, A, ldak, k, IPIV);
 
     int tempkm = k == descA->mt-1 ? tempm : descA->mb;
@@ -171,16 +219,24 @@ swptrsm(k, n)   [flops = inline_c%{ return FLOPS_ZTRSM(PlasmaLeft, CLEAN_MB(desc
   k = 0   .. KT
   n = k+1 .. descA->nt-1
 
+loc_A  = %{ return LOC(descA, k, k); %}
+loc_B  = %{ return LOC(descA, k, n); %}
+loc_IPIV = %{ return LOC(descIPIV, 0, k); %}
+
   /* Locality */
   :descA(k, n)
 
-  READ  A    <- A    getrf(k, 0)
-  READ  IPIV <- IPIV getrf(k, 0)                                [type_remote = PIVOT]
+  READ  A    <- A    getrf(k, 0)                                   [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+  READ  IPIV <- IPIV getrf(k, 0)                                   [ type_remote = %{ return ADTT_DC(ddescIPIV, loc_IPIV, PIVOT, TILED); %} ]
 
-  RW    B    <- ( 0 == k ) ? descA(k,n) : C gemm(k-1, k, n)
+  RW    B    <- ( 0 == k ) ? ddescA(k,n)                           [ type        = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, TILED); %}
+                                                                     type_data   = %{ return ADTT_READ(ddescA, loc_B, DEFAULT, LAPACK); %} ]
+             <- ( 0 != k ) ? C gemm(k-1, k, n)                     [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
           /* <- descA(k..descA->mt-1, n) : C gemm(k-1, k..descA->mt-1, n) */
-             -> (k < descA->mt-1) ? B gemm(k, k+1..descA->mt-1, n)
-             -> descA(k, n)
+             -> (k < descA->mt-1) ? B gemm(k, k+1..descA->mt-1, n) /* dep OUT: rely on datacopy dtt for sending */
+             -> ddescA(k, n)                                       [ type        = %{ return ADTT_CP(_f_B, ddescA, loc_B, DEFAULT); %}
+                                                                     type_data   = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, LAPACK); %} ]
+
 
   CTL   ctl  <- ( k > 0 ) ? ctl tile2panel(k-1, n)
 
@@ -191,7 +247,8 @@ BODY
 {
     int tempkm = ((k)==(descA->mt-1)) ? (descA->m-(k*descA->mb)) : (descA->mb);
     int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : (descA->nb);
-    int ldak = BLKLDD(descA, k);
+    int ldak_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
 
     printlog("CORE_zswptrsm(%d, %d)\n"
              "\t(%d, %d, dataA(%d,%d)[%p], B(%d,%d)[%p])",
@@ -208,14 +265,14 @@ BODY
 
         CORE_zlaswp_ontile(pdescA, 1, tempkm, IPIV, 1);
     } else {
-        CORE_zlaswp( tempnn, B, ldak, 1, tempkm, IPIV, 1);
+        CORE_zlaswp( tempnn, B, ldak_B, 1, tempkm, IPIV, 1);
     }
 
     CORE_ztrsm(
         dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaUnit,
         tempkm, tempnn,
-        1., A /*(k, k)*/, ldak,
-            B /*(k, n)*/, ldak);
+        1., A /*(k, k)*/, ldak_A,
+            B /*(k, n)*/, ldak_B);
 }
 END
 
@@ -227,11 +284,15 @@ GEMM_A_in(k, m)
   k = 0   .. KT
   m = k+1 .. descA->mt-1
 
+loc_A  = %{ return LOC(descA, m, k); %}
+
   /* Locality */
   :descA(m, k)
 
-  READ  A  <- ( k == 0 ) ? descA(m, k) : C gemm(k-1, m, k)
-           -> A gemm(k, m, k+1..descA->nt-1)
+  READ  A  <- ( k == 0 ) ? ddescA(m, k)      [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                               type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+           <- ( k != 0 ) ? C gemm(k-1, m, k) [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+           -> A gemm(k, m, k+1..descA->nt-1) /* dep OUT: rely on datacopy dtt for sending */
   CTL  ctl <- ctl getrf(k, 0)
 
 BODY
@@ -247,18 +308,24 @@ gemm(k, m, n) [flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), CLEAN_N
   m = k+1 .. descA->mt-1
   n = k+1 .. descA->nt-1
 
+loc_A  = %{ return LOC(descA, m, k); %}
+loc_B  = %{ return LOC(descA, k, n); %}
+loc_C  = %{ return LOC(descA, m, n); %}
+
   ntrd = %{ return nbthreads( k+1 ); %}
 
   /* Locality */
   :descA(m, n)
 
-  READ  A  <- A GEMM_A_in(k, m)
-  READ  B  <- B swptrsm(k, n)
-  RW    C  <- ( k   == 0 ) ? descA(m, n) : C gemm(k-1, m, n)
-           -> ( k+1 == n ) && ( k+1 == m ) ? A getrf(k+1, 0..ntrd)
-           -> ( k+1 == n ) && ( k+1 <  m ) ? A GEMM_A_in(k+1, m)
-           -> ( k+1 <  n ) && ( k+1 == m ) ? B swptrsm(k+1, n)
-           -> ( k+1 <  n ) && ( k+1 <  m ) ? C gemm(k+1, m, n)
+  READ  A  <- A GEMM_A_in(k, m)                                     [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+  READ  B  <- B swptrsm(k, n)                                       [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
+  RW    C  <- ( k   == 0 ) ? ddescA(m, n)                           [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
+                                                                      type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+           <- ( k   != 0 ) ?  C gemm(k-1, m, n)                     [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
+           -> ( k+1 == n ) && ( k+1 == m ) ? A getrf(k+1, 0..ntrd)  /* dep OUT: rely on datacopy dtt for sending */
+           -> ( k+1 == n ) && ( k+1 <  m ) ? A GEMM_A_in(k+1, m)    /* dep OUT: rely on datacopy dtt for sending */
+           -> ( k+1 <  n ) && ( k+1 == m ) ? B swptrsm(k+1, n)      /* dep OUT: rely on datacopy dtt for sending */
+           -> ( k+1 <  n ) && ( k+1 <  m ) ? C gemm(k+1, m, n)      /* dep OUT: rely on datacopy dtt for sending */
 
   CTL  ctl -> (k < KT) ? ctl tile2panel(k, n)
 
@@ -269,18 +336,19 @@ BODY
 {
     int tempmm = (m == (descA->mt-1)) ? descA->m - m * descA->mb : descA->mb;
     int tempnn = (n == (descA->nt-1)) ? descA->n - n * descA->nb : descA->nb;
-    int ldak = BLKLDD(descA, k);
-    int ldam = BLKLDD(descA, m);
+    int ldam_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(%d, %d, %d, dataA(%d,%d)[%p], %d, B(%d,%d)[%p], %d, C(%d,%d)[%p], %d)",
-             k, m, n, tempmm, tempnn, descA->mb, k, k, A, ldam, k, k, B, ldak, k, n, C, ldam);
+             k, m, n, tempmm, tempnn, descA->mb, k, k, A, ldam_A, k, k, B, ldak_B, k, n, C, ldam_C);
 
     CORE_zgemm(dplasmaNoTrans, dplasmaNoTrans,
                tempmm, tempnn, descA->mb,
-               -1., A /*(m, k)*/, ldam,
-                    B /*(k, n)*/, ldak,
-               1.,  C /*(m, n)*/, ldam );
+               -1., A /*(m, k)*/, ldam_A,
+                    B /*(k, n)*/, ldak_B,
+               1.,  C /*(m, n)*/, ldam_C );
 }
 END
 
@@ -293,13 +361,18 @@ swpback(k, n)
   k = 1 .. KT
   n = 0 .. k-1
 
+loc_A  = %{ return LOC(descA, k, n); %}
+loc_IPIV = %{ return LOC(descIPIV, 0, k); %}
+
   /* Locality */
   :descA(k, n)
 
-  RW    A    <- descA(k, n)
-             -> descA(k, n)
+  RW    A    <- ddescA(k, n)      [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                    type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+             -> ddescA(k, n)      [ type        = %{ return ADTT_CP(_f_A, ddescA, loc_A, DEFAULT); %}
+                                    type_data   = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, LAPACK); %} ]
 
-  READ  IPIV <- IPIV getrf(k, 0)                                [type_remote = PIVOT]
+  READ  IPIV <- IPIV getrf(k, 0)  [ type_remote = %{ return ADTT_DC(ddescIPIV, loc_IPIV, PIVOT, TILED); %} ]
 
   CTL   ctl  <- (n == (k-1)) ? ctl tile2panel(n, k..descA->nt-1)
 
@@ -314,11 +387,11 @@ BODY
     int tempkm = k == descA->mt-1 ? descA->m - k * descA->mb : descA->mb;
     int tempkn = k == descA->nt-1 ? descA->n - k * descA->nb : descA->nb;
     int tempmin = dplasma_imin(tempkn, tempkm);
-    int ldak = BLKLDD(descA, k);
+    int ldak_A = LDA(ddescA, A);
 
     printlog("CORE_zswpback(%d, %d)\n"
-             "\t(%d, dataA(%d,%d)[%p], %d, dataIP(%d)[%p])",
-             k, n, descA->nb, k, n, A, ldak, k, IPIV);
+             "\t(%d, dataA(%d,%d)[%p], %d, descIPIV(%d)[%p])",
+             k, n, descA->nb, k, n, A, ldak_A, k, IPIV);
 
     if ( descA->storage == matrix_Tile ) {
         int tempk  = k * descA->mb;
@@ -330,7 +403,7 @@ BODY
         pdescA.mat = (void*)A;
         CORE_zlaswp_ontile(pdescA, 1, tempmin, IPIV, 1);
     } else {
-        CORE_zlaswp( descA->nb, A/*(k, n)*/, ldak, 1, tempmin, IPIV, 1 );
+        CORE_zlaswp( descA->nb, A/*(k, n)*/, ldak_A, 1, tempmin, IPIV, 1 );
     }
 }
 END

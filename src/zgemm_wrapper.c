@@ -11,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
@@ -23,6 +24,8 @@
 #include "zgemm_NT_summa.h"
 #include "zgemm_TN_summa.h"
 #include "zgemm_TT_summa.h"
+
+#define MAX_SHAPES 3
 
 /**
  *******************************************************************************
@@ -95,7 +98,6 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
                    dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C)
 {
     parsec_taskpool_t* zgemm_tp;
-    parsec_arena_datatype_t* adt;
     two_dim_block_cyclic_t *Cdist;
     int P, Q, IP, JQ, m, n;
 
@@ -108,6 +110,10 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
         dplasma_error("dplasma_zgemm_New", "illegal value of transB");
         return NULL /*-2*/;
     }
+
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
+    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)B);
+    dplasma_data_collection_t * ddc_C = dplasma_wrap_data_collection(C);
 
     if ( C->dtype & two_dim_block_cyclic_type ) {
         P = ((two_dim_block_cyclic_t*)C)->grid.rows;
@@ -137,35 +143,32 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
 
         if( dplasmaNoTrans == transA ) {
             if( dplasmaNoTrans == transB ) {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN_summa\n");
                 parsec_zgemm_NN_summa_taskpool_t* tp;
                 tp = parsec_zgemm_NN_summa_new(transA, transB, alpha, beta,
-                                               A, B, C,
-                                               (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX];
+                                               ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             } else {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT_summa\n");
                 parsec_zgemm_NT_summa_taskpool_t* tp;
                 tp = parsec_zgemm_NT_summa_new(transA, transB, alpha, beta,
-                                               A, B, C,
-                                               (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ADT_IDX];
+                                               ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
             if( dplasmaNoTrans == transB ) {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TN_summa\n");
                 parsec_zgemm_TN_summa_taskpool_t* tp;
                 tp = parsec_zgemm_TN_summa_new(transA, transB, alpha, beta,
-                                               A, B, C,
-                                               (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ADT_IDX];
+                                               ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
             else {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT_summa\n");
                 parsec_zgemm_TT_summa_taskpool_t* tp;
                 tp = parsec_zgemm_TT_summa_new(transA, transB, alpha, beta,
-                                               A, B, C,
+                                               ddc_A, ddc_B, ddc_C,
                                                (parsec_data_collection_t*)Cdist);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ADT_IDX];
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         }
@@ -174,41 +177,52 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
     else {
         if( dplasmaNoTrans == transA ) {
             if( dplasmaNoTrans == transB ) {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN NO summa\n");
                 parsec_zgemm_NN_taskpool_t* tp;
                 tp = parsec_zgemm_NN_new(transA, transB, alpha, beta,
-                                         A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX];
+                                         ddc_A, ddc_B, ddc_C);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             } else {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT NO summa\n");
                 parsec_zgemm_NT_taskpool_t* tp;
                 tp = parsec_zgemm_NT_new(transA, transB, alpha, beta,
-                                         A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_NT_DEFAULT_ADT_IDX];
+                                         ddc_A, ddc_B, ddc_C);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         } else {
             if( dplasmaNoTrans == transB ) {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TN NO summa\n");
                 parsec_zgemm_TN_taskpool_t* tp;
                 tp = parsec_zgemm_TN_new(transA, transB, alpha, beta,
-                                         A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TN_DEFAULT_ADT_IDX];
+                                         ddc_A, ddc_B, ddc_C);
                 zgemm_tp = (parsec_taskpool_t*)tp;
-            }
-            else {
+            } else {
+                PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT NO summa\n");
                 parsec_zgemm_TT_taskpool_t* tp;
                 tp = parsec_zgemm_TT_new(transA, transB, alpha, beta,
-                                         A, B, C);
-                adt = &tp->arenas_datatypes[PARSEC_zgemm_TT_DEFAULT_ADT_IDX];
+                                         ddc_A, ddc_B, ddc_C);
                 zgemm_tp = (parsec_taskpool_t*)tp;
             }
         }
     }
 
-    dplasma_add2arena_tile( adt,
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
+    int shape = 0;
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
+    dplasma_setup_adtt_all_loc( ddc_B,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
+
+    dplasma_setup_adtt_all_loc( ddc_C,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
+
+    assert(shape == MAX_SHAPES);
 
     return zgemm_tp;
 }
@@ -236,15 +250,26 @@ dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
 void
 dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
 {
-    parsec_zgemm_NN_taskpool_t *zgemm_tp = (parsec_zgemm_NN_taskpool_t *)tp;
-    parsec_tiled_matrix_dc_t* Cdist = (parsec_tiled_matrix_dc_t*)zgemm_tp->_g_Cdist;
+    parsec_zgemm_NN_summa_taskpool_t *zgemm_tp = (parsec_zgemm_NN_summa_taskpool_t *)tp;
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescB, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescC, MAX_SHAPES);
 
-    dplasma_matrix_del2arena( &zgemm_tp->arenas_datatypes[PARSEC_zgemm_NN_DEFAULT_ADT_IDX] );
+    dplasma_data_collection_t * ddc_A = zgemm_tp->_g_ddescA;
+    dplasma_data_collection_t * ddc_B = zgemm_tp->_g_ddescB;
+    dplasma_data_collection_t * ddc_C = zgemm_tp->_g_ddescC;
+    parsec_tiled_matrix_dc_t* Cdist = (parsec_tiled_matrix_dc_t*)zgemm_tp->_g_Cdist;
     parsec_taskpool_free(tp);
     if ( NULL != Cdist ) {
         parsec_tiled_matrix_dc_destroy( Cdist );
         free( Cdist );
     }
+
+    /* free the dplasma_data_collection_t */
+    dplasma_unwrap_data_collection(ddc_A);
+    dplasma_unwrap_data_collection(ddc_B);
+    dplasma_unwrap_data_collection(ddc_C);
+
 }
 
 /**

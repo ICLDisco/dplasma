@@ -13,8 +13,11 @@
 #include "parsec/vpmap.h"
 #include "dplasmajdf.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 
 #include "zgetrf_1d.h"
+
+#define MAX_SHAPES 2
 
 /**
  *******************************************************************************
@@ -77,20 +80,22 @@
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgetrf_1d_New( parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *IPIV,
-                    int *INFO )
+                       parsec_tiled_matrix_dc_t *IPIV,
+                       int *INFO )
 {
     parsec_zgetrf_1d_taskpool_t *parsec_getrf_1d;
     int nbthreads = dplasma_imax( 1, vpmap_get_nb_threads_in_vp(0) - 1 );
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
+    dplasma_data_collection_t * ddc_IPIV = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)IPIV);
 
     if ( (IPIV->mt != 1) || (dplasma_imin(A->nt, A->mt) > IPIV->nt)) {
         dplasma_error("dplasma_zgetrf_1d_New", "IPIV doesn't have the correct number of tiles (1-by-min(A->mt,A->nt)");
         return NULL;
     }
 
-    parsec_getrf_1d = parsec_zgetrf_1d_new( A,
-                                    (parsec_data_collection_t*)IPIV,
-                                    INFO );
+    parsec_getrf_1d = parsec_zgetrf_1d_new( ddc_A,
+                                            ddc_IPIV,
+                                            INFO );
 
     if ( A->storage == matrix_Tile ) {
         parsec_getrf_1d->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
@@ -99,18 +104,17 @@ dplasma_zgetrf_1d_New( parsec_tiled_matrix_dc_t *A,
     }
     parsec_getrf_1d->_g_nbmaxthrd = nbthreads;
 
-    /* A */
-    dplasma_add2arena_tile( &parsec_getrf_1d->arenas_datatypes[PARSEC_zgetrf_1d_DEFAULT_ADT_IDX],
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
+    int shape = 0;
+    dplasma_setup_adtt_all_loc( ddc_A,
+                                parsec_datatype_double_complex_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
 
-    /* IPIV */
-    dplasma_add2arena_rectangle( &parsec_getrf_1d->arenas_datatypes[PARSEC_zgetrf_1d_PIVOT_ADT_IDX],
-                                 A->mb*sizeof(int),
-                                 PARSEC_ARENA_ALIGNMENT_SSE,
-                                 parsec_datatype_int_t, 1, A->mb, -1 );
-
+    dplasma_setup_adtt_all_loc( ddc_IPIV,
+                                parsec_datatype_int_t,
+                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                &shape);
+    assert(shape == MAX_SHAPES);
 
     return (parsec_taskpool_t*)parsec_getrf_1d;
 }
@@ -139,14 +143,21 @@ void
 dplasma_zgetrf_1d_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zgetrf_1d_taskpool_t *parsec_zgetrf_1d = (parsec_zgetrf_1d_taskpool_t *)tp;
+    dplasma_clean_adtt_all_loc(parsec_zgetrf_1d->_g_ddescA, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(parsec_zgetrf_1d->_g_ddescIPIV, MAX_SHAPES);
 
-    dplasma_matrix_del2arena( &parsec_zgetrf_1d->arenas_datatypes[PARSEC_zgetrf_1d_DEFAULT_ADT_IDX] );
-    dplasma_matrix_del2arena( &parsec_zgetrf_1d->arenas_datatypes[PARSEC_zgetrf_1d_PIVOT_ADT_IDX  ] );
+    dplasma_data_collection_t * ddc_A = parsec_zgetrf_1d->_g_ddescA;
+    dplasma_data_collection_t * ddc_IPIV = parsec_zgetrf_1d->_g_ddescIPIV;
 
     if ( parsec_zgetrf_1d->_g_getrfdata != NULL )
         free( parsec_zgetrf_1d->_g_getrfdata );
 
     parsec_taskpool_free(tp);
+
+    /* free the dplasma_data_collection_t */
+    dplasma_unwrap_data_collection(ddc_A);
+    dplasma_unwrap_data_collection(ddc_IPIV);
+
 }
 
 /**

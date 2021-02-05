@@ -15,7 +15,7 @@
 static double check_solution( int params[], double *W );
 
 int main( int argc, char **argv ) {
-    int params[8];
+    int params[PARAMS_SIZE];
     int info;
     int ictxt, nprow, npcol, myrow, mycol, iam;
     int m, n, nb, s, mloc, nloc, verif, iseed;

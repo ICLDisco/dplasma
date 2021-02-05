@@ -78,6 +78,7 @@ int main(int argc, char ** argv)
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
     dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
+
     if ( check ) {
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcA,
@@ -106,7 +107,7 @@ int main(int argc, char ** argv)
         /* Create PaRSEC */
         if(loud > 2) printf("+++ Computing getrf ... ");
 
-        PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgetrf_nopiv, 
+        PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgetrf_nopiv,
                           ((parsec_tiled_matrix_dc_t*)&dcA2, &info),
                           dplasma_zgetrf_nopiv_Destruct( PARSEC_zgetrf_nopiv ));
 

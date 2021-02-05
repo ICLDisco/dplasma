@@ -13,7 +13,7 @@
 static int check_solution( parsec_context_t *parsec, int loud,
                            dplasma_enum_t transA, dplasma_enum_t transB,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed,
-                                                    int Bm, int Bn, int Bseed,
+                                                      int Bm, int Bn, int Bseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal );
 
@@ -203,7 +203,7 @@ int main(int argc, char ** argv)
 static int check_solution( parsec_context_t *parsec, int loud,
                            dplasma_enum_t transA, dplasma_enum_t transB,
                            dplasma_complex64_t alpha, int Am, int An, int Aseed,
-                                                    int Bm, int Bn, int Bseed,
+                                                      int Bm, int Bn, int Bseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            two_dim_block_cyclic_t *dcCfinal )
 {

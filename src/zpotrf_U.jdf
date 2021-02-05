@@ -20,6 +20,36 @@ extern "C" %{
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
+/* Define the different shapes this JDF is using */
+#define DEFAULT 0
+
+/* Assume the functions on type & type_remote will return parsec_arena_datatype_t */
+#define JDF2C_TYPE_ADT_NOT_INDEX
+
+/* Include the functions to obtain the parsec_arena_datatype_t */
+#include "dplasmajdf_lapack_dtt.h"
+//#define FULL_CONVERSION
+#ifdef FULL_CONVERSION
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, layout)
+#else
+#define ADTT_READ(dM, loc, shape, layout) ADTT_DC(dM, loc, shape, LAPACK)
+#endif
+
+/* Note: with this approach to support LAPACK format and minimize
+ * the number of tile conversions performed, it is critical to
+ * determined the correct location on the matrix where the tile was
+ * originated from.
+ * Note that the LOC parameters do not correspond to the binding of the
+ * task to the matrix (although sometimes they match). These parameters
+ * correspond to the location were the datacopy was originate on the matrix (maybe
+ * it was read on another task).
+ * If there is no possibility to determine it (datacopy passed along multiple
+ * tasks and that information is lost) the approach is to force a reshapping.
+ *
+ */
+
+#include "zpotrf_U.h"
+
 /*
  * Priorities used in this jdf:
  *      - potrf_zpotrf(k)    : (MT-k)**3
@@ -38,12 +68,14 @@ extern "C" %{
 /* Globals
  */
 uplo       [type = dplasma_enum_t]
-descA      [type = "parsec_tiled_matrix_dc_t*"]
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "(((dplasma_data_collection_t*)ddescA)->dc_original)" aligned=ddescA]
 INFO       [type = "int*"]
 
 PRI_CHANGE [type = "int" hidden = on default = 0 ]
 PRI_MAX    [type = "int" hidden = on default = "(descA->mt * ( 3 + descA->mt * ( 2 + descA->mt )))" ]
 smallnb    [type = "int" hidden = on default = "descA->mb" ]
+
 
 /**************************************************
  *               potrf_zpotrf                     *
@@ -53,13 +85,18 @@ potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLE
 // Execution space
 k = 0 .. descA->nt-1
 
+loc_T = %{ return LOC(descA, k, k); %}
+
 // Parallel partitioning
 :descA(k, k)
 
 // Parameters
-RW T <- (k == 0) ? descA(k, k) : T potrf_zherk(k-1, k)
-     -> T potrf_ztrsm(k, k+1..descA->nt-1)
-     -> descA(k, k)
+RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, TILED); %}
+                                             type_data   = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, LAPACK); %} ]
+     <- (k != 0) ? T potrf_zherk(k-1, k)   [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
+     -> T potrf_ztrsm(k, k+1..descA->nt-1) /* dep OUT: rely on datacopy dtt for sending */
+     -> ddescA(k, k)                       [ type        = %{ return ADTT_CP(_f_T, ddescA, loc_T, DEFAULT); %}
+                                             type_data   = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, LAPACK); %} ]
 
 ; (k >= (descA->nt - PRI_CHANGE)) ? (descA->nt - k) * (descA->nt - k) * (descA->nt - k) : PRI_MAX
 
@@ -94,8 +131,9 @@ END
 BODY
 {
     int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
+
     int iinfo = 0;
-    int ldak = BLKLDD( descA, k );
+    int ldak = LDA(ddescA, T);
 
     CORE_zpotrf(uplo, tempkn, T, ldak, &iinfo );
 
@@ -118,16 +156,22 @@ potrf_ztrsm(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZTRSM(Pla
 k = 0   .. descA->nt-2
 n = k+1 .. descA->nt-1
 
+loc_T = %{ return LOC(descA, k, k); %}
+loc_C = %{ return LOC(descA, k, n); %}
+
 // Parallel partitioning
 : descA(k, n)
 
 // Parameters
-READ  T <- T potrf_zpotrf(k)
-RW    C <- (k == 0) ? descA(k, n) : C potrf_zgemm(k, n, k-1)
-        -> A potrf_zherk(k, n)
-        -> A potrf_zgemm(n, n+1..descA->nt-1, k)
-        -> B potrf_zgemm(k+1..n-1, n, k)
-        -> descA(k, n)
+READ  T <- T potrf_zpotrf(k)                     [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
+RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
+                                                   type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+        <- (k != 0) ? C potrf_zgemm(k, n, k-1)   [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
+        -> A potrf_zherk(k, n)                   /* dep OUT: rely on datacopy dtt for sending */
+        -> A potrf_zgemm(n, n+1..descA->nt-1, k) /* dep OUT: rely on datacopy dtt for sending */
+        -> B potrf_zgemm(k+1..n-1, n, k)         /* dep OUT: rely on datacopy dtt for sending */
+        -> ddescA(k, n)                         [ type        = %{ return ADTT_CP(_f_C, ddescA, loc_C, DEFAULT); %}
+                                                  type_data   = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, LAPACK); %} ]
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - k - n - 1) * (n - k) : PRI_MAX
 
@@ -171,21 +215,21 @@ END
 BODY
 {
     int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak = BLKLDD( descA, k );
-
+    int ldak_T = LDA(ddescA, T);
+    int ldak_C = LDA(ddescA, C);
 
     CORE_ztrsm(dplasmaLeft, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit,
                descA->mb, tempnn,
-               (dplasma_complex64_t)1.0, T /*A(k, k)*/, ldak,
-                                       C /*A(k, n)*/, ldak);
+               (dplasma_complex64_t)1.0, T /*A(k, k)*/, ldak_T,
+                                         C /*A(k, n)*/, ldak_C);
 
     printlog("CORE_ztrsm( %d, %d )\n\t( %s, %s, %s, %s, %d, %d, %f, A(%d,%d)[%p], %d,  A(%d,%d)[%p], %d)\n",
              k, n,
              &dplasma_lapack_const( dplasmaLeft ), &dplasma_lapack_const( dplasmaUpper ),
              &dplasma_lapack_const( dplasmaConjTrans ), &dplasma_lapack_const( dplasmaNonUnit ),
              descA->mb, tempnn,
-             1.0, k, k, T, ldak,
-                  k, n, C, ldak);
+             1.0, k, k, T, ldak_T,
+                  k, n, C, ldak_C);
 }
 END
 
@@ -199,13 +243,19 @@ potrf_zherk(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZHERK(CLE
 k = 0   .. descA->nt-2
 n = k+1 .. descA->nt-1
 
+loc_A = %{ return LOC(descA, k, n); %}
+loc_T = %{ return LOC(descA, n, n); %}
+
 // Parallel partitioning
 : descA(n, n)
 
 //Parameters
-READ  A <- C potrf_ztrsm(k, n)
-RW    T <- (k == 0)   ? descA(n, n) : T potrf_zherk(k-1, n)
-        -> (n == k+1) ? T potrf_zpotrf(n)  : T potrf_zherk(k+1, n)
+
+READ  A <- C potrf_ztrsm(k, n)                [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+RW    T <- (k == 0)   ? ddescA(n, n)          [ type        = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, TILED); %}
+                                                type_data   = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, LAPACK); %} ]
+        <- (k != 0)   ? T potrf_zherk(k-1, n) [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
+        -> (n == k+1) ? T potrf_zpotrf(n) : T potrf_zherk(k+1, n) /* dep OUT: rely on datacopy dtt for sending */
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * (n - k) : PRI_MAX
 
@@ -245,15 +295,15 @@ END
 BODY
 {
     int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldan = BLKLDD( descA, n );
+    int ldak = LDA(ddescA, A);
+    int ldan = LDA(ddescA, T);
 
     CORE_zherk(dplasmaUpper, dplasmaConjTrans,
                tempnn, descA->mb,
                (double)-1.0, A /*A(k, n)*/, ldak,
                (double) 1.0, T /*A(n, n)*/, ldan);
-    printlog(
-             "CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
+
+    printlog("CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              k, n,
              &dplasma_lapack_const( dplasmaUpper ), &dplasma_lapack_const( dplasmaConjTrans ),
              tempnn, descA->mb,
@@ -273,20 +323,32 @@ k = 0   .. descA->mt-3
 m = k+1 .. descA->mt-1
 n = m+1 .. descA->nt-1
 
+loc_A = %{ return LOC(descA, k, m); %}
+loc_B = %{ return LOC(descA, k, n); %}
+loc_C = %{ return LOC(descA, m, n); %}
+
 // Parallel partitioning
 : descA(m, n)
 
 // Parameters
-READ  A <- C potrf_ztrsm(k, m)
-READ  B <- C potrf_ztrsm(k, n)
-RW    C <- (k == 0)   ? descA(m, n)  : C potrf_zgemm(m, n, k-1)
-        -> (m == k+1) ? C potrf_ztrsm(m, n) : C potrf_zgemm(m, n, k+1)
+READ  A <- C potrf_ztrsm(k, m)                   [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
+READ  B <- C potrf_ztrsm(k, n)                   [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
+RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
+                                                   type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+        <- (k != 0)   ? C potrf_zgemm(m, n, k-1) [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
+        -> (m == k+1) ? C potrf_ztrsm(m, n) : C potrf_zgemm(m, n, k+1) /* dep OUT: rely on datacopy dtt for sending */
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - m - n - 3) * (n - m) + 6 * (n - k) : PRI_MAX
 
 BODY [type=CUDA
       dyld=cublasZgemm dyldtype=cublas_zgemm_t
-      weight=(m+1-k)]
+      weight=(m+1-k)
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
+      stage_in=stage_in_lapack
+      stage_out=stage_out_lapack]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -297,19 +359,21 @@ BODY [type=CUDA
 #endif
 
     int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak_A = descA->mb;
+    int ldak_B = descA->mb;
+    int ldam_C = descA->mb;
 
     cublasStatus_t status;
-    assert( ldak <= descA->mb );
-    assert( ldam <= descA->mb );
+    assert( ldak_A <= descA->mb );
+    assert( ldak_B <= descA->mb );
+    assert( ldam_C <= descA->mb );
 
     cublasSetKernelStream( parsec_body.stream );
     parsec_body.dyld_fn( dplasma_lapack_const(dplasmaConjTrans), 'N',
              descA->mb, tempnn, descA->mb,
-             mzone, (cuDoubleComplex*)A, ldak,
-                    (cuDoubleComplex*)B, ldak,
-             zone,  (cuDoubleComplex*)C, ldam );
+             mzone, (cuDoubleComplex*)A, ldak_A,
+                    (cuDoubleComplex*)B, ldak_B,
+             zone,  (cuDoubleComplex*)C, ldam_C);
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
                             {return -1;} );
@@ -318,9 +382,9 @@ BODY [type=CUDA
                  m, n, k,
                  &dplasma_lapack_const( dplasmaConjTrans ),  &dplasma_lapack_const( dplasmaNoTrans ),
                  descA->mb, tempnn, descA->nb,
-                 -1.0, k, m, A, ldak,
-                       k, n, B, ldak,
-                  1.0, m, n, C, ldam);
+                 -1.0, k, m, A, ldak_A,
+                       k, n, B, ldak_B,
+                  1.0, m, n, C, ldam_C);
 }
 END
 
@@ -369,21 +433,22 @@ END
 BODY
 {
     int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak = BLKLDD( descA, k );
-    int ldam = BLKLDD( descA, m );
+    int ldak_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
 
     CORE_zgemm(dplasmaConjTrans, dplasmaNoTrans,
                descA->mb, tempnn, descA->nb,
-               (dplasma_complex64_t)-1.0, A /*A(k, m)*/, ldak,
-                                        B /*A(k, n)*/, ldak,
-               (dplasma_complex64_t) 1.0, C /*A(m, n)*/, ldam);
+               (dplasma_complex64_t)-1.0, A /*A(k, m)*/, ldak_A,
+                                          B /*A(k, n)*/, ldak_B,
+               (dplasma_complex64_t) 1.0, C /*A(m, n)*/, ldam_C);
 
     printlog("CORE_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              m, n, k,
              &dplasma_lapack_const( dplasmaConjTrans ),  &dplasma_lapack_const( dplasmaNoTrans ),
              descA->mb, tempnn, descA->nb,
-             -1.0, k, m, A, ldak,
-                   k, n, B, ldak,
-              1.0, m, n, C, ldam);
+             -1.0, k, m, A, ldak_A,
+                   k, n, B, ldak_B,
+              1.0, m, n, C, ldam_C);
 }
 END
