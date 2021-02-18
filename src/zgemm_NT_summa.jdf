@@ -55,6 +55,12 @@ extern "C" %{
 /*
  * Globals
  */
+
+/* Keep this first, as in all jdf in this directory, to
+ * enable switching between GEMM implementations.
+ */
+gemm_type [ type = int hidden=on default="DPLASMA_ZGEMM_NT_SUMMA" ]
+
 transA [type = int]
 transB [type = int]
 

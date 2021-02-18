@@ -73,7 +73,7 @@ set(TESTS
    testing_zgeqrf_dtd_untied.c
    testing_zgetrf_incpiv_dtd.c
    testing_zgemm_dtd.c
-) 
+)
 if( DPLASMA_DEBUG_QR_PIVGEN )
   list(APPEND TESTS testing_zpivgen.c)
   include(TestsQRPivgen.cmake)
@@ -86,6 +86,10 @@ if(DPLASMA_INSTALL_TESTS)
   install(TARGETS ${targets}
           DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/dplasma/tests)
 endif(DPLASMA_INSTALL_TESTS)
+
+add_executable(testing_info testing_info.c)
+add_dependencies(testing_info dplasma dplasma_includes)
+target_link_libraries(testing_info PUBLIC dplasma $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>)
 
 # Define Testings
 include(Testings.cmake)
