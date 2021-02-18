@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -7,6 +7,7 @@
 #include "parsec/runtime.h"
 #include "parsec/execution_stream.h"
 #include "parsec/utils/mca_param.h"
+#include "parsec/utils/show_help.h"
 #include "dplasma.h"
 
 #include "common.h"
@@ -24,6 +25,11 @@
 #endif  /* defined(PARSEC_HAVE_GETOPT_H) */
 #ifdef PARSEC_HAVE_MPI
 #include <mpi.h>
+#endif
+#if defined(DPLASMA_HAVE_CUDA)
+#include "dplasmaaux.h"
+#include <cublas.h>
+#include <cusolverDn.h>
 #endif
 
 char *PARSEC_SCHED_NAME[] = {
@@ -625,6 +631,17 @@ char cwd[1024];
 int unix_timestamp;
 #endif
 
+#if defined(DPLASMA_HAVE_CUDA)
+static void destroy_cuda_handles(void *_h, void *_n)
+{
+    dplasma_cuda_handles_t *handles = (dplasma_cuda_handles_t*)_h;
+    (void)_n;
+    cublasDestroy_v2(handles->cublas_handle);
+    cusolverDnDestroy(handles->cusolverDn_handle);
+    free(handles);
+}
+#endif
+
 parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 {
 #ifdef PARSEC_PROF_TRACE
@@ -666,7 +683,7 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
              parsec_argv[parsec_argc] = argv[idx], parsec_argc++, idx++);
     }
     parsec_context_t* ctx = parsec_init(iparam[IPARAM_NCORES],
-                                      &parsec_argc, &parsec_argv);
+                                        &parsec_argc, &parsec_argv);
     free(parsec_argv);
     if( NULL == ctx ) {
         /* Failed to correctly initialize. In a correct scenario report
@@ -674,6 +691,14 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
          */
         exit(-1);
     }
+
+    /* In order to find the help-dplasma.txt file both in case
+     * this is run within the dplasma source trunk or after
+     * installation, we add both paths to the show_help directories.
+     * We add the install one first so that in normal operations (installed),
+     * the number of file access is minimized. */
+    parsec_show_help_add_dir(DPLASMA_SHARE_DIRECTORY_INSTALL);
+    parsec_show_help_add_dir(DPLASMA_SHARE_DIRECTORY_SOURCE);
 
     /* If the number of cores has not been defined as a parameter earlier
      update it with the default parameter computed in parsec_init. */
@@ -687,12 +712,36 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     }
     print_arguments(iparam);
 
+#if defined(DPLASMA_HAVE_CUDA)
+    int dev, nbgpu = 0;
+    for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
+        parsec_device_module_t *device = parsec_mca_device_get(dev);
+        if( PARSEC_DEV_CUDA == device->type ) {
+            nbgpu++;
+        }
+    }
+    if( nbgpu > 0 ) {
+        cublasStatus_t status = cublasInit();
+        assert(CUBLAS_STATUS_SUCCESS == status);
+        parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
+                             destroy_cuda_handles, NULL,
+                             dplasma_create_cuda_handles, NULL,
+                             NULL);
+    }
+#endif
+
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
     return ctx;
 }
 
 void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 {
+#if defined(DPLASMA_HAVE_CUDA)
+    parsec_info_id_t CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+    parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
+    cublasShutdown();
+#endif
+
     parsec_fini(&parsec);
 
 #ifdef PARSEC_HAVE_MPI

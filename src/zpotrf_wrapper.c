@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -13,9 +13,12 @@
 #include "dplasma/types.h"
 #include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
+#include "potrf_cublas_utils.h"
+#include "parsec/utils/zone_malloc.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"
+#include "cores/dplasma_plasmatypes.h"
 
 #define MAX_SHAPES 1
 
@@ -51,6 +54,54 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
         parsec_zpotrf->_g_smallnb = hmb;
     }
 }
+
+#if defined(DPLASMA_HAVE_CUDA)
+void *zpotrf_create_workspace(void *obj, void *user)
+{
+    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
+    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->memory;
+    cusolverDnHandle_t cusolverDnHandle;
+    cusolverStatus_t status;
+    parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
+    dplasma_potrf_workspace_t *wp = NULL;
+    int workspace_size;
+    int mb = tp->_g_descA->mb;
+    int nb = tp->_g_descA->nb;
+    size_t elt_size = sizeof(cuDoubleComplex);
+    cublasFillMode_t cublas_uplo;
+    dplasma_enum_t uplo = tp->_g_uplo;
+
+    if( PlasmaLower == uplo )
+        cublas_uplo = CUBLAS_FILL_MODE_LOWER;
+    if( PlasmaUpper == uplo )
+        cublas_uplo = CUBLAS_FILL_MODE_UPPER;
+
+    status = cusolverDnCreate(&cusolverDnHandle);
+    assert(CUSOLVER_STATUS_SUCCESS == status);
+    (void)status;
+
+    status = cusolverDnDpotrf_bufferSize(cusolverDnHandle, cublas_uplo, nb, NULL, mb, &workspace_size);
+    assert(CUSOLVER_STATUS_SUCCESS == status);
+
+    cusolverDnDestroy(cusolverDnHandle);
+
+    wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
+    wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
+    assert(NULL != wp->tmpmem);
+    wp->lwork = workspace_size;
+    wp->memory = memory;
+
+    return wp;
+}
+
+static void destroy_workspace(void *_ws, void *_n)
+{
+    dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    free(ws);
+    (void)_n;
+}
+#endif
 
 /**
  *******************************************************************************
@@ -123,6 +174,9 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_dc_t *A,
                     int *info )
 {
+    parsec_zpotrf_L_taskpool_t *parsec_zpotrf = NULL;
+    char workspace_info_name[64];
+    static int uid = 0;
     parsec_taskpool_t *tp = NULL;
     dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection(A);
 
@@ -139,12 +193,24 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     } else {
         tp = (parsec_taskpool_t*)parsec_zpotrf_L_new( uplo, ddc_A, info);
     }
-    parsec_zpotrf_L_taskpool_t *parsec_zpotrf =  (parsec_zpotrf_L_taskpool_t*)tp;
+    parsec_zpotrf =  (parsec_zpotrf_L_taskpool_t*)tp;
 
     parsec_zpotrf->_g_PRI_CHANGE = dplasma_aux_get_priority_limit( "POTRF", A );
     if(0 == parsec_zpotrf->_g_PRI_CHANGE)
       parsec_zpotrf->_g_PRI_CHANGE = A->nt;
-
+#if defined(DPLASMA_HAVE_CUDA)
+    /* It doesn't cost anything to define these infos if we have CUDA but
+     * don't have GPUs on the current machine, so we do it non-conditionally */
+    parsec_zpotrf->_g_CuHandlesID = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+    snprintf(workspace_info_name, 64, "DPLASMA::ZPOTRF(%d)::WS", uid++);
+    parsec_zpotrf->_g_POWorkspaceID = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
+                                                           destroy_workspace, NULL,
+                                                           zpotrf_create_workspace, parsec_zpotrf,
+                                                           NULL);
+#else
+    parsec_zpotrf->_g_CuHandlesID = PARSEC_INFO_ID_UNDEFINED;
+    parsec_zpotrf->_g_POWorkspaceID = PARSEC_INFO_ID_UNDEFINED;
+#endif
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
@@ -181,6 +247,11 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = (parsec_zpotrf_L_taskpool_t *)tp;
     dplasma_clean_adtt_all_loc(parsec_zpotrf->_g_ddescA, MAX_SHAPES);
     dplasma_data_collection_t * ddc_A = parsec_zpotrf->_g_ddescA;
+
+#if defined(DPLASMA_HAVE_CUDA)
+    parsec_info_unregister(&parsec_per_device_infos, parsec_zpotrf->_g_POWorkspaceID, NULL);
+#endif
+
     parsec_taskpool_free(tp);
     /* free the dplasma_data_collection_t */
     dplasma_unwrap_data_collection(ddc_A);

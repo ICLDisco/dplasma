@@ -17,7 +17,9 @@ extern "C" %{
 #endif
 
 #if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
+#include <cublas_v2.h>
+#include "potrf_cublas_utils.h"
+
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 /* Define the different shapes this JDF is using */
@@ -76,6 +78,8 @@ PRI_CHANGE [type = "int" hidden = on default = 0 ]
 PRI_MAX    [type = "int" hidden = on default = "(descA->mt * ( 3 + descA->mt * ( 2 + descA->mt )))" ]
 smallnb    [type = "int" hidden = on default = "descA->mb" ]
 
+CuHandlesID   [type = "int" hidden = on default = -1 ]
+POWorkspaceID [type = "int" hidden = on default = -1 ]
 
 /**************************************************
  *               potrf_zpotrf                     *
@@ -128,6 +132,39 @@ BODY [type=RECURSIVE]
 }
 END
 
+        BODY [type=CUDA
+              dyld=cusolverDnZpotrf dyldtype=cublas_zpotrf_v2_t
+              weigth=k]
+{
+    int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
+    int ldak = BLKLDD( descA, k );
+
+    cusolverStatus_t status;
+    cublasFillMode_t cublas_uplo;
+    dplasma_potrf_workspace_t *wp;
+    cuDoubleComplex *workspace;
+    int             *d_iinfo;
+    dplasma_cuda_handles_t *handles;
+
+    if( PlasmaLower == uplo )
+        cublas_uplo = CUBLAS_FILL_MODE_LOWER;
+    if( PlasmaUpper == uplo )
+        cublas_uplo = CUBLAS_FILL_MODE_UPPER;
+
+    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    assert(NULL != handles);
+    wp = parsec_info_get(&gpu_device->super.infos, POWorkspaceID);
+    assert(NULL != wp);
+
+    workspace = (cuDoubleComplex*)wp->tmpmem;
+    d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));
+
+    status = parsec_body.dyld_fn( handles->cusolverDn_handle, cublas_uplo, tempkn, T, ldak, workspace, wp->lwork, d_iinfo);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status,
+                            {return -1;} );
+}
+END
+
 BODY
 {
     int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
@@ -174,6 +211,32 @@ RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_
                                                   type_data   = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, LAPACK); %} ]
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - k - n - 1) * (n - k) : PRI_MAX
+
+        BODY [type=CUDA
+              dyld=cublasZtrsm_v2 dyldtype=cublas_ztrsm_v2_t
+              weight=(k+n)]
+{
+    int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
+    int ldak = BLKLDD(descA, k);
+    dplasma_cuda_handles_t *handles;
+    #if defined(PRECISION_z) || defined(PRECISION_c)
+        cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+    #else
+        double zone = 1.;
+    #endif
+
+    cublasStatus_t status;
+    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    assert(NULL != handles);
+    status = parsec_body.dyld_fn(handles->cublas_handle,
+                                 CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
+                                 CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
+                                 tempnn, descA->mb,
+                                 &zone, T, ldak, C, ldak);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
+                            {return -1;} );
+}
+END
 
 BODY [type=RECURSIVE]
 {
@@ -259,6 +322,30 @@ RW    T <- (k == 0)   ? ddescA(n, n)          [ type        = %{ return ADTT_REA
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * (n - k) : PRI_MAX
 
+BODY [type=CUDA
+      dyld=cublasZherk_v2 dyldtype=cublas_zherk_v2_t
+      weight=(k+n)]
+{
+    int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
+    int ldan = BLKLDD( descA, n );
+    int ldak = BLKLDD( descA, k );
+    dplasma_cuda_handles_t *handles;
+    double zone  =  1.;
+    double mzone = -1.;
+    cublasStatus_t status;
+
+    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    assert(NULL != handles);
+    status = parsec_body.dyld_fn( handles->cublas_handle,
+                                  CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C,
+                                  tempnn, descA->mb,
+                                  &mzone, A, ldak,
+                                  &zone, T, ldan);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
+                            {return -1;} );
+}
+END
+
 BODY [type=RECURSIVE]
 {
     int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
@@ -341,7 +428,7 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - m - n - 3) * (n - m) + 6 * (n - k) : PRI_MAX
 
 BODY [type=CUDA
-      dyld=cublasZgemm dyldtype=cublas_zgemm_t
+      dyld=cublasZgemm_v2 dyldtype=cublas_zgemm_v2_t
       weight=(m+1-k)
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -364,18 +451,23 @@ BODY [type=CUDA
     int ldam_C = descA->mb;
 
     cublasStatus_t status;
+    dplasma_cuda_handles_t *handles;
+
     assert( ldak_A <= descA->mb );
     assert( ldak_B <= descA->mb );
     assert( ldam_C <= descA->mb );
 
+    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    assert(NULL != handles);
+
     cublasSetKernelStream( parsec_body.stream );
-    parsec_body.dyld_fn( dplasma_lapack_const(dplasmaConjTrans), 'N',
-             descA->mb, tempnn, descA->mb,
-             mzone, (cuDoubleComplex*)A, ldak_A,
-                    (cuDoubleComplex*)B, ldak_B,
-             zone,  (cuDoubleComplex*)C, ldam_C);
-    status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
+    status = parsec_body.dyld_fn( handles->cublas_handle,
+                                  CUBLAS_OP_C, CUBLAS_OP_N,
+                                  descA->mb, tempnn, descA->mb,
+                                  &mzone, (cuDoubleComplex*)A, ldak_A,
+                                          (cuDoubleComplex*)B, ldak_B,
+                                  &zone,  (cuDoubleComplex*)C, ldam_C);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status,
                             {return -1;} );
 
     printlogcuda("CUDA_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The University of Tennessee and The University
+ * Copyright (c) 2011-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -108,5 +108,16 @@ extern void *dplasma_pcomm;
 #else
 #define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); } while(0)
 #endif /* defined(DPLASMA_DEBUG) */
+
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas.h>
+#include "parsec/mca/device/cuda/device_cuda.h"
+typedef struct {
+    cublasHandle_t cublas_handle;
+    void * cusolverDn_handle;
+} dplasma_cuda_handles_t;
+void *dplasma_create_cuda_handles(void *obj, void *user);
+
+#endif
 
 #endif /* _DPLASMAAUX_H_INCLUDED */

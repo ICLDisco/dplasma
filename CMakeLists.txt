@@ -279,6 +279,9 @@ if(PARSEC_HAVE_CUDA)
   option(DPLASMA_HAVE_CUDA
     "Use CUDA to accelerate DPLASMA routines" ON)
   if(DPLASMA_HAVE_CUDA)
+    if(NOT DEFINED CUDA_cusolver_LIBRARY)
+      message(FATAL_ERROR "CUDA support is too old: do not define cusolver library. Either upgrade CUDA library or disable DPLASMA_HAVE_CUDA with -DDPLASMA_HAVE_CUDA=OFF")
+    endif(NOT DEFINED CUDA_cusolver_LIBRARY)
     message(STATUS "CUDA support for DPLASMA enabled")
   endif()
 endif(PARSEC_HAVE_CUDA)
@@ -298,6 +301,8 @@ if(DPLASMA_SCALAPACK_WRAPPER)
   add_subdirectory(src/wrappers)
 endif(DPLASMA_SCALAPACK_WRAPPER)
 
+set(DPLASMA_SHARE_DIRECTORY_SOURCE ${PROJECT_SOURCE_DIR}/share)
+set(DPLASMA_SHARE_DIRECTORY_INSTALL ${CMAKE_INSTALL_DATADIR}/dplasma)
 
 # Configuration header
 configure_file (
@@ -312,6 +317,8 @@ install(EXPORT dplasma-targets # rules to export the targets built here
   FILE dplasma-targets.cmake
   NAMESPACE DPlasma::
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma)
+
+install(FILES share/help-dplasma.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/dplasma)
 
 # cmake config files
 include(CMakePackageConfigHelpers)
