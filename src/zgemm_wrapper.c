@@ -478,24 +478,24 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
 				    gpu_mem_nb_blocks = cuda_device->mem_nb_blocks;
             }
         }
-        int64_t tile_size = A->mb*A->nb*sizeof(dplasma_complex64_t);
-        int64_t nb_block_per_tile = (tile_size + gpu_mem_block_size -1 ) / gpu_mem_block_size;
-        int64_t nb_tile_per_gpu = gpu_mem_nb_blocks / nb_block_per_tile;
-        int64_t nb_active_tiles_per_gpu = C->mt * C->nt / (p*q) + dplasma_aux_getGEMMLookahead(C) * A->mt / p + dplasma_aux_getGEMMLookahead(C) * B->nt / q;
-        if( (A->dtype & two_dim_block_cyclic_type) &&
-            (B->dtype & two_dim_block_cyclic_type) &&
-            (nb_gpu_devices > 0) &&
-            transA == dplasmaNoTrans &&
-            transB == dplasmaNoTrans &&
-            (nb_active_tiles_per_gpu > 0.95* nb_tile_per_gpu) ) {
-            zgemm_tp = dplasma_Zgemm_New_gpu(transA, transB, alpha, A, B, beta, C, opt, &adt);
-        } else {
+        if(0 < nb_gpu_devices) {
+            int64_t tile_size = A->mb*A->nb*sizeof(dplasma_complex64_t);
+            int64_t nb_block_per_tile = (tile_size + gpu_mem_block_size -1 ) / gpu_mem_block_size;
+            int64_t nb_tile_per_gpu = gpu_mem_nb_blocks / nb_block_per_tile;
+            int64_t nb_active_tiles_per_gpu = C->mt * C->nt / (p*q) + dplasma_aux_getGEMMLookahead(C) * A->mt / p + dplasma_aux_getGEMMLookahead(C) * B->nt / q;
+            if( (A->dtype & two_dim_block_cyclic_type) &&
+                (B->dtype & two_dim_block_cyclic_type) &&
+                transA == dplasmaNoTrans &&
+                transB == dplasmaNoTrans &&
+                (nb_active_tiles_per_gpu > 0.95* nb_tile_per_gpu) ) {
+                zgemm_tp = dplasma_Zgemm_New_gpu(transA, transB, alpha, A, B, beta, C, opt, &adt);
+                return zgemm_tp;
+            } 
             zgemm_tp = dplasma_Zgemm_New_summa(transA, transB, alpha, A, B, beta, C, opt, &adt);
+            return zgemm_tp;
         }
-    } else {
-        zgemm_tp = dplasma_Zgemm_New_default(transA, transB, alpha, A, B, beta, C, opt, &adt);
     }
-
+    zgemm_tp = dplasma_Zgemm_New_default(transA, transB, alpha, A, B, beta, C, opt, &adt);
     return zgemm_tp;
 }
 
