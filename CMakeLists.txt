@@ -204,7 +204,7 @@ if( APPLE )
     STRING(REPLACE " " ";" NEW_PREC "${tmp_fixed_prec}")
     STRING(COMPARE NOTEQUAL "${NEW_PREC}" "${DPLASMA_PRECISIONS}" prec_change)
     if( prec_change )
-      MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes Dplasma to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
+      MESSAGE(WARNING "Detected Apple vecLIB! the Accelerate Framework has a non-standard BLAS interface that causes DPLASMA to produce wrong results in single precision. Restricting DPLASMA to ${NEW_PREC} (from ${DPLASMA_PRECISIONS})")
       set(DPLASMA_PRECISIONS ${NEW_PREC})
     endif( prec_change )
   endif( PARSEC_OSX_VECLIB )
@@ -315,7 +315,7 @@ install(FILES
 # Export Targets
 install(EXPORT dplasma-targets # rules to export the targets built here
   FILE dplasma-targets.cmake
-  NAMESPACE DPlasma::
+  NAMESPACE DPLASMA::
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/dplasma)
 
 install(FILES share/help-dplasma.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/dplasma)
