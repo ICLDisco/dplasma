@@ -196,6 +196,7 @@ dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
     return zgemm_tp;
 }
 
+#if defined(DPLASMA_HAVE_CUDA)
 static parsec_taskpool_t*
 dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
                        dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
@@ -377,6 +378,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
         free(dev_index);
     return NULL;
 }
+#endif /* DPLASMA_HAVE_CUDA */
 
 /**
  *******************************************************************************
@@ -462,6 +464,7 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
     }
 
     if ( C->dtype & two_dim_block_cyclic_type ) {
+#if defined(DPLASMA_HAVE_CUDA)
         int nb_gpu_devices = 0, devid;
 		int p = ((two_dim_block_cyclic_t*)C)->grid.rows;
 	    int q = ((two_dim_block_cyclic_t*)C)->grid.cols;
@@ -490,10 +493,11 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
                 (nb_active_tiles_per_gpu > 0.95* nb_tile_per_gpu) ) {
                 zgemm_tp = dplasma_Zgemm_New_gpu(transA, transB, alpha, A, B, beta, C, opt, &adt);
                 return zgemm_tp;
-            } 
-            zgemm_tp = dplasma_Zgemm_New_summa(transA, transB, alpha, A, B, beta, C, opt, &adt);
-            return zgemm_tp;
+            }
         }
+#endif /* DPLASMA_HAVE_CUDA */
+        zgemm_tp = dplasma_Zgemm_New_summa(transA, transB, alpha, A, B, beta, C, opt, &adt);
+        return zgemm_tp;
     }
     zgemm_tp = dplasma_Zgemm_New_default(transA, transB, alpha, A, B, beta, C, opt, &adt);
     return zgemm_tp;
@@ -566,9 +570,11 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
         ddc_A = zgemm_tp->_g_ddescA;
         ddc_B = zgemm_tp->_g_ddescB;
         ddc_C = zgemm_tp->_g_ddescC;
+#if defined(DPLASMA_HAVE_CUDA)
     } else if( zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NN_GPU ) {
         parsec_zgemm_NN_gpu_taskpool_t *zgemm_gpu_tp = (parsec_zgemm_NN_gpu_taskpool_t *)tp;
         dplasma_matrix_del2arena( &zgemm_gpu_tp->arenas_datatypes[PARSEC_zgemm_NN_gpu_DEFAULT_ADT_IDX] );
+#endif /* DPLASMA_HAVE_CUDA */
     }
 
     parsec_taskpool_free(tp);
