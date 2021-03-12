@@ -7,7 +7,7 @@ set_and_check(DPLASMA_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
 set_and_check(DPLASMA_CMAKE_DIRS "@PACKAGE_CMAKE_INSTALL_DATADIR@/cmake/dplasma")
 set_and_check(DPLASMA_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
 set_and_check(DPLASMA_BINARY_DIRS "@PACKAGE_CMAKE_INSTALL_BINDIR@")
-set_and_check(DPLASMA_LIBEXEC_DIRS "@PACKAGE_CMAKE_LIBEXECDIR@")
+set_and_check(DPLASMA_LIBEXEC_DIRS "@PACKAGE_CMAKE_INSTALL_LIBEXECDIR@")
 
 # Pull the dependencies
 list(APPEND CMAKE_PREFIX_PATH "${DPLASMA_CMAKE_DIRS}")
@@ -29,7 +29,7 @@ find_package(LAPACKE REQUIRED)
 # Pull the PaRSEC::<targets>
 if(NOT TARGET DPlasma::dplasma)
   include(${CMAKE_CURRENT_LIST_DIR}/dplasma-targets.cmake)
-endif(NOT TARGET Dplasma::dplasma)
+endif(NOT TARGET DPlasma::dplasma)
 
 # Populate the variables
 set(DPLASMA_LIBRARIES DPlasma::dplasma CACHE STRING "List of libraries suitable for use in target_link_libraries") # for compatibility with older (non-target based) clients
