@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -57,39 +57,11 @@ int main(int argc, char ** argv)
                                rank, 1, NB, P, dplasma_imin(M, N), 0, 0,
                                P, dplasma_imin(M, N), P, nodes/P, KP, KQ, IP, JQ));
 
-    PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
-        two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
-                               rank, MB, NB, LDA, N, 0, 0,
-                               M, N, P, nodes/P, KP, KQ, IP, JQ));
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
-        two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
-                               rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
-        two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
-                               rank, MB, NB, LDB, NRHS, 0, 0,
-                               N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
-
-    /* check matrix generation */
-    if ( check ) {
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcB,
-                        (parsec_tiled_matrix_dc_t *)&dcX );
-    }
-
     int t;
     for(t = 0; t < nruns; t++) {
         /* matrix (re)generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
-        /* copy to check matrix only on last run */
-        if( check && t == nruns-1 )
-            dplasma_zlacpy( parsec, dplasmaUpperLower,
-                            (parsec_tiled_matrix_dc_t *)&dcA,
-                            (parsec_tiled_matrix_dc_t *)&dcA0 );
         if(loud > 2) printf("Done\n");
 
         parsec_devices_release_memory();
@@ -112,23 +84,39 @@ int main(int argc, char ** argv)
         ret |= 1;
     }
     else if ( check ) {
+        /* regenerate A0 from seed */
+        PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
+            two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
+                                   rank, MB, NB, LDA, N, 0, 0,
+                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA0, random_seed);
+
+        /* Check: Ax=B */
+        PASTE_CODE_ALLOCATE_MATRIX(dcB, check,
+            two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
+        PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
+            two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
+                                   rank, MB, NB, LDB, NRHS, 0, 0,
+                                   M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
+                        (parsec_tiled_matrix_dc_t *)&dcB,
+                        (parsec_tiled_matrix_dc_t *)&dcX );
+
         dplasma_ztrsmpl_ptgpanel(parsec,
                                (parsec_tiled_matrix_dc_t *)&dcA,
                                (parsec_tiled_matrix_dc_t *)&dcIPIV,
                                (parsec_tiled_matrix_dc_t *)&dcX);
-
         dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit,
                       1.0, (parsec_tiled_matrix_dc_t *)&dcA,
                            (parsec_tiled_matrix_dc_t *)&dcX);
-
-        /* Check the solution */
         ret |= check_solution( parsec, (rank == 0) ? loud : 0,
                                (parsec_tiled_matrix_dc_t *)&dcA0,
                                (parsec_tiled_matrix_dc_t *)&dcB,
                                (parsec_tiled_matrix_dc_t *)&dcX);
-    }
 
-    if ( check ) {
         parsec_data_free(dcA0.mat);
         parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0);
         parsec_data_free(dcB.mat);
