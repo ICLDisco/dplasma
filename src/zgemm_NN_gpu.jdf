@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2017-2017 The University of Tennessee and The University
+ * Copyright (c) 2017-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -15,9 +15,9 @@ extern "C" %{
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
     
 static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
 {

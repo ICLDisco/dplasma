@@ -608,10 +608,10 @@ esac
 
 
 case x$with_cuda in
-xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=OFF";;
-xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON";;
+xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=OFF -DDPLASMA_GPU_WITH_CUDA=OFF";;
+xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DDPLASMA_GPU_WITH_CUDA=ON";;
 x) ;;
-*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DCUDAToolkit_ROOT=$(printf %q "$with_cuda") ";;
+*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DCUDAToolkit_ROOT=$(printf %q "$with_cuda") -DDPLASMA_GPU_WITH_CUDA=ON";;
 esac
 
 case x$with_cuda_sm_targets in

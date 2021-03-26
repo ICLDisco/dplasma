@@ -232,8 +232,8 @@ target_link_libraries(dplasma
   PUBLIC
   PaRSEC::parsec
   LAPACKE::LAPACKE
-  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_CUBLAS_LIBRARIES}>
-  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_cusolver_LIBRARY}>)
+  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cublas>
+  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cusolver>)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                        SOVERSION ${DPLASMA_VERSION_MAJOR})
 
