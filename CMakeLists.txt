@@ -275,16 +275,13 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 
-if(PARSEC_HAVE_CUDA)
-  option(DPLASMA_HAVE_CUDA
-    "Use CUDA to accelerate DPLASMA routines" ON)
-  if(DPLASMA_HAVE_CUDA)
-    if(NOT DEFINED CUDA_cusolver_LIBRARY)
-      message(FATAL_ERROR "CUDA support is too old: do not define cusolver library. Either upgrade CUDA library or disable DPLASMA_HAVE_CUDA with -DDPLASMA_HAVE_CUDA=OFF")
-    endif(NOT DEFINED CUDA_cusolver_LIBRARY)
-    message(STATUS "CUDA support for DPLASMA enabled")
-  endif()
-endif(PARSEC_HAVE_CUDA)
+option(DPLASMA_HAVE_CUDA "Use CUDA to accelerate DPLASMA routines" ${PARSEC_HAVE_CUDA})
+if(DPLASMA_HAVE_CUDA)
+  if(NOT TARGET CUDA::cusolver)
+    message(FATAL_ERROR "CUDA is too old: it does not define the cusolver library. Either upgrade CUDA library or disable DPLASMA_HAVE_CUDA with -DDPLASMA_HAVE_CUDA=OFF")
+  endif(NOT TARGET CUDA::cusolver)
+  message(STATUS "CUDA support for DPLASMA enabled")
+endif()
 
 
 set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)

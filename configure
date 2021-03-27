@@ -78,12 +78,15 @@ cat <<EOF
                 Enable Fortran bindings
 
 
---enable-debug=yes,paranoid,noisier|history|no
+--enable-debug=yes,paranoid,noisier|history,memaddr|memleak|memrace,no
                 turn on debugging information
                     yes:            normal debugging; some overhead
                     paranoid:       more thorough assertions; extra overhead
                     noisier:        more verbose debugging; heavy overhead
                     history:        keep an history of latest debugging messages in memory for gdb printing; light overhead
+                    memaddr:        use the memory sanitizer for out-of-bound detection
+                    memleak:        use the memory sanitizer for leak detection
+                    memrace:        use the memory sanitizer for thread-race detection
                     no (explicit):  remove all debugging symbols and assertions
 
 --enable-prof-trace
@@ -92,19 +95,19 @@ cat <<EOF
                 print a message when each task body is executed
 --enable-prof-dryrun=yes|dep|body|no
                 turn on 'dry-run' mode
-                    /dep:            communication is skipped (only task completion signaling messages are sent)
+                    dep:            communication is skipped (only task completion signaling messages are sent)
                     body:           computation is skipped (no task body execution)
                     yes:            both communication and computation are skipped
                     no:             normal execution
 --enable-prof-grapher
                 turn on grapher mode: generates the dependency graph instead of executing
+--enable-testing
+                enable the compilation of all PaRSEC tests
 
 --with-tau[=DIR]
                 use the TAU profiler package [installed in DIR]
 --with-papi[=DIR]
                 use the PAPI performance counter package [installed in DIR] (default=autodetect)
---with-gtg[=DIR]
-                use the GTG package [installed in DIR] (optional)
 --with-ayudame[=DIR]
                 use the Ayudame package [installed in DIR] (optional)
 
@@ -241,6 +244,8 @@ while [ "x$1" != x ]; do
         --disable-fortran) enable_fortran=no; shift;;
         --enable-doc) enable_doc=yes; shift;;
         --disable-doc) enable_doc=no; shift;;
+        --enable-testing) enable_testing=yes; shift;;
+        --disable-testing) enable_testing=no; shift;;
 
 #debug/profiling
         --enable-debug=*) enable_debug="${1#*=}"; shift;;
@@ -255,6 +260,8 @@ while [ "x$1" != x ]; do
         --disable-prof-dryrun) enable_prof_dryrun=no; shift;;
         --enable-prof-grapher) enable_prof_grapher=yes; shift;;
         --disable-prof-grapher) enable_prof_grapher=no; shift;;
+        --enable-prof-pins) enable_prof_pins=yes; shift;;
+        --disable-prof-pins) enable_prof_pins=no; shift;;
 
         --with-tau=*) with_tau="${1#*=}"; shift;;
         --with-tau) with_tau=yes; shift;;
@@ -521,17 +528,22 @@ CMAKE_DEFINES+=" ${prefix:+-DCMAKE_INSTALL_PREFIX=$prefix}"
 [ x$enable_fortran = xyes ] && CMAKE_DEFINES+=" -DSUPPORT_FORTRAN=ON"
 [ x$enable_fortran = xno ] && CMAKE_DEFINES+=" -DSUPPORT_FORTRAN=OFF"
 [ x$enable_doc = xyes ] && CMAKE_DEFINES+=" -DBUILD_DOCUMENTATION=ON"
-[ x$enable_doc = xno ] && CMAKE_DEFINES+="-DBUILD_DOCUMENTATION=OFF "
+[ x$enable_doc = xno ] && CMAKE_DEFINES+=" -DBUILD_DOCUMENTATION=OFF"
+[ x$enable_testing = xyes ] && CMAKE_DEFINES+=" -DBUILD_TESTING=ON"
+[ x$enable_testing = xno ] && CMAKE_DEFINES+=" -DBUILD_TESTING=OFF"
 
 if [ -z "$enable_debug" ]; then CMAKE_DEFINES+=" -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 elif [[ "$enable_debug" =~ ^no$ ]]; then
     CMAKE_DEFINES+=" -DCMAKE_BUILD_TYPE=Release"
-elif [[ $enable_debug =~ ^((yes|paranoid|noisier|history),?)+$ ]]; then
+elif [[ $enable_debug =~ ^((yes|paranoid|noisier|history|memrace|memaddr|memleak),?)+$ ]]; then
     CMAKE_DEFINES+=" -DCMAKE_BUILD_TYPE=Debug"
     [[ $enable_debug =~ paranoid ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_PARANOID=ON"
     [[ $enable_debug =~ noisier ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_NOISIER=ON"
     [[ $enable_debug =~ history ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_HISTORY=ON"
-else echo >&2 "Option $enable_debug is invalid (can be yes|paranoid|noisier|history|no)"; exit 1; fi
+    [[ $enable_debug =~ memrace ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_MEM_RACE=ON"
+    [[ $enable_debug =~ memaddr ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_MEM_ADDR=ON"
+    [[ $enable_debug =~ memleak ]] && CMAKE_DEFINES+=" -DPARSEC_DEBUG_MEM_LEAK=ON"
+else echo >&2 "Option $enable_debug is invalid (can be yes|paranoid|noisier|history|memrace|memaddr|memleak|no)"; exit 1; fi
 
 [ x$enable_prof_trace = xyes ] && CMAKE_DEFINES+=" -DPARSEC_PROF_TRACE=ON"
 [ x$enable_prof_trace = xno ] && CMAKE_DEFINES+=" -DPARSEC_PROF_TRACE=OFF"
@@ -539,6 +551,8 @@ else echo >&2 "Option $enable_debug is invalid (can be yes|paranoid|noisier|hist
 [ x$enable_prof_calltrace = xno ] && CMAKE_DEFINES+=" -DPARSEC_PROF_CALLTRACE=OFF"
 [ x$enable_prof_grapher = xyes ] && CMAKE_DEFINES+=" -DPARSEC_PROF_GRAPHER=ON"
 [ x$enable_prof_grapher = xno ] && CMAKE_DEFINES+=" -DPARSEC_PROF_GRAPHER=OFF"
+[ x$enable_prof_pins = xyes ] && CMAKE_DEFINES+=" -DPARSEC_PROF_PINS=ON"
+[ x$enable_prof_pins = xno ] && CMAKE_DEFINES+=" -DPARSEC_PROF_PINS=OFF"
 
 if [[ x$enable_prof_dryrun =~ ^x((yes|no|body|dep),?)*$ ]]; then
     [[ $enable_prof_dryrun =~ yes ]] && CMAKE_DEFINES+=" -DPARSEC_PROF_DRY_RUN=ON"
@@ -562,14 +576,7 @@ xno) CMAKE_DEFINES+=" -DPARSEC_PROF_TRACE=OFF"
     fi;;
 xyes) CMAKE_DEFINES+=" -DPARSEC_PROF_TRACE=ON";;
 x) ;;
-*) CMAKE_DEFINES+=" -DPAPI_DIR=$(printf %q "$with_papi")";;
-esac
-
-case x$with_gtg in
-xno) ;; # No CMAKE control to remove if available
-xyes) ;; # No CMAKE control to force using
-x) ;;
-*) CMAKE_DEFINES+=" -DGTG_DIR=$(printf %q "$with_gtg")";;
+*) CMAKE_DEFINES+=" -DPAPI_ROOT=$(printf %q "$with_papi")";;
 esac
 
 case x$with_ayudame in
@@ -583,7 +590,7 @@ case x$with_hwloc in
 xno) ;; # No CMAKE control to remove if available
 xyes) ;; # No CMAKE control to force using
 x) ;;
-*) CMAKE_DEFINES+=" -DHWLOC_DIR=$(printf %q "$with_hwloc")";;
+*) CMAKE_DEFINES+=" -DHWLOC_ROOT=$(printf %q "$with_hwloc")";;
 esac
 
 case x$with_mpi in
@@ -601,10 +608,10 @@ esac
 
 
 case x$with_cuda in
-xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=OFF";;
-xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON";;
+xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=OFF -DDPLASMA_GPU_WITH_CUDA=OFF";;
+xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DDPLASMA_GPU_WITH_CUDA=ON";;
 x) ;;
-*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=$(printf %q "$with_cuda") ${CC:+-DCUDA_HOST_COMPILER=$(printf %q "$(command -v $CC)")} ";;
+*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_CUDA=ON -DCUDAToolkit_ROOT=$(printf %q "$with_cuda") -DDPLASMA_GPU_WITH_CUDA=ON";;
 esac
 
 case x$with_cuda_sm_targets in

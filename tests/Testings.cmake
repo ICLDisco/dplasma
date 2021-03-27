@@ -147,12 +147,12 @@ foreach(prec ${DPLASMA_PRECISIONS} )
   dplasma_add_test(getrf_incpiv_dtd     gemm    shm -N 874 -K 367 -t 76 -i 23 ${OPTIONS})
 
   # GPU tests
-  if (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
+  if (DPLASMA_HAVE_CUDA)
     dplasma_add_test(potrf              potrf   1gpu_shm -N 8000 -t 320 ${OPTIONS} -g 1)
     dplasma_add_test(potrf              potrf   2gpu_shm -N 8000 -t 320 ${OPTIONS} -g 2)
     dplasma_add_test(gemm               gemm    1gpu_shm -N 3000 -t 320 ${OPTIONS} -g 1)
     dplasma_add_test(gemm               gemm    2gpu_shm -N 3000 -t 320 ${OPTIONS} -g 2)
-  endif (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
+  endif (DPLASMA_HAVE_CUDA)
 
   #   if ( ${prec} STREQUAL "c" OR ${prec} STREQUAL "z" )
   #     dplasma_add_test(heev "" ${PTG2DTD}_shm -N 4000 ${OPTIONS})
@@ -251,10 +251,10 @@ if( MPI_C_FOUND )
     dplasma_add_test(gesv_incpiv        gemm mpi:${PROCS} -N 874 -K 367 -t 17 -i 7 ${OPTIONS})
 
     # GPU Cholesky tests
-    if (CUDA_FOUND)
+    if (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
         dplasma_add_test(potrf potrf      1gpu_mpi:${PROCS} -N 8000 -t 320 ${OPTIONS} -g 1 -P 2)
         dplasma_add_test(potrf potrf_1gpu 2gpu_mpi:${PROCS} -N 8000 -t 320 ${OPTIONS} -g 2 -P 2)
-    endif (CUDA_FOUND)
+    endif (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
 
     # dplasma_add_test(potrf_pbq "" mpi:${PROCS} -N 4000 ${OPTIONS} -o PBQ)
     # dplasma_add_test(geqrf_pbq "" mpi:${PROCS} -N 4000 ${OPTIONS} -o PBQ)

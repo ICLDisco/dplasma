@@ -159,81 +159,21 @@ if( DPLASMA_HAVE_CUDA )
   target_include_directories(dplasma_cores_cuda
     PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
-    $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_SOURCE_DIR}>
-    ${CUDA_INCLUDE_DIRS})
+    $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_SOURCE_DIR}>)
   target_link_libraries(dplasma_cores_cuda
     PRIVATE
     PaRSEC::parsec
     LAPACKE::LAPACKE
     m
-    ${CUDA_CUBLAS_LIBRARIES})
+    CUDA::cublas)
 
   # dplasma_cores is an object library, and linking an object library from an object library is 
   # currently broken (CMake 3.12). So we pull-in the sources of dplasma_cores_cuda directly.
   target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores_cuda>)
-  target_link_libraries(dplasma
-    PUBLIC # this does not get inherited through TARGET_OBJECTS so it needs to be exported explicitly
-    ${CUDA_CUBLAS_LIBRARIES})
 
-  ### Generate the CUDA .cu kernels if necessary
-  # By default drop support for older devices (add 11 and 13 for support
-  # SM targets with poor DP flops are also disabled by default (add 30 50 52 53 61 62)
-  if( ${CUDA_VERSION_STRING} VERSION_LESS "4.2" )
-    set(CUDA_SM_TARGETS 11 13 20 CACHE STRING "Specify GPU architectures to build binaries for, BIN(PTX) format is supported")
-  elseif( ${CUDA_VERSION_STRING} VERSION_LESS "8.0" )
-    set(CUDA_SM_TARGETS 20 35 37 CACHE STRING "Specify GPU architectures to build binaries for, BIN(PTX) format is supported")
-  elseif( ${CUDA_VERSION_STRING} VERSION_EQUAL "7.0" )
-    set(CUDA_SM_TARGETS 20 35 37 60 CACHE STRING "Specify GPU architectures to build binaries for, BIN(PTX) format is supported")
-  else()
-    # SM_20 will be removed in cuda>8
-    set(CUDA_SM_TARGETS 35 37 60 70 CACHE STRING "Specify GPU architectures to build binaries for, BIN(PTX) format is supported")
-  endif()
+  # Ability to generate .cu files into _smXY.so has been removed because it was unused and broke.
+  # If needed again, use enable_language(CUDA) and add .cu files to add_library/target_sources, with
+  # the PROPERTY CUDA_ARCHITECTURES set appropriately on the target library. Do not use find_package(CUDA).
 
-  ### CUDA .cu sources
-  set( ZSOURCES_CUDA20
-#        zgemm_20_30.cu
-  )
-  set( ZSOURCES_CUDA30 ${ZSOURCES_CUDA20} )
-  set( ZSOURCES_CUDA35 ${ZSOURCES_CUDA30} )
-  set( ZSOURCES_CUDA37 ${ZSOURCES_CUDA30} )
-  set( ZSOURCES_CUDA50 ${ZSOURCES_CUDA30} )
-  set( ZSOURCES_CUDA52 ${ZSOURCES_CUDA50} )
-  set( ZSOURCES_CUDA53 ${ZSOURCES_CUDA50} )
-  set( ZSOURCES_CUDA60 ${ZSOURCES_CUDA50} )
-  set( ZSOURCES_CUDA61 ${ZSOURCES_CUDA60} )
-  set( ZSOURCES_CUDA62 ${ZSOURCES_CUDA60} )
-  set( ZSOURCES_CUDA70 ${ZSOURCES_CUDA60} )
-
-  foreach( _smtarget ${CUDA_SM_TARGETS} )
-      if( NOT "${ZSOURCES_CUDA${_smtarget}}" STREQUAL "" )
-      set(generated_cores_cuda_cu "")
-      precisions_rules_py(generated_cores_cuda_cu
-                          "${ZSOURCES_CUDA${_smtarget}}"
-                          PRECISIONS "${DPLASMA_PRECISIONS}")
-      foreach( _cudafile ${generated_cores_cuda_cu} )
-          get_source_file_property(_IsInBinaryDir ${_cudafile} GENERATED)
-          if( _IsInBinaryDir )
-              string(REGEX REPLACE
-                      ${_cudafile}
-                      ${CMAKE_CURRENT_BINARY_DIR}/${_cudafile}
-                      generated_cores_cuda_cu "${generated_cores_cuda_cu}")
-          endif( _IsInBinaryDir )
-      endforeach()
-
-      cuda_add_library(dplasma_cucores_sm${_smtarget}
-                       ${generated_cores_cuda_cu})
-      cuda_add_cublas_to_target( dplasma_cucores_sm${_smtarget} )
-      target_compile_definitions(dplasma_cucores_sm${_smtarget} -arch sm_${_smtarget} -DCUDA_SM_VERSION=${_smtarget} ${CUDA_NVCC_FLAGS_${_smtarget}})
-      if( NOT BUILD_SHARED_LIBS )
-        target_sources(dplasma_cores PUBLIC $<TARGET_OBJECTS:dplasma_cucores_sm${_smtarget}>)
-      else()
-        target_link_libraries(dplasma_cores PUBLIC dplasma_cucores_sm${_smtarget})
-        install(TARGETS dplasma_cucores_sm${_smtarget}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-      endif()
-    endif()
-  endforeach()
-  cuda_build_clean_target()
 endif( DPLASMA_HAVE_CUDA )
 
