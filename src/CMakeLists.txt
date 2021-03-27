@@ -217,7 +217,7 @@ Add_Subdirectory(cores)
 
 target_include_directories(dplasma
     INTERFACE
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/utils>
