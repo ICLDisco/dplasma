@@ -102,7 +102,6 @@ how one sets some default options.
 .. code:: bash
 
   with_hwloc=${HWLOC_ROOT:="/spack/opt/spack/linux-scientific7-x86_64/gcc-7.3.0/hwloc-1.11.11-nu65xwuyodswr74llx3ymi67hgd6vmwe"}
-  with_gtg=${GTG_ROOT:="/sw/gtg/0.2-2"}
 
   # BLAS: use MKL
   [ -z "${MKLROOT}" ] || module load intel-mkl/2019.3.199/gcc-7.3.0-2pn4
@@ -419,7 +418,6 @@ Hopefully, once the expected arguments are provided the output will look similar
   CMAKE_Fortran_COMPILER full path: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/xl-16.1.1-3/spectrum-mpi-10.3.0.1-20190611-aqjt3jo53mogrrhcrd2iufr435azcaha/bin/mpif90
   Fortran compiler: mpif90
   No optimized Fortran compiler flags are known, we just try -O2...
-  -- Could NOT find GTG (missing: GTG_LIBRARY GTG_INCLUDE_DIR)
   -- Checking for module 'libgvc'
   --   No package 'libgvc' found
   -- Could NOT find GRAPHVIZ (missing: GRAPHVIZ_LIBRARY GRAPHVIZ_INCLUDE_DIR)
