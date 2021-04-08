@@ -11,7 +11,7 @@ import java.util.regex.Matcher
 def PROJECT_NAME = "DPLASMA"
 
 //node {
-//    sh 'env > env.txt' 
+//    sh 'env > env.txt'
 //    for (String i : readFile('env.txt').split("\r?\n")) {
 //        println i
 //    }
@@ -57,6 +57,12 @@ node {
     config.put('basicAuth', basicAuth)
 }
 
+def COLOR_MAP = [
+    'SUCCESS': 'good',
+    'FAILURE': 'danger',
+]
+def slackResponse = null
+
 // Save the master of the lack check
 //git log --format="%H" -n 1 master
 
@@ -85,9 +91,15 @@ pipeline {
             steps {
                 script {
                     try {
-                        slackSend color: 'YELLOW', channel: "ci",
-                            message: "Starting: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                                     "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
+                        blocks = [
+                          [
+                            "type": "section",
+                            "text": [
+                                "type": "mrkdwn",
+                                "text": "${PROJECT_NAME} Jenkins: [${env.BUILD_URL}](${env.JOB_NAME} [${env.BUILD_NUMBER})"
+                                    ]
+                          ]]
+                        slackResponse = slackSend(channel: '#ci', blocks:blocks)
                     } catch (Exception ex) {  //disable Slack
                         config.useSlack = false
                     }
@@ -156,30 +168,25 @@ pipeline {
             }
         }
     }
-    post { 
-        // no always
+    post {
+        always {
+            script {
+                BUILD_USER = env.CHANGE_AUTHOR
+            }
+            slackSend channel: '#ci',
+                      color: COLOR_MAP[currentBuild.currentResult],
+                      message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} by ${BUILD_USER}\n More info at: ${env.BUILD_URL}"
+        }
         regression {
-            slackSend color: 'RED', channel: "ci",
-                message: "REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
-            //emailext (
-            //    subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-            //    body: """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
-            //  <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
-            //    recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            //)
+            slackSend channel: slackResponse.channelId, timestamp: slackResponse.ts,
+                      message: "${PROJECT_NAME} REGRESSION: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
+                               "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a>."
         }
         success {
-            slackSend color: 'GREEN', channel: "ci",
-                message: "SUCCESS: Job <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> ready to merge"
             approvePullRequest(config.repository, env.CHANGE_ID)
         }
         failure {
-            slackSend color: 'RED', channel: "ci",
-                message: "FAILURE: <a href=\"${env.BUILD_URL}\">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a><br>" +
-                         "Pull Request <a href=\"${env.CHANGE_URL}\">#${env.CHANGE_ID}</a> consistently fails.<br>" +
-                         "This kind of consistency is N.O.T. good"
+            unapprovePullRequest(config.repository, env.CHANGE_ID)
         }
     }
 }
@@ -204,7 +211,7 @@ String getVersion() {
 def displayServerResponse( InputStream is ) {
     BufferedReader input = new BufferedReader(new InputStreamReader(is))
     String inputLine;
-    while ((inputLine = input.readLine()) != null) 
+    while ((inputLine = input.readLine()) != null)
         println inputLine
     input.close();
 }
@@ -214,7 +221,9 @@ def displayServerResponse( InputStream is ) {
 def isApprovedBranch(repository, pr, byWho) {
     Boolean prApproved = false
 
-    def url = new URL("https://api.bitbucket.org/2.0/repositories/${config.organization}/${repository}/pullrequests/${pr}/")
+    url = "https://api.bitbucket.org/2.0/repositories/${config.organization}/${repository}/pullrequests/${pr}/"
+    println "Check URL: ${url}"
+    def url = new URL(url)
 
     def conn = url.openConnection()
     conn.setRequestProperty( "Authorization", config.basicAuth)
@@ -287,7 +296,7 @@ def approvePullRequest(repository, pr) {
             println "[Approve PR] URL ${url.toString()}"
             println "[Approve PR] Server response:"
             response = displayServerResponse(conn.getErrorStream())
-            println "[Approve PR] ${response}" 
+            println "[Approve PR] ${response}"
             println "[Approve PR] -----"
         }
     } catch (Exception e) {
@@ -324,7 +333,7 @@ def unapprovePullRequest(repository, pr) {
             println "[Unapprove PR] URL ${url.toString()}"
             println "[Unapprove PR] Server response:"
             response = displayServerResponse(conn.getErrorStream())
-            println "[Unapprove PR] ${response}" 
+            println "[Unapprove PR] ${response}"
             println "[Unapprove PR] -----"
         }
     } catch (Exception e) {
@@ -337,4 +346,3 @@ def unapprovePullRequest(repository, pr) {
     }
     return prUnapproved
 }
-
