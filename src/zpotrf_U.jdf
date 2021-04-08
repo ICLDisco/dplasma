@@ -132,12 +132,12 @@ BODY [type=RECURSIVE]
 }
 END
 
-        BODY [type=CUDA
-              dyld=cusolverDnZpotrf dyldtype=cublas_zpotrf_v2_t
-              weigth=k]
+BODY [type=CUDA
+      dyld=cusolverDnZpotrf dyldtype=cublas_zpotrf_v2_t
+      weigth=k]
 {
     int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
-    int ldak = BLKLDD( descA, k );
+    int ldak = LDA(ddescA, T);
 
     cusolverStatus_t status;
     cublasFillMode_t cublas_uplo;
@@ -217,13 +217,14 @@ RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_
               weight=(k+n)]
 {
     int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak = BLKLDD(descA, k);
+    int ldak_T = LDA(ddescA, T);
+    int ldak_C = LDA(ddescA, C);
     dplasma_cuda_handles_t *handles;
-    #if defined(PRECISION_z) || defined(PRECISION_c)
-        cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
-    #else
-        double zone = 1.;
-    #endif
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+#else
+    double zone = 1.;
+#endif
 
     cublasStatus_t status;
     handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
@@ -231,8 +232,8 @@ RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_
     status = parsec_body.dyld_fn(handles->cublas_handle,
                                  CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
                                  CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
-                                 tempnn, descA->mb,
-                                 &zone, T, ldak, C, ldak);
+                                 descA->mb, tempnn,
+                                 &zone, T, ldak_T, C, ldak_C);
     PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
                             {return -1;} );
 }
@@ -327,8 +328,8 @@ BODY [type=CUDA
       weight=(k+n)]
 {
     int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
-    int ldan = BLKLDD( descA, n );
-    int ldak = BLKLDD( descA, k );
+    int ldak = LDA(ddescA, A);
+    int ldan = LDA(ddescA, T);
     dplasma_cuda_handles_t *handles;
     double zone  =  1.;
     double mzone = -1.;
@@ -341,6 +342,7 @@ BODY [type=CUDA
                                   tempnn, descA->mb,
                                   &mzone, A, ldak,
                                   &zone, T, ldan);
+
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
                             {return -1;} );
 }
@@ -446,9 +448,9 @@ BODY [type=CUDA
 #endif
 
     int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak_A = descA->mb;
-    int ldak_B = descA->mb;
-    int ldam_C = descA->mb;
+    int ldak_A = LDA(ddescA, A);
+    int ldak_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
 
     cublasStatus_t status;
     dplasma_cuda_handles_t *handles;
@@ -463,7 +465,7 @@ BODY [type=CUDA
     cublasSetKernelStream( parsec_body.stream );
     status = parsec_body.dyld_fn( handles->cublas_handle,
                                   CUBLAS_OP_C, CUBLAS_OP_N,
-                                  descA->mb, tempnn, descA->mb,
+                                  descA->mb, tempnn, descA->nb,
                                   &mzone, (cuDoubleComplex*)A, ldak_A,
                                           (cuDoubleComplex*)B, ldak_B,
                                   &zone,  (cuDoubleComplex*)C, ldam_C);
