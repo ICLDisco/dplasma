@@ -12,12 +12,11 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/superscalar/insert_function.h"
 
-enum regions {
-               TILE_FULL,
-               TILE_LOWER,
-               TILE_UPPER,
-               TILE_RECTANGLE,
-             };
+/* Global indices for the different datatypes */
+static int TILE_FULL,
+           TILE_LOWER,
+           TILE_UPPER,
+           TILE_RECTANGLE;
 
 int
 parsec_core_geqrt(parsec_execution_stream_t *es, parsec_task_t *this_task)
@@ -339,24 +338,28 @@ int main(int argc, char ** argv)
 
     /* Allocating data arrays to be used by comm engine */
     /* Default type */
-    dplasma_add2arena_tile( &parsec_dtd_arenas_datatypes[TILE_FULL],
+    parsec_arena_datatype_t *tile_full = parsec_dtd_create_arena_datatype(parsec, &TILE_FULL);
+    dplasma_add2arena_tile( tile_full,
                             dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
     /* Lower triangular part of tile without diagonal */
-    dplasma_add2arena_lower( &parsec_dtd_arenas_datatypes[TILE_LOWER],
+    parsec_arena_datatype_t *tile_lower = parsec_dtd_create_arena_datatype(parsec, &TILE_LOWER);
+    dplasma_add2arena_lower( tile_lower,
                              dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, dcA.super.mb, 0 );
 
     /* Upper triangular part of tile with diagonal */
-    dplasma_add2arena_upper( &parsec_dtd_arenas_datatypes[TILE_UPPER],
+    parsec_arena_datatype_t *tile_upper = parsec_dtd_create_arena_datatype(parsec, &TILE_UPPER);
+    dplasma_add2arena_upper( tile_upper,
                              dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                              PARSEC_ARENA_ALIGNMENT_SSE,
                              parsec_datatype_double_complex_t, dcA.super.mb, 1 );
 
-    dplasma_add2arena_rectangle( &parsec_dtd_arenas_datatypes[TILE_RECTANGLE],
+    parsec_arena_datatype_t *tile_rectangle = parsec_dtd_create_arena_datatype(parsec, &TILE_RECTANGLE);
+    dplasma_add2arena_rectangle( tile_rectangle,
                                  dcT.super.mb*dcT.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcT.super.mb, dcT.super.nb, -1);
@@ -441,10 +444,14 @@ int main(int argc, char ** argv)
     }
 
     /* Cleaning data arrays we allocated for communication */
-    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_FULL] );
-    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_LOWER] );
-    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_UPPER] );
-    dplasma_matrix_del2arena( &parsec_dtd_arenas_datatypes[TILE_RECTANGLE] );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
+    dplasma_matrix_del2arena( tile_full );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_LOWER);
+    dplasma_matrix_del2arena( tile_lower );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_UPPER);
+    dplasma_matrix_del2arena( tile_upper );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_RECTANGLE);
+    dplasma_matrix_del2arena( tile_rectangle );
 
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcT );
