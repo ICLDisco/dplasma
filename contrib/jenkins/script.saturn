@@ -18,6 +18,9 @@ module load \
   bison/3.7.4 \
   hwloc/2.4.0 \
 
+# Required to run with openmpi/4.0.2 on our Cauchy nodes
+export OMPI_MCA_btl=openib,vader,self OMPI_MCA_btl_openib_allow_ib=1
+
 # dplasma specific
 module load \
   intel-mkl/2020.4.304 
@@ -30,7 +33,7 @@ fi
 
 if expr >/dev/null "${BUILDTYPE}" : ".*-ext"; then
     ${WORKSPACE}/parsec/configure --with-platform=saturn --prefix=${BUILDDIR}.install ${PARSEC_DEBUG_OPTIONS}
-    make -j 12 -l 8 install || exit -1
+    ninja -j 24 -l 32 install || exit -1
     WITH_PARSEC="--with-parsec=${BUILDDIR}.install"
 else
     DPLASMA_DEBUG_OPTIONS+=" ${PARSEC_DEBUG_OPTIONS}"
@@ -41,15 +44,15 @@ echo $CONFCMD
 eval $CONFCMD
 
 # Build stage
-ninja
+ninja -j 24 -l 32
 
 # Check that install works
-ninja install
+ninja -j 24 -l 32 install
 
 # Run the ctest
 # Ctest currently disabled because of a problem with initializing Cuda on some of the nodes
 # that do not have an accelerator, causing many tests to fail after a warning 'fork was used'
 # The fork is issued from within `cudaGetDeviceCount`, the function fails and causes a warning.
 
-#ctest --output-on-failure --timeout 30
+#ctest --output-on-failure --timeout 45
 
