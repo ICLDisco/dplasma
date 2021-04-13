@@ -9,16 +9,21 @@ module purge
 # using the lowest compatible version of cmake to force
 # upgrading the cmake_required when we add new features
 module load \
-  gcc/7.3.0/gcc-4.8.5-ox22 \
-  openmpi/3.1.3/gcc-7.3.0-tbup \
-  cmake/3.16.2/gcc-7.3.0-jg66 \
-  python/2.7.16/gcc-7.3.0-wfpb \
-  otf2/2.1.1/gcc-7.3.0-ylax \
-  cuda/9.2.88/gcc-7.3.0-idc7 \
+  gcc/9.2.0 \
+  openmpi/4.0.2 \
+  cmake/3.18.2 \
+  cuda/11.0.2 \
+  ninja/1.10.2 \
+  python/3.8.7 \
+  bison/3.7.4 \
+  hwloc/2.4.0 \
+
+# Required to run with openmpi/4.0.2 on our Cauchy nodes
+export OMPI_MCA_btl=openib,vader,self OMPI_MCA_btl_openib_allow_ib=1
 
 # dplasma specific
 module load \
-  intel-mkl/2019.3.199/gcc-7.3.0-2pn4
+  intel-mkl/2020.4.304 
 
 
 if expr >/dev/null "${BUILDTYPE}" : "Debug"; then
@@ -28,7 +33,7 @@ fi
 
 if expr >/dev/null "${BUILDTYPE}" : ".*-ext"; then
     ${WORKSPACE}/parsec/configure --with-platform=saturn --prefix=${BUILDDIR}.install ${PARSEC_DEBUG_OPTIONS}
-    make -j 12 -l 8 install || exit -1
+    ninja -j 24 -l 32 install || exit -1
     WITH_PARSEC="--with-parsec=${BUILDDIR}.install"
 else
     DPLASMA_DEBUG_OPTIONS+=" ${PARSEC_DEBUG_OPTIONS}"
@@ -39,15 +44,15 @@ echo $CONFCMD
 eval $CONFCMD
 
 # Build stage
-make -j 12 -l 8
+ninja -j 24 -l 32
 
 # Check that install works
-make install
+ninja -j 24 -l 32 install
 
 # Run the ctest
 # Ctest currently disabled because of a problem with initializing Cuda on some of the nodes
 # that do not have an accelerator, causing many tests to fail after a warning 'fork was used'
 # The fork is issued from within `cudaGetDeviceCount`, the function fails and causes a warning.
 
-#ctest --output-on-failure --timeout 30
+#ctest --output-on-failure --timeout 45
 
