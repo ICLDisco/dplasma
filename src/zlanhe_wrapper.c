@@ -16,6 +16,13 @@
 
 #include "zlansy.h"
 
+static parsec_data_t*
+dplasma_zlanhe_fake_data_of(parsec_data_collection_t *mat, ...)
+{
+    return parsec_matrix_create_data( (parsec_tiled_matrix_t*)mat, NULL,
+                                     0, 0 );
+}
+
 /**
  *******************************************************************************
  *
@@ -138,7 +145,7 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
         0, 0,   /* Starting points (not important here) */
         m, P*Q, /* Dimensions of the submatrix          */
         P, Q, 1, 1, IP, JQ);
-    Tdist->super.super.data_of = fake_data_of;
+    Tdist->super.super.data_of = dplasma_zlanhe_fake_data_of;
 
     /* Create the DAG */
     parsec_zlanhe = (parsec_taskpool_t*)parsec_zlansy_new(
