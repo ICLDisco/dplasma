@@ -127,9 +127,9 @@ void ADTT_INFO_internal(parsec_data_copy_t *cp, const dplasma_data_collection_t 
  * Assuming a full tiled has been allocated on the GPU (mb*nb*size(elem))
  */
 static int
-stage_in_lapack(parsec_gpu_task_t *gtask,
+stage_in_lapack(parsec_cuda_task_t *gtask,
                 uint32_t flow_mask,
-                parsec_gpu_exec_stream_t *gpu_stream)
+                parsec_cuda_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
     parsec_data_copy_t * copy_in;
@@ -203,9 +203,9 @@ stage_in_lapack(parsec_gpu_task_t *gtask,
 }
 
 static int
-stage_out_lapack(parsec_gpu_task_t *gtask,
+stage_out_lapack(parsec_cuda_task_t *gtask,
                  uint32_t flow_mask,
-                 parsec_gpu_exec_stream_t *gpu_stream)
+                 parsec_cuda_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
     parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
