@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -220,7 +220,7 @@ dplasma_zgeqrfr_geqrt_Destruct( parsec_taskpool_t *tp )
     dplasma_matrix_del2arena( &parsec_zgeqrt->arenas_datatypes[PARSEC_zgeqrfr_geqrt_DEFAULT_ADT_IDX ] );
     dplasma_matrix_del2arena( &parsec_zgeqrt->arenas_datatypes[PARSEC_zgeqrfr_geqrt_LITTLE_T_ADT_IDX] );
 
-    tp->destructor(tp);
+    parsec_taskpool_free(tp);
 }
 
 %}
