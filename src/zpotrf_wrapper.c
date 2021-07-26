@@ -59,7 +59,7 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
 void *zpotrf_create_workspace(void *obj, void *user)
 {
     parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->super.memory;
+    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
