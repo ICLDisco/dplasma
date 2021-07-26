@@ -127,15 +127,15 @@ void ADTT_INFO_internal(parsec_data_copy_t *cp, const dplasma_data_collection_t 
  * Assuming a full tiled has been allocated on the GPU (mb*nb*size(elem))
  */
 static int
-stage_in_lapack(parsec_cuda_task_t *gtask,
+stage_in_lapack(parsec_gpu_task_t *gtask,
                 uint32_t flow_mask,
-                parsec_cuda_exec_stream_t *gpu_stream)
+                parsec_gpu_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
     parsec_data_copy_t * copy_in;
     parsec_data_copy_t * copy_out;
-    parsec_device_cuda_module_t *in_elem_dev;
-    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t *)gpu_stream;
+    parsec_device_gpu_module_t *in_elem_dev;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     dplasma_data_collection_t * ddc;
     parsec_task_t *task = gtask->ec;
     int elem_sz;
@@ -147,8 +147,8 @@ stage_in_lapack(parsec_cuda_task_t *gtask,
             ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
-            in_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_in->device_index);
-            if( (in_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
+            in_elem_dev = (parsec_device_gpu_module_t*)parsec_mca_device_get( copy_in->device_index);
+            if( (in_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)) {
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_nb_elts[i],
@@ -189,7 +189,7 @@ stage_in_lapack(parsec_cuda_task_t *gtask,
                                           src,
                                           nrows * elem_sz,
                                           cudaMemcpyHostToDevice,
-                                          gpu_stream->cuda_stream );
+                                          cuda_stream->cuda_stream );
                     PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
 
                 }
@@ -203,15 +203,15 @@ stage_in_lapack(parsec_cuda_task_t *gtask,
 }
 
 static int
-stage_out_lapack(parsec_cuda_task_t *gtask,
+stage_out_lapack(parsec_gpu_task_t *gtask,
                  uint32_t flow_mask,
-                 parsec_cuda_exec_stream_t *gpu_stream)
+                 parsec_gpu_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
-    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     parsec_data_copy_t * copy_in;
     parsec_data_copy_t * copy_out;
-    parsec_device_cuda_module_t *out_elem_dev;
+    parsec_device_gpu_module_t *out_elem_dev;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     parsec_task_t *task = gtask->ec;
     dplasma_data_collection_t * ddc;
     int elem_sz;
@@ -223,7 +223,7 @@ stage_out_lapack(parsec_cuda_task_t *gtask,
             ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
-            out_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_out->device_index);
+            out_elem_dev = (parsec_device_gpu_module_t*)parsec_mca_device_get( copy_out->device_index);
 
             if( (out_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,

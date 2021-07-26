@@ -14,9 +14,7 @@
 #include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include "parsec/mca/device/cuda/device_cuda.h"
-#endif
+#include "parsec/mca/device/device_gpu.h"
 #include "utils/dplasma_info.h"
 
 #include "zgemm_NN.h"
@@ -223,12 +221,12 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
         if( PARSEC_DEV_CUDA == device->type ) {
-            parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
+            parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
             nbgpu++;
             if( 0 == gpu_mem_block_size )
-                gpu_mem_block_size = cuda_device->super.mem_block_size;
-            if( -1 == gpu_mem_nb_blocks || cuda_device->super.mem_nb_blocks < gpu_mem_nb_blocks )
-                gpu_mem_nb_blocks = cuda_device->super.mem_nb_blocks;
+                gpu_mem_block_size = gpu_device->mem_block_size;
+            if( -1 == gpu_mem_nb_blocks || gpu_device->mem_nb_blocks < gpu_mem_nb_blocks )
+                gpu_mem_nb_blocks = gpu_device->mem_nb_blocks;
         }
     }
     if(nbgpu == 0) {
@@ -462,12 +460,12 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
         for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
             parsec_device_module_t *device = parsec_mca_device_get(devid);
             if( PARSEC_DEV_CUDA == device->type ) {
-				parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
+				parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
                 nb_gpu_devices++;
 				if( 0 == gpu_mem_block_size )
-				    gpu_mem_block_size = cuda_device->super.mem_block_size;
-				if( -1 == gpu_mem_nb_blocks || cuda_device->super.mem_nb_blocks < gpu_mem_nb_blocks )
-				    gpu_mem_nb_blocks = cuda_device->super.mem_nb_blocks;
+				    gpu_mem_block_size = gpu_device->mem_block_size;
+				if( -1 == gpu_mem_nb_blocks || gpu_device->mem_nb_blocks < gpu_mem_nb_blocks )
+				    gpu_mem_nb_blocks = gpu_device->mem_nb_blocks;
             }
         }
         if(0 < nb_gpu_devices) {
