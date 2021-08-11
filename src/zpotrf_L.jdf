@@ -26,7 +26,6 @@ extern "C" %{
 #include <hipblas.h>
 #include <hip/hip_complex.h>
 #include <rocsolver.h>
-#include "potrf_wrapper.h"
 #endif  /* defined(DPLASMA_HAVE_HIP) */
 
 /* Define the different shapes this JDF is using */
