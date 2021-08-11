@@ -197,7 +197,6 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
 
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
-#include "potrf_wrapper.h"
 #include "parsec/utils/zone_malloc.h"
 
 /* Unfortunately, HIPBLAS does not provide a error to string function */
@@ -218,12 +217,12 @@ static char *dplasma_hipblas_error_to_string(hipblasStatus_t hipblas_status)
 }
 
 
-void *dplasma_create_cuda_handles(void *obj, void *_n)
+void *dplasma_create_hip_handles(void *obj, void *_n)
 {
     parsec_hip_exec_stream_t *stream = (parsec_hip_exec_stream_t *)obj;
     dplasma_hip_handles_t *new;
     hipblasHandle_t hipblas_handle;
-    hipblasStatus_t cublas_status;
+    hipblasStatus_t hipblas_status;
 
     (void)_n;
 
