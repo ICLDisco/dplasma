@@ -24,7 +24,6 @@ static void zpotrf_L_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
 #include <hipblas.h>
 #include <hip/hip_complex.h>
 #include <rocsolver.h>
-#include "potrf_wrapper.h"
 #endif  /* defined(DPLASMA_HAVE_HIP) */
 
 /* Define the different shapes this JDF is using */

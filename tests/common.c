@@ -745,7 +745,9 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     assert(HIPBLAS_STATUS_SUCCESS == status);
     */
     parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
-                         destroy_hip_handles, NULL, NULL);
+                         destroy_hip_handles, NULL,
+                         dplasma_create_hip_handles, NULL,
+                         NULL);
 #endif
 
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
