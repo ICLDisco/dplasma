@@ -234,7 +234,7 @@ dplasma_zgeqrfr_tsqrt_Destruct( parsec_taskpool_t *tp )
     dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_DEFAULT_ADT_IDX ] );
     dplasma_matrix_del2arena( &parsec_zgeqrfr_tsqrt->arenas_datatypes[PARSEC_zgeqrfr_tsqrt_LITTLE_T_ADT_IDX] );
 
-    tp->destructor(tp);
+    parsec_taskpool_free(tp);
 }
 
 %}
