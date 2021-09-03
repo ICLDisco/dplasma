@@ -13,7 +13,7 @@
 # PaRSEC Internal: generation of various floating point precision files from a template.
 #
 include(ParseArguments)
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(Python COMPONENTS Interpreter REQUIRED)
 
 if(NOT DEFINED PRECISIONGENERATOR_LOCATION)
   message(FATAL_ERROR "PRECISIONGENERATOR_LOCATION is not defined as it
