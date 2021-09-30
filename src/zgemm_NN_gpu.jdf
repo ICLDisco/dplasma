@@ -19,6 +19,11 @@ extern "C" %{
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
+#if defined(DPLASMA_HAVE_HIP)
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#endif  /* defined(DPLASMA_HAVE_HIP) */
+
 static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
 {
     int xn = *x, yn = *y, zn = *z;
@@ -150,6 +155,8 @@ cuda_device_index [ type = "int *" ]
 xMax       [ type = int default = "-1" hidden=on ]
 yMax       [ type = int default = "-1" hidden=on ]
 zMax       [ type = int default = "-1" hidden=on ]
+
+hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 /*********************************************************
  *                           READ_A                      *
@@ -417,6 +424,67 @@ BODY [type=CUDA]
         assert( PARSEC_DEV_CUDA == next_gemm.task_class->incarnations[chore_id].type );
         if(NULL != next_gemm.task_class->incarnations[chore_id].evaluate) {
             if( next_gemm.task_class->incarnations[chore_id].evaluate((parsec_task_t*)&next_gemm) ==
+                PARSEC_HOOK_RETURN_NEXT ) {
+                    /* The next GEMM wants to run on the CPUs... */
+                    gpu_task->pushout |= (1 << 0);
+            }
+        }
+    }
+}
+END
+
+BODY [type=HIP
+      weight=(descA->nt-k)]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipDoubleComplex lalpha = make_hipDoubleComplex(creal(alpha), cimag(alpha));
+    hipDoubleComplex lbeta  = (k == 0) ? make_hipDoubleComplex(creal(beta), cimag(beta))
+                                      : make_hipDoubleComplex(1.0, 0.0);
+#else
+    double lalpha = alpha;
+    double lbeta  = (k == 0) ? beta : 1.0;
+#endif
+    int cAmb = descA->mb;
+    int cAnb = descA->nb;
+    int cBmb = descB->nb;
+    int cBnb = descB->nb;
+    int cCmb = cAmb;
+    int cCnb = cBnb;
+
+    int tempmm = cCmb;
+    int tempnn = cCnb;
+    int tempkk = cAnb;
+    int ldam = cAmb;
+    int ldbk = cBmb;
+    int ldcm = cCmb;
+
+    PARSEC_DEBUG_VERBOSE(10, parsec_debug_output,
+            "HIP:  gemm( %d, %d, %d ) > A(%d,%d) * B(%d,%d) C(%d,%d)\n",
+             m, n, k, cAmb, cAnb, cBmb, cBnb, cCmb, cCnb);
+
+    hipblasStatus_t status;
+    hipblasOperation_t opA = dplasmaNoTrans == transA? HIPBLAS_OP_N: HIPBLAS_OP_T;
+    hipblasOperation_t opB = dplasmaNoTrans == transB? HIPBLAS_OP_N: HIPBLAS_OP_T;
+    dplasma_hip_handles_t *handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZgemm( handles->hipblas_handle,
+                           opA, opB,
+                           tempmm, tempnn, tempkk,
+                           &lalpha, (hipDoubleComplex*)A, ldam,
+                                    (hipDoubleComplex*)B, ldbk,
+                           &lbeta,  (hipDoubleComplex*)C, ldcm );
+    assert(HIPBLAS_STATUS_SUCCESS == status);
+    PARSEC_HIP_CHECK_ERROR( "hipblasZgemm ", status,
+                            {return PARSEC_HOOK_RETURN_DONE;} );
+
+    /* Quick and dirty emulation of the next GEMM */
+    if( k == descC->mt -1 ) {
+        __parsec_zgemm_NN_gpu_GEMM_task_t next_gemm;
+        memcpy(&next_gemm, this_task, sizeof(__parsec_zgemm_NN_gpu_GEMM_task_t));
+        next_gemm.locals.k.value = descC->mt -1;
+        assert( PARSEC_DEV_CUDA == next_gemm.task_class->incarnations[this_task->chore_id].type );
+        if(NULL != next_gemm.task_class->incarnations[this_task->chore_id].evaluate) {
+            if( next_gemm.task_class->incarnations[this_task->chore_id].evaluate((parsec_task_t*)&next_gemm) ==
                 PARSEC_HOOK_RETURN_NEXT ) {
                     /* The next GEMM wants to run on the CPUs... */
                     gpu_task->pushout |= (1 << 0);

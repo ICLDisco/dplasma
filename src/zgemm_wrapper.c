@@ -186,7 +186,7 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
     return zgemm_tp;
 }
 
-#if defined(DPLASMA_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
 static parsec_taskpool_t*
 dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
                        dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
@@ -220,7 +220,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     nbgpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
-        if( PARSEC_DEV_CUDA == device->type ) {
+        if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
             parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
             nbgpu++;
             if( 0 == gpu_mem_block_size )
@@ -237,7 +237,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     nbgpu= 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
-        if( PARSEC_DEV_CUDA == device->type ) {
+        if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
             dev_index[nbgpu++] = device->device_index;
         }
     }
@@ -356,8 +356,15 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
         K = B->mt;
         tp->_g_zMax = (K + d - 1) / d - 1;
 
-        zgemm_tp = (parsec_taskpool_t *) tp;
+#if defined(PARSEC_HAVE_HIP)
+        /* It doesn't cost anything to define these infos if we have HIP but
+         * don't have GPUs on the current machine, so we do it non-conditionally */
+        tp->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+        tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
 
+        zgemm_tp = (parsec_taskpool_t *) tp;
         return zgemm_tp;
     }
 
@@ -366,7 +373,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
         free(dev_index);
     return NULL;
 }
-#endif /* DPLASMA_HAVE_CUDA */
+#endif /* DPLASMA_HAVE_CUDA || DPLASMA_HAVE_HIP */
 
 /**
  *******************************************************************************
@@ -451,7 +458,7 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
     }
 
     if ( C->dtype & parsec_matrix_block_cyclic_type ) {
-#if defined(DPLASMA_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
         int nb_gpu_devices = 0, devid;
 		int p = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
 	    int q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
@@ -459,7 +466,7 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
 		int64_t gpu_mem_nb_blocks = -1;
         for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
             parsec_device_module_t *device = parsec_mca_device_get(devid);
-            if( PARSEC_DEV_CUDA == device->type ) {
+            if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
 				parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
                 nb_gpu_devices++;
 				if( 0 == gpu_mem_block_size )
@@ -482,7 +489,7 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
                 return zgemm_tp;
             }
         }
-#endif /* DPLASMA_HAVE_CUDA */
+#endif /* DPLASMA_HAVE_CUDA || DPLASMA_HAVE_HIP */
         zgemm_tp = dplasma_zgemm_summa_new(transA, transB, alpha, A, B, beta, C, opt);
         return zgemm_tp;
     }
