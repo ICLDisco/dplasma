@@ -78,12 +78,26 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
             parsec_zgemm_NN_summa_taskpool_t* tp;
             tp = parsec_zgemm_NN_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
+#if defined(PARSEC_HAVE_HIP)
+            /* It doesn't cost anything to define these infos if we have HIP but
+             * don't have GPUs on the current machine, so we do it non-conditionally */
+            tp->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+            tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         } else {
             PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT_summa\n");
             parsec_zgemm_NT_summa_taskpool_t* tp;
             tp = parsec_zgemm_NT_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
+#if defined(PARSEC_HAVE_HIP)
+            /* It doesn't cost anything to define these infos if we have HIP but
+             * don't have GPUs on the current machine, so we do it non-conditionally */
+            tp->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+            tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         }
     } else {
@@ -92,6 +106,13 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
             parsec_zgemm_TN_summa_taskpool_t* tp;
             tp = parsec_zgemm_TN_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
+#if defined(PARSEC_HAVE_HIP)
+            /* It doesn't cost anything to define these infos if we have HIP but
+             * don't have GPUs on the current machine, so we do it non-conditionally */
+            tp->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+            tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         } else {
             PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT_summa\n");
@@ -99,6 +120,13 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
             tp = parsec_zgemm_TT_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C,
                                            (parsec_data_collection_t*)Cdist);
+#if defined(PARSEC_HAVE_HIP)
+            /* It doesn't cost anything to define these infos if we have HIP but
+             * don't have GPUs on the current machine, so we do it non-conditionally */
+            tp->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+            tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         }
     }
