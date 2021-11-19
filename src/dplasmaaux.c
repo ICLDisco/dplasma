@@ -151,7 +151,7 @@ static char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status)
 
 void *dplasma_create_cuda_handles(void *obj, void *_n)
 {
-    parsec_gpu_exec_stream_t *stream = (parsec_gpu_exec_stream_t *)obj;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t *)obj;
     dplasma_cuda_handles_t *new;
     cublasHandle_t cublas_handle;
     cublasStatus_t cublas_status;
@@ -168,7 +168,7 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
                      dplasma_cublas_error_to_string(cublas_status));
         return NULL;
     }
-    cublas_status = cublasSetStream(cublas_handle, stream->cuda_stream);
+    cublas_status = cublasSetStream(cublas_handle, cuda_stream->cuda_stream);
     assert(CUBLAS_STATUS_SUCCESS == cublas_status);
 
     cusolverDnHandle_t cusolver_handle;
@@ -183,7 +183,7 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
                      dplasma_cusolver_error_to_string(cusolver_status));
         return NULL;
     }
-    cusolver_status = cusolverDnSetStream(cusolver_handle, stream->cuda_stream);
+    cusolver_status = cusolverDnSetStream(cusolver_handle, cuda_stream->cuda_stream);
     assert(CUSOLVER_STATUS_SUCCESS == cusolver_status);
 
     new = malloc(sizeof(dplasma_cuda_handles_t));

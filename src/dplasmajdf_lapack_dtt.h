@@ -135,6 +135,7 @@ stage_in_lapack(parsec_gpu_task_t *gtask,
     parsec_data_copy_t * copy_in;
     parsec_data_copy_t * copy_out;
     parsec_device_cuda_module_t *in_elem_dev;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t *)gpu_stream;
     dplasma_data_collection_t * ddc;
     parsec_task_t *task = gtask->ec;
     int elem_sz;
@@ -147,13 +148,13 @@ stage_in_lapack(parsec_gpu_task_t *gtask,
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             in_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_in->device_index);
-            if( (in_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
+            if( (in_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_nb_elts[i],
-                                                    (in_elem_dev->super.type != PARSEC_DEV_CUDA)?
+                                                    (in_elem_dev->super.super.type != PARSEC_DEV_CUDA)?
                                                             cudaMemcpyHostToDevice : cudaMemcpyDeviceToDevice,
-                                                    gpu_stream->cuda_stream);
+                                                    cuda_stream->cuda_stream);
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
             }else{
 
@@ -171,7 +172,7 @@ stage_in_lapack(parsec_gpu_task_t *gtask,
                                                       spitch, /*src pitch bytes*/
                                                       width, height,
                                                       cudaMemcpyHostToDevice,
-                                                      gpu_stream->cuda_stream );
+                                                      cuda_stream->cuda_stream );
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpy2DAsync ", ret, { return PARSEC_ERROR; } );
 
 
@@ -207,6 +208,7 @@ stage_out_lapack(parsec_gpu_task_t *gtask,
                  parsec_gpu_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     parsec_data_copy_t * copy_in;
     parsec_data_copy_t * copy_out;
     parsec_device_cuda_module_t *out_elem_dev;
@@ -223,13 +225,13 @@ stage_out_lapack(parsec_gpu_task_t *gtask,
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             out_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_out->device_index);
 
-            if( (out_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
+            if( (out_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_nb_elts[i],
-                                                    out_elem_dev->super.type != PARSEC_DEV_CUDA ?
+                                                    out_elem_dev->super.super.type != PARSEC_DEV_CUDA ?
                                                             cudaMemcpyDeviceToHost : cudaMemcpyDeviceToDevice,
-                                                    gpu_stream->cuda_stream);
+                                                    cuda_stream->cuda_stream);
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
             }else{
 
@@ -247,7 +249,7 @@ stage_out_lapack(parsec_gpu_task_t *gtask,
                                                       spitch, /*src pitch bytes*/
                                                       width, height,
                                                       cudaMemcpyDeviceToHost,
-                                                      gpu_stream->cuda_stream);
+                                                      cuda_stream->cuda_stream);
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpy2DAsync ", ret, { return PARSEC_ERROR; } );
 #else
                 int ldd, nrows, ncols;
@@ -260,7 +262,7 @@ stage_out_lapack(parsec_gpu_task_t *gtask,
                                           src,
                                           nrows * elem_sz,
                                           cudaMemcpyDeviceToHost,
-                                          gpu_stream->cuda_stream);
+                                          cuda_stream->cuda_stream);
                     PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
                 }
 #endif
