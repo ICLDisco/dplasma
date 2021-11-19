@@ -235,8 +235,8 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
     TIME_START();                                                       \
     PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
-    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n", \
-                           P, Q, NB, N,                                 \
+    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQxg= %3d %-3d %d NB= %4d N= %7d : %14f gflops\n", \
+                           P, Q, gpus, NB, N,                           \
                            gflops=(flops/1e9)/sync_time_elapsed));      \
     PASTE_PROF_INFO;                                                    \
     if(loud >= 5 && rank == 0) {                                        \
@@ -266,10 +266,10 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     SYNC_TIME_STOP();                                                   \
     double stime_C = sync_time_elapsed;                                 \
     if(rank==0){                                                        \
-        printf("[****] TIME(s) %12.5f : " #KERNEL "\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops"\
+        printf("[****] TIME(s) %12.5f : " #KERNEL "\tPxQxg= %3d %-3d %d NB= %4d N= %7d : %14f gflops"\
                   " - ENQ&PROG&DEST %12.5f : %14f gflops"               \
                   " - ENQ %12.5f - DEST %12.5f\n",                      \
-                          stime_B, P, Q, NB, N,                         \
+                          stime_B, P, Q, gpus, NB, N,                   \
                           gflops=(flops/1e9)/stime_B,                   \
                           (stime_A+stime_B+stime_C),                    \
                           (flops/1e9)/(stime_A+stime_B+stime_C),        \
