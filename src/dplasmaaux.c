@@ -113,8 +113,6 @@ dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_t *A )
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
 #include <cusolverDn.h>
-#include "potrf_cublas_utils.h"
-#include "parsec/utils/zone_malloc.h"
 
 /* Unfortunately, CUBLAS does not provide a error to string function */
 static char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
@@ -197,7 +195,6 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
 
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
-#include "parsec/utils/zone_malloc.h"
 
 /* Unfortunately, HIPBLAS does not provide a error to string function */
 static char *dplasma_hipblas_error_to_string(hipblasStatus_t hipblas_status)
