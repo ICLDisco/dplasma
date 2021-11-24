@@ -740,10 +740,6 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     }
 #endif
 #if defined(DPLASMA_HAVE_HIP)
-    /* Unsupported/unecessary
-    hipblasStatus_t status = hipblasInit();
-    assert(HIPBLAS_STATUS_SUCCESS == status);
-    */
     parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
                          destroy_hip_handles, NULL,
                          dplasma_create_hip_handles, NULL,
@@ -764,9 +760,6 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 #if defined(DPLASMA_HAVE_HIP)
     parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
-    /* Unsupported/unecessary
-    hipblasShutdown();
-    */
 #endif
     parsec_fini(&parsec);
 
