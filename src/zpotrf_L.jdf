@@ -563,8 +563,9 @@ BODY [type=HIP
     int ldam_A = LDA(ddescA, A);
     int ldan_B = LDA(ddescA, B);
     int ldam_C = LDA(ddescA, C);
-    assert( ldan <= descA->mb );
-    assert( ldam <= descA->mb );
+    assert( ldam_A <= descA->mb );
+    assert( ldan_B <= descA->mb );
+    assert( ldam_C <= descA->mb );
 
     hipblasStatus_t status;
     dplasma_hip_handles_t *handles;
