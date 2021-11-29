@@ -20,6 +20,7 @@ static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
+#include <cusolverDn.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
@@ -404,7 +405,6 @@ BODY [type=CUDA]
                              tempnn, descA->mb,
                              &mzone, A, ldak,
                              &zone, T, ldan);
-
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
                             {return -1;} );
 }
