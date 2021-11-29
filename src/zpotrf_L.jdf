@@ -21,6 +21,7 @@ extern "C" %{
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
+#include <cusolverDn.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
@@ -141,7 +142,6 @@ BODY [type=RECURSIVE]
 END
 
 BODY [type=CUDA
-      dyld=cusolverDnZpotrf dyldtype=cublas_zpotrf_v2_t
       weigth=k]
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
@@ -167,7 +167,7 @@ BODY [type=CUDA
     workspace = (cuDoubleComplex*)wp->tmpmem;
     d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));
 
-    status = parsec_body.dyld_fn( handles->cusolverDn_handle, cublas_uplo, tempkm, T, ldak, workspace, wp->lwork, d_iinfo);
+    status = cusolverDnZpotrf( handles->cusolverDn_handle, cublas_uplo, tempkm, T, ldak, workspace, wp->lwork, d_iinfo);
     PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status,
                             {return -1;} );
 }
@@ -248,7 +248,6 @@ RW    C <- (k == 0) ? ddescA(m, k)               [ type        = %{ return ADTT_
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - k - m - 1) * (m - k) : PRI_MAX
 
 BODY [type=CUDA
-      dyld=cublasZtrsm_v2 dyldtype=cublas_ztrsm_v2_t
       weight=(m+k)]
 {
     int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
@@ -263,7 +262,7 @@ BODY [type=CUDA
     cublasStatus_t status;
     handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
-    status = parsec_body.dyld_fn(handles->cublas_handle,
+    status = cublasZtrsm_v2(handles->cublas_handle,
                                  CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
                                  CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
                                  tempmm, descA->nb,
@@ -382,7 +381,6 @@ RW    T <- (k == 0)   ? ddescA(m, m)          [ type        = %{ return ADTT_REA
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * (m - k) : PRI_MAX
 
 BODY [type=CUDA
-      dyld=cublasZherk_v2 dyldtype=cublas_zherk_v2_t
       weight=(m+k)]
 {
     int tempmm = m == descA->mt-1 ? descA->m - m*descA->mb : descA->mb;
@@ -395,7 +393,7 @@ BODY [type=CUDA
 
     handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
-    status = parsec_body.dyld_fn( handles->cublas_handle,
+    status = cublasZherk_v2( handles->cublas_handle,
                                   CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
                                   tempmm, descA->mb,
                                   &mzone, A, ldam_A,
@@ -509,7 +507,6 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - m - n - 3) * (m - n) + 6 * (m - k) : PRI_MAX
 
 BODY [type=CUDA
-      dyld=cublasZgemm_v2 dyldtype=cublas_zgemm_v2_t
       weight=(n+1-k)
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -539,7 +536,7 @@ BODY [type=CUDA
     handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
 
-    status = parsec_body.dyld_fn( handles->cublas_handle,
+    status = cublasZgemm_v2( handles->cublas_handle,
                                   CUBLAS_OP_N, CUBLAS_OP_C,
                                   tempmm, descA->mb, descA->mb,
                                   &mzone, (cuDoubleComplex*)A, ldam_A,

@@ -56,6 +56,8 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
 }
 
 #if defined(DPLASMA_HAVE_CUDA)
+#include <cusolverDn.h>
+
 static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 {
     parsec_device_module_t *mod = (parsec_device_module_t *)obj;
