@@ -24,9 +24,9 @@
 #   define printlog(str, ...) fprintf(stderr, "thread %d VP %d " str "\n", \
                                       es->th_id, es->virtual_process->vp_id, __VA_ARGS__)
 #   define printlogcuda(str, ...) fprintf(stderr, "cuda %d " str "\n", \
-                                          gpu_device->cuda_index, __VA_ARGS__)
+                                          gpu_device->super.device_index, __VA_ARGS__)
 #   define printloghip(str, ...) fprintf(stderr, "hip %d " str "\n", \
-                                          gpu_device->hip_index, __VA_ARGS__)
+                                          gpu_device->super.device_index, __VA_ARGS__)
 #else
 #   define printlog(...) do {} while(0)
 #   define printlogcuda(...) do {} while(0)
