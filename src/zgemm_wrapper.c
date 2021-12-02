@@ -224,9 +224,9 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
             parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
             nbgpu++;
             if( 0 == gpu_mem_block_size )
-                gpu_mem_block_size = cuda_device->mem_block_size;
-            if( -1 == gpu_mem_nb_blocks || cuda_device->mem_nb_blocks < gpu_mem_nb_blocks )
-                gpu_mem_nb_blocks = cuda_device->mem_nb_blocks;
+                gpu_mem_block_size = cuda_device->super.mem_block_size;
+            if( -1 == gpu_mem_nb_blocks || cuda_device->super.mem_nb_blocks < gpu_mem_nb_blocks )
+                gpu_mem_nb_blocks = cuda_device->super.mem_nb_blocks;
         }
     }
     if(nbgpu == 0) {
@@ -462,9 +462,9 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
 				parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
                 nb_gpu_devices++;
 				if( 0 == gpu_mem_block_size )
-				    gpu_mem_block_size = cuda_device->mem_block_size;
-				if( -1 == gpu_mem_nb_blocks || cuda_device->mem_nb_blocks < gpu_mem_nb_blocks )
-				    gpu_mem_nb_blocks = cuda_device->mem_nb_blocks;
+				    gpu_mem_block_size = cuda_device->super.mem_block_size;
+				if( -1 == gpu_mem_nb_blocks || cuda_device->super.mem_nb_blocks < gpu_mem_nb_blocks )
+				    gpu_mem_nb_blocks = cuda_device->super.mem_nb_blocks;
             }
         }
         if(0 < nb_gpu_devices) {
