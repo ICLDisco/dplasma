@@ -161,7 +161,7 @@ BODY [type=CUDA]
                  zone,  (cuDoubleComplex*)C, ldan );
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
@@ -267,7 +267,7 @@ BODY [type=CUDA]
                  zone, (cuDoubleComplex*)C, ldam );
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
@@ -435,7 +435,7 @@ BODY [type=CUDA]
                  zone, (cuDoubleComplex*)C, ldam );
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
