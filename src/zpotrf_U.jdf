@@ -171,7 +171,7 @@ BODY [type=CUDA
 
     status = cusolverDnZpotrf( handles->cusolverDn_handle, cublas_uplo, tempkn, T, ldak, workspace, wp->lwork, d_iinfo);
     PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
@@ -200,7 +200,7 @@ BODY [type=HIP
     d_iinfo = (int*)wp->tmpmem;
 
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkn, T, ldak, d_iinfo);
-    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return -1;});
+    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -274,7 +274,7 @@ BODY [type=CUDA]
                             descA->mb, tempnn,
                             &zone, T, ldak_T, C, ldak_C);
     PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
@@ -299,7 +299,7 @@ BODY [type=HIP
                                  HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
                                  descA->mb, tempnn,
                                  &zone, T, ldak_T, C, ldak_C);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return -1;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -406,7 +406,7 @@ BODY [type=CUDA]
                              &mzone, A, ldak,
                              &zone, T, ldan);
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
@@ -428,7 +428,7 @@ BODY [type=HIP
                                   tempnn, descA->mb,
                                   &mzone, A, ldak,
                                   &zone, T, ldan);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return -1;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -552,7 +552,7 @@ BODY [type=CUDA
                                      (cuDoubleComplex*)B, ldak_B,
                              &zone,  (cuDoubleComplex*)C, ldam_C);
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status,
-                            {return -1;} );
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
 
     printlogcuda("CUDA_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
                  m, n, k,
@@ -595,7 +595,7 @@ BODY [type=HIP
                                   &mzone, A, ldak_A,
                                           B, ldak_B,
                                   &zone,  C, ldam_C);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return -1;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
