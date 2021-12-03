@@ -211,8 +211,8 @@ BODY [type=CUDA
       B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
       C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
       A.dc=ddescA B.dc=ddescB C.dc=ddescC
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex lalpha = make_cuDoubleComplex(creal(alpha), cimag(alpha));

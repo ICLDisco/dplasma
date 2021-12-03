@@ -151,7 +151,7 @@ BODY [type=CUDA
 
     cusolverStatus_t status;
     cublasFillMode_t cublas_uplo;
-    dplasma_potrf_workspace_t *wp;
+    dplasma_potrf_gpu_workspaces_t *wp;
     cuDoubleComplex *workspace;
     int             *d_iinfo;
     dplasma_cuda_handles_t *handles;
@@ -183,7 +183,7 @@ BODY [type=HIP
 
     rocblas_status status;
     rocblas_fill rocblas_uplo;
-    dplasma_potrf_workspace_t *wp;
+    dplasma_potrf_gpu_workspaces_t *wp;
     int *d_iinfo;
 
     if( PlasmaLower == uplo )
@@ -200,7 +200,7 @@ BODY [type=HIP
     d_iinfo = (int*)wp->tmpmem;
 
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkn, T, ldak, d_iinfo);
-    assert(rocblas_status_success == status );
+    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return -1;});
 }
 END
 
@@ -299,7 +299,7 @@ BODY [type=HIP
                                  HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
                                  descA->mb, tempnn,
                                  &zone, T, ldak_T, C, ldak_C);
-    assert(HIPBLAS_STATUS_SUCCESS == status);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return -1;});
 }
 END
 
@@ -428,7 +428,7 @@ BODY [type=HIP
                                   tempnn, descA->mb,
                                   &mzone, A, ldak,
                                   &zone, T, ldan);
-    assert(HIPBLAS_STATUS_SUCCESS == status);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return -1;});
 }
 END
 
@@ -518,8 +518,8 @@ BODY [type=CUDA
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       A.dc=ddescA B.dc=ddescA C.dc=ddescA
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -565,6 +565,8 @@ BODY [type=CUDA
 END
 
 BODY [type=HIP
+      stage_in=dplasma_hip_lapack_stage_in
+      stage_out=dplasma_hip_lapack_stage_out
       weight=(m+1-k)]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -593,7 +595,7 @@ BODY [type=HIP
                                   &mzone, A, ldak_A,
                                           B, ldak_B,
                                   &zone,  C, ldam_C);
-    assert(HIPBLAS_STATUS_SUCCESS == status);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return -1;});
 }
 END
 
