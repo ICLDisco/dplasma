@@ -473,8 +473,7 @@ BODY [type=HIP
                            &lalpha, (hipDoubleComplex*)A, ldam,
                                     (hipDoubleComplex*)B, ldbk,
                            &lbeta,  (hipDoubleComplex*)C, ldcm );
-    assert(HIPBLAS_STATUS_SUCCESS == status);
-    PARSEC_HIP_CHECK_ERROR( "hipblasZgemm ", status,
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status,
                             {return PARSEC_HOOK_RETURN_DONE;} );
 
     /* Quick and dirty emulation of the next GEMM */
