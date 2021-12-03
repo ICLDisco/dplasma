@@ -21,7 +21,6 @@ extern "C" %{
 
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
-#include <hip/hip_complex.h>
 #endif  /* defined(DPLASMA_HAVE_HIP) */
 
 static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
@@ -437,9 +436,9 @@ BODY [type=HIP
       weight=(descA->nt-k)]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
-    hipDoubleComplex lalpha = make_hipDoubleComplex(creal(alpha), cimag(alpha));
-    hipDoubleComplex lbeta  = (k == 0) ? make_hipDoubleComplex(creal(beta), cimag(beta))
-                                      : make_hipDoubleComplex(1.0, 0.0);
+    hipblasDoubleComplex lalpha = { creal(alpha), cimag(alpha) };
+    hipblasDoubleComplex lbeta  = { 1., 0. };
+    if( k == 0 ) { lbeta.x = creal(beta); lbeta.y = cimag(beta); };
 #else
     double lalpha = alpha;
     double lbeta  = (k == 0) ? beta : 1.0;
@@ -470,9 +469,9 @@ BODY [type=HIP
     status = hipblasZgemm( handles->hipblas_handle,
                            opA, opB,
                            tempmm, tempnn, tempkk,
-                           &lalpha, (hipDoubleComplex*)A, ldam,
-                                    (hipDoubleComplex*)B, ldbk,
-                           &lbeta,  (hipDoubleComplex*)C, ldcm );
+                           &lalpha, A, ldam,
+                                    B, ldbk,
+                           &lbeta,  C, ldcm );
     DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status,
                             {return PARSEC_HOOK_RETURN_DONE;} );
 
@@ -481,7 +480,7 @@ BODY [type=HIP
         __parsec_zgemm_NN_gpu_GEMM_task_t next_gemm;
         memcpy(&next_gemm, this_task, sizeof(__parsec_zgemm_NN_gpu_GEMM_task_t));
         next_gemm.locals.k.value = descC->mt -1;
-        assert( PARSEC_DEV_CUDA == next_gemm.task_class->incarnations[this_task->chore_id].type );
+        assert( PARSEC_DEV_HIP == next_gemm.task_class->incarnations[this_task->chore_id].type );
         if(NULL != next_gemm.task_class->incarnations[this_task->chore_id].evaluate) {
             if( next_gemm.task_class->incarnations[this_task->chore_id].evaluate((parsec_task_t*)&next_gemm) ==
                 PARSEC_HOOK_RETURN_NEXT ) {
