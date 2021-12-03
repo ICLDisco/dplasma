@@ -65,7 +65,7 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
-    dplasma_potrf_workspace_t *wp = NULL;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
     int workspace_size;
     int mb = tp->_g_descA->mb;
     int nb = tp->_g_descA->nb;
@@ -87,7 +87,7 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 
     cusolverDnDestroy(cusolverDnHandle);
 
-    wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
     wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
     assert(NULL != wp->tmpmem);
     wp->lwork = workspace_size;
@@ -98,7 +98,7 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 
 static void zpotrf_destroy_cuda_workspace(void *_ws, void *_n)
 {
-    dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
     zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
     free(ws);
     (void)_n;
@@ -110,10 +110,10 @@ static void *zpotrf_create_hip_workspace(void *obj, void *user)
 {
     parsec_device_module_t *mod = (parsec_device_module_t *)obj;
     zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
-    dplasma_potrf_workspace_t *wp = NULL;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
     (void)user;
 
-    wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
     wp->tmpmem = zone_malloc(memory, sizeof(int));
     assert(NULL != wp->tmpmem);
     wp->lwork = 0;
@@ -124,7 +124,7 @@ static void *zpotrf_create_hip_workspace(void *obj, void *user)
 
 static void zpotrf_destroy_hip_workspace(void *_ws, void *_n)
 {
-    dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
     zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
     free(ws);
     (void)_n;

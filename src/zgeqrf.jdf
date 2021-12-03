@@ -472,8 +472,8 @@ BODY [type=CUDA device=%{ return n; %}
       V.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       T.size=%{ return descT->mb*descT->nb*parsec_datadist_getsizeoftype(descT->mtype);%}
       A1.dc=ddescA A2.dc=ddescA V.dc=ddescA T.dc=ddescT
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
     dplasma_complex64_t *WORK, *WORKC;
     int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;

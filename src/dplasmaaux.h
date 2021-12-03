@@ -122,10 +122,32 @@ void *dplasma_create_cuda_handles(void *obj, void *user);
 #if defined(DPLASMA_HAVE_HIP)
 #include <hipblas.h>
 #include "parsec/mca/device/hip/device_hip.h"
+
+#define DPLASMA_ROCBLAS_CHECK_ERROR(STR, ERROR, CODE) \
+    do { \
+        rocblas_status __error = (rocblas_status) (ERROR); \
+        if(rocblas_status_success != __error) { \
+            parsec_warning( "%s:%d %s%s", __FILE__, __LINE__, \
+                            (STR), rocblas_status_to_string(__error)); \
+            CODE; \
+        } \
+    } while(0)
+
+/* For some reason the error values are not the same... */
+#define DPLASMA_HIPBLAS_CHECK_ERROR(STR, ERROR, CODE) \
+    do { \
+        hipblasStatus_t __error = (hipblasStatus_t) (ERROR); \
+        if(HIPBLAS_STATUS_SUCCESS != __error) { \
+            parsec_warning( "%s:%d %s%s", __FILE__, __LINE__, \
+                            (STR), hipblasStatusToString(__error)); \
+            CODE; \
+        } \
+    } while(0)
+
 typedef struct {
     hipblasHandle_t hipblas_handle;
 } dplasma_hip_handles_t;
 void *dplasma_create_hip_handles(void *obj, void *user);
-#endif
+#endif /* defined(DPLASMA_HAVE_HIP) */
 
 #endif /* _DPLASMAAUX_H_INCLUDED */
