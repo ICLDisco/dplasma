@@ -163,7 +163,7 @@ int main(int argc, char ** argv)
                             ldbk = BLKLDD(&dcB.super, k);
                             zbeta = k == 0 ? beta : zone;
 
-                            parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
+                            parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm,  0, PARSEC_DEV_CPU, "Gemm",
                                      sizeof(int),           &tA,                           PARSEC_VALUE,
                                      sizeof(int),           &tB,                           PARSEC_VALUE,
                                      sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -189,7 +189,7 @@ int main(int argc, char ** argv)
                             tempkn = k == dcA.super.nt-1 ? dcA.super.n-k*dcA.super.nb : dcA.super.nb;
                             zbeta = k == 0 ? beta : zone;
 
-                            parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm,  0, "Gemm",
+                            parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm,  0, PARSEC_DEV_CPU, "Gemm",
                                      sizeof(int),           &tA,                           PARSEC_VALUE,
                                      sizeof(int),           &tB,                           PARSEC_VALUE,
                                      sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -217,7 +217,7 @@ int main(int argc, char ** argv)
                             ldbk = BLKLDD(&dcB.super, k);
                             zbeta = k == 0 ? beta : zone;
 
-                            parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                            parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                      sizeof(int),           &tA,                           PARSEC_VALUE,
                                      sizeof(int),           &tB,                           PARSEC_VALUE,
                                      sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -243,7 +243,7 @@ int main(int argc, char ** argv)
                             ldak = BLKLDD(&dcA.super, k);
                             zbeta = k == 0 ? beta : zone;
 
-                            parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                            parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                      sizeof(int),           &tA,                           PARSEC_VALUE,
                                      sizeof(int),           &tB,                           PARSEC_VALUE,
                                      sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -404,7 +404,7 @@ int main(int argc, char ** argv)
                                     ldbk = BLKLDD(&dcB.super, k);
                                     zbeta = k == 0 ? beta : zone;
 
-                                    parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                                    parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                              sizeof(int),           &trans[tA],                    PARSEC_VALUE,
                                              sizeof(int),           &trans[tB],                    PARSEC_VALUE,
                                              sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -431,7 +431,7 @@ int main(int argc, char ** argv)
                                     tempkn = k == dcA.super.nt-1 ? dcA.super.n-k*dcA.super.nb : dcA.super.nb;
                                     zbeta = k == 0 ? beta : zone;
 
-                                    parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                                    parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                              sizeof(int),           &trans[tA],                    PARSEC_VALUE,
                                              sizeof(int),           &trans[tB],                    PARSEC_VALUE,
                                              sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -460,7 +460,7 @@ int main(int argc, char ** argv)
                                     ldbk = BLKLDD(&dcB.super, k);
                                     zbeta = k == 0 ? beta : zone;
 
-                                    parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                                    parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                              sizeof(int),           &trans[tA],                    PARSEC_VALUE,
                                              sizeof(int),           &trans[tB],                    PARSEC_VALUE,
                                              sizeof(int),           &tempmm,                       PARSEC_VALUE,
@@ -488,7 +488,7 @@ int main(int argc, char ** argv)
                                     ldak = BLKLDD(&dcA.super, k);
                                     zbeta = k == 0 ? beta : zone;
 
-                                    parsec_dtd_taskpool_insert_task( dtd_tp,  &parsec_core_gemm, 0,  "Gemm",
+                                    parsec_dtd_insert_task( dtd_tp,  &parsec_core_gemm, 0,  PARSEC_DEV_CPU, "Gemm",
                                              sizeof(int),           &trans[tA],                    PARSEC_VALUE,
                                              sizeof(int),           &trans[tB],                    PARSEC_VALUE,
                                              sizeof(int),           &tempmm,                       PARSEC_VALUE,

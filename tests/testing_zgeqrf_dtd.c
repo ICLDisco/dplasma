@@ -240,8 +240,9 @@ int main(int argc, char **argv)
         tempkn = k == dcA.super.nt-1 ? dcA.super.n-(k*dcA.super.nb) : dcA.super.nb;
         ldak = BLKLDD( (parsec_tiled_matrix_dc_t*)&dcA, k);
 
-        parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_geqrt,
-                          (dcA.super.nt-k)*(dcA.super.nt-k)*(dcA.super.nt-k), "geqrt",
+        parsec_dtd_insert_task( dtd_tp,      parsec_core_geqrt,
+                          (dcA.super.nt-k)*(dcA.super.nt-k)*(dcA.super.nt-k),
+                          PARSEC_DEV_CPU, "geqrt",
                            sizeof(int),           &tempkm,                        PARSEC_VALUE,
                            sizeof(int),           &tempkn,                        PARSEC_VALUE,
                            sizeof(int),           &ib,                            PARSEC_VALUE,
@@ -256,7 +257,7 @@ int main(int argc, char **argv)
         for( n = k+1; n < dcA.super.nt; n++ ) {
             tempnn = n == dcA.super.nt-1 ? dcA.super.n-(n*dcA.super.nb) : dcA.super.nb;
 
-            parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_unmqr,          0,    "unmqr",
+            parsec_dtd_insert_task( dtd_tp,      parsec_core_unmqr,          0,    PARSEC_DEV_CPU,      "unmqr",
                                sizeof(int),           &side,                              PARSEC_VALUE,
                                sizeof(int),           &trans,                             PARSEC_VALUE,
                                sizeof(int),           &tempkm,                            PARSEC_VALUE,
@@ -279,8 +280,8 @@ int main(int argc, char **argv)
             tempmm = m == dcA.super.mt-1 ? dcA.super.m-(m*dcA.super.mb) : dcA.super.mb;
             ldam = BLKLDD( (parsec_tiled_matrix_dc_t*)&dcA, m);
 
-            parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_tsqrt,
-                              (dcA.super.mt-k)*(dcA.super.mt-k)*(dcA.super.mt-k),  "tsqrt",
+            parsec_dtd_insert_task( dtd_tp,      parsec_core_tsqrt,
+                              (dcA.super.mt-k)*(dcA.super.mt-k)*(dcA.super.mt-k),  PARSEC_DEV_CPU, "tsqrt",
                                sizeof(int),           &tempmm,                            PARSEC_VALUE,
                                sizeof(int),           &tempkn,                            PARSEC_VALUE,
                                sizeof(int),           &ib,                                PARSEC_VALUE,
@@ -298,8 +299,8 @@ int main(int argc, char **argv)
                 tempnn = n == dcA.super.nt-1 ? dcA.super.n-(n*dcA.super.nb) : dcA.super.nb;
                 int ldwork = dplasmaLeft == dplasmaLeft ? ib : dcT.super.nb;
 
-                parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_tsmqr,
-                                  (dcA.super.mt-k)*(dcA.super.mt-n)*(dcA.super.mt-n),        "tsmqr",
+                parsec_dtd_insert_task( dtd_tp,      parsec_core_tsmqr,
+                                  (dcA.super.mt-k)*(dcA.super.mt-n)*(dcA.super.mt-n),        PARSEC_DEV_CPU,     "tsmqr",
                                    sizeof(int),           &side,                             PARSEC_VALUE,
                                    sizeof(int),           &trans,                            PARSEC_VALUE,
                                    sizeof(int),           &dcA.super.mb,                     PARSEC_VALUE,

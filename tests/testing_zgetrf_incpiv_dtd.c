@@ -280,7 +280,7 @@ int main(int argc, char ** argv)
         ldak = BLKLDD((parsec_tiled_matrix_dc_t*)&dcA, k);
         check_info = k == dcA.super.mt-1;
 
-        parsec_dtd_taskpool_insert_task( dtd_tp,     parsec_core_getrf_incpiv,             0, "getrf_incpiv",
+        parsec_dtd_insert_task( dtd_tp,     parsec_core_getrf_incpiv,             0, PARSEC_DEV_CPU, "getrf_incpiv",
                            sizeof(int),           &tempkm,                           PARSEC_VALUE,
                            sizeof(int),           &tempkn,                           PARSEC_VALUE,
                            sizeof(int),           &ib,                               PARSEC_VALUE,
@@ -295,7 +295,7 @@ int main(int argc, char ** argv)
             tempnn = n == dcA.super.nt-1 ? (dcA.super.n)-n*(dcA.super.nb) : dcA.super.nb;
             ldl = dcL.super.mb;
 
-            parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_gessm,           0,  "gessm",
+            parsec_dtd_insert_task( dtd_tp,      parsec_core_gessm,           0,  PARSEC_DEV_CPU,   "gessm",
                                sizeof(int),           &tempkm,                           PARSEC_VALUE,
                                sizeof(int),           &tempnn,                           PARSEC_VALUE,
                                sizeof(int),           &tempkm,                           PARSEC_VALUE,
@@ -319,7 +319,7 @@ int main(int argc, char ** argv)
             ldl = dcL.super.mb;
             check_info = m == dcA.super.mt-1;
 
-            parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_tstrf,              0,  "tstrf",
+            parsec_dtd_insert_task( dtd_tp,      parsec_core_tstrf,              0,      PARSEC_DEV_CPU,    "tstrf",
                                sizeof(int),           &tempmm,                           PARSEC_VALUE,
                                sizeof(int),           &tempkn,                           PARSEC_VALUE,
                                sizeof(int),           &ib,                               PARSEC_VALUE,
@@ -342,7 +342,7 @@ int main(int argc, char ** argv)
                 anb = dcA.super.nb;
                 ldl = dcL.super.mb;
 
-                parsec_dtd_taskpool_insert_task( dtd_tp,      parsec_core_ssssm,            0,    "ssssm",
+                parsec_dtd_insert_task( dtd_tp,      parsec_core_ssssm,            0,         PARSEC_DEV_CPU,   "ssssm",
                                    sizeof(int),           &anb,                               PARSEC_VALUE,
                                    sizeof(int),           &tempnn,                            PARSEC_VALUE,
                                    sizeof(int),           &tempmm,                            PARSEC_VALUE,

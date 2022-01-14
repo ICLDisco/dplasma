@@ -149,8 +149,8 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
         tempkm = (k == (dcA->super.mt - 1)) ? dcA->super.m - k * dcA->super.mb : dcA->super.mb;
         ldak = BLKLDD(&dcA->super, k);
 
-        parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_potrf,
-                         (total - k) * (total-k) * (total - k)/*priority*/, "Potrf",
+        parsec_dtd_insert_task(dtd_tp, parsec_core_potrf,
+                               (total - k) * (total-k) * (total - k)/*priority*/, PARSEC_DEV_CPU, "Potrf",
                          sizeof(int),      &uplo,              VALUE,
                          sizeof(int),      &tempkm,            VALUE,
                          PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, k), INOUT | TILE_FULL | AFFINITY,
@@ -160,8 +160,8 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
         for( m = k+1; m < total; m++, count++ ) {
             tempmm = m == dcA->super.mt - 1 ? dcA->super.m - m * dcA->super.mb : dcA->super.mb;
             ldam = BLKLDD(&dcA->super, m);
-            parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_trsm,
-                             (total - m) * (total-m) * (total - m) + 3 * ((2 * total) - k - m - 1) * (m - k)/*priority*/, "Trsm",
+            parsec_dtd_insert_task(dtd_tp, parsec_core_trsm,
+                                   (total - m) * (total-m) * (total - m) + 3 * ((2 * total) - k - m - 1) * (m - k)/*priority*/, PARSEC_DEV_CPU, "Trsm",
                              sizeof(int),      &side,               VALUE,
                              sizeof(int),      &uplo,               VALUE,
                              sizeof(int),      &transA_p,           VALUE,
@@ -180,8 +180,8 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
         for( m = k+1; m < dcA->super.nt; m++, count++ ){
             tempmm = m == dcA->super.mt - 1 ? dcA->super.m - m * dcA->super.mb : dcA->super.mb;
             ldam = BLKLDD(&dcA->super, m);
-            parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_herk,
-                            (total - m) * (total - m) * (total - m) + 3 * (m - k)/*priority*/, "Herk",
+            parsec_dtd_insert_task(dtd_tp, parsec_core_herk,
+                                   (total - m) * (total - m) * (total - m) + 3 * (m - k)/*priority*/, PARSEC_DEV_CPU, "Herk",
                             sizeof(int),       &uplo,               VALUE,
                             sizeof(int),       &trans,              VALUE,
                             sizeof(int),       &tempmm,             VALUE,
@@ -195,8 +195,9 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
                             PARSEC_DTD_ARG_END);
             for( n = m+1; n < total; n++, count++ ){
                 ldan = BLKLDD(&dcA->super, n);
-                parsec_dtd_taskpool_insert_task(dtd_tp,  parsec_core_gemm,
-                               (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/, "Gemm",
+                parsec_dtd_insert_task(dtd_tp,  parsec_core_gemm,
+                               (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/, 
+                               PARSEC_DEV_CPU, "Gemm",
                                sizeof(int),        &transA_g,           VALUE,
                                sizeof(int),        &transB,             VALUE,
                                sizeof(int),        &tempmm,             VALUE,
@@ -257,8 +258,8 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
         tempkm = k == dcA->super.nt-1 ? dcA->super.n-k*dcA->super.nb : dcA->super.nb;
         ldak = BLKLDD(&dcA->super, k);
-        parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_potrf,
-                         (total - k) * (total-k) * (total - k)/*priority*/, "Potrf",
+        parsec_dtd_insert_task(dtd_tp, parsec_core_potrf,
+                               (total - k) * (total-k) * (total - k)/*priority*/, PARSEC_DEV_CPU, "Potrf",
                          sizeof(int),      &uplo,              VALUE,
                          sizeof(int),      &tempkm,            VALUE,
                          PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, k), INOUT | TILE_FULL | AFFINITY,
@@ -267,8 +268,8 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
                          PARSEC_DTD_ARG_END);
         for (m = k+1; m < total; m++, count++) {
             tempmm = m == dcA->super.nt-1 ? dcA->super.n-m*dcA->super.nb : dcA->super.nb;
-            parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_trsm,
-                             (total - m) * (total-m) * (total - m) + 3 * ((2 * total) - k - m - 1) * (m - k)/*priority*/, "Trsm",
+            parsec_dtd_insert_task(dtd_tp, parsec_core_trsm,
+                                   (total - m) * (total-m) * (total - m) + 3 * ((2 * total) - k - m - 1) * (m - k)/*priority*/, PARSEC_DEV_CPU, "Trsm",
                              sizeof(int),      &side,               VALUE,
                              sizeof(int),      &uplo,               VALUE,
                              sizeof(int),      &transA_p,           VALUE,
@@ -287,8 +288,8 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
         for (m = k+1; m < dcA->super.mt; m++, count++) {
             tempmm = m == dcA->super.nt-1 ? dcA->super.n-m*dcA->super.nb : dcA->super.nb;
             ldam = BLKLDD(&dcA->super, m);
-            parsec_dtd_taskpool_insert_task(dtd_tp, parsec_core_herk,
-                            (total - m) * (total - m) * (total - m) + 3 * (m - k)/*priority*/, "Herk",
+            parsec_dtd_insert_task(dtd_tp, parsec_core_herk,
+                                   (total - m) * (total - m) * (total - m) + 3 * (m - k)/*priority*/, PARSEC_DEV_CPU, "Herk",
                             sizeof(int),       &uplo,               VALUE,
                             sizeof(int),       &trans,              VALUE,
                             sizeof(int),       &tempmm,             VALUE,
@@ -302,8 +303,9 @@ insert_task_upper(parsec_execution_stream_t *es, parsec_task_t *this_task)
                             PARSEC_DTD_ARG_END);
             for (n = m+1; n < total; n++, count++) {
                ldan = BLKLDD(&dcA->super, n);
-               parsec_dtd_taskpool_insert_task(dtd_tp,  parsec_core_gemm,
-                               (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/, "Gemm",
+               parsec_dtd_insert_task(dtd_tp,  parsec_core_gemm,
+                               (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/, 
+                               PARSEC_DEV_CPU, "Gemm",
                                sizeof(int),        &transA_g,           VALUE,
                                sizeof(int),        &transB,             VALUE,
                                sizeof(int),        &dcA->super.mb,   VALUE,
@@ -389,7 +391,7 @@ int main(int argc, char **argv)
     int total;
     if( dplasmaLower == uplo ) {
         total = dcA.super.mt;
-        parsec_dtd_taskpool_insert_task( dtd_tp,       insert_task_lower, 0, "insert_task_lower",
+        parsec_dtd_insert_task( dtd_tp,       insert_task_lower, 0, PARSEC_DEV_CPU, "insert_task_lower",
                            sizeof(int),           &total,              VALUE,
                            sizeof(int),           iteration,           REF,
                            sizeof(int),           &uplo,               VALUE,
@@ -399,7 +401,7 @@ int main(int argc, char **argv)
 
     } else {
         total = dcA.super.nt;
-        parsec_dtd_taskpool_insert_task( dtd_tp,       insert_task_upper, 0, "insert_task_upper",
+        parsec_dtd_insert_task( dtd_tp,       insert_task_upper, 0, PARSEC_DEV_CPU, "insert_task_upper",
                            sizeof(int),           &total,              VALUE,
                            sizeof(int),           iteration,           REF,
                            sizeof(int),           &uplo,               VALUE,
