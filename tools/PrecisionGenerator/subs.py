@@ -230,7 +230,7 @@ subs = {
     ('syrfb1','syrfb1','herfb1','herfb1'),
     ('lansy','lansy','lanhe','lanhe'),
     ('syssq','syssq','hessq','hessq'),
-    ('\*\*T','\*\*T','\*\*H','\*\*H'),
+    (r'\*\*T',r'\*\*T',r'\*\*H',r'\*\*H'),
     ('BLAS_s','BLAS_d','BLAS_s','BLAS_d'),
     ('BLAS_s','BLAS_d','BLAS_c','BLAS_z'),
     ('','','CBLAS_SADDR','CBLAS_SADDR'),
@@ -304,7 +304,7 @@ subs = {
   ],
   'tracing' : [
     ['plain','tau'],
-    ('(\w+\*?)\s+(\w+)\s*\(([a-z* ,A-Z_0-9]*)\)\s*{\s+(.*)\s*#pragma tracing_start\s+(.*)\s+#pragma tracing_end\s+(.*)\s+}',r'\1 \2(\3){\n\4tau("\2");\5tau();\6}'),
-    ('\.c','.c.tau'),
+    (r'(\w+\*?)\s+(\w+)\s*\(([a-z* ,A-Z_0-9]*)\)\s*{\s+(.*)\s*#pragma tracing_start\s+(.*)\s+#pragma tracing_end\s+(.*)\s+}',r'\1 \2(\3){\n\4tau("\2");\5tau();\6}'),
+    (r'\.c','.c.tau'),
   ],
 };

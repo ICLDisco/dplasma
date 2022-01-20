@@ -41,7 +41,7 @@ KEYWORD = '@precisions';
 """Replace the above keyword with this one post-replacements"""
 DONE_KEYWORD = '@generated';
 """Regular expression for the replacement formatting"""
-REGEX = '^.*'+KEYWORD+'\s+((\w+,?)+)\s+(\w+)\s+->\s*((\s\w+)+).*$';
+REGEX = r'^.*'+KEYWORD+r'\s+((\w+,?)+)\s+(\w+)\s+->\s*((\s\w+)+).*$';
 """Default acceptable extensions for files during directory walking"""
 EXTS = ['.c','.cpp','.h','.hpp','.f','.jdf','.f90','.F90','.f77','.F77','.cu','.cuf','.CUF','.jdf'];
 
@@ -250,10 +250,10 @@ class Conversion:
         search = work[i][prec_from];
         replace = work[i][prec_to];
         if not search: continue;
-        replace = replace.replace('\*','*');
+        replace = replace.replace(r'\*','*');
         if sub_type != 'tracing' :
-          replace = replace.replace('\(','(');
-          replace = replace.replace('\)',')');
+          replace = replace.replace(r'\(','(');
+          replace = replace.replace(r'\)',')');
         data = re.sub(search, replace, data);
       except:
         print 'Bad replacement pair ',i,'in',sub_type;
