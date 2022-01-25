@@ -65,9 +65,9 @@
 int
 dplasma_zgetrs(parsec_context_t *parsec,
                dplasma_enum_t trans,
-               parsec_tiled_matrix_dc_t *A,
-               parsec_tiled_matrix_dc_t *IPIV,
-               parsec_tiled_matrix_dc_t *B)
+               parsec_tiled_matrix_t *A,
+               parsec_tiled_matrix_t *IPIV,
+               parsec_tiled_matrix_t *B)
 {
     /* Check input arguments */
     if ( trans != dplasmaNoTrans &&

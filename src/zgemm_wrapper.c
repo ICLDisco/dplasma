@@ -37,21 +37,21 @@
 
 static parsec_taskpool_t *
 dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
-                        dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                        dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C,
+                        dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
+                        dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                         dplasma_info_t opt)
 {
     int P, Q, IP, JQ, m, n;
     parsec_taskpool_t *zgemm_tp;
-    two_dim_block_cyclic_t *Cdist;
+    parsec_matrix_block_cyclic_t *Cdist;
 
-    P = ((two_dim_block_cyclic_t*)C)->grid.rows;
-    Q = ((two_dim_block_cyclic_t*)C)->grid.cols;
-    IP = ((two_dim_block_cyclic_t*)C)->grid.ip;
-    JQ = ((two_dim_block_cyclic_t*)C)->grid.jq;
+    P = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
+    Q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
+    IP = ((parsec_matrix_block_cyclic_t*)C)->grid.ip;
+    JQ = ((parsec_matrix_block_cyclic_t*)C)->grid.jq;
 
-    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
-    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)B);
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
     dplasma_data_collection_t * ddc_C = dplasma_wrap_data_collection(C);
 
     m = dplasma_imax(C->mt, P);
@@ -61,10 +61,10 @@ dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
      * As it is used as a NULL value we must have a data_copy and a data associated
      * with it, so we can create them here.
      * Create the task distribution */
-    Cdist = (two_dim_block_cyclic_t*)malloc(sizeof(two_dim_block_cyclic_t));
+    Cdist = (parsec_matrix_block_cyclic_t*)malloc(sizeof(parsec_matrix_block_cyclic_t));
 
-    two_dim_block_cyclic_init(
-            Cdist, matrix_RealDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(
+            Cdist, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_TILE,
             C->super.myrank,
             1, 1, /* Dimensions of the tiles              */
             m, n, /* Dimensions of the matrix             */
@@ -108,17 +108,17 @@ dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_B,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_C,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     assert(shape == MAX_SHAPES);
@@ -129,14 +129,14 @@ dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
 
 static parsec_taskpool_t *
 dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
-                          dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                          dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C,
+                          dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
+                          dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                           dplasma_info_t opt)
 {
     parsec_taskpool_t* zgemm_tp;
 
-    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
-    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)B);
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
     dplasma_data_collection_t * ddc_C = dplasma_wrap_data_collection(C);
 
     if( dplasmaNoTrans == transA ) {
@@ -169,17 +169,17 @@ dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_B,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_C,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     assert(shape == MAX_SHAPES);
@@ -191,8 +191,8 @@ dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
 #if defined(DPLASMA_HAVE_CUDA)
 static parsec_taskpool_t*
 dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
-                       dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                       dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C,
+                       dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
+                       dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                        dplasma_info_t opt)
 {
 
@@ -244,8 +244,8 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
         }
     }
 
-    p = ((two_dim_block_cyclic_t*)C)->grid.rows;
-    q = ((two_dim_block_cyclic_t*)C)->grid.cols;
+    p = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
+    q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
 
     vd = 1.0; // Default percentage of available memory dedicated to this GEMM
     dplasma_info_get(opt, "DPLASMA:GEMM:GPU:mem_ratio", DPLASMA_MAX_INFO_VAL, info_value, &info_found);
@@ -436,8 +436,8 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
-                      dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                      dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C, dplasma_info_t opt)
+                      dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
+                      dplasma_complex64_t beta,  parsec_tiled_matrix_t* C, dplasma_info_t opt)
 {
     parsec_taskpool_t* zgemm_tp = NULL;
 
@@ -451,11 +451,11 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
         return NULL /*-2*/;
     }
 
-    if ( C->dtype & two_dim_block_cyclic_type ) {
+    if ( C->dtype & parsec_matrix_block_cyclic_type ) {
 #if defined(DPLASMA_HAVE_CUDA)
         int nb_gpu_devices = 0, devid;
-		int p = ((two_dim_block_cyclic_t*)C)->grid.rows;
-	    int q = ((two_dim_block_cyclic_t*)C)->grid.cols;
+		int p = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
+	    int q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
 		int64_t gpu_mem_block_size = 0;
 		int64_t gpu_mem_nb_blocks = -1;
         for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
@@ -474,8 +474,8 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
             int64_t nb_block_per_tile = (tile_size + gpu_mem_block_size -1 ) / gpu_mem_block_size;
             int64_t nb_tile_per_gpu = gpu_mem_nb_blocks / nb_block_per_tile;
             int64_t nb_active_tiles_per_gpu = C->mt * C->nt / (p*q) + dplasma_aux_getGEMMLookahead(C) * A->mt / p + dplasma_aux_getGEMMLookahead(C) * B->nt / q;
-            if( (A->dtype & two_dim_block_cyclic_type) &&
-                (B->dtype & two_dim_block_cyclic_type) &&
+            if( (A->dtype & parsec_matrix_block_cyclic_type) &&
+                (B->dtype & parsec_matrix_block_cyclic_type) &&
                 transA == dplasmaNoTrans &&
                 transB == dplasmaNoTrans &&
                 (nb_active_tiles_per_gpu > 0.95* nb_tile_per_gpu) ) {
@@ -493,8 +493,8 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
 
 parsec_taskpool_t*
 dplasma_zgemm_New( dplasma_enum_t transA, dplasma_enum_t transB,
-                   dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t* A, const parsec_tiled_matrix_dc_t* B,
-                   dplasma_complex64_t beta,  parsec_tiled_matrix_dc_t* C)
+                   dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
+                   dplasma_complex64_t beta,  parsec_tiled_matrix_t* C)
 {
     parsec_taskpool_t *tp;
     dplasma_info_t opt;
@@ -535,9 +535,9 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
         zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TN_SUMMA ||
         zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TT_SUMMA) {
         parsec_zgemm_NN_summa_taskpool_t *zgemm_summa_tp = (parsec_zgemm_NN_summa_taskpool_t *)tp;
-        parsec_tiled_matrix_dc_t* Cdist = (parsec_tiled_matrix_dc_t*)zgemm_summa_tp->_g_Cdist;
+        parsec_tiled_matrix_t* Cdist = (parsec_tiled_matrix_t*)zgemm_summa_tp->_g_Cdist;
         if ( NULL != Cdist ) {
-            parsec_tiled_matrix_dc_destroy( Cdist );
+            parsec_tiled_matrix_destroy( Cdist );
             free( Cdist );
         }
         dplasma_clean_adtt_all_loc(zgemm_summa_tp->_g_ddescA, MAX_SHAPES);
@@ -644,9 +644,9 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zgemm( parsec_context_t *parsec,
                dplasma_enum_t transA, dplasma_enum_t transB,
-               dplasma_complex64_t alpha, const parsec_tiled_matrix_dc_t *A,
-                                        const parsec_tiled_matrix_dc_t *B,
-               dplasma_complex64_t beta,        parsec_tiled_matrix_dc_t *C)
+               dplasma_complex64_t alpha, const parsec_tiled_matrix_t *A,
+                                        const parsec_tiled_matrix_t *B,
+               dplasma_complex64_t beta,        parsec_tiled_matrix_t *C)
 {
     parsec_taskpool_t *parsec_zgemm = NULL;
     int M, N, K;

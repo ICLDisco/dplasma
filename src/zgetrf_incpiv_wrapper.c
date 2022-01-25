@@ -83,9 +83,9 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgetrf_incpiv_New( parsec_tiled_matrix_dc_t *A,
-                           parsec_tiled_matrix_dc_t *L,
-                           parsec_tiled_matrix_dc_t *IPIV,
+dplasma_zgetrf_incpiv_New( parsec_tiled_matrix_t *A,
+                           parsec_tiled_matrix_t *L,
+                           parsec_tiled_matrix_t *IPIV,
                            int *INFO )
 {
     parsec_zgetrf_incpiv_taskpool_t *parsec_getrf_incpiv;
@@ -244,9 +244,9 @@ dplasma_zgetrf_incpiv_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgetrf_incpiv( parsec_context_t *parsec,
-                       parsec_tiled_matrix_dc_t *A,
-                       parsec_tiled_matrix_dc_t *L,
-                       parsec_tiled_matrix_dc_t *IPIV )
+                       parsec_tiled_matrix_t *A,
+                       parsec_tiled_matrix_t *L,
+                       parsec_tiled_matrix_t *IPIV )
 {
     parsec_taskpool_t *parsec_zgetrf_incpiv = NULL;
     int info = 0;

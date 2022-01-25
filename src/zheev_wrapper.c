@@ -50,9 +50,9 @@
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
-                  parsec_tiled_matrix_dc_t* A,
-                  parsec_tiled_matrix_dc_t* W,  /* Should be removed: internal workspace as T */
-                  parsec_tiled_matrix_dc_t* Z,
+                  parsec_tiled_matrix_t* A,
+                  parsec_tiled_matrix_t* W,  /* Should be removed: internal workspace as T */
+                  parsec_tiled_matrix_t* Z,
                   int* info )
 {
     (void)Z;
@@ -81,11 +81,11 @@ dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
         parsec_taskpool_t* zherbt_obj, * zhbrdt_obj;
         parsec_diag_band_to_rect_taskpool_t* band2rect_obj;
         parsec_taskpool_t* zheev_compound;
-        sym_two_dim_block_cyclic_t* As = (sym_two_dim_block_cyclic_t*)A;
+        parsec_matrix_sym_block_cyclic_t* As = (parsec_matrix_sym_block_cyclic_t*)A;
         int ib=A->nb/3;
 
-        two_dim_block_cyclic_t* T = calloc(1, sizeof(two_dim_block_cyclic_t));
-        two_dim_block_cyclic_init(T, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic_t* T = calloc(1, sizeof(parsec_matrix_block_cyclic_t));
+        parsec_matrix_block_cyclic_init(T, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
              A->super.myrank, ib, A->nb, A->mt*ib, A->n, 0, 0,
              A->mt*ib, A->n, As->grid.rows, As->grid.cols, As->grid.krows, As->grid.krows, As->grid.ip, As->grid.jq);
         T->mat = parsec_data_allocate((size_t)T->super.nb_local_tiles *
@@ -93,8 +93,8 @@ dplasma_zheev_New(dplasma_enum_t jobz, dplasma_enum_t uplo,
                                      (size_t)parsec_datadist_getsizeoftype(T->super.mtype));
         parsec_data_collection_set_key((parsec_data_collection_t*)T, "zheev_dcT");
 
-        zherbt_obj = (parsec_taskpool_t*)dplasma_zherbt_New( uplo, ib, A, (parsec_tiled_matrix_dc_t*)T );
-        band2rect_obj = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)A, (two_dim_block_cyclic_t*)W,
+        zherbt_obj = (parsec_taskpool_t*)dplasma_zherbt_New( uplo, ib, A, (parsec_tiled_matrix_t*)T );
+        band2rect_obj = parsec_diag_band_to_rect_new((parsec_matrix_sym_block_cyclic_t*)A, (parsec_matrix_block_cyclic_t*)W,
                 A->mt, A->nt, A->mb, A->nb, sizeof(dplasma_complex64_t));
         zhbrdt_obj = (parsec_taskpool_t*)dplasma_zhbrdt_New(W);
         zheev_compound = parsec_compose( zherbt_obj, (parsec_taskpool_t*)band2rect_obj );
@@ -137,9 +137,9 @@ void
 dplasma_zheev_Destruct( parsec_taskpool_t *tp )
 {
 #if 0
-    two_dim_block_cyclic_t* T = ???
+    parsec_matrix_block_cyclic_t* T = ???
     parsec_data_free(T->mat);
-    parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)T); free(T);
+    parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)T); free(T);
 
     dplasma_matrix_del2arena( &((parsec_diag_band_to_rect_taskpool_t *)tp)->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX] );
 #endif
@@ -176,9 +176,9 @@ dplasma_zheev_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zheev( parsec_context_t *parsec,
                dplasma_enum_t jobz, dplasma_enum_t uplo,
-               parsec_tiled_matrix_dc_t* A,
-               parsec_tiled_matrix_dc_t* W, /* Should be removed */
-               parsec_tiled_matrix_dc_t* Z )
+               parsec_tiled_matrix_t* A,
+               parsec_tiled_matrix_t* W, /* Should be removed */
+               parsec_tiled_matrix_t* Z )
 {
     parsec_taskpool_t *parsec_zheev = NULL;
     int info = 0;

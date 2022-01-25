@@ -86,10 +86,10 @@ parsec_taskpool_t*
 dplasma_zhemm_New( dplasma_enum_t side,
                    dplasma_enum_t uplo,
                    dplasma_complex64_t alpha,
-                   const parsec_tiled_matrix_dc_t* A,
-                   const parsec_tiled_matrix_dc_t* B,
+                   const parsec_tiled_matrix_t* A,
+                   const parsec_tiled_matrix_t* B,
                    dplasma_complex64_t beta,
-                   parsec_tiled_matrix_dc_t* C)
+                   parsec_tiled_matrix_t* C)
 {
     parsec_zhemm_taskpool_t* tp;
 
@@ -206,10 +206,10 @@ dplasma_zhemm( parsec_context_t *parsec,
                dplasma_enum_t side,
                dplasma_enum_t uplo,
                dplasma_complex64_t alpha,
-               const parsec_tiled_matrix_dc_t *A,
-               const parsec_tiled_matrix_dc_t *B,
+               const parsec_tiled_matrix_t *A,
+               const parsec_tiled_matrix_t *B,
                dplasma_complex64_t beta,
-               parsec_tiled_matrix_dc_t *C)
+               parsec_tiled_matrix_t *C)
 {
     parsec_taskpool_t *parsec_zhemm = NULL;
 

@@ -104,12 +104,12 @@
 int
 dplasma_zgels( parsec_context_t *parsec,
                dplasma_enum_t trans,
-               parsec_tiled_matrix_dc_t* A,
-               parsec_tiled_matrix_dc_t* T,
-               parsec_tiled_matrix_dc_t* B )
+               parsec_tiled_matrix_t* A,
+               parsec_tiled_matrix_t* T,
+               parsec_tiled_matrix_t* B )
 {
-    parsec_tiled_matrix_dc_t *subA;
-    parsec_tiled_matrix_dc_t *subB;
+    parsec_tiled_matrix_t *subA;
+    parsec_tiled_matrix_t *subB;
     int info = 0;
 
     /* Check input arguments */
@@ -138,16 +138,16 @@ dplasma_zgels( parsec_context_t *parsec,
              */
             dplasma_zunmqr( parsec, dplasmaLeft, dplasmaConjTrans, A, T, B );
 
-            subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
-            subB = tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
+            subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
             info = dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
         }
         else {
             /*
              * Overdetermined system of equations A**H * X = B
              */
-            subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
-            subB = tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
+            subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
             info = dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaUpper, dplasmaConjTrans, dplasmaNonUnit, 1.0, subA, subB );
 
             if (info != 0) {
@@ -158,7 +158,7 @@ dplasma_zgels( parsec_context_t *parsec,
 
             if ( A->m > A->n ) {
                 free(subB);
-                subB = tiled_matrix_submatrix( B, A->n, 0, A->m-A->n, B->n );
+                subB = parsec_tiled_matrix_submatrix( B, A->n, 0, A->m-A->n, B->n );
                 dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., subB );
             }
 
@@ -175,8 +175,8 @@ dplasma_zgels( parsec_context_t *parsec,
             /*
              * Underdetermined system of equations A * X = B
              */
-            subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
-            subB = tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
+            subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
             info = dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaLower, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );
 
             if (info != 0) {
@@ -187,7 +187,7 @@ dplasma_zgels( parsec_context_t *parsec,
 
             if ( A->n > A->m ) {
                 free(subB);
-                subB = tiled_matrix_submatrix( B, A->m, 0, A->n-A->m, B->n );
+                subB = parsec_tiled_matrix_submatrix( B, A->m, 0, A->n-A->m, B->n );
                 dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., subB );
             }
 
@@ -199,8 +199,8 @@ dplasma_zgels( parsec_context_t *parsec,
              */
             dplasma_zunmlq( parsec, dplasmaLeft, dplasmaNoTrans, A, T, B );
 
-            subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
-            subB = tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
+            subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
             info = dplasma_ztrsm(  parsec, dplasmaLeft, dplasmaLower, dplasmaConjTrans, dplasmaNonUnit, 1.0, subA, subB );
         }
     }

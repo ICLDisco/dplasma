@@ -64,13 +64,13 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_ztrsmpl_ptgpanel_New( const parsec_tiled_matrix_dc_t *A,
-                            const parsec_tiled_matrix_dc_t *IPIV,
-                            parsec_tiled_matrix_dc_t *B )
+dplasma_ztrsmpl_ptgpanel_New( const parsec_tiled_matrix_t *A,
+                            const parsec_tiled_matrix_t *IPIV,
+                            parsec_tiled_matrix_t *B )
 {
     parsec_ztrsmpl_ptgpanel_taskpool_t *parsec_ztrsmpl_ptgpanel = NULL;
     int nb = A->nb;
-    int P = ((two_dim_block_cyclic_t*)A)->grid.rows;
+    int P = ((parsec_matrix_block_cyclic_t*)A)->grid.rows;
 
     parsec_ztrsmpl_ptgpanel = parsec_ztrsmpl_ptgpanel_new(A, IPIV, B, P);
 
@@ -172,9 +172,9 @@ dplasma_ztrsmpl_ptgpanel_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_ztrsmpl_ptgpanel( parsec_context_t *parsec,
-                        const parsec_tiled_matrix_dc_t *A,
-                        const parsec_tiled_matrix_dc_t *IPIV,
-                        parsec_tiled_matrix_dc_t *B )
+                        const parsec_tiled_matrix_t *A,
+                        const parsec_tiled_matrix_t *IPIV,
+                        parsec_tiled_matrix_t *B )
 {
     parsec_taskpool_t *parsec_ztrsmpl_ptgpanel = NULL;
 

@@ -14,7 +14,7 @@
 #include "butterfly_map.h"
 #include "parsec/data_internal.h"
 
-seg_info_t parsec_rbt_calculate_constants(const parsec_tiled_matrix_dc_t *A, int L, int ib, int jb){
+seg_info_t parsec_rbt_calculate_constants(const parsec_tiled_matrix_t *A, int L, int ib, int jb){
     int am, an, bm, bn, cm, cn, dm, dn, em, en, fm, fn;
     int mb, width, height, block_count;
     int cstartn, cendn, cstartm, cendm;

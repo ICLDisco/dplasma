@@ -30,7 +30,7 @@
 #define TILED      1
 #define MAX_LAYOUT 2
 
-static inline int dplasma_tile_location(const parsec_tiled_matrix_dc_t *dM, int m, int n)
+static inline int dplasma_tile_location(const parsec_tiled_matrix_t *dM, int m, int n)
 {
 
   int ret =
@@ -88,10 +88,10 @@ int dplasma_cleanup_datatype_info( const dplasma_data_collection_t *dc,
 
 typedef struct dplasma_data_collection_s {
     parsec_data_collection_t super;
-    parsec_tiled_matrix_dc_t *dc_original;
+    parsec_tiled_matrix_t *dc_original;
 } dplasma_data_collection_t;
 
-dplasma_data_collection_t *dplasma_wrap_data_collection(parsec_tiled_matrix_dc_t *A);
+dplasma_data_collection_t *dplasma_wrap_data_collection(parsec_tiled_matrix_t *A);
 void dplasma_unwrap_data_collection(dplasma_data_collection_t *ddc);
 
 #endif  /* DPLASMA_LAPACK_ADT_H_HAS_BEEN_INCLUDED */

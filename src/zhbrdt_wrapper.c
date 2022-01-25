@@ -17,7 +17,7 @@
 
 #include "zhbrdt.h"
 
-parsec_taskpool_t* dplasma_zhbrdt_New(parsec_tiled_matrix_dc_t* A /* data A */)
+parsec_taskpool_t* dplasma_zhbrdt_New(parsec_tiled_matrix_t* A /* data A */)
 {
     parsec_zhbrdt_taskpool_t *parsec_zhbrdt = NULL;
 

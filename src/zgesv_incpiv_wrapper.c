@@ -74,10 +74,10 @@
  ******************************************************************************/
 int
 dplasma_zgesv_incpiv( parsec_context_t *parsec,
-                      parsec_tiled_matrix_dc_t *A,
-                      parsec_tiled_matrix_dc_t *L,
-                      parsec_tiled_matrix_dc_t *IPIV,
-                      parsec_tiled_matrix_dc_t *B )
+                      parsec_tiled_matrix_t *A,
+                      parsec_tiled_matrix_t *L,
+                      parsec_tiled_matrix_t *IPIV,
+                      parsec_tiled_matrix_t *B )
 {
     int info;
 

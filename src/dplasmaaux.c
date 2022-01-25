@@ -56,7 +56,7 @@ int dplasma_aux_free_comm(void)
 
 
 int
-dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_dc_t* dc )
+dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_t* dc )
 {
     char *v;
     char *keyword;
@@ -67,16 +67,16 @@ dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_dc_t* 
     keyword = alloca( strlen(function)+2 );
 
     switch( dc->mtype ) {
-    case matrix_RealFloat:
+    case PARSEC_MATRIX_FLOAT:
         sprintf(keyword, "S%s", function);
         break;
-    case matrix_RealDouble:
+    case PARSEC_MATRIX_DOUBLE:
         sprintf(keyword, "D%s", function);
         break;
-    case matrix_ComplexFloat:
+    case PARSEC_MATRIX_COMPLEX_FLOAT:
         sprintf(keyword, "C%s", function);
         break;
-    case matrix_ComplexDouble:
+    case PARSEC_MATRIX_COMPLEX_DOUBLE:
         sprintf(keyword, "Z%s", function);
         break;
     default:
@@ -90,7 +90,7 @@ dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_dc_t* 
 }
 
 int
-dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_dc_t *A )
+dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_t *A )
 {
     /**
      * Assume that the number of threads per node is constant, and compute the

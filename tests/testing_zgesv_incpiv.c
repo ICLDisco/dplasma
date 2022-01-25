@@ -11,9 +11,9 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           parsec_tiled_matrix_dc_t *dcA,
-                           parsec_tiled_matrix_dc_t *dcB,
-                           parsec_tiled_matrix_dc_t *dcX );
+                           parsec_tiled_matrix_t *dcA,
+                           parsec_tiled_matrix_t *dcB,
+                           parsec_tiled_matrix_t *dcX );
 
 int main(int argc, char ** argv)
 {
@@ -35,38 +35,38 @@ int main(int argc, char ** argv)
 
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-        two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDA, N, 0, 0,
                                M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
-        two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcA0, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDA, N, 0, 0,
                                M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
-        two_dim_block_cyclic, (&dcB, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcB, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDB, NRHS, 0, 0,
                                N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcX, 1,
-        two_dim_block_cyclic, (&dcX, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcX, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDB, NRHS, 0, 0,
                                N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcL, 1,
-        two_dim_block_cyclic, (&dcL, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcL, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, IB, NB, MT*IB, N, 0, 0,
                                MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
 
     PASTE_CODE_ALLOCATE_MATRIX(dcIPIV, 1,
-        two_dim_block_cyclic, (&dcIPIV, matrix_Integer, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcIPIV, PARSEC_MATRIX_INTEGER, PARSEC_MATRIX_TILE,
                                rank, MB, 1, M, NT, 0, 0,
                                M, NT, P, nodes/P, KP, KQ, IP, JQ));
 
     /* matrix generation */
     if(loud > 2) printf("+++ Generate matrices ... ");
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA0, 3872);
     if(loud > 2) printf("Done\n");
 
     /*********************************************************************
@@ -79,28 +79,28 @@ int main(int argc, char ** argv)
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
+                    (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
+    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, 3872);
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
+                    (parsec_tiled_matrix_t *)&dcB, (parsec_tiled_matrix_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
 
     /* Compute */
     if( loud > 2 ) printf("Compute ... ... ");
     info = dplasma_zgesv_incpiv(parsec,
-                                (parsec_tiled_matrix_dc_t *)&dcA,
-                                (parsec_tiled_matrix_dc_t *)&dcL,
-                                (parsec_tiled_matrix_dc_t *)&dcIPIV,
-                                (parsec_tiled_matrix_dc_t *)&dcX );
+                                (parsec_tiled_matrix_t *)&dcA,
+                                (parsec_tiled_matrix_t *)&dcL,
+                                (parsec_tiled_matrix_t *)&dcIPIV,
+                                (parsec_tiled_matrix_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
     if ( info != 0 ) printf("%d: Info = %d\n", rank, info);
 
     /* Check the solution */
     if ( info == 0 ) {
         info_solution = check_solution( parsec, rank ? 0 : loud,
-                                        (parsec_tiled_matrix_dc_t *)&dcA0,
-                                        (parsec_tiled_matrix_dc_t *)&dcB,
-                                        (parsec_tiled_matrix_dc_t *)&dcX );
+                                        (parsec_tiled_matrix_t *)&dcA0,
+                                        (parsec_tiled_matrix_t *)&dcB,
+                                        (parsec_tiled_matrix_t *)&dcX );
     }
     if ( rank == 0 ) {
         if ( info || info_solution) {
@@ -123,24 +123,24 @@ int main(int argc, char ** argv)
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
+                    (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
+    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, 3872);
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
+                    (parsec_tiled_matrix_t *)&dcB, (parsec_tiled_matrix_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
 
     /* Compute */
     if( loud > 2 ) printf("Compute ... ... ");
     info = dplasma_zgetrf_incpiv(parsec,
-                                 (parsec_tiled_matrix_dc_t *)&dcA,
-                                 (parsec_tiled_matrix_dc_t *)&dcL,
-                                 (parsec_tiled_matrix_dc_t *)&dcIPIV );
+                                 (parsec_tiled_matrix_t *)&dcA,
+                                 (parsec_tiled_matrix_t *)&dcL,
+                                 (parsec_tiled_matrix_t *)&dcIPIV );
     if ( info == 0 ) {
         dplasma_zgetrs_incpiv(parsec, dplasmaNoTrans,
-                              (parsec_tiled_matrix_dc_t *)&dcA,
-                              (parsec_tiled_matrix_dc_t *)&dcL,
-                              (parsec_tiled_matrix_dc_t *)&dcIPIV,
-                              (parsec_tiled_matrix_dc_t *)&dcX );
+                              (parsec_tiled_matrix_t *)&dcA,
+                              (parsec_tiled_matrix_t *)&dcL,
+                              (parsec_tiled_matrix_t *)&dcIPIV,
+                              (parsec_tiled_matrix_t *)&dcX );
     }
     if ( loud > 2 ) printf("Done\n");
     if ( info != 0 ) printf("%d: Info = %d\n", rank, info);
@@ -148,9 +148,9 @@ int main(int argc, char ** argv)
     /* Check the solution */
     if ( info == 0 ) {
         info_solution = check_solution( parsec, rank ? 0 : loud,
-                                        (parsec_tiled_matrix_dc_t *)&dcA0,
-                                        (parsec_tiled_matrix_dc_t *)&dcB,
-                                        (parsec_tiled_matrix_dc_t *)&dcX );
+                                        (parsec_tiled_matrix_t *)&dcA0,
+                                        (parsec_tiled_matrix_t *)&dcB,
+                                        (parsec_tiled_matrix_t *)&dcX );
     }
     if ( rank == 0 ) {
         if ( info || info_solution) {
@@ -173,30 +173,30 @@ int main(int argc, char ** argv)
     /* matrix generation */
     if( loud > 2 ) printf("Generate matrices ... ");
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcA0, (parsec_tiled_matrix_dc_t *)&dcA );
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, 3872);
+                    (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
+    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, 3872);
     dplasma_zlacpy( parsec, dplasmaUpperLower,
-                    (parsec_tiled_matrix_dc_t *)&dcB, (parsec_tiled_matrix_dc_t *)&dcX );
+                    (parsec_tiled_matrix_t *)&dcB, (parsec_tiled_matrix_t *)&dcX );
     if( loud > 2 ) printf("Done\n");
     
     /* Compute */
     if( loud > 2 )printf("Compute ... ... ");
     info = dplasma_zgetrf_incpiv(parsec,
-                                 (parsec_tiled_matrix_dc_t *)&dcA,
-                                 (parsec_tiled_matrix_dc_t *)&dcL,
-                                 (parsec_tiled_matrix_dc_t *)&dcIPIV );
+                                 (parsec_tiled_matrix_t *)&dcA,
+                                 (parsec_tiled_matrix_t *)&dcL,
+                                 (parsec_tiled_matrix_t *)&dcIPIV );
 
     if ( info == 0 ) {
         dplasma_ztrsmpl_incpiv(parsec,
-                        (parsec_tiled_matrix_dc_t *)&dcA,
-                        (parsec_tiled_matrix_dc_t *)&dcL,
-                        (parsec_tiled_matrix_dc_t *)&dcIPIV,
-                        (parsec_tiled_matrix_dc_t *)&dcX);
+                        (parsec_tiled_matrix_t *)&dcA,
+                        (parsec_tiled_matrix_t *)&dcL,
+                        (parsec_tiled_matrix_t *)&dcIPIV,
+                        (parsec_tiled_matrix_t *)&dcX);
 
         dplasma_ztrsm(parsec, dplasmaLeft, dplasmaUpper,
                       dplasmaNoTrans, dplasmaNonUnit, 1.0,
-                      (parsec_tiled_matrix_dc_t *)&dcA,
-                      (parsec_tiled_matrix_dc_t *)&dcX);
+                      (parsec_tiled_matrix_t *)&dcA,
+                      (parsec_tiled_matrix_t *)&dcX);
     }
     if ( loud > 2 ) printf("Done\n");
     if ( info != 0 ) printf("%d: Info = %d\n", rank, info);
@@ -204,9 +204,9 @@ int main(int argc, char ** argv)
     /* Check the solution */
     if ( info == 0 ) {
             info_solution = check_solution( parsec, rank ? 0 : loud,
-                                            (parsec_tiled_matrix_dc_t *)&dcA0,
-                                            (parsec_tiled_matrix_dc_t *)&dcB,
-                                            (parsec_tiled_matrix_dc_t *)&dcX );
+                                            (parsec_tiled_matrix_t *)&dcA0,
+                                            (parsec_tiled_matrix_t *)&dcB,
+                                            (parsec_tiled_matrix_t *)&dcX );
     }
     if ( rank == 0 ) {
         if ( info || info_solution ) {
@@ -220,17 +220,17 @@ int main(int argc, char ** argv)
     }
 
     parsec_data_free(dcA.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
     parsec_data_free(dcA0.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA0);
     parsec_data_free(dcB.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcB);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcB);
     parsec_data_free(dcX.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcX);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcX);
     parsec_data_free(dcL.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcL);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcL);
     parsec_data_free(dcIPIV.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcIPIV);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcIPIV);
 
     cleanup_parsec(parsec, iparam);
 
@@ -240,9 +240,9 @@ int main(int argc, char ** argv)
 
 
 static int check_solution( parsec_context_t *parsec, int loud,
-                           parsec_tiled_matrix_dc_t *dcA,
-                           parsec_tiled_matrix_dc_t *dcB,
-                           parsec_tiled_matrix_dc_t *dcX )
+                           parsec_tiled_matrix_t *dcA,
+                           parsec_tiled_matrix_t *dcB,
+                           parsec_tiled_matrix_t *dcX )
 {
     int info_solution;
     int N = dcB->m;

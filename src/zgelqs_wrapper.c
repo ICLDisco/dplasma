@@ -60,12 +60,12 @@
  ******************************************************************************/
 int
 dplasma_zgelqs( parsec_context_t *parsec,
-                parsec_tiled_matrix_dc_t* A,
-                parsec_tiled_matrix_dc_t* T,
-                parsec_tiled_matrix_dc_t* B )
+                parsec_tiled_matrix_t* A,
+                parsec_tiled_matrix_t* T,
+                parsec_tiled_matrix_t* B )
 {
-    parsec_tiled_matrix_dc_t *subA;
-    parsec_tiled_matrix_dc_t *subB;
+    parsec_tiled_matrix_t *subA;
+    parsec_tiled_matrix_t *subB;
 
     /* Check input arguments */
     if ( A->m > A->n ) {
@@ -81,8 +81,8 @@ dplasma_zgelqs( parsec_context_t *parsec,
         return -3;
     }
 
-    subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
-    subB = tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
+    subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
+    subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->m, B->n );
 
 #ifdef PARSEC_COMPOSITION
 

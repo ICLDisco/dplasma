@@ -39,7 +39,7 @@ typedef struct zpltmg_args_s zpltmg_args_t;
 
 static int
 dplasma_zpltmg_generic_operator( parsec_execution_stream_t *es,
-                                 const parsec_tiled_matrix_dc_t *descA,
+                                 const parsec_tiled_matrix_t *descA,
                                  void *_A,
                                  dplasma_enum_t uplo, int m, int n,
                                  void *op_data )
@@ -109,7 +109,7 @@ dplasma_zpltmg_generic_operator( parsec_execution_stream_t *es,
 static inline int
 dplasma_zpltmg_generic( parsec_context_t *parsec,
                         dplasma_enum_t mtxtype,
-                        parsec_tiled_matrix_dc_t *A,
+                        parsec_tiled_matrix_t *A,
                         dplasma_complex64_t *W,
                         unsigned long long int seed)
 {
@@ -170,7 +170,7 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
 static inline int
 dplasma_zpltmg_genvect( parsec_context_t *parsec,
                         dplasma_enum_t mtxtype,
-                        parsec_tiled_matrix_dc_t *A,
+                        parsec_tiled_matrix_t *A,
                         unsigned long long int seed )
 {
     size_t vectorsize = 0;
@@ -266,7 +266,7 @@ dplasma_zpltmg_genvect( parsec_context_t *parsec,
  ******************************************************************************/
 static inline int
 dplasma_zpltmg_circul( parsec_context_t *parsec,
-                       parsec_tiled_matrix_dc_t *A,
+                       parsec_tiled_matrix_t *A,
                        unsigned long long int seed )
 {
     int info;
@@ -311,13 +311,13 @@ dplasma_zpltmg_circul( parsec_context_t *parsec,
  ******************************************************************************/
 static inline int
 dplasma_zpltmg_condex( parsec_context_t *parsec,
-                       parsec_tiled_matrix_dc_t *A )
+                       parsec_tiled_matrix_t *A )
 {
     /* gallery('condex', A->m, 4, 100.) */
     dplasma_complex64_t theta = 100.;
-    two_dim_block_cyclic_t *twodA = (two_dim_block_cyclic_t *)A;
-    two_dim_block_cyclic_t Q;
-    two_dim_block_cyclic_init( &Q, matrix_ComplexDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_t *twodA = (parsec_matrix_block_cyclic_t *)A;
+    parsec_matrix_block_cyclic_t Q;
+    parsec_matrix_block_cyclic_init( &Q, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                A->super.myrank,
                                A->mb, A->nb, A->mb*A->mt, 3, 0, 0, A->m, 3, 1, 1, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq );
     Q.mat = parsec_data_allocate((size_t)Q.super.nb_local_tiles *
@@ -359,12 +359,12 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
 
     dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1. + theta, A );
     dplasma_zgemm( parsec, dplasmaNoTrans, dplasmaConjTrans,
-                   -theta, (parsec_tiled_matrix_dc_t*)&Q,
-                           (parsec_tiled_matrix_dc_t*)&Q,
+                   -theta, (parsec_tiled_matrix_t*)&Q,
+                           (parsec_tiled_matrix_t*)&Q,
                    1.,     A );
 
     parsec_data_free(Q.mat);
-    parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)&Q);
+    parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&Q);
     return 0;
 }
 
@@ -402,14 +402,14 @@ dplasma_zpltmg_condex( parsec_context_t *parsec,
  ******************************************************************************/
 static inline int
 dplasma_zpltmg_house( parsec_context_t *parsec,
-                      parsec_tiled_matrix_dc_t *A,
+                      parsec_tiled_matrix_t *A,
                       unsigned long long int seed )
 {
     /* gallery('house', random, 0 ) */
-    vector_two_dim_cyclic_t V;
+    parsec_vector_two_dim_cyclic_t V;
     dplasma_complex64_t *Vmat, tau;
 
-    vector_two_dim_cyclic_init( &V, matrix_ComplexDouble, matrix_VectorDiag,
+    parsec_vector_two_dim_cyclic_init( &V, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_VECTOR_DISTRIB_DIAG,
                                 A->super.myrank,
                                 A->mb, A->m, 0, A->m, 1, 1 );
     V.mat = parsec_data_allocate((size_t)V.super.nb_local_tiles *
@@ -434,12 +434,12 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
     /* Compute the Householder matrix I - tau v * v' */
     dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., A);
     dplasma_zgerc( parsec, -tau,
-                   (parsec_tiled_matrix_dc_t*)&V,
-                   (parsec_tiled_matrix_dc_t*)&V,
+                   (parsec_tiled_matrix_t*)&V,
+                   (parsec_tiled_matrix_t*)&V,
                    A );
 
     parsec_data_free(V.mat);
-    parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)&V);
+    parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&V);
 
     return 0;
 }
@@ -484,7 +484,7 @@ dplasma_zpltmg_house( parsec_context_t *parsec,
 int
 dplasma_zpltmg( parsec_context_t *parsec,
                 dplasma_enum_t mtxtype,
-                parsec_tiled_matrix_dc_t *A,
+                parsec_tiled_matrix_t *A,
                 unsigned long long int seed)
 {
 

@@ -127,8 +127,8 @@ dplasma_zgeqrf_setrecursive( parsec_taskpool_t *tp, int hnb )
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgeqrf_New( parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *T )
+dplasma_zgeqrf_New( parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *T )
 {
     parsec_zgeqrf_taskpool_t* tp;
     dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection(A);
@@ -150,23 +150,23 @@ dplasma_zgeqrf_New( parsec_tiled_matrix_dc_t *A,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
 
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_Lower/*uplo*/, 0/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_LOWER/*uplo*/, 0/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_Upper/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_UPPER/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_T,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     assert(shape == MAX_SHAPES);
@@ -282,8 +282,8 @@ dplasma_zgeqrf_Destruct( parsec_taskpool_t *tp)
  ******************************************************************************/
 int
 dplasma_zgeqrf( parsec_context_t *parsec,
-                parsec_tiled_matrix_dc_t *A,
-                parsec_tiled_matrix_dc_t *T )
+                parsec_tiled_matrix_t *A,
+                parsec_tiled_matrix_t *T )
 {
     parsec_taskpool_t *parsec_zgeqrf = NULL;
 
@@ -372,8 +372,8 @@ dplasma_zgeqrf( parsec_context_t *parsec,
  ******************************************************************************/
 int
 dplasma_zgeqrf_rec( parsec_context_t *parsec,
-                    parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *T, int hnb )
+                    parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *T, int hnb )
 {
     parsec_taskpool_t *parsec_zgeqrf = NULL;
 

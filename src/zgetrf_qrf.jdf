@@ -36,10 +36,10 @@ dplasma_log2(int n)
 
 %}
 
-descA    [type = "parsec_tiled_matrix_dc_t*"]
+descA    [type = "parsec_tiled_matrix_t*"]
 IPIV     [type = "parsec_data_collection_t *" aligned=descA]
-TS      [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
-TT      [type = "parsec_tiled_matrix_dc_t*" aligned=descA]
+TS      [type = "parsec_tiled_matrix_t*" aligned=descA]
+TT      [type = "parsec_tiled_matrix_t*" aligned=descA]
 lu_tab   [type = "int*"]
 qrtree   [type = "dplasma_qrtree_t"]
 ib       [type = "int"]
@@ -50,8 +50,8 @@ p_work   [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*i
 p_tau    [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *(TS->nb))"]
 INFO     [type = "int*"]
 
-param_p   [type = int default="((two_dim_block_cyclic_t*)descA)->grid.rows" hidden=on ]
-param_q   [type = int default="((two_dim_block_cyclic_t*)descA)->grid.cols" hidden=on ]
+param_p   [type = int default="((parsec_matrix_block_cyclic_t*)descA)->grid.rows" hidden=on ]
+param_q   [type = int default="((parsec_matrix_block_cyclic_t*)descA)->grid.cols" hidden=on ]
 minMNT    [type = int default="dplasma_imin( descA->mt-1, descA->nt-1 )"    hidden=on ]
 nbmaxthrd [type = "int" default="( dplasma_imax( 1, dplasma_imin( vpmap_get_nb_threads_in_vp(0) - 1, 48 ) ) )" hidden=on] /* 48 is the actual limit of the kernel */
 
@@ -792,7 +792,7 @@ BODY
           W[0] = 0.;
       }
 
-      if ( descA->storage == matrix_Tile ) {
+      if ( descA->storage == PARSEC_MATRIX_TILE ) {
           PLASMA_desc pdescA = plasma_desc_init( PlasmaComplexDouble,
                                                  descA->mb, descA->nb, descA->mb * descA->nb,
                                                  s*descA->mb, descA->nb, 0, 0,

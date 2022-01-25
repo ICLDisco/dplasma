@@ -263,8 +263,8 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
 
     Bm = *M; Bn = *N;
 
-    two_dim_block_cyclic_t dcA_lapack;
-    two_dim_block_cyclic_lapack_init(&dcA_lapack, matrix_RealDouble, matrix_Lapack,
+    parsec_matrix_block_cyclic_t dcA_lapack;
+    parsec_matrix_block_cyclic_lapack_init(&dcA_lapack, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                      rank_A,
                                      MB_A, NB_A,
                                      gM_A, gN_A,
@@ -277,8 +277,8 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
     dcA_lapack.mat = A;
     parsec_data_collection_set_key((parsec_data_collection_t*)&dcA_lapack, "dcA_lapack");
 
-    two_dim_block_cyclic_t dcB_lapack;
-    two_dim_block_cyclic_lapack_init(&dcB_lapack, matrix_RealDouble, matrix_Lapack,
+    parsec_matrix_block_cyclic_t dcB_lapack;
+    parsec_matrix_block_cyclic_lapack_init(&dcB_lapack, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                      rank_B,
                                      MB_B, NB_B,
                                      gM_B, gN_B,
@@ -298,23 +298,23 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
     /* TRSM doesn't support native ScaLAPACK: always redistribute */
     int redisA = 1, redisB = 1;
 
-    two_dim_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
-    two_dim_block_cyclic_t *dcB = redistribute_lapack_input(&dcB_lapack, redisB, comm_B, rank_B, "redisB");
+    parsec_matrix_block_cyclic_t *dcA = redistribute_lapack_input(&dcA_lapack, redisA, comm_A, rank_A, "redisA");
+    parsec_matrix_block_cyclic_t *dcB = redistribute_lapack_input(&dcB_lapack, redisB, comm_B, rank_B, "redisB");
 
     WRAPPER_PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec_ctx, dtrsm,
                               ( side, uplo,
                                 trans, diag,
                                 *ALPHA,
-                               (parsec_tiled_matrix_dc_t *)dcA,
-                               (parsec_tiled_matrix_dc_t *)dcB ),
+                               (parsec_tiled_matrix_t *)dcA,
+                               (parsec_tiled_matrix_t *)dcB ),
                               dplasma_dtrsm_Destruct( PARSEC_dtrsm ),
                               rank_A, P_A, Q_A, NB_A, gN_A, comm_A);
 
     dcA = redistribute_lapack_output_cleanup(&dcA_lapack, dcA, 0, comm_A, rank_A, "redisA");
     dcB = redistribute_lapack_output_cleanup(&dcB_lapack, dcB, 1, comm_B, rank_B, "redisB");
 
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcA);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)dcB);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)dcB);
 
 }
 

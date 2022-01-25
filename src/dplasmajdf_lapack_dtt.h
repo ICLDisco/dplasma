@@ -10,7 +10,7 @@
 /* Obtain location on matrix.
  */
 static inline
-int LOC(const parsec_tiled_matrix_dc_t *dM, int m, int n)
+int LOC(const parsec_tiled_matrix_t *dM, int m, int n)
 {
     return dplasma_tile_location(dM, m, n);
 }
@@ -148,7 +148,7 @@ stage_in_lapack(parsec_gpu_task_t *gtask,
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             in_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_in->device_index);
-            if( (in_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
+            if( (in_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_nb_elts[i],
@@ -225,7 +225,7 @@ stage_out_lapack(parsec_gpu_task_t *gtask,
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             out_elem_dev = (parsec_device_cuda_module_t*)parsec_mca_device_get( copy_out->device_index);
 
-            if( (out_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != matrix_Lapack)){
+            if( (out_elem_dev->super.super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_nb_elts[i],

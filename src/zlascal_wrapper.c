@@ -17,7 +17,7 @@
 
 static int
 dplasma_zlascal_operator( parsec_execution_stream_t *es,
-                         const parsec_tiled_matrix_dc_t *descA,
+                         const parsec_tiled_matrix_t *descA,
                          void *_A,
                          dplasma_enum_t uplo, int m, int n,
                          void *args )
@@ -111,7 +111,7 @@ dplasma_zlascal_operator( parsec_execution_stream_t *es,
 parsec_taskpool_t*
 dplasma_zlascal_New( dplasma_enum_t uplo,
                      dplasma_complex64_t alpha,
-                     parsec_tiled_matrix_dc_t *A )
+                     parsec_tiled_matrix_t *A )
 {
     dplasma_complex64_t *a = (dplasma_complex64_t*)malloc(sizeof(dplasma_complex64_t));
     *a = alpha;
@@ -197,7 +197,7 @@ int
 dplasma_zlascal( parsec_context_t     *parsec,
                  dplasma_enum_t          uplo,
                  dplasma_complex64_t    alpha,
-                 parsec_tiled_matrix_dc_t *A )
+                 parsec_tiled_matrix_t *A )
 {
     parsec_taskpool_t *parsec_zlascal = NULL;
 

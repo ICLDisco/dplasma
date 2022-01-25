@@ -74,13 +74,13 @@
 int
 dplasma_zgeqrs_param(parsec_context_t *parsec,
                      dplasma_qrtree_t *qrtree,
-                     parsec_tiled_matrix_dc_t* A,
-                     parsec_tiled_matrix_dc_t* TS,
-                     parsec_tiled_matrix_dc_t* TT,
-                     parsec_tiled_matrix_dc_t* B)
+                     parsec_tiled_matrix_t* A,
+                     parsec_tiled_matrix_t* TS,
+                     parsec_tiled_matrix_t* TT,
+                     parsec_tiled_matrix_t* B)
 {
-    parsec_tiled_matrix_dc_t *subA;
-    parsec_tiled_matrix_dc_t *subB;
+    parsec_tiled_matrix_t *subA;
+    parsec_tiled_matrix_t *subB;
 
     /* Check input arguments */
     if ( A->n > A->m ) {
@@ -100,8 +100,8 @@ dplasma_zgeqrs_param(parsec_context_t *parsec,
         return -5;
     }
 
-    subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
-    subB = tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
+    subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
+    subB = parsec_tiled_matrix_submatrix( B, 0, 0, A->n, B->n );
 
     dplasma_zunmqr_param( parsec, dplasmaLeft, dplasmaConjTrans, qrtree, A, TS, TT, B );
     dplasma_ztrsm( parsec, dplasmaLeft, dplasmaUpper, dplasmaNoTrans, dplasmaNonUnit, 1.0, subA, subB );

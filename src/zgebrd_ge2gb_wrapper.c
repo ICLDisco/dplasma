@@ -144,12 +144,12 @@ dplasma_zgebrd_ge2gbx_New( int ib,
                            dplasma_qrtree_t *qrtre0,
                            dplasma_qrtree_t *qrtree,
                            dplasma_qrtree_t *lqtree,
-                           parsec_tiled_matrix_dc_t *A,
-                           parsec_tiled_matrix_dc_t *TS0,
-                           parsec_tiled_matrix_dc_t *TT0,
-                           parsec_tiled_matrix_dc_t *TS,
-                           parsec_tiled_matrix_dc_t *TT,
-                           parsec_tiled_matrix_dc_t *Band )
+                           parsec_tiled_matrix_t *A,
+                           parsec_tiled_matrix_t *TS0,
+                           parsec_tiled_matrix_t *TT0,
+                           parsec_tiled_matrix_t *TS,
+                           parsec_tiled_matrix_t *TT,
+                           parsec_tiled_matrix_t *Band )
 {
     parsec_zgebrd_ge2gb_taskpool_t* tp;
 
@@ -302,11 +302,11 @@ dplasma_zgebrd_ge2gbx_New( int ib,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgebrd_ge2gb_New( int ib,
-                          parsec_tiled_matrix_dc_t *A,
-                          parsec_tiled_matrix_dc_t *Band )
+                          parsec_tiled_matrix_t *A,
+                          parsec_tiled_matrix_t *Band )
 {
     parsec_taskpool_t *tp;
-    parsec_tiled_matrix_dc_t *subA = NULL;
+    parsec_tiled_matrix_t *subA = NULL;
     dplasma_qrtree_t *qrtre0, *qrtree, *lqtree;
     int P, Q, cores;
 
@@ -314,12 +314,12 @@ dplasma_zgebrd_ge2gb_New( int ib,
     qrtree = malloc( sizeof(dplasma_qrtree_t) );
     lqtree = malloc( sizeof(dplasma_qrtree_t) );
 
-    if ( !(A->dtype & two_dim_block_cyclic_type) ) {
+    if ( !(A->dtype & parsec_matrix_block_cyclic_type) ) {
         P = 1; Q = 1;
     }
     else {
-        P = ((two_dim_block_cyclic_t*)A)->grid.rows;
-        Q = ((two_dim_block_cyclic_t*)A)->grid.cols;
+        P = ((parsec_matrix_block_cyclic_t*)A)->grid.rows;
+        Q = ((parsec_matrix_block_cyclic_t*)A)->grid.cols;
     }
 
     /* R-bidiagonalization */
@@ -329,7 +329,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
             dplasma_hqr_init( qrtre0, dplasmaNoTrans,
                               A, -1, -1, -1, P, -1, 0 );
 
-            subA = tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->n, A->n );
         }
         else {
             qrtre0 = qrtree;
@@ -357,7 +357,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
             dplasma_hqr_init( qrtre0, dplasmaTrans,
                               A, -1, -1, -1, Q, -1, 0 );
 
-            subA = tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
+            subA = parsec_tiled_matrix_submatrix( A, 0, 0, A->m, A->m );
         }
         else {
             qrtre0 = qrtree;
@@ -534,12 +534,12 @@ dplasma_zgebrd_ge2gbx( parsec_context_t *parsec, int ib,
                        dplasma_qrtree_t *qrtre0,
                        dplasma_qrtree_t *qrtree,
                        dplasma_qrtree_t *lqtree,
-                       parsec_tiled_matrix_dc_t *A,
-                       parsec_tiled_matrix_dc_t *TS0,
-                       parsec_tiled_matrix_dc_t *TT0,
-                       parsec_tiled_matrix_dc_t *TS,
-                       parsec_tiled_matrix_dc_t *TT,
-                       parsec_tiled_matrix_dc_t *Band)
+                       parsec_tiled_matrix_t *A,
+                       parsec_tiled_matrix_t *TS0,
+                       parsec_tiled_matrix_t *TT0,
+                       parsec_tiled_matrix_t *TS,
+                       parsec_tiled_matrix_t *TT,
+                       parsec_tiled_matrix_t *Band)
 {
     parsec_taskpool_t *parsec_zgebrd_ge2gb = NULL;
 
@@ -599,8 +599,8 @@ dplasma_zgebrd_ge2gbx( parsec_context_t *parsec, int ib,
  ******************************************************************************/
 int
 dplasma_zgebrd_ge2gb( parsec_context_t *parsec, int ib,
-                      parsec_tiled_matrix_dc_t *A,
-                      parsec_tiled_matrix_dc_t *Band)
+                      parsec_tiled_matrix_t *A,
+                      parsec_tiled_matrix_t *Band)
 {
     parsec_taskpool_t *parsec_zgebrd_ge2gb = NULL;
 

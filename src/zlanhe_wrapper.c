@@ -19,7 +19,7 @@
 static parsec_data_t*
 dplasma_zlanhe_fake_data_of(parsec_data_collection_t *mat, ...)
 {
-    return parsec_matrix_create_data( (parsec_tiled_matrix_t*)mat, NULL,
+    return parsec_tiled_matrix_create_data( (parsec_tiled_matrix_t*)mat, NULL,
                                      0, 0 );
 }
 
@@ -84,11 +84,11 @@ dplasma_zlanhe_fake_data_of(parsec_data_collection_t *mat, ...)
 parsec_taskpool_t*
 dplasma_zlanhe_New( dplasma_enum_t norm,
                     dplasma_enum_t uplo,
-                    const parsec_tiled_matrix_dc_t *A,
+                    const parsec_tiled_matrix_t *A,
                     double *result )
 {
     int P, Q, IP, JQ, mb, nb, elt, m;
-    two_dim_block_cyclic_t *Tdist;
+    parsec_matrix_block_cyclic_t *Tdist;
     parsec_taskpool_t *parsec_zlanhe = NULL;
 
     if ( (norm != dplasmaMaxNorm) && (norm != dplasmaOneNorm)
@@ -100,15 +100,15 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
         dplasma_error("dplasma_zlanhe", "illegal value of uplo");
         return NULL;
     }
-    if ( !(A->dtype & ( two_dim_block_cyclic_type | sym_two_dim_block_cyclic_type)) ) {
+    if ( !(A->dtype & ( parsec_matrix_block_cyclic_type | parsec_matrix_sym_block_cyclic_type)) ) {
         dplasma_error("dplasma_zlanhe", "illegal type of descriptor for A");
         return NULL;
     }
 
-    P = ((sym_two_dim_block_cyclic_t*)A)->grid.rows;
-    Q = ((sym_two_dim_block_cyclic_t*)A)->grid.cols;
-    IP = ((two_dim_block_cyclic_t*)A)->grid.ip;
-    JQ = ((two_dim_block_cyclic_t*)A)->grid.jq;
+    P = ((parsec_matrix_sym_block_cyclic_t*)A)->grid.rows;
+    Q = ((parsec_matrix_sym_block_cyclic_t*)A)->grid.cols;
+    IP = ((parsec_matrix_block_cyclic_t*)A)->grid.ip;
+    JQ = ((parsec_matrix_block_cyclic_t*)A)->grid.jq;
 
     /* Warning: Pb with smb/snb when mt/nt lower than P/Q */
     switch( norm ) {
@@ -135,10 +135,10 @@ dplasma_zlanhe_New( dplasma_enum_t norm,
      * As it is used as a NULL value we must have a data_copy and a data associated
      * with it, so we can create them here.
      * Create the task distribution */
-    Tdist = (two_dim_block_cyclic_t*)malloc(sizeof(two_dim_block_cyclic_t));
+    Tdist = (parsec_matrix_block_cyclic_t*)malloc(sizeof(parsec_matrix_block_cyclic_t));
 
-    two_dim_block_cyclic_init(
-        Tdist, matrix_RealDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(
+        Tdist, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_TILE,
         A->super.myrank,
         1, 1,   /* Dimensions of the tiles              */
         m, P*Q, /* Dimensions of the matrix             */
@@ -193,7 +193,7 @@ dplasma_zlanhe_Destruct( parsec_taskpool_t *tp )
 {
     parsec_zlansy_taskpool_t *parsec_zlanhe = (parsec_zlansy_taskpool_t *)tp;
 
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)(parsec_zlanhe->_g_Tdist) );
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)(parsec_zlanhe->_g_Tdist) );
     free( parsec_zlanhe->_g_Tdist );
 
     dplasma_matrix_del2arena( &parsec_zlanhe->arenas_datatypes[PARSEC_zlansy_DEFAULT_ADT_IDX] );
@@ -260,7 +260,7 @@ double
 dplasma_zlanhe( parsec_context_t *parsec,
                 dplasma_enum_t norm,
                 dplasma_enum_t uplo,
-                const parsec_tiled_matrix_dc_t *A)
+                const parsec_tiled_matrix_t *A)
 {
     double result = 0.;
     parsec_taskpool_t *parsec_zlanhe = NULL;
@@ -274,7 +274,7 @@ dplasma_zlanhe( parsec_context_t *parsec,
         dplasma_error("dplasma_zlanhe", "illegal value of uplo");
         return -3.;
     }
-    if ( !(A->dtype & ( two_dim_block_cyclic_type | sym_two_dim_block_cyclic_type)) ) {
+    if ( !(A->dtype & ( parsec_matrix_block_cyclic_type | parsec_matrix_sym_block_cyclic_type)) ) {
         dplasma_error("dplasma_zlanhe", "illegal type of descriptor for A");
         return -4.;
     }

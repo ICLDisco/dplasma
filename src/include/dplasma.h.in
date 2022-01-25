@@ -43,9 +43,9 @@ static inline int dplasma_iceil(int a, int b) { return (a + b - 1) / b; };
 /*
  * Map operations
  */
-int dplasma_map2( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B, tiled_matrix_binary_op_t op, void *op_args);
+int dplasma_map2( parsec_context_t *parsec, dplasma_enum_t uplo, dplasma_enum_t trans, const parsec_tiled_matrix_t *A, parsec_tiled_matrix_t *B, parsec_tiled_matrix_binary_op_t op, void *op_args);
 
-parsec_taskpool_t *dplasma_map2_New( dplasma_enum_t uplo, dplasma_enum_t trans, const parsec_tiled_matrix_dc_t *A, parsec_tiled_matrix_dc_t *B, tiled_matrix_binary_op_t op, void *op_args);
+parsec_taskpool_t *dplasma_map2_New( dplasma_enum_t uplo, dplasma_enum_t trans, const parsec_tiled_matrix_t *A, parsec_tiled_matrix_t *B, parsec_tiled_matrix_binary_op_t op, void *op_args);
 
 void dplasma_map2_Destruct( parsec_taskpool_t *o );
 

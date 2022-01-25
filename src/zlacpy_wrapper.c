@@ -17,8 +17,8 @@
 
 static int
 dplasma_zlacpy_operator( parsec_execution_stream_t *es,
-                         const parsec_tiled_matrix_dc_t *descA,
-                         const parsec_tiled_matrix_dc_t *descB,
+                         const parsec_tiled_matrix_t *descA,
+                         const parsec_tiled_matrix_t *descB,
                          const void *_A, void *_B,
                          dplasma_enum_t uplo, int m, int n,
                          void *args )
@@ -88,8 +88,8 @@ dplasma_zlacpy_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zlacpy_New( dplasma_enum_t uplo,
-                    const parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *B)
+                    const parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *B)
 {
     parsec_taskpool_t* tp;
 
@@ -174,8 +174,8 @@ dplasma_zlacpy_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zlacpy( parsec_context_t *parsec,
                 dplasma_enum_t uplo,
-                const parsec_tiled_matrix_dc_t *A,
-                parsec_tiled_matrix_dc_t *B)
+                const parsec_tiled_matrix_t *A,
+                parsec_tiled_matrix_t *B)
 {
     parsec_taskpool_t *parsec_zlacpy = NULL;
 

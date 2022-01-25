@@ -22,7 +22,7 @@
  * dplasma_zhetrf_New()
  */
 parsec_taskpool_t*
-dplasma_zhetrf_New( parsec_tiled_matrix_dc_t *A, int *INFO)
+dplasma_zhetrf_New( parsec_tiled_matrix_t *A, int *INFO)
 {
     int ldwork, lwork, ib;
     parsec_taskpool_t *parsec_zhetrf = NULL;
@@ -65,7 +65,7 @@ dplasma_zhetrf_Destruct( parsec_taskpool_t *tp )
  * dplasma_ztrmdm_New()
  */
 parsec_taskpool_t*
-dplasma_ztrmdm_New( parsec_tiled_matrix_dc_t *A)
+dplasma_ztrmdm_New( parsec_tiled_matrix_t *A)
 {
     parsec_taskpool_t *parsec_ztrmdm = NULL;
 
@@ -94,7 +94,7 @@ dplasma_ztrmdm_Destruct( parsec_taskpool_t *tp )
  * Blocking Interface
  */
 
-int dplasma_zhetrf(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A)
+int dplasma_zhetrf(parsec_context_t *parsec, parsec_tiled_matrix_t *A)
 {
     parsec_taskpool_t *parsec_zhetrf/*, *parsec_ztrmdm*/;
     int info = 0, ginfo = 0;

@@ -16,8 +16,8 @@ extern "C" %{
 %}
 
 /** Globals */
-dataA     [type = "parsec_tiled_matrix_dc_t*"]
-dataIP    [type = "const parsec_tiled_matrix_dc_t*"]
+dataA     [type = "parsec_tiled_matrix_t*"]
+dataIP    [type = "const parsec_tiled_matrix_t*"]
 inc       [type = "int"]
 
 /************************************************************************************
@@ -60,7 +60,7 @@ BODY
         int tempnn = ((n)==(dataA->nt-1)) ? (dataA->n-(n*dataA->nb)) : (dataA->nb);
         int ldak = BLKLDD(dataA, k);
 
-        if ( dataA->storage == matrix_Tile ) {
+        if ( dataA->storage == PARSEC_MATRIX_TILE ) {
             int tempk = k * dataA->mb;
             int tempm = dataA->m - tempk;
             PLASMA_desc pdescA = plasma_desc_init( PlasmaComplexDouble,

@@ -68,8 +68,8 @@
  ******************************************************************************/
 parsec_taskpool_t *
 dplasma_map_New( dplasma_enum_t uplo,
-                 parsec_tiled_matrix_dc_t *A,
-                 tiled_matrix_unary_op_t operator,
+                 parsec_tiled_matrix_t *A,
+                 parsec_tiled_matrix_unary_op_t operator,
                  void *op_args )
 {
     parsec_map_taskpool_t *parsec_map = NULL;
@@ -87,31 +87,31 @@ dplasma_map_New( dplasma_enum_t uplo,
                                operator, op_args);
 
     switch( A->mtype ) {
-    case matrix_ComplexDouble :
+    case PARSEC_MATRIX_COMPLEX_DOUBLE :
         dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(dplasma_complex64_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_complex_t, A->mb);
         break;
-    case matrix_ComplexFloat  :
+    case PARSEC_MATRIX_COMPLEX_FLOAT  :
         dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(dplasma_complex32_t),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_complex_t, A->mb);
         break;
-    case matrix_RealDouble    :
+    case PARSEC_MATRIX_DOUBLE    :
         dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(double),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_double_t, A->mb);
         break;
-    case matrix_RealFloat     :
+    case PARSEC_MATRIX_FLOAT     :
         dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(float),
                                 PARSEC_ARENA_ALIGNMENT_SSE,
                                 parsec_datatype_float_t, A->mb);
         break;
-    case matrix_Integer       :
+    case PARSEC_MATRIX_INTEGER       :
     default:
         dplasma_add2arena_tile( &parsec_map->arenas_datatypes[PARSEC_map_DEFAULT_ADT_IDX],
                                 A->mb*A->nb*sizeof(int),
@@ -212,8 +212,8 @@ dplasma_map_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_map( parsec_context_t *parsec,
              dplasma_enum_t uplo,
-             parsec_tiled_matrix_dc_t *A,
-             tiled_matrix_unary_op_t operator,
+             parsec_tiled_matrix_t *A,
+             parsec_tiled_matrix_unary_op_t operator,
              void *op_args )
 {
     parsec_taskpool_t *parsec_map = NULL;
