@@ -14,7 +14,7 @@
 #include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#if DPLASMA_HAVE_CUDA
+#if defined(DPLASMA_HAVE_CUDA)
 #include "parsec/mca/device/cuda/device_cuda.h"
 #endif
 #include "utils/dplasma_info.h"

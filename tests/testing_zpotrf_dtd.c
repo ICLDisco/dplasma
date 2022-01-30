@@ -14,6 +14,12 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/dtd/insert_function.h"
 
+#if defined(PARSEC_HAVE_CUDA)
+#include "parsec/parsec_internal.h"
+#include "parsec/mca/device/cuda/device_cuda.h"
+#include <cublas.h>
+#endif  /* defined(PARSEC_HAVE_CUDA) */
+
 /* Global index for the full tile datatype */
 static int TILE_FULL;
 
@@ -96,6 +102,102 @@ parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     return PARSEC_HOOK_RETURN_DONE;
 }
 
+#if defined(PARSEC_HAVE_CUDA)
+static int
+gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
+                                       parsec_gpu_task_t * gpu_task,
+                                       parsec_gpu_exec_stream_t * gpu_stream)
+{
+    int transA, transB;
+    int m, n, k, lda, ldb, ldc;
+    dplasma_complex64_t alpha, beta;
+    dplasma_complex64_t *A;
+    dplasma_complex64_t *B;
+    dplasma_complex64_t *C;
+    parsec_task_t *this_task = gpu_task->ec;
+    parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
+
+    parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
+                           &A, &lda, &B, &ldb, &beta, &C, &ldc);
+
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+    cuDoubleComplex mzone = make_cuDoubleComplex(-1., 0.);
+#else
+    double zone  =  1.;
+    double mzone = -1.;
+#endif
+
+#if defined(PARSEC_DEBUG_NOISIER)
+    {
+        char tmp[MAX_TASK_STRLEN];
+        PARSEC_DEBUG_VERBOSE(10, parsec_cuda_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
+                             gpu_device->cuda_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
+                                                                          (parsec_task_t *) this_task),
+                             this_task->priority);
+    }
+#endif /* defined(PARSEC_DEBUG_NOISIER) */
+
+    cublasStatus_t status;
+
+    cublasSetKernelStream( cuda_stream->cuda_stream );
+    cublasZgemm( 'N', dplasma_lapack_const(dplasmaConjTrans),
+                 n, n, k,
+                 mzone, (cuDoubleComplex*)A, lda,
+                 (cuDoubleComplex*)B, ldb,
+                 zone,  (cuDoubleComplex*)C, ldc );
+    status = cublasGetError();
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
+                             {return -1;} );
+    (void)gpu_device;
+    return PARSEC_HOOK_RETURN_DONE;
+}
+
+int
+parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
+{
+    parsec_gpu_task_t *gpu_task;
+    double ratio;
+    int dev_index;
+    int transA, transB;
+    int m, n, k, lda, ldb, ldc;
+    dplasma_complex64_t alpha, beta;
+    dplasma_complex64_t *A;
+    dplasma_complex64_t *B;
+    dplasma_complex64_t *C;
+
+    parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
+                           &A, &lda, &B, &ldb, &beta, &C, &ldc);
+
+    ratio = ((m + 1) - k);
+    dev_index = parsec_get_best_device((parsec_task_t *) this_task, ratio);
+    assert(dev_index >= 0);
+    if (dev_index < 2) {
+        /* Fallback to the CPU only version */
+        return parsec_core_gemm(es, this_task);
+    }
+
+    gpu_task = (parsec_gpu_task_t *) calloc(1, sizeof(parsec_gpu_task_t));
+    PARSEC_OBJ_CONSTRUCT(gpu_task, parsec_list_item_t);
+    gpu_task->ec = (parsec_task_t *) this_task;
+    gpu_task->submit = &gpu_kernel_submit_dpotrf_U_potrf_dgemm;
+    gpu_task->task_type = 0;
+    gpu_task->load = ratio * parsec_device_sweight[dev_index];
+    gpu_task->last_data_check_epoch = -1;	/* force at least one validation for the task */
+    gpu_task->pushout = 0;
+    gpu_task->flow[0] = NULL; /*&flow_of_dpotrf_U_potrf_dgemm_for_C;*/
+    if ((m == (k + 1))) {
+        gpu_task->pushout |= (1 << 0);
+    }
+    gpu_task->flow[1] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_A; */
+    gpu_task->flow[2] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_B; */
+    parsec_device_load[dev_index] += gpu_task->load;
+
+    (void)es;
+    return parsec_cuda_kernel_scheduler(es, gpu_task, dev_index);
+}
+#endif  /* defined(PARSEC_HAVE_CUDA) */
+
 int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
@@ -159,6 +261,15 @@ int main(int argc, char **argv)
 
     /* start parsec context */
     parsec_context_start( parsec );
+
+    /**
+     * To be or not to be: CUDA or plain CPU ?
+     */
+#if defined(PARSEC_HAVE_CUDA)
+    parsec_dtd_funcptr_t* gemm_fct = parsec_core_cuda_gemm;
+#else
+    parsec_dtd_funcptr_t* gemm_fct = parsec_core_gemm;
+#endif  /* defined(PARSEC_HAVE_CUDA) */
 
     if( dplasmaLower == uplo ) {
 
@@ -228,9 +339,14 @@ int main(int argc, char **argv)
 
                 for( n = m+1; n < total; n++ ) {
                     ldan = BLKLDD(&dcA.super, n);
-                    parsec_dtd_insert_task( dtd_tp,  parsec_core_gemm,
-                                      (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-                                      PARSEC_DEV_CPU, "Gemm",
+                    parsec_dtd_insert_task( dtd_tp,  gemm_fct,
+                                       (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
+#if defined(PARSEC_HAVE_CUDA)
+                                       PARSEC_DEV_CUDA,
+#else
+                                       PARSEC_DEV_CPU,
+#endif  /* defined(PARSEC_HAVE_CUDA) */
+                                       "Gemm",
                                        sizeof(int),        &transA_g,           PARSEC_VALUE,
                                        sizeof(int),        &transB,             PARSEC_VALUE,
                                        sizeof(int),        &tempmm,             PARSEC_VALUE,
@@ -314,9 +430,14 @@ int main(int argc, char **argv)
 
                 for( n = m+1; n < total; n++ ) {
                    ldan = BLKLDD(&dcA.super, n);
-                   parsec_dtd_insert_task( dtd_tp,  parsec_core_gemm,
-                               (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-                               PARSEC_DEV_CPU, "Gemm",
+                   parsec_dtd_insert_task( dtd_tp,  gemm_fct,
+                                      (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
+#if defined(PARSEC_HAVE_CUDA)
+                                      PARSEC_DEV_CUDA,
+#else
+                                      PARSEC_DEV_CPU,
+#endif  /* defined(PARSEC_HAVE_CUDA) */
+                                      "Gemm",
                                       sizeof(int),        &transA_g,           PARSEC_VALUE,
                                       sizeof(int),        &transB,             PARSEC_VALUE,
                                       sizeof(int),        &dcA.super.mb,    PARSEC_VALUE,
