@@ -63,11 +63,11 @@
  ******************************************************************************/
 int check_zpotrf( parsec_context_t *parsec, int loud,
                   dplasma_enum_t uplo,
-                  parsec_tiled_matrix_dc_t *A,
-                  parsec_tiled_matrix_dc_t *A0 )
+                  parsec_tiled_matrix_t *A,
+                  parsec_tiled_matrix_t *A0 )
 {
-    two_dim_block_cyclic_t *twodA = (two_dim_block_cyclic_t *)A0;
-    two_dim_block_cyclic_t LLt;
+    parsec_matrix_block_cyclic_t *twodA = (parsec_matrix_block_cyclic_t *)A0;
+    parsec_matrix_block_cyclic_t LLt;
     int info_factorization;
     double Rnorm = 0.0;
     double Anorm = 0.0;
@@ -77,7 +77,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     double eps = LAPACKE_dlamch_work('e');
     dplasma_enum_t side;
 
-    two_dim_block_cyclic_init(&LLt, matrix_ComplexDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(&LLt, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                               twodA->grid.rank,
                               A->mb, A->nb, M, N, 0, 0,
                               M, N, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq);
@@ -86,21 +86,21 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                                   (size_t)LLt.super.bsiz *
                                   (size_t)parsec_datadist_getsizeoftype(LLt.super.mtype));
 
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_dc_t *)&LLt );
-    dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_dc_t *)&LLt );
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
+    dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
 
     /* Compute LL' or U'U  */
     side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
     dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
-                   A, (parsec_tiled_matrix_dc_t*)&LLt);
+                   A, (parsec_tiled_matrix_t*)&LLt);
 
     /* compute LL' - A or U'U - A */
     dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
-                    -1.0, A0, 1., (parsec_tiled_matrix_dc_t*)&LLt);
+                    -1.0, A0, 1., (parsec_tiled_matrix_t*)&LLt);
 
     Anorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, A0);
     Rnorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo,
-                           (parsec_tiled_matrix_dc_t*)&LLt);
+                           (parsec_tiled_matrix_t*)&LLt);
 
     result = Rnorm / ( Anorm * N * eps ) ;
 
@@ -128,7 +128,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     }
 
     parsec_data_free(LLt.mat); LLt.mat = NULL;
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&LLt);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&LLt);
 
     return info_factorization;
 }
@@ -179,9 +179,9 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
  ******************************************************************************/
 int check_zaxmb( parsec_context_t *parsec, int loud,
                  dplasma_enum_t uplo,
-                 parsec_tiled_matrix_dc_t *A,
-                 parsec_tiled_matrix_dc_t *b,
-                 parsec_tiled_matrix_dc_t *x )
+                 parsec_tiled_matrix_t *A,
+                 parsec_tiled_matrix_t *b,
+                 parsec_tiled_matrix_t *x )
 {
     int info_solution;
     double Rnorm = 0.0;
@@ -250,7 +250,7 @@ int check_zaxmb( parsec_context_t *parsec, int loud,
  *
  * @param[in] A
  *          Descriptor of the distributed original matrix A.
- *          A must be two_dim_block_cyclic and fully generated.
+ *          A must be parsec_matrix_block_cyclic and fully generated.
  *
  * @param[in] Ainv
  *          Descriptor of the computed distributed A inverse.
@@ -264,18 +264,18 @@ int check_zaxmb( parsec_context_t *parsec, int loud,
  ******************************************************************************/
 int check_zpoinv( parsec_context_t *parsec, int loud,
                   dplasma_enum_t uplo,
-                  parsec_tiled_matrix_dc_t *A,
-                  parsec_tiled_matrix_dc_t *Ainv )
+                  parsec_tiled_matrix_t *A,
+                  parsec_tiled_matrix_t *Ainv )
 {
-    two_dim_block_cyclic_t *twodA = (two_dim_block_cyclic_t *)A;
-    two_dim_block_cyclic_t Id;
+    parsec_matrix_block_cyclic_t *twodA = (parsec_matrix_block_cyclic_t *)A;
+    parsec_matrix_block_cyclic_t Id;
     int info_solution;
     double Anorm, Ainvnorm, Rnorm;
     double eps, result;
 
     eps = LAPACKE_dlamch_work('e');
 
-    two_dim_block_cyclic_init(&Id, matrix_ComplexDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(&Id, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                twodA->grid.rank,
                                A->mb, A->nb, A->n, A->n, 0, 0,
                                A->n, A->n, twodA->grid.rows, twodA->grid.cols, twodA->grid.krows, twodA->grid.kcols, twodA->grid.ip, twodA->grid.jq);
@@ -284,16 +284,16 @@ int check_zpoinv( parsec_context_t *parsec, int loud,
                                   (size_t)Id.super.bsiz *
                                   (size_t)parsec_datadist_getsizeoftype(Id.super.mtype));
 
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&Id);
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&Id);
 
     /* Id - A^-1 * A */
     dplasma_zhemm(parsec, dplasmaLeft, uplo,
                   -1., Ainv, A,
-                  1., (parsec_tiled_matrix_dc_t *)&Id );
+                  1., (parsec_tiled_matrix_t *)&Id );
 
     Anorm    = dplasma_zlanhe( parsec, dplasmaOneNorm, uplo, A );
     Ainvnorm = dplasma_zlanhe( parsec, dplasmaOneNorm, uplo, Ainv );
-    Rnorm    = dplasma_zlange( parsec, dplasmaOneNorm, (parsec_tiled_matrix_dc_t*)&Id );
+    Rnorm    = dplasma_zlange( parsec, dplasmaOneNorm, (parsec_tiled_matrix_t*)&Id );
 
     result = Rnorm / ( (Anorm*Ainvnorm)*A->n*eps );
     if ( loud > 2 ) {
@@ -309,7 +309,7 @@ int check_zpoinv( parsec_context_t *parsec, int loud,
     }
 
     parsec_data_free(Id.mat);
-    parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)&Id);
+    parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&Id);
 
     return info_solution;
 }

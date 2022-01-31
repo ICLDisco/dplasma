@@ -16,10 +16,10 @@ extern "C" %{
 
 %}
 
-descA1 [type = "parsec_tiled_matrix_dc_t*"]
-descA2 [type = "parsec_tiled_matrix_dc_t*" aligned=descA1]
-descV  [type = "parsec_tiled_matrix_dc_t*" aligned=descA1]
-descT  [type = "parsec_tiled_matrix_dc_t*" aligned=descA1]
+descA1 [type = "parsec_tiled_matrix_t*"]
+descA2 [type = "parsec_tiled_matrix_t*" aligned=descA1]
+descV  [type = "parsec_tiled_matrix_t*" aligned=descA1]
+descT  [type = "parsec_tiled_matrix_t*" aligned=descA1]
 
 p_work [type = "parsec_memory_pool_t *"]
 
@@ -153,10 +153,10 @@ extern "C" %{
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgeqrfr_tsmqr_New( parsec_tiled_matrix_dc_t *A1,
-                           parsec_tiled_matrix_dc_t *A2,
-                           parsec_tiled_matrix_dc_t *V,
-                           parsec_tiled_matrix_dc_t *T,
+dplasma_zgeqrfr_tsmqr_New( parsec_tiled_matrix_t *A1,
+                           parsec_tiled_matrix_t *A2,
+                           parsec_tiled_matrix_t *V,
+                           parsec_tiled_matrix_t *T,
                            void *work )
 {
     parsec_taskpool_t* tp;

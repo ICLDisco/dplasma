@@ -29,7 +29,7 @@
  */
 
 /* Obtain number of elements rows in tile in matrix tile row m. */
-static inline int dplasma_get_rows(const parsec_tiled_matrix_dc_t *dM, int m)
+static inline int dplasma_get_rows(const parsec_tiled_matrix_t *dM, int m)
 {
   int nrows = dM->mb;
   if(m == 0)     nrows =   ((dM->i % dM->mb) !=0          ? (dM->mb - (dM->i % dM->mb)) : dM->mb);
@@ -38,7 +38,7 @@ static inline int dplasma_get_rows(const parsec_tiled_matrix_dc_t *dM, int m)
 }
 
 /* Obtain number of elements cols in tile in matrix tile col n. */
-static inline int dplasma_get_cols(const parsec_tiled_matrix_dc_t *dM, int n)
+static inline int dplasma_get_cols(const parsec_tiled_matrix_t *dM, int n)
 {
   int ncols = dM->nb;
   if(n == 0)     ncols =  ((dM->j % dM->nb) !=0          ? (dM->nb - (dM->j % dM->nb)) : dM->nb);
@@ -101,7 +101,7 @@ static inline
 void dplasma_setup_adtt_all_loc(dplasma_data_collection_t * ddc, parsec_datatype_t parsec_type,
                                 int uplo, int diag, int *shape)
 {
-    parsec_tiled_matrix_dc_t * desc = ddc->dc_original;
+    parsec_tiled_matrix_t * desc = ddc->dc_original;
     parsec_arena_datatype_t *adt_default = NULL;
     parsec_arena_datatype_t adt;
 
@@ -109,12 +109,12 @@ void dplasma_setup_adtt_all_loc(dplasma_data_collection_t * ddc, parsec_datatype
     int bottom = dplasma_get_rows(desc, desc->m);
     int left   = dplasma_get_cols(desc, 0);
     int right  = dplasma_get_cols(desc, desc->n);
-    int ld     = (desc->storage == matrix_Lapack ) ? desc->llm : desc->mb;
+    int ld     = (desc->storage == PARSEC_MATRIX_LAPACK ) ? desc->llm : desc->mb;
 
     int full_rows = desc->mb;
     int full_cols = desc->nb;
 
-    if( uplo == matrix_UpperLower ){
+    if( uplo == PARSEC_MATRIX_FULL ){
         /* Generating datatypes for full tiles. No other extraction of data.
          * Reuse data collection dtt.
          */
@@ -127,7 +127,7 @@ void dplasma_setup_adtt_all_loc(dplasma_data_collection_t * ddc, parsec_datatype
     }
 
 
-    if( desc->storage != matrix_Lapack ){ /*TILED DESC*/
+    if( desc->storage != PARSEC_MATRIX_LAPACK ){ /*TILED DESC*/
         /* on tile format, data collection dtt is the entire MBxNB even if that memory is not logically on the matrix.
          * force usage of the data collection dtt.
          */

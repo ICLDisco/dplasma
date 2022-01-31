@@ -79,14 +79,14 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgetrf_1d_New( parsec_tiled_matrix_dc_t *A,
-                       parsec_tiled_matrix_dc_t *IPIV,
+dplasma_zgetrf_1d_New( parsec_tiled_matrix_t *A,
+                       parsec_tiled_matrix_t *IPIV,
                        int *INFO )
 {
     parsec_zgetrf_1d_taskpool_t *parsec_getrf_1d;
     int nbthreads = dplasma_imax( 1, vpmap_get_nb_threads_in_vp(0) - 1 );
-    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
-    dplasma_data_collection_t * ddc_IPIV = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)IPIV);
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+    dplasma_data_collection_t * ddc_IPIV = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)IPIV);
 
     if ( (IPIV->mt != 1) || (dplasma_imin(A->nt, A->mt) > IPIV->nt)) {
         dplasma_error("dplasma_zgetrf_1d_New", "IPIV doesn't have the correct number of tiles (1-by-min(A->mt,A->nt)");
@@ -97,7 +97,7 @@ dplasma_zgetrf_1d_New( parsec_tiled_matrix_dc_t *A,
                                             ddc_IPIV,
                                             INFO );
 
-    if ( A->storage == matrix_Tile ) {
+    if ( A->storage == PARSEC_MATRIX_TILE ) {
         parsec_getrf_1d->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
     } else {
         parsec_getrf_1d->_g_getrfdata = CORE_zgetrf_reclap_init(nbthreads);
@@ -107,12 +107,12 @@ dplasma_zgetrf_1d_New( parsec_tiled_matrix_dc_t *A,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_IPIV,
                                 parsec_datatype_int_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
     assert(shape == MAX_SHAPES);
 
@@ -217,8 +217,8 @@ dplasma_zgetrf_1d_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgetrf_1d( parsec_context_t *parsec,
-                parsec_tiled_matrix_dc_t *A,
-                parsec_tiled_matrix_dc_t *IPIV )
+                parsec_tiled_matrix_t *A,
+                parsec_tiled_matrix_t *IPIV )
 {
     parsec_taskpool_t *parsec_zgetrf_1d = NULL;
 

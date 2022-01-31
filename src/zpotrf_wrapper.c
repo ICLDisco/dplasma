@@ -171,7 +171,7 @@ static void destroy_workspace(void *_ws, void *_n)
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zpotrf_New( dplasma_enum_t uplo,
-                    parsec_tiled_matrix_dc_t *A,
+                    parsec_tiled_matrix_t *A,
                     int *info )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = NULL;
@@ -214,7 +214,7 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     assert(shape == MAX_SHAPES);
@@ -306,7 +306,7 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zpotrf( parsec_context_t *parsec,
                 dplasma_enum_t uplo,
-                parsec_tiled_matrix_dc_t *A )
+                parsec_tiled_matrix_t *A )
 {
     parsec_taskpool_t *parsec_zpotrf = NULL;
     int info = 0, ginfo = 0 ;
@@ -386,7 +386,7 @@ dplasma_zpotrf( parsec_context_t *parsec,
 int
 dplasma_zpotrf_rec( parsec_context_t *parsec,
                     dplasma_enum_t uplo,
-                    parsec_tiled_matrix_dc_t *A, int hmb )
+                    parsec_tiled_matrix_t *A, int hmb )
 {
     parsec_taskpool_t *parsec_zpotrf = NULL;
     int info = 0, ginfo = 0 ;

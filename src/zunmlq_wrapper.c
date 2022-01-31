@@ -89,9 +89,9 @@
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zunmlq_New( dplasma_enum_t side, dplasma_enum_t trans,
-                    parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *T,
-                    parsec_tiled_matrix_dc_t *C )
+                    parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *T,
+                    parsec_tiled_matrix_t *C )
 {
     parsec_taskpool_t* tp;
     int An, ib = T->mb;
@@ -287,9 +287,9 @@ dplasma_zunmlq_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zunmlq( parsec_context_t *parsec,
                 dplasma_enum_t side, dplasma_enum_t trans,
-                parsec_tiled_matrix_dc_t *A,
-                parsec_tiled_matrix_dc_t *T,
-                parsec_tiled_matrix_dc_t *C )
+                parsec_tiled_matrix_t *A,
+                parsec_tiled_matrix_t *T,
+                parsec_tiled_matrix_t *C )
 {
     parsec_taskpool_t *parsec_zunmlq = NULL;
     int An;

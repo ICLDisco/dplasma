@@ -25,9 +25,9 @@ int
 dplasma_zhetrd( parsec_context_t* parsec,
                 dplasma_enum_t uplo,
                 int ib,
-                parsec_tiled_matrix_dc_t* A,
-                parsec_tiled_matrix_dc_t* DE,
-                parsec_tiled_matrix_dc_t* T,
+                parsec_tiled_matrix_t* A,
+                parsec_tiled_matrix_t* DE,
+                parsec_tiled_matrix_t* T,
                 int* info )
 {
     parsec_zhetrd_h2b_L_taskpool_t * h2b = NULL;
@@ -75,7 +75,7 @@ dplasma_zhetrd( parsec_context_t* parsec,
         *info=-101; goto cleanup;
     }
 
-    band2rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)A, (two_dim_block_cyclic_t*)DE,
+    band2rect = parsec_diag_band_to_rect_new((parsec_matrix_sym_block_cyclic_t*)A, (parsec_matrix_block_cyclic_t*)DE,
                                              A->mt, A->nt, A->mb, A->nb, sizeof(dplasma_complex64_t));
     if( NULL == band2rect ) goto cleanup;
     dplasma_add2arena_tile( &band2rect->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX],

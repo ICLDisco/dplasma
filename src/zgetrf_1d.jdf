@@ -51,10 +51,10 @@ extern "C" %{
 
 
 ddescA     [type = "dplasma_data_collection_t*"]
-descA      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+descA      [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
 
 ddescIPIV   [type = "dplasma_data_collection_t*"]
-descIPIV    [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescIPIV)->dc_original" aligned=ddescIPIV]
+descIPIV    [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_data_collection_t*)ddescIPIV)->dc_original" aligned=ddescIPIV]
 
 INFO      [type = "int*"]
 
@@ -185,7 +185,7 @@ BODY
     info[1] = t;
     info[2] = nbthrd+1;
 
-    if ( descA->storage == matrix_Tile ) {
+    if ( descA->storage == PARSEC_MATRIX_TILE ) {
         PLASMA_desc pdescA = plasma_desc_init( PlasmaComplexDouble,
                                                descA->mb, descA->nb, descA->mb * descA->nb,
                                                (descA->mt-k)*descA->mb, descA->nb, 0, 0,
@@ -254,7 +254,7 @@ BODY
              "\t(%d, %d, dataA(%d,%d)[%p], B(%d,%d)[%p])",
              k, n, tempkm, tempnn, k, k, A, k, n, B);
 
-    if ( descA->storage == matrix_Tile ) {
+    if ( descA->storage == PARSEC_MATRIX_TILE ) {
         int tempk = k * descA->mb;
         int tempm = descA->m - tempk;
         PLASMA_desc pdescA = plasma_desc_init( PlasmaComplexDouble,
@@ -393,7 +393,7 @@ BODY
              "\t(%d, dataA(%d,%d)[%p], %d, descIPIV(%d)[%p])",
              k, n, descA->nb, k, n, A, ldak_A, k, IPIV);
 
-    if ( descA->storage == matrix_Tile ) {
+    if ( descA->storage == PARSEC_MATRIX_TILE ) {
         int tempk  = k * descA->mb;
         int tempm  = descA->m - tempk;
         PLASMA_desc pdescA = plasma_desc_init( PlasmaComplexDouble,

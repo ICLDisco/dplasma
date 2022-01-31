@@ -91,8 +91,8 @@ int main( int argc, char **argv ) {
                          nprow, npcol,
                          mloc,
                          Aseed);
-    // dplasma_dplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA, Aseed);
-    // dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcC, Cseed );
+    // dplasma_dplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_t *)&dcA, Aseed);
+    // dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed );
 
       A = malloc( sizeof(double)*mloc*nloc );
       pdlacpy_( "All", &Am, &An, A, &i1, &i1, descA, A, &i1, &i1, descA );

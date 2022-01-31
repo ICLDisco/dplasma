@@ -72,10 +72,10 @@
  *
  ******************************************************************************/
 parsec_taskpool_t *
-dplasma_ztrsmpl_incpiv_New(const parsec_tiled_matrix_dc_t *A,
-                    const parsec_tiled_matrix_dc_t *L,
-                    const parsec_tiled_matrix_dc_t *IPIV,
-                    parsec_tiled_matrix_dc_t *B)
+dplasma_ztrsmpl_incpiv_New(const parsec_tiled_matrix_t *A,
+                    const parsec_tiled_matrix_t *L,
+                    const parsec_tiled_matrix_t *IPIV,
+                    parsec_tiled_matrix_t *B)
 {
     parsec_ztrsmpl_incpiv_taskpool_t *parsec_trsmpl_incpiv = NULL; 
 
@@ -205,10 +205,10 @@ dplasma_ztrsmpl_incpiv_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_ztrsmpl_incpiv( parsec_context_t *parsec,
-                 const parsec_tiled_matrix_dc_t *A,
-                 const parsec_tiled_matrix_dc_t *L,
-                 const parsec_tiled_matrix_dc_t *IPIV,
-                       parsec_tiled_matrix_dc_t *B )
+                 const parsec_tiled_matrix_t *A,
+                 const parsec_tiled_matrix_t *L,
+                 const parsec_tiled_matrix_t *IPIV,
+                       parsec_tiled_matrix_t *B )
 {
     parsec_taskpool_t *parsec_ztrsmpl_incpiv = NULL;
 

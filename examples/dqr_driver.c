@@ -23,8 +23,8 @@ int main(int argc, char ** argv)
     int P = 0;
     int ch;
     int cores = -1;
-    two_dim_block_cyclic_t dcA;
-    two_dim_block_cyclic_t dcWork;
+    parsec_matrix_block_cyclic_t dcA;
+    parsec_matrix_block_cyclic_t dcWork;
 
     static struct option longopts[] = {
         { "M",      required_argument,            NULL,           'M' },
@@ -132,7 +132,7 @@ int main(int argc, char ** argv)
      *  See $DPLASMA_INSTALL_DIR/include/data_dist/matrix/two_dim_rectangle_cyclic.h
      *  for documentation on all parameters.
      */
-    two_dim_block_cyclic_init(&dcA, matrix_RealDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(&dcA, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_TILE,
                               rank, mb, nb, M, N, 0, 0,
                               M, N, P, world/P, 4, 1, 0, 0);
     /** Give a name to this matrix, for debugging and tracing purposes */
@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
      *  factorization (see http://www.netlib.org/lapack/explore-3.1.1-html/dgeqrf.f.html)
      *  That matrix is distributed over the same process grid as A.
      */
-    two_dim_block_cyclic_init(&dcWork, matrix_RealDouble, matrix_Tile,
+    parsec_matrix_block_cyclic_init(&dcWork, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_TILE,
                               rank, ib, nb, dcA.super.lmt*ib, N, 0, 0,
                               dcA.super.lmt*ib, P, world/P, N, 4, 1, 0, 0);
     /** Give a name to this matrix, for debugging and tracing purposes */
@@ -164,7 +164,7 @@ int main(int argc, char ** argv)
      * See $DPLASMA_INSTALL_DIR/include/dplasma.h for all possible
      * functions
      */
-    dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+    dplasma_dplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
 
     /** Perform the QR operation using the non-blocking interface
      *  Measure the time taken, reduce the max, and compute the
@@ -181,8 +181,8 @@ int main(int argc, char ** argv)
         gettimeofday(&start, NULL);
 
         /** Create a handle for the QR operation on A and Work */
-        parsec_taskpool_t* PARSEC_dgeqrf = dplasma_dgeqrf_New( (parsec_tiled_matrix_dc_t*)&dcA,
-                                                           (parsec_tiled_matrix_dc_t*)&dcWork );
+        parsec_taskpool_t* PARSEC_dgeqrf = dplasma_dgeqrf_New( (parsec_tiled_matrix_t*)&dcA,
+                                                           (parsec_tiled_matrix_t*)&dcWork );
 
         /** Schedule the QR operation */
         parsec_context_add_taskpool(parsec, PARSEC_dgeqrf);
@@ -219,8 +219,8 @@ int main(int argc, char ** argv)
     /** Free matrices allocated for the operation */
     free(dcA.mat);
     free(dcWork.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcWork);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcWork);
 
     /** Release resources used by the PaRSEC engine */
     parsec_fini(&parsec);

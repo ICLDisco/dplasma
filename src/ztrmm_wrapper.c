@@ -96,12 +96,12 @@ parsec_taskpool_t*
 dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                    dplasma_enum_t trans, dplasma_enum_t diag,
                    dplasma_complex64_t alpha,
-                   const parsec_tiled_matrix_dc_t *A,
-                   parsec_tiled_matrix_dc_t *B )
+                   const parsec_tiled_matrix_t *A,
+                   parsec_tiled_matrix_t *B )
 {
     parsec_taskpool_t *parsec_trmm = NULL;
-    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)A);
-    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_dc_t*)B);
+    dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+    dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
 
     /* Check input arguments */
     if (side != dplasmaLeft && side != dplasmaRight) {
@@ -173,12 +173,12 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     dplasma_setup_adtt_all_loc( ddc_B,
                                 parsec_datatype_double_complex_t,
-                                matrix_UpperLower/*uplo*/, 1/*diag:for matrix_Upper or matrix_Lower types*/,
+                                PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
 
     assert(shape == MAX_SHAPES);
@@ -295,8 +295,8 @@ dplasma_ztrmm( parsec_context_t *parsec,
                dplasma_enum_t side,  dplasma_enum_t uplo,
                dplasma_enum_t trans, dplasma_enum_t diag,
                dplasma_complex64_t alpha,
-               const parsec_tiled_matrix_dc_t *A,
-               parsec_tiled_matrix_dc_t *B)
+               const parsec_tiled_matrix_t *A,
+               parsec_tiled_matrix_t *B)
 {
     parsec_taskpool_t *parsec_ztrmm = NULL;
 

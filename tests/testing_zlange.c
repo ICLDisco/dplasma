@@ -36,7 +36,7 @@ int main(int argc, char ** argv)
 
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
-        two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Lapack,
+        parsec_matrix_block_cyclic, (&dcA0, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                rank, MB, NB, LDA, An, 0, 0,
                                M, An, 1, 1, KP, KQ, IP, JQ));
 
@@ -49,14 +49,14 @@ int main(int argc, char ** argv)
      */
     {
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-            two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+            parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                    rank, MB, NB, LDA, N, 0, 0,
                                    M, N, P, nodes/P, KP, KQ, IP, JQ));
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA,  3872);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA0, 3872);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA,  3872);
         if(loud > 2) printf("Done\n");
 
         for(i=0; i<4; i++) {
@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
             }
             if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
             normdag = dplasma_zlange(parsec, norms[i],
-                                     (parsec_tiled_matrix_dc_t *)&dcA);
+                                     (parsec_tiled_matrix_t *)&dcA);
 
             if ( rank == 0 ) {
                 normlap = LAPACKE_zlange_work(LAPACK_COL_MAJOR, normsstr[i][0], M, N,
@@ -116,7 +116,7 @@ int main(int argc, char ** argv)
         }
 
         parsec_data_free(dcA.mat);
-        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+        parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
     }
 
     /*
@@ -127,17 +127,17 @@ int main(int argc, char ** argv)
 
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+        dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_t *)&dcA0, 3872);
         if(loud > 2) printf("Done\n");
 
         /* Computing the norm */
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-            two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+            parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                    rank, MB, NB, LDA, N, 0, 0,
                                    M, N, P, nodes/P, KP, KQ, IP, JQ));
 
         for(u=0; u<2; u++) {
-            dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+            dplasma_zplrnt( parsec, 0., (parsec_tiled_matrix_t *)&dcA, 3872);
 
             for(d=0; d<2; d++) {
                 for(i=0; i<4; i++) {
@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
                     }
                     if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
                     normdag = dplasma_zlantr(parsec, norms[i], uplo[u], diag[d],
-                                             (parsec_tiled_matrix_dc_t *)&dcA);
+                                             (parsec_tiled_matrix_t *)&dcA);
 
                     if ( rank == 0 ) {
                         normlap = LAPACKE_zlantr_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], diagstr[d][0], M, N,
@@ -199,7 +199,7 @@ int main(int argc, char ** argv)
             }
         }
         parsec_data_free(dcA.mat);
-        parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)&dcA);
+        parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&dcA);
     }
 
     /* Let set N=M for the triangular cases */
@@ -211,18 +211,18 @@ int main(int argc, char ** argv)
     {
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+        dplasma_zplgsy( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_t *)&dcA0, 3872);
         if(loud > 2) printf("Done\n");
 
         for(u=0; u<2; u++) {
 
             /* Computing the norm */
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-                sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
+                parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                            rank, MB, NB, LDA, N, 0, 0,
                                            M, N, P, nodes/P, uplo[u]));
 
-            dplasma_zplgsy( parsec, 0., uplo[u], (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+            dplasma_zplgsy( parsec, 0., uplo[u], (parsec_tiled_matrix_t *)&dcA, 3872);
 
             for(i=0; i<4; i++) {
                 if ( rank == 0 ) {
@@ -230,7 +230,7 @@ int main(int argc, char ** argv)
                 }
                 if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
                 normdag = dplasma_zlansy(parsec, norms[i], uplo[u],
-                                         (parsec_tiled_matrix_dc_t *)&dcA);
+                                         (parsec_tiled_matrix_t *)&dcA);
 
                 if ( rank == 0 ) {
                     normlap = LAPACKE_zlansy_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], M,
@@ -280,7 +280,7 @@ int main(int argc, char ** argv)
             }
 
             parsec_data_free(dcA.mat);
-            parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+            parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
         }
     }
 
@@ -291,18 +291,18 @@ int main(int argc, char ** argv)
     {
         /* matrix generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplghe( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_dc_t *)&dcA0, 3872);
+        dplasma_zplghe( parsec, 0., dplasmaUpperLower, (parsec_tiled_matrix_t *)&dcA0, 3872);
         if(loud > 2) printf("Done\n");
 
         for(u=0; u<2; u++) {
 
             /* Computing the norm */
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-                sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
+                parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                            rank, MB, NB, LDA, N, 0, 0,
                                            M, N, P, nodes/P, uplo[u]));
 
-            dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+            dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_t *)&dcA, 3872);
 
             for(i=0; i<4; i++) {
                 if ( rank == 0 ) {
@@ -310,7 +310,7 @@ int main(int argc, char ** argv)
                 }
                 if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
                 normdag = dplasma_zlanhe(parsec, norms[i], uplo[u],
-                                         (parsec_tiled_matrix_dc_t *)&dcA);
+                                         (parsec_tiled_matrix_t *)&dcA);
 
                 if ( rank == 0 ) {
                     normlap = LAPACKE_zlanhe_work(LAPACK_COL_MAJOR, normsstr[i][0], uplostr[u][0], M,
@@ -359,7 +359,7 @@ int main(int argc, char ** argv)
             }
 
             parsec_data_free(dcA.mat);
-            parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+            parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
         }
     }
 #endif
@@ -369,7 +369,7 @@ int main(int argc, char ** argv)
         free( work );
     }
     parsec_data_free(dcA0.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA0);
 
     cleanup_parsec(parsec, iparam);
 

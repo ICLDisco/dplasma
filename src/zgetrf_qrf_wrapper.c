@@ -156,10 +156,10 @@ dplasma_genrandom_lutab(int *lutab, int deb, int fin, int nb_lu, int rec_depth)
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
-                        parsec_tiled_matrix_dc_t *A,
-                        parsec_tiled_matrix_dc_t *IPIV,
-                        parsec_tiled_matrix_dc_t *TS,
-                        parsec_tiled_matrix_dc_t *TT,
+                        parsec_tiled_matrix_t *A,
+                        parsec_tiled_matrix_t *IPIV,
+                        parsec_tiled_matrix_t *TS,
+                        parsec_tiled_matrix_t *TT,
                         int criteria, double alpha, int* lu_tab,
                         int* INFO)
 {
@@ -177,7 +177,7 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
         (criteria == HIGHAM_MAX_CRITERIUM) ||
         (criteria == HIGHAM_MOY_CRITERIUM))
     {
-        int P = ((two_dim_block_cyclic_t*)A)->grid.rows;
+        int P = ((parsec_matrix_block_cyclic_t*)A)->grid.rows;
         sizeReduceVec = P;
         sizeW = (A->mt + P - 1) / P;
     }
@@ -202,7 +202,7 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
                                 NULL, NULL, NULL,
                                 INFO);
 
-    if ( A->storage == matrix_Tile ) {
+    if ( A->storage == PARSEC_MATRIX_TILE ) {
         tp->_g_getrfdata = CORE_zgetrf_rectil_init(nbthreads);
     } else {
         tp->_g_getrfdata = CORE_zgetrf_reclap_init(nbthreads);
@@ -418,10 +418,10 @@ dplasma_zgetrf_qrf_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zgetrf_qrf( parsec_context_t *parsec,
                     dplasma_qrtree_t *qrtree,
-                    parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *IPIV,
-                    parsec_tiled_matrix_dc_t *TS,
-                    parsec_tiled_matrix_dc_t *TT,
+                    parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *IPIV,
+                    parsec_tiled_matrix_t *TS,
+                    parsec_tiled_matrix_t *TT,
                     int criteria, double alpha, int* lu_tab,
                     int* INFO )
 {

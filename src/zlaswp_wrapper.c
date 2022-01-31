@@ -57,8 +57,8 @@
  *
  ******************************************************************************/
 parsec_taskpool_t *
-dplasma_zlaswp_New(parsec_tiled_matrix_dc_t *A,
-                   const parsec_tiled_matrix_dc_t *IPIV,
+dplasma_zlaswp_New(parsec_tiled_matrix_t *A,
+                   const parsec_tiled_matrix_t *IPIV,
                    int inc)
 {
     parsec_zlaswp_taskpool_t *parsec_laswp;
@@ -156,8 +156,8 @@ dplasma_zlaswp_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zlaswp( parsec_context_t *parsec,
-                parsec_tiled_matrix_dc_t *A,
-                const parsec_tiled_matrix_dc_t *IPIV,
+                parsec_tiled_matrix_t *A,
+                const parsec_tiled_matrix_t *IPIV,
                 int inc)
 {
     parsec_taskpool_t *parsec_zlaswp = NULL;

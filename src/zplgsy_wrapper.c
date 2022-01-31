@@ -22,7 +22,7 @@ typedef struct zplgsy_args_s zplgsy_args_t;
 
 static int
 dplasma_zplgsy_operator( parsec_execution_stream_t *es,
-                         const parsec_tiled_matrix_dc_t *descA,
+                         const parsec_tiled_matrix_t *descA,
                          void *_A,
                          dplasma_enum_t uplo, int m, int n,
                          void *op_data )
@@ -95,7 +95,7 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo,
-                    parsec_tiled_matrix_dc_t *A,
+                    parsec_tiled_matrix_t *A,
                     unsigned long long int seed)
 {
     zplgsy_args_t *params = (zplgsy_args_t*)malloc(sizeof(zplgsy_args_t));
@@ -181,7 +181,7 @@ dplasma_zplgsy_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zplgsy( parsec_context_t *parsec,
                 dplasma_complex64_t bump, dplasma_enum_t uplo,
-                parsec_tiled_matrix_dc_t *A,
+                parsec_tiled_matrix_t *A,
                 unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zplgsy = NULL;

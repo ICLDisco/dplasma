@@ -68,7 +68,7 @@
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zpoinv_New( dplasma_enum_t uplo,
-                    parsec_tiled_matrix_dc_t *A,
+                    parsec_tiled_matrix_t *A,
                     int *info )
 {
     parsec_zpoinv_L_taskpool_t *parsec_zpoinv = NULL;
@@ -184,7 +184,7 @@ dplasma_zpoinv_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zpoinv( parsec_context_t *parsec,
                 dplasma_enum_t uplo,
-                parsec_tiled_matrix_dc_t *A )
+                parsec_tiled_matrix_t *A )
 {
     parsec_taskpool_t *parsec_zpoinv = NULL;
     int info = 0, ginfo = 0 ;
@@ -255,7 +255,7 @@ dplasma_zpoinv( parsec_context_t *parsec,
 int
 dplasma_zpoinv_sync( parsec_context_t *parsec,
                      dplasma_enum_t uplo,
-                     parsec_tiled_matrix_dc_t* A )
+                     parsec_tiled_matrix_t* A )
 {
     int info = 0;
     /* Check input arguments */

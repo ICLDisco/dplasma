@@ -61,14 +61,14 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_dc_t *A,
-                           parsec_tiled_matrix_dc_t *IPIV,
+dplasma_zgetrf_ptgpanel_New( parsec_tiled_matrix_t *A,
+                           parsec_tiled_matrix_t *IPIV,
                            int *info )
 {
     parsec_zgetrf_ptgpanel_taskpool_t *parsec_zgetrf_ptgpanel = NULL;
     int nb = A->nb;
-    int P = ((two_dim_block_cyclic_t*)A)->grid.rows;
-    int Q = ((two_dim_block_cyclic_t*)A)->grid.cols;
+    int P = ((parsec_matrix_block_cyclic_t*)A)->grid.rows;
+    int Q = ((parsec_matrix_block_cyclic_t*)A)->grid.cols;
 
     /* The code has to be fixed for N >> M */
     assert( A->m >= A->n );
@@ -194,8 +194,8 @@ dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
-                       parsec_tiled_matrix_dc_t *A,
-                       parsec_tiled_matrix_dc_t *IPIV )
+                       parsec_tiled_matrix_t *A,
+                       parsec_tiled_matrix_t *IPIV )
 {
     int info = 0, ginfo = 0 ;
     parsec_taskpool_t *parsec_zgetrf_ptgpanel = NULL;

@@ -35,20 +35,20 @@ int main(int argc, char *argv[])
 
     /*
      PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-     sym_two_dim_block_cyclic, (&dcA, matrix_ComplexDouble,
+     parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
      rank, MB, NB, LDA, N, 0, 0,
      N, N, P, nodes/P, MatrixLower))
      */
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-                               two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+                               parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                       rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
                                                       MB+1, (NB+2)*NT, 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
 
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
 
     PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt,
-                              ((parsec_tiled_matrix_dc_t*)&dcA));
+                              ((parsec_tiled_matrix_t*)&dcA));
 
     PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
 
@@ -59,20 +59,20 @@ int main(int argc, char *argv[])
         /* Regenerate A, distributed so that the random generators are doing
          * the same things */
         PASTE_CODE_ALLOCATE_MATRIX(dcAcpy, 1,
-                                   two_dim_block_cyclic, (&dcAcpy, matrix_ComplexDouble, matrix_Tile,
+                                   parsec_matrix_block_cyclic, (&dcAcpy, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                           rank, MB+1, NB+2, MB+1, (NB+2)*NT,
                                                           0, 0, MB+1, (NB+2)*NT, 1, nodes, 1, KQ, IP, JQ));
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcAcpy, 3872);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcAcpy, 3872);
 
         /* Gather Acpy on rank 0 */
         PASTE_CODE_ALLOCATE_MATRIX(dcLAcpy, 1,
-                                   two_dim_block_cyclic, (&dcLAcpy, matrix_ComplexDouble, matrix_Tile,
+                                   parsec_matrix_block_cyclic, (&dcLAcpy, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                           rank, MB+1, NB+2, MB+1, (NB+2)*NT,
                                                           0, 0, MB+1, (NB+2)*NT, 1, 1, 1, 1, IP, JQ));
 
         /* Gather A diagonal and subdiagonal on rank 0 */
         PASTE_CODE_ALLOCATE_MATRIX(dcLA, 1,
-                                   two_dim_block_cyclic, (&dcLA, matrix_ComplexDouble, matrix_Tile,
+                                   parsec_matrix_block_cyclic, (&dcLA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                           rank, 2, NB, 2, NB*NT,
                                                           0, 0, 2, NB*NT, 1, 1, 1, 1, IP, JQ));
         if(rank == 0) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
 
     parsec_data_free(dcA.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
 
     cleanup_parsec(parsec, iparam);
 

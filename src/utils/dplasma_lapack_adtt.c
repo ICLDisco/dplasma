@@ -324,7 +324,7 @@ static int key_to_string(parsec_data_collection_t * desc, parsec_data_key_t data
     return ((parsec_data_collection_t*)ddc->dc_original)->key_to_string(((parsec_data_collection_t *)ddc->dc_original), datakey, buffer, buffer_size);
 }
 
-dplasma_data_collection_t *dplasma_wrap_data_collection(parsec_tiled_matrix_dc_t *A)
+dplasma_data_collection_t *dplasma_wrap_data_collection(parsec_tiled_matrix_t *A)
 {
     dplasma_data_collection_t * ddc = (dplasma_data_collection_t *)malloc(sizeof(dplasma_data_collection_t));
     parsec_data_collection_init((parsec_data_collection_t *)ddc,

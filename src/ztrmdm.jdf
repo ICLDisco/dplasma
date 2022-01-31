@@ -16,7 +16,7 @@ extern int CORE_ztrmdm(dplasma_enum_t uplo, int N, dplasma_complex64_t *A, int L
 
 %}
 
-desc_A  [type = "parsec_tiled_matrix_dc_t*"]
+desc_A  [type = "parsec_tiled_matrix_t*"]
 
 ztrmdm(k)
   /* Execution space */

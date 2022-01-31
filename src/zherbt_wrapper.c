@@ -19,8 +19,8 @@
 
 parsec_taskpool_t *
 dplasma_zherbt_New( dplasma_enum_t uplo, int IB,
-                    parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *T)
+                    parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *T)
 {
     parsec_zherbt_L_taskpool_t *parsec_zherbt = NULL;
     parsec_memory_pool_t *pool[4];

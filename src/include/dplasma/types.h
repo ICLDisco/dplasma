@@ -37,7 +37,7 @@ dplasma_add2arena_rectangle( parsec_arena_datatype_t *adt, size_t elem_size, siz
 {
     (void)elem_size;
     return dplasma_get_or_construct_adt( adt, oldtype, alignment,
-                                         matrix_UpperLower, 1, tile_mb, tile_nb, tile_mb, resized);
+                                         PARSEC_MATRIX_FULL, 1, tile_mb, tile_nb, tile_mb, resized);
 }
 
 static inline int
@@ -47,7 +47,7 @@ dplasma_add2arena_tile( parsec_arena_datatype_t *adt, size_t elem_size, size_t a
 {
     (void)elem_size;
     return dplasma_get_or_construct_adt( adt, oldtype, alignment,
-                                         matrix_UpperLower, 1, tile_mb, tile_mb, tile_mb, -1);
+                                         PARSEC_MATRIX_FULL, 1, tile_mb, tile_mb, tile_mb, -1);
 }
 
 static inline int
@@ -57,7 +57,7 @@ dplasma_add2arena_upper( parsec_arena_datatype_t *adt, size_t elem_size, size_t 
 {
     (void)elem_size;
     return dplasma_get_or_construct_adt( adt, oldtype, alignment,
-                                         matrix_Upper, diag, tile_mb, tile_mb, tile_mb, -1);
+                                         PARSEC_MATRIX_UPPER, diag, tile_mb, tile_mb, tile_mb, -1);
 }
 
 static inline int
@@ -67,7 +67,7 @@ dplasma_add2arena_lower( parsec_arena_datatype_t *adt, size_t elem_size, size_t 
 {
     (void)elem_size;
     return dplasma_get_or_construct_adt( adt, oldtype, alignment,
-                                         matrix_Lower, diag, tile_mb, tile_mb, tile_mb, -1);
+                                         PARSEC_MATRIX_LOWER, diag, tile_mb, tile_mb, tile_mb, -1);
 }
 
 static inline int

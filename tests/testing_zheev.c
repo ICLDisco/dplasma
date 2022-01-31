@@ -44,27 +44,27 @@ int main(int argc, char *argv[])
     LDB = dplasma_imax( LDB, N );
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-        two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDA, N, 0, 0,
                                N, N, P, nodes/P, KP, KP, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
-        two_dim_block_cyclic, (&dcT, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcT, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, IB, NB, MT*IB, N, 0, 0,
                                MT*IB, N, P, nodes/P, KP, KP, IP, JQ));
 
     /* Fill A with randomness */
     dplasma_zplghe( parsec, (double)N, uplo,
-                    (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+                    (parsec_tiled_matrix_t *)&dcA, 3872);
 #ifdef PRINTF_HEAVY
     printf("########### A (initial, tile storage)\n");
-    dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_dc_t *)&dcA );
+    dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_t *)&dcA );
 #endif
 
     /* Step 1 - Reduction A to band matrix */
     PASTE_CODE_ENQUEUE_KERNEL(parsec, zherbt,
                               (uplo, IB,
-                               (parsec_tiled_matrix_dc_t*)&dcA,
-                               (parsec_tiled_matrix_dc_t*)&dcT));
+                               (parsec_tiled_matrix_t*)&dcA,
+                               (parsec_tiled_matrix_t*)&dcT));
     PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt);
 #ifdef PRINTF_HEAVY
     printf("########### A (reduced to band form)\n");
@@ -75,11 +75,11 @@ goto fin;
 
     /* Step 2 - Conversion of the tiled band to 1D band storage */
     PASTE_CODE_ALLOCATE_MATRIX(dcBAND, 1,
-        two_dim_block_cyclic, (&dcBAND, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcBAND, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
                                MB+1, (NB+2)*(NT+1), 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
     SYNC_TIME_START();
-    parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((sym_two_dim_block_cyclic_t*)&dcA, &dcBAND,
+    parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((parsec_matrix_sym_block_cyclic_t*)&dcA, &dcBAND,
                                                                                             MT, NT, MB, NB, sizeof(dplasma_complex64_t));
     parsec_arena_datatype_t* adt = &PARSEC_diag_band_to_rect->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX];
     dplasma_add2arena_tile(adt,
@@ -99,7 +99,7 @@ goto fin;
 #endif
 
     /* Step 3 - Reduce band to bi-diag form */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt, ((parsec_tiled_matrix_dc_t*)&dcBAND));
+    PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt, ((parsec_tiled_matrix_t*)&dcBAND));
     PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
 
     if( check ) {
@@ -117,11 +117,11 @@ goto fin;
 #if 0
             /* LAcpy doesn't taskpool differing tile sizes, so lets get simple here */
             PASTE_CODE_ALLOCATE_MATRIX(dcW, 1,
-                                       two_dim_block_cyclic, (&dcW, matrix_ComplexDouble, matrix_Tile,
+                                       parsec_matrix_block_cyclic, (&dcW, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                               rank, 2, N, 1, 1, 0, 0, 2, N, 1, nodes, 1, 1, IP, JQ)); /* on rank 0 only */
 #else
             PASTE_CODE_ALLOCATE_MATRIX(dcW, 1,
-                                       two_dim_block_cyclic, (&dcW, matrix_ComplexDouble, matrix_Tile,
+                                       parsec_matrix_block_cyclic, (&dcW, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                               rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
                                                               MB+1, (NB+2)*NT, 1, 1, 1, 1, IP, JQ/* rank0 only */ ));
 #endif
@@ -171,20 +171,20 @@ goto fin;
         /* COMPUTE THE EIGENVALUES WITH LAPACK */
         /* Regenerate A (same random generator) into A0 */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0t, 1,
-                                   two_dim_block_cyclic, (&dcA0t, matrix_ComplexDouble, matrix_Tile,
+                                   parsec_matrix_block_cyclic, (&dcA0t, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                                           rank, MB, NB, LDA, N, 0, 0,
                                                           N, N, 1, 1, 1, 1, IP, JQ));
         /* Fill A0 again */
         dplasma_zlaset( parsec, dplasmaUpperLower, 0.0, 0.0, &dcA0t.super);
-        dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_dc_t *)&dcA0t, 3872);
+        dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_t *)&dcA0t, 3872);
         /* Convert into Lapack format */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, 1,
-                                   two_dim_block_cyclic, (&dcA0, matrix_ComplexDouble, matrix_Lapack,
+                                   parsec_matrix_block_cyclic, (&dcA0, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                                           rank, MB, NB, LDA, N, 0, 0,
                                                           N, N, 1, 1, 1, 1, IP, JQ));
         dplasma_zlacpy( parsec, uplo, &dcA0t.super, &dcA0.super);
         parsec_data_free(dcA0t.mat);
-        parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA0t);
+        parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA0t);
 #ifdef PRINTF_HEAVY
         printf("########### A0 (initial, lapack storage)\n");
         dplasma_zprint( parsec, uplo, &dcA0 );
@@ -203,7 +203,7 @@ goto fin;
         dplasma_zprint( parsec, uplo, &dcA0 );
 #endif
         parsec_data_free(dcA0.mat);
-        parsec_tiled_matrix_dc_destroy( &dcA0.super );
+        parsec_tiled_matrix_destroy( &dcA0.super );
         if( 0 == rank ) {
 #ifdef PRINTF_HEAVY
             printf("\n###############\nDPLASMA Eignevalues\n");
@@ -250,9 +250,9 @@ goto fin;
     parsec_data_free(dcBAND.mat);
     parsec_data_free(dcA.mat);
     parsec_data_free(dcT.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcBAND);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcBAND);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcT);
 fin:
     cleanup_parsec(parsec, iparam);
 

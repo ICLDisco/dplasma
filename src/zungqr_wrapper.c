@@ -70,9 +70,9 @@
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zungqr_New( parsec_tiled_matrix_dc_t *A,
-                    parsec_tiled_matrix_dc_t *T,
-                    parsec_tiled_matrix_dc_t *Q )
+dplasma_zungqr_New( parsec_tiled_matrix_t *A,
+                    parsec_tiled_matrix_t *T,
+                    parsec_tiled_matrix_t *Q )
 {
     parsec_zungqr_taskpool_t* tp;
     int ib = T->mb;
@@ -211,9 +211,9 @@ dplasma_zungqr_Destruct( parsec_taskpool_t *tp )
  ******************************************************************************/
 int
 dplasma_zungqr( parsec_context_t *parsec,
-                parsec_tiled_matrix_dc_t *A,
-                parsec_tiled_matrix_dc_t *T,
-                parsec_tiled_matrix_dc_t *Q )
+                parsec_tiled_matrix_t *A,
+                parsec_tiled_matrix_t *T,
+                parsec_tiled_matrix_t *Q )
 {
     parsec_taskpool_t *parsec_zungqr;
 

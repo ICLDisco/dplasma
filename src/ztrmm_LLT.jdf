@@ -50,10 +50,10 @@ diag      [type = "dplasma_enum_t"]
 alpha     [type = "dplasma_complex64_t"]
 
 ddescA     [type = "dplasma_data_collection_t*"]
-descA      [type = "const parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+descA      [type = "const parsec_tiled_matrix_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
 
 ddescB     [type = "dplasma_data_collection_t*"]
-descB      [type = "parsec_tiled_matrix_dc_t*" hidden = on default = "((dplasma_data_collection_t*)ddescB)->dc_original" aligned=ddescB]
+descB      [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_data_collection_t*)ddescB)->dc_original" aligned=ddescB]
 
 read_A(m, k) [profile = off]
   /* Execution Space */

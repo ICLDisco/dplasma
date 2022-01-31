@@ -123,21 +123,21 @@ void parsec_wrapper_devices_reset_load_(void);
   #define REDIS_TIME_FINI(COMM, RANK, MATRIX)
 #endif //#ifdef MEASURE_INTERNAL_TIMES
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input_internal(parsec_matrix_block_cyclic_t * dc_lapack,
                                    int do_redis, MPI_Comm comm, int rank, char* name,
                                    int P, int Q);
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input(parsec_matrix_block_cyclic_t * dc_lapack,
                           int do_redis, MPI_Comm comm, int rank, char* name);
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input_1D(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input_1D(parsec_matrix_block_cyclic_t * dc_lapack,
                           int do_redis, MPI_Comm comm, int rank, char* name, int redisP, int redisQ);
 
-two_dim_block_cyclic_t *
-redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_block_cyclic_t * dc_redis,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_output_cleanup(parsec_matrix_block_cyclic_t * dc_lapack, parsec_matrix_block_cyclic_t * dc_redis,
                            int do_redis, MPI_Comm comm, int rank, char* name);
 
 
@@ -199,7 +199,7 @@ redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_b
     #define PRINT(parsec_ctx, comm, uplo_parsec, mname, dc) do {\
         MPI_Barrier(comm);\
         WRAPPER_DUMP_TILE_MATRIX(mname, dc, parsec_ctx, "");\
-        /*dplasma_dprint( parsec_ctx, uplo_parsec, (parsec_tiled_matrix_dc_t *)&dc );*/\
+        /*dplasma_dprint( parsec_ctx, uplo_parsec, (parsec_tiled_matrix_t *)&dc );*/\
         MPI_Barrier(comm);\
     }while(0)
 #else
@@ -208,13 +208,13 @@ redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_b
 
 
 void dcopy_lapack_tile(parsec_context_t *parsec,
-                       two_dim_block_cyclic_t *dcIn,
-                       two_dim_block_cyclic_t *dcOut,
+                       parsec_matrix_block_cyclic_t *dcIn,
+                       parsec_matrix_block_cyclic_t *dcOut,
                        int mloc, int nloc);
 
 void dcopy_lapack_lapack(parsec_context_t *parsec,
-                         two_dim_block_cyclic_t *dcIn,
-                         two_dim_block_cyclic_t *dcOut,
+                         parsec_matrix_block_cyclic_t *dcIn,
+                         parsec_matrix_block_cyclic_t *dcOut,
                          int mloc, int nloc);
 
 #define OP_TRANS(TRANS) ( ((TRANS=='N')||(TRANS=='n')) ? dplasmaNoTrans : \

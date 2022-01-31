@@ -23,12 +23,12 @@ int count_PDTRMM = 0;
 int count_PDTRSM = 0;
 #endif
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input_internal(parsec_matrix_block_cyclic_t * dc_lapack,
                                    int do_redis, MPI_Comm comm, int rank, char* name,
                                    int P, int Q)
 {
-    two_dim_block_cyclic_t * dc_out = dc_lapack;
+    parsec_matrix_block_cyclic_t * dc_out = dc_lapack;
 #ifdef ACTIVATE_REDIS
 
     #ifdef FORCE_REDIS
@@ -50,8 +50,8 @@ redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
 
         int cmb = REDIS_BLOCKSZ;
         int cnb = REDIS_BLOCKSZ;
-        dc_out = (two_dim_block_cyclic_t*)malloc(sizeof(two_dim_block_cyclic_t));
-        two_dim_block_cyclic_init(dc_out, dc_lapack->super.mtype, matrix_Tile,
+        dc_out = (parsec_matrix_block_cyclic_t*)malloc(sizeof(parsec_matrix_block_cyclic_t));
+        parsec_matrix_block_cyclic_init(dc_out, dc_lapack->super.mtype, PARSEC_MATRIX_TILE,
                                   dc_lapack->super.super.myrank,
                                   cmb, cnb,
                                   dc_lapack->super.m,    dc_lapack->super.n,
@@ -73,8 +73,8 @@ redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
         REDIS_TIME_INI(comm);
 
         parsec_redistribute(parsec_ctx,
-                            (parsec_tiled_matrix_dc_t *)dc_lapack,
-                            (parsec_tiled_matrix_dc_t *)dc_out,
+                            (parsec_tiled_matrix_t *)dc_lapack,
+                            (parsec_tiled_matrix_t *)dc_out,
                             dc_lapack->super.m, dc_lapack->super.n,
                             dc_lapack->super.i % dc_lapack->super.mb, dc_lapack->super.j % dc_lapack->super.nb,
                             0, 0);
@@ -85,8 +85,8 @@ redistribute_lapack_input_internal(two_dim_block_cyclic_t * dc_lapack,
     return dc_out;
 }
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input(parsec_matrix_block_cyclic_t * dc_lapack,
                           int do_redis, MPI_Comm comm, int rank, char* name)
 {
     return redistribute_lapack_input_internal(dc_lapack,
@@ -95,8 +95,8 @@ redistribute_lapack_input(two_dim_block_cyclic_t * dc_lapack,
 }
 
 
-two_dim_block_cyclic_t *
-redistribute_lapack_input_1D(two_dim_block_cyclic_t * dc_lapack,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_input_1D(parsec_matrix_block_cyclic_t * dc_lapack,
                           int do_redis, MPI_Comm comm, int rank, char* name, int redisP, int redisQ)
 {
     return redistribute_lapack_input_internal(dc_lapack,
@@ -104,8 +104,8 @@ redistribute_lapack_input_1D(two_dim_block_cyclic_t * dc_lapack,
                                               redisP, redisQ);
 }
 
-two_dim_block_cyclic_t *
-redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_block_cyclic_t * dc_redis,
+parsec_matrix_block_cyclic_t *
+redistribute_lapack_output_cleanup(parsec_matrix_block_cyclic_t * dc_lapack, parsec_matrix_block_cyclic_t * dc_redis,
                            int do_redis, MPI_Comm comm, int rank, char* name)
 {
 #ifdef ACTIVATE_REDIS
@@ -115,8 +115,8 @@ redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_b
           DO_COUNT_REDIS_OUT();
           REDIS_TIME_INI(comm);
           parsec_redistribute(parsec_ctx,
-                              (parsec_tiled_matrix_dc_t *)dc_redis,
-                              (parsec_tiled_matrix_dc_t *)dc_lapack,
+                              (parsec_tiled_matrix_t *)dc_redis,
+                              (parsec_tiled_matrix_t *)dc_lapack,
                               dc_lapack->super.m, dc_lapack->super.n,
                               0, 0,
                               dc_lapack->super.i % dc_lapack->super.mb, dc_lapack->super.j % dc_lapack->super.nb);
@@ -124,7 +124,7 @@ redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_b
         }
         /* Clean up */
         parsec_data_free(dc_redis->mat);
-        parsec_tiled_matrix_dc_destroy((parsec_tiled_matrix_dc_t*)dc_redis);
+        parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)dc_redis);
     }
 #endif
     return dc_lapack;
@@ -133,8 +133,8 @@ redistribute_lapack_output_cleanup(two_dim_block_cyclic_t * dc_lapack, two_dim_b
 
 void
 dcopy_lapack_tile(parsec_context_t *parsec,
-                  two_dim_block_cyclic_t *dcIn,
-                  two_dim_block_cyclic_t *dcOut,
+                  parsec_matrix_block_cyclic_t *dcIn,
+                  parsec_matrix_block_cyclic_t *dcOut,
                   int mloc, int nloc){
     (void)parsec;
     int LD_lapack = dcIn->super.llm;
@@ -155,9 +155,9 @@ dcopy_lapack_tile(parsec_context_t *parsec,
                 for(ii=0; ii<tempmm; ii++) {
                     int ind_lapack = start_block_lapack + jj*LD_lapack + ii;
                     int ind_tile   = start_block_tile   + jj*LD_tile   + ii;
-                    if(dcIn->super.mtype == matrix_RealDouble){
+                    if(dcIn->super.mtype == PARSEC_MATRIX_DOUBLE){
                         ((double*)dcOut->mat)[ind_tile] = ((double*)dcIn->mat)[ind_lapack];
-                    }else if(dcIn->super.mtype == matrix_Integer){
+                    }else if(dcIn->super.mtype == PARSEC_MATRIX_INTEGER){
                         ((int*)dcOut->mat)[ind_tile] = ((int*)dcIn->mat)[ind_lapack];
                     }else{
                         assert(1==0);
@@ -170,8 +170,8 @@ dcopy_lapack_tile(parsec_context_t *parsec,
 
 void
 dcopy_lapack_lapack(parsec_context_t *parsec,
-                    two_dim_block_cyclic_t *dcIn,
-                    two_dim_block_cyclic_t *dcOut,
+                    parsec_matrix_block_cyclic_t *dcIn,
+                    parsec_matrix_block_cyclic_t *dcOut,
                     int mloc, int nloc){
 
     int LD_lapack = dcIn->super.llm;
@@ -190,9 +190,9 @@ dcopy_lapack_lapack(parsec_context_t *parsec,
                 for(jj=0; jj<tempnn; jj++) {
                     int ind_lapack = m*dcIn->super.mb + n*dcIn->super.nb*LD_lapack
                             + jj*LD_lapack + ii;
-                    if(dcIn->super.mtype == matrix_RealDouble){
+                    if(dcIn->super.mtype == PARSEC_MATRIX_DOUBLE){
                         ((double*)dcOut->mat)[ind_lapack] = ((double*)dcIn->mat)[ind_lapack];
-                    }else if(dcIn->super.mtype == matrix_Integer){
+                    }else if(dcIn->super.mtype == PARSEC_MATRIX_INTEGER){
                         ((int*)dcOut->mat)[ind_lapack] = ((int*)dcIn->mat)[ind_lapack];
                     }else{
                         assert(1==0);

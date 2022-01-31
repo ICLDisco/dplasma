@@ -107,7 +107,7 @@ static parsec_data_t *parsec_rbt_data_of(parsec_data_collection_t *desc, ...){
  * dplasma_zhebut_New()
  */
 parsec_taskpool_t*
-dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
+dplasma_zhebut_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
 {
     parsec_taskpool_t *parsec_zhebut = NULL;
     parsec_seg_dc_t *seg_descA;
@@ -119,8 +119,8 @@ dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
     seg_descA = (parsec_seg_dc_t *)calloc(1, sizeof(parsec_seg_dc_t));
 
-    /* copy the parsec_tiled_matrix_dc_t part of A into seg_descA */
-    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_dc_t));
+    /* copy the parsec_tiled_matrix_t part of A into seg_descA */
+    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_t));
     /* overwrite the rank_of() and data_of() */
     seg_descA->super.super.rank_of = parsec_rbt_rank_of;
     seg_descA->super.super.data_of = parsec_rbt_data_of;
@@ -152,7 +152,7 @@ dplasma_zhebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
         if( type_exists ){
             adt = &((parsec_zhebut_taskpool_t*)parsec_zhebut)->arenas_datatypes[i];
-            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -166,7 +166,7 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
     parsec_zhebut_taskpool_t *obut = (parsec_zhebut_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        parsec_matrix_del2arena( &obut->arenas_datatypes[i] );
+        parsec_del2arena( &obut->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);
@@ -178,7 +178,7 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
  * dplasma_zgebut_New()
  */
 parsec_taskpool_t*
-dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
+dplasma_zgebut_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, int *info)
 {
     parsec_taskpool_t *parsec_zgebut = NULL;
     parsec_seg_dc_t *seg_descA;
@@ -190,8 +190,8 @@ dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
     seg_descA = (parsec_seg_dc_t *)calloc(1, sizeof(parsec_seg_dc_t));
 
-    /* copy the parsec_tiled_matrix_dc_t part of A into seg_descA */
-    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_dc_t));
+    /* copy the parsec_tiled_matrix_t part of A into seg_descA */
+    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_t));
     /* overwrite the rank_of() and data_of() */
     seg_descA->super.super.rank_of = parsec_rbt_rank_of;
     seg_descA->super.super.data_of = parsec_rbt_data_of;
@@ -223,7 +223,7 @@ dplasma_zgebut_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
         if( type_exists ){
             adt = &((parsec_zgebut_taskpool_t*)parsec_zgebut)->arenas_datatypes[i];
-            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -247,7 +247,7 @@ dplasma_zgebut_Destruct( parsec_taskpool_t *tp )
  * dplasma_zgebmm_New()
  */
 parsec_taskpool_t*
-dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, dplasma_enum_t trans, int *info)
+dplasma_zgebmm_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, int i_block, int j_block, int level, dplasma_enum_t trans, int *info)
 {
     parsec_taskpool_t *parsec_zgebmm = NULL;
     parsec_seg_dc_t *seg_descA;
@@ -258,8 +258,8 @@ dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
     seg_descA = (parsec_seg_dc_t *)calloc(1, sizeof(parsec_seg_dc_t));
 
-    /* copy the parsec_tiled_matrix_dc_t part of A into seg_descA */
-    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_dc_t));
+    /* copy the parsec_tiled_matrix_t part of A into seg_descA */
+    memcpy(seg_descA, A, sizeof(parsec_tiled_matrix_t));
     /* overwrite the rank_of() and data_of() */
     seg_descA->super.super.rank_of = parsec_rbt_rank_of;
     seg_descA->super.super.data_of = parsec_rbt_data_of;
@@ -294,7 +294,7 @@ dplasma_zgebmm_New( parsec_tiled_matrix_dc_t *A, dplasma_complex64_t *U_but_vec,
 
         if( type_exists ){
             adt = &((parsec_zgebmm_taskpool_t*)parsec_zgebmm)->arenas_datatypes[i];
-            parsec_matrix_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
         }
     }
 
@@ -320,7 +320,7 @@ dplasma_zgebmm_Destruct( parsec_taskpool_t *tp )
  * Blocking Interface
  */
 
-static parsec_taskpool_t **iterate_ops(parsec_tiled_matrix_dc_t *A, int tmp_level,
+static parsec_taskpool_t **iterate_ops(parsec_tiled_matrix_t *A, int tmp_level,
                                     int target_level, int i_block, int j_block,
                                     parsec_taskpool_t **subop,
                                     parsec_context_t *parsec,
@@ -372,7 +372,7 @@ static void RBT_zrandom(int N, dplasma_complex64_t *V)
 }
 
 
-int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_dc_t *A, dplasma_complex64_t **U_but_ptr, int levels)
+int dplasma_zhebut(parsec_context_t *parsec, parsec_tiled_matrix_t *A, dplasma_complex64_t **U_but_ptr, int levels)
 {
     parsec_taskpool_t **subop;
     dplasma_complex64_t *U_but_vec, beta;

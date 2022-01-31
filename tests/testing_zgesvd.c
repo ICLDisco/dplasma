@@ -60,11 +60,11 @@ int main(int argc, char ** argv)
 
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-        two_dim_block_cyclic, (&dcA, matrix_ComplexDouble, matrix_Tile,
+        parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDA, N, 0, 0,
                                M, N, P, nodes/P, KP, KQ, IP, JQ));
     PASTE_CODE_ALLOCATE_MATRIX(dcBand, 1,
-        two_dim_block_cyclic, (&dcBand, matrix_ComplexDouble, matrix_Lapack,
+        parsec_matrix_block_cyclic, (&dcBand, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                rank, MB+1, NB, MB+1, minMN, 0, 0,
                                MB+1, minMN, 1, 1, 1, 1, IP, JQ));
 
@@ -88,17 +88,17 @@ int main(int argc, char ** argv)
             }
         }
 
-        dplasma_zlatms( parsec, dplasmaGeneral, (double)N, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+        dplasma_zlatms( parsec, dplasmaGeneral, (double)N, (parsec_tiled_matrix_t *)&dcA, 3872);
     }
     else {
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, 3872);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
     }
 
     /* Create Parsec */
     PASTE_CODE_ENQUEUE_KERNEL(parsec, zgebrd_ge2gb,
                               (IB,
-                               (parsec_tiled_matrix_dc_t*)&dcA,
-                               (parsec_tiled_matrix_dc_t*)&dcBand));
+                               (parsec_tiled_matrix_t*)&dcA,
+                               (parsec_tiled_matrix_t*)&dcBand));
 
     /* lets rock! */
     SYNC_TIME_START();
@@ -207,8 +207,8 @@ int main(int argc, char ** argv)
     parsec_data_free(dcA.mat);
     parsec_data_free(dcBand.mat);
 
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcBand);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcBand);
 
     cleanup_parsec(parsec, iparam);
 

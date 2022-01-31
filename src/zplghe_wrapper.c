@@ -22,7 +22,7 @@ typedef struct zplghe_args_s zplghe_args_t;
 
 static int
 dplasma_zplghe_operator( parsec_execution_stream_t *es,
-                         const parsec_tiled_matrix_dc_t *descA,
+                         const parsec_tiled_matrix_t *descA,
                          void *_A,
                          dplasma_enum_t uplo, int m, int n,
                          void *op_data )
@@ -93,7 +93,7 @@ dplasma_zplghe_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zplghe_New( double bump, dplasma_enum_t uplo,
-                    parsec_tiled_matrix_dc_t *A,
+                    parsec_tiled_matrix_t *A,
                     unsigned long long int seed)
 {
     zplghe_args_t *params = (zplghe_args_t*)malloc(sizeof(zplghe_args_t));
@@ -177,7 +177,7 @@ dplasma_zplghe_Destruct( parsec_taskpool_t *tp )
 int
 dplasma_zplghe( parsec_context_t *parsec,
                 double bump, dplasma_enum_t uplo,
-                parsec_tiled_matrix_dc_t *A,
+                parsec_tiled_matrix_t *A,
                 unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zplghe = NULL;
