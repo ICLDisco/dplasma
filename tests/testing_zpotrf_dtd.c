@@ -116,6 +116,7 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
     dplasma_complex64_t *C;
     parsec_task_t *this_task = gpu_task->ec;
     parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
+    parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)gpu_device;
 
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
                            &A, &lda, &B, &ldb, &beta, &C, &ldc);
@@ -131,9 +132,9 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
 #if defined(PARSEC_DEBUG_NOISIER)
     {
         char tmp[MAX_TASK_STRLEN];
-        PARSEC_DEBUG_VERBOSE(10, parsec_cuda_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
-                             gpu_device->cuda_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
-                                                                          (parsec_task_t *) this_task),
+        PARSEC_DEBUG_VERBOSE(10, parsec_gpu_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
+                             cuda_device->cuda_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
+                                                                           (parsec_task_t *) this_task),
                              this_task->priority);
     }
 #endif /* defined(PARSEC_DEBUG_NOISIER) */
