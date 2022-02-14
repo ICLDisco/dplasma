@@ -1,6 +1,7 @@
 include(DplasmaCompilerFlags)
 if(NOT TARGET dplasma_tests_common)
   add_library(dplasma_tests_common OBJECT common.c)
+  set_target_properties(dplasma_tests_common PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
   target_include_directories(dplasma_tests_common
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR})
