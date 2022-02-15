@@ -68,12 +68,115 @@ int main(int argc, char ** argv)
                                rank, MB+1, NB, MB+1, minMN, 0, 0,
                                MB+1, minMN, 1, 1, 1, 1, IP, JQ));
 
-    /* Initialize the matrix */
-    if(loud > 3) printf("+++ Generate matrices ... ");
+    for(int t = 0; t < nruns+1; t++) {
+        /* Initialize the matrix */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        if(0==t && check) {
+            dplasma_zlatms( parsec, dplasmaGeneral, (double)N, (parsec_tiled_matrix_t *)&dcA, 3872);
+        } else {
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+        }
+        if(loud > 3) printf("Done\n");
 
-    /* Generate the matrix on rank 0 */
-    if ( check ) {
+        /* Create Parsec */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zgebrd_ge2gb,
+                                  (IB,
+                                          (parsec_tiled_matrix_t*)&dcA,
+                                          (parsec_tiled_matrix_t*)&dcBand));
 
+        /* lets rock! */
+        SYNC_TIME_START();
+        rc = parsec_context_start(parsec);
+        PARSEC_CHECK_ERROR(rc, "parsec_context_start");
+        TIME_START();
+        rc = parsec_context_wait(parsec);
+        PARSEC_CHECK_ERROR(rc, "parsec_context_wait");
+        SYNC_TIME_STOP();
+        time_ge2gb = sync_time_elapsed;
+
+        if( rank == 0 ) {
+            double *e;
+
+            s1 = (double*)malloc( minMN * sizeof(double));
+            e  = (double*)malloc( minMN * sizeof(double));
+
+            /* #if defined(__ICC) || defined(__INTEL_COMPILER) */
+            /*         mkl_set_num_threads( iparam[IPARAM_NCORES] ); */
+            /* #endif */
+            /* Reduce the band */
+            TIME_START();
+            info_solution = LAPACKE_zgbbrd( LAPACK_COL_MAJOR,
+                                            'N',
+                                            M, N,
+                                            0, 0, NB,
+                                            dcBand.mat, MB+1,
+                                            s1, e,
+                                            NULL, 1,
+                                            NULL, 1,
+                                            NULL, 1 );
+            TIME_STOP();
+            time_gb2bd = time_elapsed;
+
+            /* Solve the bidiagonal SVD problem */
+            if (info_solution == 0){
+                TIME_START();
+                info_solution = LAPACKE_zbdsqr( LAPACK_COL_MAJOR, 'U',
+                                                minMN, 0, 0, 0,
+                                                s1, e,
+                                                NULL, 1, NULL, 1, NULL, 1 );
+                TIME_STOP();
+                time_solve = time_elapsed;
+            }
+            free(e);
+
+            /* #if defined(__ICC) || defined(__INTEL_COMPILER) */
+            /*         mkl_set_num_threads( 1 ); */
+            /* #endif */
+
+            if(t > 0) {
+                printf("zgeqrf GESVD computation NP= %d NC= %d P= %d IB= %d MB= %d NB= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d R-bidiag= %d M= %d N= %d : %e %e %e / %f gflops\n",
+                       iparam[IPARAM_NNODES],
+                       iparam[IPARAM_NCORES],
+                       iparam[IPARAM_P],
+                       iparam[IPARAM_IB],
+                       iparam[IPARAM_MB],
+                       iparam[IPARAM_NB],
+                       iparam[IPARAM_QR_TS_SZE],
+                       iparam[IPARAM_QR_HLVL_SZE],
+                       iparam[IPARAM_LOWLVL_TREE],
+                       iparam[IPARAM_HIGHLVL_TREE],
+                       iparam[IPARAM_QR_DOMINO],
+                       iparam[IPARAM_QR_TSRR],
+                       iparam[IPARAM_M],
+                       iparam[IPARAM_N],
+                       time_ge2gb, time_gb2bd, time_solve,
+                       gflops = (flops/1e9)/(time_ge2gb+time_gb2bd+time_solve));
+                gflops_avg += gflops/nruns;
+            }
+
+#if defined(PARSEC_SIM)
+            printf("zgeqrf GESVD simulation NP= %d NC= %d P= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d RR= %d MT= %d NT= %d : %d \n",
+                   iparam[IPARAM_NNODES],
+                   iparam[IPARAM_NCORES],
+                   iparam[IPARAM_P],
+                   iparam[IPARAM_QR_TS_SZE],
+                   iparam[IPARAM_QR_HLVL_SZE],
+                   iparam[IPARAM_LOWLVL_TREE],
+                   iparam[IPARAM_HIGHLVL_TREE],
+                   iparam[IPARAM_QR_DOMINO],
+                   iparam[IPARAM_QR_TSRR],
+                   MT, NT,
+                   parsec_getsimulationdate( parsec ));
+#endif
+        }
+
+        dplasma_zgebrd_ge2gb_Destruct( PARSEC_zgebrd_ge2gb );
+    }
+    fprintf(stderr, "WARNING: This code is using the non optimized Lapack zbdsqr subroutine to reduce the band to bi-diagonal form. Please replace this call by the multi-threaded PLASMA implementation in order to get performance\n");
+    PASTE_CODE_PERF_LOOP_DONE();
+
+    if( check && (rank==0) ) {
+        /* Generate the matrix on rank 0 */
         /* Generate the singular values vector as in latms routines for check purpose */
         if (rank == 0)
         {
@@ -88,104 +191,6 @@ int main(int argc, char ** argv)
             }
         }
 
-        dplasma_zlatms( parsec, dplasmaGeneral, (double)N, (parsec_tiled_matrix_t *)&dcA, 3872);
-    }
-    else {
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
-    }
-
-    /* Create Parsec */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zgebrd_ge2gb,
-                              (IB,
-                               (parsec_tiled_matrix_t*)&dcA,
-                               (parsec_tiled_matrix_t*)&dcBand));
-
-    /* lets rock! */
-    SYNC_TIME_START();
-    rc = parsec_context_start(parsec);
-    PARSEC_CHECK_ERROR(rc, "parsec_context_start");
-    TIME_START();
-    rc = parsec_context_wait(parsec);
-    PARSEC_CHECK_ERROR(rc, "parsec_context_wait");
-    SYNC_TIME_STOP();
-    time_ge2gb = sync_time_elapsed;
-
-    if( rank == 0 ) {
-        double *e;
-
-        s1 = (double*)malloc( minMN * sizeof(double));
-        e  = (double*)malloc( minMN * sizeof(double));
-
-/* #if defined(__ICC) || defined(__INTEL_COMPILER) */
-/*         mkl_set_num_threads( iparam[IPARAM_NCORES] ); */
-/* #endif */
-        /* Reduce the band */
-        TIME_START();
-        info_solution = LAPACKE_zgbbrd( LAPACK_COL_MAJOR,
-                                        'N',
-                                        M, N,
-                                        0, 0, NB,
-                                        dcBand.mat, MB+1,
-                                        s1, e,
-                                        NULL, 1,
-                                        NULL, 1,
-                                        NULL, 1 );
-        TIME_STOP();
-        time_gb2bd = time_elapsed;
-
-        /* Solve the bidiagonal SVD problem */
-        if (info_solution == 0){
-            TIME_START();
-            info_solution = LAPACKE_zbdsqr( LAPACK_COL_MAJOR, 'U',
-                                            minMN, 0, 0, 0,
-                                            s1, e,
-                                            NULL, 1, NULL, 1, NULL, 1 );
-            TIME_STOP();
-            time_solve = time_elapsed;
-        }
-        free(e);
-
-/* #if defined(__ICC) || defined(__INTEL_COMPILER) */
-/*         mkl_set_num_threads( 1 ); */
-/* #endif */
-        fprintf(stderr, "WARNING: This code is using the non optimized Lapack zbdsqr subroutine to reduce the band to bi-diagonal form. Please replace this call by the multi-threaded PLASMA implementation in order to get performance\n");
-        printf("zgeqrf GESVD computation NP= %d NC= %d P= %d IB= %d MB= %d NB= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d R-bidiag= %d M= %d N= %d : %e %e %e / %f gflops\n",
-               iparam[IPARAM_NNODES],
-               iparam[IPARAM_NCORES],
-               iparam[IPARAM_P],
-               iparam[IPARAM_IB],
-               iparam[IPARAM_MB],
-               iparam[IPARAM_NB],
-               iparam[IPARAM_QR_TS_SZE],
-               iparam[IPARAM_QR_HLVL_SZE],
-               iparam[IPARAM_LOWLVL_TREE],
-               iparam[IPARAM_HIGHLVL_TREE],
-               iparam[IPARAM_QR_DOMINO],
-               iparam[IPARAM_QR_TSRR],
-               iparam[IPARAM_M],
-               iparam[IPARAM_N],
-               time_ge2gb, time_gb2bd, time_solve,
-               gflops = (flops/1e9)/(time_ge2gb+time_gb2bd+time_solve));
-
-#if defined(PARSEC_SIM)
-        printf("zgeqrf GESVD simulation NP= %d NC= %d P= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d RR= %d MT= %d NT= %d : %d \n",
-               iparam[IPARAM_NNODES],
-               iparam[IPARAM_NCORES],
-               iparam[IPARAM_P],
-               iparam[IPARAM_QR_TS_SZE],
-               iparam[IPARAM_QR_HLVL_SZE],
-               iparam[IPARAM_LOWLVL_TREE],
-               iparam[IPARAM_HIGHLVL_TREE],
-               iparam[IPARAM_QR_DOMINO],
-               iparam[IPARAM_QR_TSRR],
-               MT, NT,
-               parsec_getsimulationdate( parsec ));
-#endif
-    }
-
-    dplasma_zgebrd_ge2gb_Destruct( PARSEC_zgebrd_ge2gb );
-
-    if( check && (rank==0) ) {
         if (info_solution == 0 ) {
             info_solution = check_solution(minMN, s0, s1);
         }

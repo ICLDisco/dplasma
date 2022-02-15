@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
                                M, NT, P, nodes/P, KP, KQ, IP, JQ));
 
     int t;
-    for(t = 0; t < nruns; t++) {
+    for(t = 0; t < nruns+1; t++) {
         /* matrix (re)generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
         dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
@@ -75,10 +75,11 @@ int main(int argc, char ** argv)
                             (parsec_tiled_matrix_t*)&dcIPIV,
                             &info));
         /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_incpiv);
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_incpiv, t);
         dplasma_zgetrf_incpiv_Destruct( PARSEC_zgetrf_incpiv );
         if(loud > 2) printf("Done.\n");
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if ( info != 0 ) {
         if( rank == 0 && loud ) printf("-- Factorization is suspicious (info = %d) ! \n", info );

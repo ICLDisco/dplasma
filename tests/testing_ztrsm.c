@@ -53,20 +53,6 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDC, N, 0, 0,
                                M, N, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 2) printf("+++ Generate matrices ... ");
-    /* Generate matrix A with diagonal dominance to keep stability during computation */
-    dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA0, Aseed);
-    /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
-    dplasma_zlascal( parsec, dplasmaUpperLower,
-                     1. / (dplasma_complex64_t)Am,
-                     (parsec_tiled_matrix_t *)&dcA0 );
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
-    if (check)
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcC, (parsec_tiled_matrix_t *)&dcC0 );
-    if(loud > 2) printf("Done\n");
-
     if(!check)
     {
         dplasma_enum_t side  = dplasmaLeft;
@@ -74,34 +60,65 @@ int main(int argc, char ** argv)
         dplasma_enum_t trans = dplasmaNoTrans;
         dplasma_enum_t diag  = dplasmaUnit;
 
-        /* Make A square */
-        if (side == dplasmaLeft) {
-            dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, M, M );
-        } else {
-            dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, N, N );
-        }
-
-        /* Compute b = 1/alpha * A * x */
-        dplasma_ztrmm(parsec, side, uplo, trans, diag, 1. / alpha,
-                      dcA, (parsec_tiled_matrix_t *)&dcC);
-
         PASTE_CODE_FLOPS(FLOPS_ZTRSM, (side, (DagDouble_t)M, (DagDouble_t)N));
 
-        /* Create PaRSEC */
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, ztrsm,
-                                  (side, uplo, trans, diag, alpha,
-                                   dcA, (parsec_tiled_matrix_t *)&dcC));
+        for(int t = 0; t < nruns+1; t++) {
+            /* matrix generation */
+            if(loud > 2) printf("+++ Generate matrices ... ");
+            /* Generate matrix A with diagonal dominance to keep stability during computation */
+            dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA0, Aseed);
+            /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+            dplasma_zlascal( parsec, dplasmaUpperLower,
+                             1. / (dplasma_complex64_t)Am,
+                             (parsec_tiled_matrix_t *)&dcA0 );
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
+            if (check)
+                dplasma_zlacpy( parsec, dplasmaUpperLower,
+                                (parsec_tiled_matrix_t *)&dcC, (parsec_tiled_matrix_t *)&dcC0 );
+            if(loud > 2) printf("Done\n");
 
-        /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, ztrsm);
+            /* Make A square */
+            if (side == dplasmaLeft) {
+                dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, M, M );
+            } else {
+                dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, N, N );
+            }
 
-        dplasma_ztrsm_Destruct( PARSEC_ztrsm );
+            /* Compute b = 1/alpha * A * x */
+            dplasma_ztrmm(parsec, side, uplo, trans, diag, 1. / alpha,
+                          dcA, (parsec_tiled_matrix_t *)&dcC);
+
+            /* Create PaRSEC */
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, ztrsm,
+                                      (side, uplo, trans, diag, alpha,
+                                              dcA, (parsec_tiled_matrix_t *)&dcC));
+
+            /* lets rock! */
+            PASTE_CODE_PROGRESS_KERNEL(parsec, ztrsm, t);
+
+            dplasma_ztrsm_Destruct( PARSEC_ztrsm );
+        }
+        PASTE_CODE_PERF_LOOP_DONE();
+
         free(dcA);
     }
     else
     {
         int s, u, t, d;
         int info_solution;
+
+        /* matrix generation */
+        if(loud > 2) printf("+++ Generate matrices ... ");
+        /* Generate matrix A with diagonal dominance to keep stability during computation */
+        dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA0, Aseed);
+        /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+        dplasma_zlascal( parsec, dplasmaUpperLower,
+                         1. / (dplasma_complex64_t)Am,
+                         (parsec_tiled_matrix_t *)&dcA0 );
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
+        dplasma_zlacpy( parsec, dplasmaUpperLower,
+                        (parsec_tiled_matrix_t *)&dcC, (parsec_tiled_matrix_t *)&dcC0 );
+        if(loud > 2) printf("Done\n");
 
         for (s=0; s<2; s++) {
             /* Make A square */

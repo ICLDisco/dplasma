@@ -83,23 +83,27 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDB, NRHS, 0, 0,
                                N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
-    if( check )
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
-    if(loud > 3) printf("Done\n");
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+        if(0 == t && check) {
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
+        }
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
+        if(loud > 3) printf("Done\n");
 
-    /* Create PaRSEC */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zgeqrf,
-                              ((parsec_tiled_matrix_t*)&dcA,
-                               (parsec_tiled_matrix_t*)&dcT));
+        /* Create PaRSEC */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zgeqrf,
+                                  ((parsec_tiled_matrix_t*)&dcA,
+                                          (parsec_tiled_matrix_t*)&dcT));
 
-    /* lets rock! */
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
-    dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
+        /* lets rock! */
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf, t);
+        dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
+    }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if( check ) {
         if(loud > 2) printf("+++ Generate the Q ...");

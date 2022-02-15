@@ -322,15 +322,6 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDB, NRHS, 0, 0,
                                M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
-    if( check )
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
-    if(loud > 3) printf("Done\n");
-
     /* Getting new parsec handle of dtd type */
     parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new();
 
@@ -364,38 +355,54 @@ int main(int argc, char ** argv)
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcT.super.mb, dcT.super.nb, -1);
 
-    /* Registering the handle with parsec context */
-    parsec_context_add_taskpool(parsec, dtd_tp);
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+        if(0==t && check) {
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
+        }
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
+        if(loud > 3) printf("Done\n");
 
-    SYNC_TIME_START();
-    /* start parsec context */
-    parsec_context_start(parsec);
+        /* Registering the handle with parsec context */
+        parsec_context_add_taskpool(parsec, dtd_tp);
 
-    /* Testing Insert Function */
-    int *iteration = malloc(sizeof(int));
-    *iteration = 0;
-    int total = minMNT;
+        SYNC_TIME_START();
+        /* start parsec context */
+        parsec_context_start(parsec);
 
-    parsec_dtd_insert_task( dtd_tp,       insert_task_geqrf, 0, PARSEC_DEV_CPU,   "insert_task_geqrf",
-                       sizeof(int),           &total,               PARSEC_VALUE,
-                       sizeof(int *),         iteration,            PARSEC_REF,
-                       sizeof(parsec_matrix_block_cyclic_t *), &dcA,      PARSEC_REF,
-                       sizeof(parsec_matrix_block_cyclic_t *), &dcT,      PARSEC_REF,
-                       PARSEC_DTD_ARG_END );
+        /* Testing Insert Function */
+        int *iteration = malloc(sizeof(int));
+        *iteration = 0;
+        int total = minMNT;
 
-    /* finishing all the tasks inserted, but not finishing the handle */
-    parsec_dtd_taskpool_wait( dtd_tp );
+        parsec_dtd_insert_task( dtd_tp,       insert_task_geqrf, 0, PARSEC_DEV_CPU,   "insert_task_geqrf",
+                                sizeof(int),           &total,               PARSEC_VALUE,
+                                sizeof(int *),         iteration,            PARSEC_REF,
+                                sizeof(parsec_matrix_block_cyclic_t *), &dcA,      PARSEC_REF,
+                                sizeof(parsec_matrix_block_cyclic_t *), &dcT,      PARSEC_REF,
+                                PARSEC_DTD_ARG_END );
 
-    /* Waiting on all handle and turning everything off for this context */
-    parsec_context_wait( parsec );
+        /* finishing all the tasks inserted, but not finishing the handle */
+        parsec_dtd_taskpool_wait( dtd_tp );
 
-    SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
-                           P, Q, NB, N,
-                           gflops=(flops/1e9)/sync_time_elapsed));
+        /* Waiting on all handle and turning everything off for this context */
+        parsec_context_wait( parsec );
+
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
+                    P, Q, NB, N,
+                    gflops=(flops/1e9)/sync_time_elapsed));
+            gflops_avg += gflops/nruns;
+        }
+        free(iteration);
+    }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );
-    free(iteration);
 
     if( check ) {
         if (M >= N) {

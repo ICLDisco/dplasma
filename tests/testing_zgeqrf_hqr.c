@@ -81,59 +81,61 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDB, NRHS, 0, 0,
                                M, NRHS, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
-    if( check )
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcTS);
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcTT);
-    if(loud > 3) printf("Done\n");
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
+        if(0 == t && check) {
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcA0 );
+        }
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcTS);
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcTT);
+        if(loud > 3) printf("Done\n");
 
-    dplasma_hqr_init( &qrtree,
-                      dplasmaNoTrans, (parsec_tiled_matrix_t *)&dcA,
-                      iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
-                      iparam[IPARAM_QR_TS_SZE],   iparam[IPARAM_QR_HLVL_SZE],
-                      iparam[IPARAM_QR_DOMINO],   iparam[IPARAM_QR_TSRR] );
+        dplasma_hqr_init( &qrtree,
+                          dplasmaNoTrans, (parsec_tiled_matrix_t *)&dcA,
+                          iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
+                          iparam[IPARAM_QR_TS_SZE],   iparam[IPARAM_QR_HLVL_SZE],
+                          iparam[IPARAM_QR_DOMINO],   iparam[IPARAM_QR_TSRR] );
 
-    /* Create PaRSEC */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zgeqrf_param,
-                              (&qrtree,
-                               (parsec_tiled_matrix_t*)&dcA,
-                               (parsec_tiled_matrix_t*)&dcTS,
-                               (parsec_tiled_matrix_t*)&dcTT));
+        /* Create PaRSEC */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zgeqrf_param,
+                                  (&qrtree,
+                                          (parsec_tiled_matrix_t*)&dcA,
+                                          (parsec_tiled_matrix_t*)&dcTS,
+                                          (parsec_tiled_matrix_t*)&dcTT));
 
-    /* lets rock! This code should be copy the PASTE_CODE_PROGRESS_KERNEL macro */
-    SYNC_TIME_START();
-    parsec_context_start(parsec);
-    TIME_START();
-    parsec_context_wait(parsec);
+        /* lets rock! This code should be copy the PASTE_CODE_PROGRESS_KERNEL macro */
+        SYNC_TIME_START();
+        parsec_context_start(parsec);
+        TIME_START();
+        parsec_context_wait(parsec);
 
-    SYNC_TIME_PRINT(rank,
-                    ("zgeqrf HQR computation NP= %d NC= %d P= %d IB= %d MB= %d NB= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d RR= %d M= %d N= %d : %f gflops\n",
-                     iparam[IPARAM_NNODES],
-                     iparam[IPARAM_NCORES],
-                     iparam[IPARAM_P],
-                     iparam[IPARAM_IB],
-                     iparam[IPARAM_MB],
-                     iparam[IPARAM_NB],
-                     iparam[IPARAM_QR_TS_SZE],
-                     iparam[IPARAM_QR_HLVL_SZE],
-                     iparam[IPARAM_LOWLVL_TREE],
-                     iparam[IPARAM_HIGHLVL_TREE],
-                     iparam[IPARAM_QR_DOMINO],
-                     iparam[IPARAM_QR_TSRR],
-                     iparam[IPARAM_M],
-                     iparam[IPARAM_N],
-                     gflops = (flops/1e9)/(sync_time_elapsed)));
-    if(loud >= 5 && rank == 0) {
-        printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n"
-               "                 encoding=\"none\" compression=\"none\">\n"
-               "%g\n"
-               "</DartMeasurement>\n",
-               gflops);
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank,
+                            ("zgeqrf HQR computation NP= %d NC= %d P= %d IB= %d MB= %d NB= %d qr_a= %d qr_p = %d treel= %d treeh= %d domino= %d RR= %d M= %d N= %d : %f gflops\n",
+                                    iparam[IPARAM_NNODES],
+                                    iparam[IPARAM_NCORES],
+                                    iparam[IPARAM_P],
+                                    iparam[IPARAM_IB],
+                                    iparam[IPARAM_MB],
+                                    iparam[IPARAM_NB],
+                                    iparam[IPARAM_QR_TS_SZE],
+                                    iparam[IPARAM_QR_HLVL_SZE],
+                                    iparam[IPARAM_LOWLVL_TREE],
+                                    iparam[IPARAM_HIGHLVL_TREE],
+                                    iparam[IPARAM_QR_DOMINO],
+                                    iparam[IPARAM_QR_TSRR],
+                                    iparam[IPARAM_M],
+                                    iparam[IPARAM_N],
+                                    gflops = (flops/1e9)/(sync_time_elapsed)));
+            gflops_avg += gflops/nruns;
+        }
+
+        dplasma_zgeqrf_param_Destruct( PARSEC_zgeqrf_param );
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
 #if defined(PARSEC_SIM)
     if ( rank == 0 ) {
@@ -151,8 +153,6 @@ int main(int argc, char ** argv)
                parsec_getsimulationdate( parsec ));
     }
 #endif
-
-    dplasma_zgeqrf_param_Destruct( PARSEC_zgeqrf_param );
 
     if( check ) {
         if (M >= N) {

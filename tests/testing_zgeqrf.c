@@ -53,58 +53,59 @@ int main(int argc, char ** argv)
                                rank, IB, NB, MT*IB, N, 0, 0,
                                MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
 
-    int t;
-    for(t = 0; t < nruns; t++) {
-        /* matrix (re)generation */
-        if(loud > 3) printf("+++ Generate matrices ... ");
-        dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
-        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
-        if(loud > 3) printf("Done\n");
+    if(!check) {
+        int t;
+        for(t = 0; t < nruns+1; t++) {
+            /* matrix (re)generation */
+            if(loud > 3) printf("+++ Generate matrices ... ");
+            dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t *)&dcT);
+            if(loud > 3) printf("Done\n");
 
-        parsec_devices_release_memory();
+            parsec_devices_release_memory();
 
-        if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
-        {
-            SYNC_TIME_START();
-            parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_t*)&dcA,
-                                                                   (parsec_tiled_matrix_t*)&dcT );
-            /* Set the recursive size */
-            dplasma_zgeqrf_setrecursive( PARSEC_zgeqrf, iparam[IPARAM_HNB] );
-            parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
-            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgeqrf\tDAG created\n"));
+            if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
+            {
+                SYNC_TIME_START();
+                parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_t*)&dcA,
+                                                                       (parsec_tiled_matrix_t*)&dcT );
+                /* Set the recursive size */
+                dplasma_zgeqrf_setrecursive( PARSEC_zgeqrf, iparam[IPARAM_HNB] );
+                parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
+                if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgeqrf\tDAG created\n"));
 
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
-            dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
+                PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf, t);
+                dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
 
-            parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+                parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+            }
+            else
+            {
+                PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
+                                                            ((parsec_tiled_matrix_t*)&dcA,
+                                                                    (parsec_tiled_matrix_t*)&dcT),
+                                                                    dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ), t);
+            }
+            parsec_devices_reset_load(parsec);
+
         }
-        else
-        {
-            PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
-                                      ((parsec_tiled_matrix_t*)&dcA,
-                                      (parsec_tiled_matrix_t*)&dcT),
-                                      dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ));
-        }
-        parsec_devices_reset_load(parsec);
-
-    }
+        PASTE_CODE_PERF_LOOP_DONE();
 
 #if defined(PARSEC_SIM)
-    {
-        int largest_simulation_date = parsec_getsimulationdate( parsec );
-        if ( rank == 0 ) {
-            printf("zgeqrf simulation NP= %d NC= %d P= %d KP= %d MT= %d NT= %d : %d \n",
-               iparam[IPARAM_NNODES],
-                   iparam[IPARAM_NCORES],
-                   iparam[IPARAM_P],
-                   iparam[IPARAM_KP],
-                   MT, NT,
-                   largest_simulation_date);
+        {
+            int largest_simulation_date = parsec_getsimulationdate( parsec );
+            if ( rank == 0 ) {
+                printf("zgeqrf simulation NP= %d NC= %d P= %d KP= %d MT= %d NT= %d : %d \n",
+                       iparam[IPARAM_NNODES],
+                       iparam[IPARAM_NCORES],
+                       iparam[IPARAM_P],
+                       iparam[IPARAM_KP],
+                       MT, NT,
+                       largest_simulation_date);
+            }
         }
-    }
 #endif
-
-    if( check ) {
+    } else {
         /* regenerate A0 from seed */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
             parsec_matrix_block_cyclic, (&dcA0, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,

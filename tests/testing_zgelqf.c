@@ -52,7 +52,7 @@ int main(int argc, char ** argv)
                                MT*IB, N, P, nodes/P, KP, KQ, IP, JQ));
 
     int t;
-    for(t = 0; t < nruns; t++) {
+    for(t = 0; t < nruns+1; t++) {
         /* matrix (re)generation */
         if(loud > 3) printf("+++ Generate matrices ... ");
         dplasma_zplrnt( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed);
@@ -61,32 +61,23 @@ int main(int argc, char ** argv)
 
         parsec_devices_release_memory();
 
-        if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
-        {
-            SYNC_TIME_START();
-            parsec_taskpool_t* PARSEC_zgelqf = dplasma_zgelqf_New( (parsec_tiled_matrix_t*)&dcA,
-                                                                   (parsec_tiled_matrix_t*)&dcT );
-            /* Set the recursive size */
-            //TODO: import recursive from QRF
-            //dplasma_zgelqf_setrecursive( PARSEC_zgelqf, iparam[IPARAM_HNB] );
-            parsec_context_add_taskpool(parsec, PARSEC_zgelqf);
-            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgelqf\tDAG created\n"));
+        SYNC_TIME_START();
+        parsec_taskpool_t* PARSEC_zgelqf = dplasma_zgelqf_New( (parsec_tiled_matrix_t*)&dcA,
+                                                               (parsec_tiled_matrix_t*)&dcT );
 
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zgelqf);
-            dplasma_zgelqf_Destruct( PARSEC_zgelqf );
+        /* TODO: Set the recursive size if iparam[IPARAM_HNB] != iparam[IPARAM_NB]) */
+        //dplasma_zgelqf_setrecursive( PARSEC_zgelqf, iparam[IPARAM_HNB] );
+        parsec_context_add_taskpool(parsec, PARSEC_zgelqf);
+        if( loud > 2 && t > 0) SYNC_TIME_PRINT(rank, ( "zgelqf\tDAG created\n"));
 
-            parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
-        }
-        else
-        {
-            PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgelqf,
-                                      ((parsec_tiled_matrix_t*)&dcA,
-                                      (parsec_tiled_matrix_t*)&dcT),
-                                      dplasma_zgelqf_Destruct( PARSEC_zgelqf ));
-        }
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zgelqf, t);
+        dplasma_zgelqf_Destruct( PARSEC_zgelqf );
+
+        parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
+
         parsec_devices_reset_load(parsec);
-
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
 #if defined(PARSEC_SIM)
     {

@@ -211,24 +211,6 @@ int main(int argc, char ** argv)
                                                       rank, MB, NB, LDA, N, 0, 0,
                                                       M, N, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 2) printf("+++ Generate matrices ... ");
-    dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
-    if ( check ) {
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcA,
-                        (parsec_tiled_matrix_t *)&dcA0 );
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, random_seed + 1 );
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_t *)&dcB,
-                        (parsec_tiled_matrix_t *)&dcX );
-    }
-    if ( check_inv ) {
-        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcI);
-        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcInvA);
-    }
-    if(loud > 2) printf("Done\n");
-
     /* Getting new parsec handle of dtd type */
     parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new();
 
@@ -263,130 +245,154 @@ int main(int argc, char ** argv)
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcL.super.mb, dcL.super.nb, -1);
 
-    /* Registering the handle with parsec context */
-    parsec_context_add_taskpool( parsec, dtd_tp );
-
-    SYNC_TIME_START();
-
-    /* #### PaRSEC context starting #### */
-
-    /* start parsec context */
-    parsec_context_start( parsec );
-
-    /* Testing insert task function */
-    for( k = 0; k < minMNT; k++ ) {
-        tempkm = k == dcA.super.mt-1 ? (dcA.super.m)-k*(dcA.super.mb) : dcA.super.mb;
-        tempkn = k == dcA.super.nt-1 ? (dcA.super.n)-k*(dcA.super.nb) : dcA.super.nb;
-        ldak = BLKLDD((parsec_tiled_matrix_t*)&dcA, k);
-        check_info = k == dcA.super.mt-1;
-
-        parsec_dtd_insert_task( dtd_tp,     parsec_core_getrf_incpiv,             0, PARSEC_DEV_CPU, "getrf_incpiv",
-                           sizeof(int),           &tempkm,                           PARSEC_VALUE,
-                           sizeof(int),           &tempkn,                           PARSEC_VALUE,
-                           sizeof(int),           &ib,                               PARSEC_VALUE,
-                           PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                           sizeof(int),           &ldak,                             PARSEC_VALUE,
-                           PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, k, k),  PARSEC_OUTPUT | TILE_RECTANGLE,
-                           sizeof(int),   &check_info,                       PARSEC_VALUE,
-                           sizeof(int *),         &info,                             PARSEC_REF,
-                           PARSEC_DTD_ARG_END );
-
-        for( n = k+1; n < dcA.super.nt; n++ ) {
-            tempnn = n == dcA.super.nt-1 ? (dcA.super.n)-n*(dcA.super.nb) : dcA.super.nb;
-            ldl = dcL.super.mb;
-
-            parsec_dtd_insert_task( dtd_tp,      parsec_core_gessm,           0,  PARSEC_DEV_CPU,   "gessm",
-                               sizeof(int),           &tempkm,                           PARSEC_VALUE,
-                               sizeof(int),           &tempnn,                           PARSEC_VALUE,
-                               sizeof(int),           &tempkm,                           PARSEC_VALUE,
-                               sizeof(int),           &ib,                               PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, k, k),    PARSEC_INPUT | TILE_RECTANGLE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, k, k),       PARSEC_INPUT | L_TILE_RECTANGLE,
-                               sizeof(int),           &ldl,                              PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),       PARSEC_INPUT | TILE_FULL,
-                               sizeof(int),           &ldak,                             PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),       PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                               sizeof(int),           &ldak,                             PARSEC_VALUE,
-                               PARSEC_DTD_ARG_END );
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 2) printf("+++ Generate matrices ... ");
+        dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
+        if(0 == t && check) {
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_t *)&dcA,
+                            (parsec_tiled_matrix_t *)&dcA0 );
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, random_seed + 1 );
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_t *)&dcB,
+                            (parsec_tiled_matrix_t *)&dcX );
         }
-        parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(L, k, k) );
-        parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(IPIV, k, k) );
+        if (0 == t && check_inv ) {
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcI);
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcInvA);
+        }
+        if(loud > 2) printf("Done\n");
 
-        for( m = k+1; m < dcA.super.mt; m++ ) {
-            tempmm = m == dcA.super.mt-1 ? (dcA.super.m)-m*(dcA.super.mb) : dcA.super.mb;
-            ldam = BLKLDD( (parsec_tiled_matrix_t*)&dcA, m);
-            nb = dcL.super.nb;
-            ldl = dcL.super.mb;
-            check_info = m == dcA.super.mt-1;
+        /* Registering the handle with parsec context */
+        parsec_context_add_taskpool( parsec, dtd_tp );
 
-            parsec_dtd_insert_task( dtd_tp,      parsec_core_tstrf,              0,      PARSEC_DEV_CPU,    "tstrf",
-                               sizeof(int),           &tempmm,                           PARSEC_VALUE,
-                               sizeof(int),           &tempkn,                           PARSEC_VALUE,
-                               sizeof(int),           &ib,                               PARSEC_VALUE,
-                               sizeof(int),           &nb,                               PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     PARSEC_INOUT | TILE_FULL,
-                               sizeof(int),           &ldak,                             PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                               sizeof(int),           &ldam,                             PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     PARSEC_OUTPUT | L_TILE_RECTANGLE,
-                               sizeof(int),           &ldl,                              PARSEC_VALUE,
-                               PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  PARSEC_OUTPUT | TILE_RECTANGLE,
-                               sizeof(dplasma_complex64_t)*ib*nb,    NULL,                PARSEC_SCRATCH,
-                               sizeof(int),           &nb,                               PARSEC_VALUE,
-                               sizeof(int),           &check_info,                       PARSEC_VALUE,
-                               sizeof(int *),         &info,                             PARSEC_REF,
-                               PARSEC_DTD_ARG_END );
+        SYNC_TIME_START();
+
+        /* #### PaRSEC context starting #### */
+
+        /* start parsec context */
+        parsec_context_start( parsec );
+
+        /* Testing insert task function */
+        for( k = 0; k < minMNT; k++ ) {
+            tempkm = k == dcA.super.mt-1 ? (dcA.super.m)-k*(dcA.super.mb) : dcA.super.mb;
+            tempkn = k == dcA.super.nt-1 ? (dcA.super.n)-k*(dcA.super.nb) : dcA.super.nb;
+            ldak = BLKLDD((parsec_tiled_matrix_t*)&dcA, k);
+            check_info = k == dcA.super.mt-1;
+
+            parsec_dtd_insert_task( dtd_tp,     parsec_core_getrf_incpiv,             0, PARSEC_DEV_CPU, "getrf_incpiv",
+                                    sizeof(int),           &tempkm,                           PARSEC_VALUE,
+                                    sizeof(int),           &tempkn,                           PARSEC_VALUE,
+                                    sizeof(int),           &ib,                               PARSEC_VALUE,
+                                    PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
+                                    sizeof(int),           &ldak,                             PARSEC_VALUE,
+                                    PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, k, k),  PARSEC_OUTPUT | TILE_RECTANGLE,
+                                    sizeof(int),   &check_info,                       PARSEC_VALUE,
+                                    sizeof(int *),         &info,                             PARSEC_REF,
+                                    PARSEC_DTD_ARG_END );
 
             for( n = k+1; n < dcA.super.nt; n++ ) {
                 tempnn = n == dcA.super.nt-1 ? (dcA.super.n)-n*(dcA.super.nb) : dcA.super.nb;
-                anb = dcA.super.nb;
                 ldl = dcL.super.mb;
 
-                parsec_dtd_insert_task( dtd_tp,      parsec_core_ssssm,            0,         PARSEC_DEV_CPU,   "ssssm",
-                                   sizeof(int),           &anb,                               PARSEC_VALUE,
-                                   sizeof(int),           &tempnn,                            PARSEC_VALUE,
-                                   sizeof(int),           &tempmm,                            PARSEC_VALUE,
-                                   sizeof(int),           &tempnn,                            PARSEC_VALUE,
-                                   sizeof(int),           &anb,                               PARSEC_VALUE,
-                                   sizeof(int),           &ib,                                PARSEC_VALUE,
-                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),     PARSEC_INOUT | TILE_FULL,
-                                   sizeof(int),           &ldak,                              PARSEC_VALUE,
-                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, n),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                                   sizeof(int),           &ldam,                              PARSEC_VALUE,
-                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     PARSEC_INPUT | L_TILE_RECTANGLE,
-                                   sizeof(int),           &ldl,                               PARSEC_VALUE,
-                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     PARSEC_INPUT | TILE_FULL,
-                                   sizeof(int),           &ldam,                              PARSEC_VALUE,
-                                   PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  PARSEC_INPUT | TILE_RECTANGLE,
-                                   PARSEC_DTD_ARG_END );
+                parsec_dtd_insert_task( dtd_tp,      parsec_core_gessm,           0,  PARSEC_DEV_CPU,   "gessm",
+                                        sizeof(int),           &tempkm,                           PARSEC_VALUE,
+                                        sizeof(int),           &tempnn,                           PARSEC_VALUE,
+                                        sizeof(int),           &tempkm,                           PARSEC_VALUE,
+                                        sizeof(int),           &ib,                               PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, k, k),    PARSEC_INPUT | TILE_RECTANGLE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, k, k),       PARSEC_INPUT | L_TILE_RECTANGLE,
+                                        sizeof(int),           &ldl,                              PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),       PARSEC_INPUT | TILE_FULL,
+                                        sizeof(int),           &ldak,                             PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),       PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
+                                        sizeof(int),           &ldak,                             PARSEC_VALUE,
+                                        PARSEC_DTD_ARG_END );
             }
-            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(L, m, k) );
-            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(IPIV, m, k) );
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(L, k, k) );
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(IPIV, k, k) );
+
+            for( m = k+1; m < dcA.super.mt; m++ ) {
+                tempmm = m == dcA.super.mt-1 ? (dcA.super.m)-m*(dcA.super.mb) : dcA.super.mb;
+                ldam = BLKLDD( (parsec_tiled_matrix_t*)&dcA, m);
+                nb = dcL.super.nb;
+                ldl = dcL.super.mb;
+                check_info = m == dcA.super.mt-1;
+
+                parsec_dtd_insert_task( dtd_tp,      parsec_core_tstrf,              0,      PARSEC_DEV_CPU,    "tstrf",
+                                        sizeof(int),           &tempmm,                           PARSEC_VALUE,
+                                        sizeof(int),           &tempkn,                           PARSEC_VALUE,
+                                        sizeof(int),           &ib,                               PARSEC_VALUE,
+                                        sizeof(int),           &nb,                               PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, k),     PARSEC_INOUT | TILE_FULL,
+                                        sizeof(int),           &ldak,                             PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
+                                        sizeof(int),           &ldam,                             PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     PARSEC_OUTPUT | L_TILE_RECTANGLE,
+                                        sizeof(int),           &ldl,                              PARSEC_VALUE,
+                                        PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  PARSEC_OUTPUT | TILE_RECTANGLE,
+                                        sizeof(dplasma_complex64_t)*ib*nb,    NULL,                PARSEC_SCRATCH,
+                                        sizeof(int),           &nb,                               PARSEC_VALUE,
+                                        sizeof(int),           &check_info,                       PARSEC_VALUE,
+                                        sizeof(int *),         &info,                             PARSEC_REF,
+                                        PARSEC_DTD_ARG_END );
+
+                for( n = k+1; n < dcA.super.nt; n++ ) {
+                    tempnn = n == dcA.super.nt-1 ? (dcA.super.n)-n*(dcA.super.nb) : dcA.super.nb;
+                    anb = dcA.super.nb;
+                    ldl = dcL.super.mb;
+
+                    parsec_dtd_insert_task( dtd_tp,      parsec_core_ssssm,            0,         PARSEC_DEV_CPU,   "ssssm",
+                                            sizeof(int),           &anb,                               PARSEC_VALUE,
+                                            sizeof(int),           &tempnn,                            PARSEC_VALUE,
+                                            sizeof(int),           &tempmm,                            PARSEC_VALUE,
+                                            sizeof(int),           &tempnn,                            PARSEC_VALUE,
+                                            sizeof(int),           &anb,                               PARSEC_VALUE,
+                                            sizeof(int),           &ib,                                PARSEC_VALUE,
+                                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, k, n),     PARSEC_INOUT | TILE_FULL,
+                                            sizeof(int),           &ldak,                              PARSEC_VALUE,
+                                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, n),     PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
+                                            sizeof(int),           &ldam,                              PARSEC_VALUE,
+                                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(L, m, k),     PARSEC_INPUT | L_TILE_RECTANGLE,
+                                            sizeof(int),           &ldl,                               PARSEC_VALUE,
+                                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(A, m, k),     PARSEC_INPUT | TILE_FULL,
+                                            sizeof(int),           &ldam,                              PARSEC_VALUE,
+                                            PASSED_BY_REF,         PARSEC_DTD_TILE_OF(IPIV, m, k),  PARSEC_INPUT | TILE_RECTANGLE,
+                                            PARSEC_DTD_ARG_END );
+                }
+                parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(L, m, k) );
+                parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(IPIV, m, k) );
+            }
+            for( n = k+1; n < dcA.super.nt; n++ ) {
+                parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, n));
+            }
+            for( m = k+1; m < dcA.super.mt; m++ ) {
+                parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, m, k) );
+            }
+            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, k) );
         }
-        for( n = k+1; n < dcA.super.nt; n++ ) {
-            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, n));
+
+        parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcA );
+        parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcL );
+        parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcIPIV );
+
+        /* finishing all the tasks inserted, but not finishing the handle */
+        parsec_dtd_taskpool_wait( dtd_tp );
+
+        /* Waiting on all handle and turning everything off for this context */
+        parsec_context_wait( parsec );
+
+        /* #### PaRSEC context is done #### */
+
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
+                    P, Q, NB, N,
+                    gflops=(flops/1e9)/sync_time_elapsed));
+            gflops_avg += gflops/nruns;
         }
-        for( m = k+1; m < dcA.super.mt; m++ ) {
-            parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, m, k) );
-        }
-        parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, k) );
     }
-
-    parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcA );
-    parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcL );
-    parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcIPIV );
-
-    /* finishing all the tasks inserted, but not finishing the handle */
-    parsec_dtd_taskpool_wait( dtd_tp );
-
-    /* Waiting on all handle and turning everything off for this context */
-    parsec_context_wait( parsec );
-
-    /* #### PaRSEC context is done #### */
-
-    SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
-                           P, Q, NB, N,
-                           gflops=(flops/1e9)/sync_time_elapsed));
+    PASTE_CODE_PERF_LOOP_DONE();
 
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );

@@ -59,22 +59,25 @@ int main(int argc, char ** argv)
                                        rank, MB, NB, LDC, N, 0, 0,
                                        N, N, P, nodes/P, uplo));
 
-        /* matrix generation */
-        if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA,  Aseed);
-        dplasma_zplghe( parsec, 0., uplo, (parsec_tiled_matrix_t *)&dcC, Cseed);
-        if(loud > 2) printf("Done\n");
+        for(int t = 0; t < nruns+1; t++) {
+            /* matrix generation */
+            if(loud > 2) printf("+++ Generate matrices ... ");
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA,  Aseed);
+            dplasma_zplghe( parsec, 0., uplo, (parsec_tiled_matrix_t *)&dcC, Cseed);
+            if(loud > 2) printf("Done\n");
 
-        /* Create PaRSEC */
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, zherk,
-                                  (uplo, trans,
-                                   alpha, (parsec_tiled_matrix_t *)&dcA,
-                                   beta,  (parsec_tiled_matrix_t *)&dcC));
+            /* Create PaRSEC */
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, zherk,
+                                      (uplo, trans,
+                                              alpha, (parsec_tiled_matrix_t *)&dcA,
+                                              beta,  (parsec_tiled_matrix_t *)&dcC));
 
-        /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zherk);
+            /* lets rock! */
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zherk, t);
 
-        dplasma_zherk_Destruct( PARSEC_zherk );
+            dplasma_zherk_Destruct( PARSEC_zherk );
+        }
+        PASTE_CODE_PERF_LOOP_DONE();
 
         parsec_data_free(dcA.mat);
         parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
