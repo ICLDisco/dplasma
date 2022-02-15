@@ -45,15 +45,6 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDA, Am, 0, 0,
                                Am, Am, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 2) printf("+++ Generate matrices ... ");
-    /* Generate matrix A with diagonal dominance to keep stability during computation */
-    dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA, Aseed);
-    /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
-    dplasma_zlascal( parsec, dplasmaUpperLower,
-                     1. / (dplasma_complex64_t)Am,
-                     (parsec_tiled_matrix_t *)&dcA );
-    if(loud > 2) printf("Done\n");
 
     if(!check)
     {
@@ -63,19 +54,42 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_FLOPS(FLOPS_ZTRTRI, ((DagDouble_t)Am));
 
-        /* Create PaRSEC */
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, ztrtri,
-                                  (uplo, diag, (parsec_tiled_matrix_t *)&dcA, &info));
+        for(int t = 0; t < nruns+1; t++) {
+            /* matrix generation */
+            if(loud > 2) printf("+++ Generate matrices ... ");
+            /* Generate matrix A with diagonal dominance to keep stability during computation */
+            dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA, Aseed);
+            /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+            dplasma_zlascal( parsec, dplasmaUpperLower,
+                             1. / (dplasma_complex64_t)Am,
+                             (parsec_tiled_matrix_t *)&dcA );
+            if(loud > 2) printf("Done\n");
 
-        /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, ztrtri);
+            /* Create PaRSEC */
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, ztrtri,
+                                      (uplo, diag, (parsec_tiled_matrix_t *)&dcA, &info));
 
-        dplasma_ztrtri_Destruct( PARSEC_ztrtri );
+            /* lets rock! */
+            PASTE_CODE_PROGRESS_KERNEL(parsec, ztrtri, t);
+
+            dplasma_ztrtri_Destruct( PARSEC_ztrtri );
+        }
+        PASTE_CODE_PERF_LOOP_DONE();
     }
     else
     {
         int u, d, info;
         int info_solution;
+
+        /* matrix generation */
+        if(loud > 2) printf("+++ Generate matrices ... ");
+        /* Generate matrix A with diagonal dominance to keep stability during computation */
+        dplasma_zplrnt( parsec, 1, (parsec_tiled_matrix_t *)&dcA, Aseed);
+        /* Scale down the full matrix to keep stability in diag = dplasmaUnit case */
+        dplasma_zlascal( parsec, dplasmaUpperLower,
+                         1. / (dplasma_complex64_t)Am,
+                         (parsec_tiled_matrix_t *)&dcA );
+        if(loud > 2) printf("Done\n");
 
         for (u=0; u<2; u++) {
             for (d=0; d<2; d++) {
@@ -127,10 +141,10 @@ int main(int argc, char ** argv)
         parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&dcAinv);
     }
 
-    cleanup_parsec(parsec, iparam);
-
     parsec_data_free(dcA.mat);
     parsec_tiled_matrix_destroy((parsec_tiled_matrix_t*)&dcA);
+
+    cleanup_parsec(parsec, iparam);
 
     return ret;
 }

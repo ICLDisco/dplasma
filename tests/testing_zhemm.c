@@ -55,13 +55,6 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDC, N, 0, 0,
                                M, N, P, nodes/P, KP, KQ, IP, JQ));
 
-    if (loud > 2) printf("Generate matrices ... ");
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB,  Bseed);
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC,  Cseed);
-    if (check)
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC2, Cseed);
-    if (loud > 2) printf("Done\n");
-
     if(!check)
     {
         dplasma_enum_t side  = dplasmaLeft;
@@ -76,23 +69,27 @@ int main(int argc, char ** argv)
                                        rank, MB, NB, LDA, Am, 0, 0,
                                        Am, Am, P, nodes/P, uplo));
 
-        /* matrix generation */
-        if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplghe( parsec, 0., uplo, (parsec_tiled_matrix_t *)&dcA, Aseed);
-        if(loud > 2) printf("Done\n");
+        for(int t = 0; t < nruns+1; t++) {
+            /* matrix generation */
+            if(loud > 2) printf("+++ Generate matrices ... ");
+            dplasma_zplghe( parsec, 0., uplo, (parsec_tiled_matrix_t *)&dcA, Aseed);
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB,  Bseed);
+            dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC,  Cseed);
+            if(loud > 2) printf("Done\n");
 
-        /* Create PaRSEC */
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, zhemm,
-                                  (side, uplo,
-                                   alpha, (parsec_tiled_matrix_t *)&dcA,
-                                          (parsec_tiled_matrix_t *)&dcB,
-                                   beta,  (parsec_tiled_matrix_t *)&dcC));
+            /* Create PaRSEC */
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, zhemm,
+                                      (side, uplo,
+                                              alpha, (parsec_tiled_matrix_t *)&dcA,
+                                              (parsec_tiled_matrix_t *)&dcB,
+                                              beta,  (parsec_tiled_matrix_t *)&dcC));
 
-        /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zhemm);
+            /* lets rock! */
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zhemm, t);
 
-        dplasma_zhemm_Destruct( PARSEC_zhemm );
-
+            dplasma_zhemm_Destruct( PARSEC_zhemm );
+        }
+        PASTE_CODE_PERF_LOOP_DONE();
         parsec_data_free(dcA.mat);
         parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
     }
@@ -100,6 +97,12 @@ int main(int argc, char ** argv)
     {
         int s, u;
         int info_solution;
+
+        if (loud > 2) printf("Generate matrices ... ");
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB,  Bseed);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC,  Cseed);
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC2, Cseed);
+        if (loud > 2) printf("Done\n");
 
         for (s=0; s<2; s++) {
             /* initializing matrix structure */

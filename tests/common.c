@@ -273,7 +273,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     /* Default seed */
     iparam[IPARAM_RANDOM_SEED] = 3872;
     iparam[IPARAM_MATRIX_INIT] = dplasmaMatrixRandom;
-    iparam[IPARAM_NRUNS] = 1;
+    iparam[IPARAM_NRUNS] = 3;
 
     do {
 #if defined(PARSEC_HAVE_GETOPT_LONG)
@@ -443,14 +443,18 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     if(0 == iparam[IPARAM_N] && optind < argc) {
         iparam[IPARAM_N] = atoi(argv[optind++]);
     }
+
+    /* If we ask for check (-x), then we do '0' run, i.e. only the 'warmup'
+     * run, which is sometimes used to initialize the data and do the initial
+     * computation */
+    if(iparam[IPARAM_CHECK]) {
+        iparam[IPARAM_NRUNS] = 0;
+    }
     (void)rc;
 }
 
 static void parse_arguments(int *iparam) {
     int verbose = iparam[IPARAM_RANK] ? 0 : iparam[IPARAM_VERBOSE];
-
-    /* we want to run at least once, right? */
-    if(iparam[IPARAM_NRUNS] < 1) iparam[IPARAM_NRUNS] = 1;
 
     if(iparam[IPARAM_NGPUS] < 0) iparam[IPARAM_NGPUS] = 0;
     if(iparam[IPARAM_NGPUS] > 0) {

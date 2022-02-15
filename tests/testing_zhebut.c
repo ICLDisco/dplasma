@@ -80,16 +80,61 @@ int main(int argc, char ** argv)
                                rank, MB, NB, LDA, N, 0, 0,
                                N, N, P, nodes/P, KP, KQ, IP, JQ));
 
-    /* matrix generation */
-    if(loud > 2) printf("+++ Generate matrices ... ");
-    dplasma_zplghe( parsec, (double)(0), uplo,
-                    (parsec_tiled_matrix_t *)&dcA, 1358);
+    for(int t = 0; t < nruns+1; t++) {
+        if(loud > 2 && rank==0) printf("+++ Generate matrices ... ");
+        dplasma_zplghe( parsec, (double)(0), uplo,
+                        (parsec_tiled_matrix_t *)&dcA, 1358);
+        if(0 ==t && check) {
+            dplasma_zlacpy( parsec, uplo,
+                            (parsec_tiled_matrix_t *)&dcA,
+                            (parsec_tiled_matrix_t *)&dcA0);
+        }
+        if(loud > 2 && rank == 0) printf("Done\n");
 
-    if( check ){
-        dplasma_zlacpy( parsec, uplo,
-                        (parsec_tiled_matrix_t *)&dcA,
-                        (parsec_tiled_matrix_t *)&dcA0);
+        if(loud > 2 && rank == 0) printf("+++ Computing Butterfly ... \n");
+        SYNC_TIME_START();
+        if (loud) TIME_START();
 
+        ret = dplasma_zhebut(parsec, (parsec_tiled_matrix_t *)&dcA, &U_but_vec, butterfly_level);
+        if( ret < 0 )
+            return ret;
+
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ("zhebut computation N= %d NB= %d\n", N, NB));
+
+            /* Backup butterfly time */
+            time_butterfly = sync_time_elapsed;
+        }
+        if(loud > 2) printf("... Done\n");
+
+
+        if(loud > 2) printf("+++ Computing Factorization ... \n");
+        SYNC_TIME_START();
+        dplasma_zhetrf(parsec, (parsec_tiled_matrix_t *)&dcA);
+
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ("zhetrf computation N= %d NB= %d : %f gflops\n", N, NB,
+                    (gflops = (flops/1e9)/(sync_time_elapsed))));
+            gflops_avg += gflops/nruns;
+        }
+        if(loud > 2) printf(" ... Done.\n");
+
+        time_facto = sync_time_elapsed;
+        time_total = time_butterfly + time_facto;
+
+        if(0 == rank && t>0) {
+            printf( "zhebut+zhetrf computation : %f gflops (%02.2f%% / %02.2f%%)\n",
+                    (gflops = (flops/1e9)/(time_total)),
+                    time_butterfly / time_total * 100.,
+                    time_facto     / time_total * 100.);
+        }
+        (void)gflops;
+    }
+    PASTE_CODE_PERF_LOOP_DONE();
+
+    if(check) {
+        /* matrix generation */
+        if(loud > 2) printf("+++ Generate additional checking matrices ... ");
 #if defined(CHECK_B)
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_t *)&dcB, 3872);
@@ -102,45 +147,7 @@ int main(int argc, char ** argv)
             dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcInvA);
             dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_t *)&dcI);
         }
-    }
-    if(loud > 2) printf("Done\n");
-
-
-    if(loud > 2) printf("+++ Computing Butterfly ... \n");
-    SYNC_TIME_START();
-    if (loud) TIME_START();
-
-    ret = dplasma_zhebut(parsec, (parsec_tiled_matrix_t *)&dcA, &U_but_vec, butterfly_level);
-    if( ret < 0 )
-        return ret;
-
-    SYNC_TIME_PRINT(rank, ("zhebut computation N= %d NB= %d\n", N, NB));
-
-    /* Backup butterfly time */
-    time_butterfly = sync_time_elapsed;
-    if(loud > 2) printf("... Done\n");
-
-
-    if(loud > 2) printf("+++ Computing Factorization ... \n");
-    SYNC_TIME_START();
-    dplasma_zhetrf(parsec, (parsec_tiled_matrix_t *)&dcA);
-
-    SYNC_TIME_PRINT(rank, ("zhetrf computation N= %d NB= %d : %f gflops\n", N, NB,
-                           (gflops = (flops/1e9)/(sync_time_elapsed))));
-    if(loud > 2) printf(" ... Done.\n");
-
-    time_facto = sync_time_elapsed;
-    time_total = time_butterfly + time_facto;
-
-    if(0 == rank) {
-        printf( "zhebut+zhetrf computation : %f gflops (%02.2f%% / %02.2f%%)\n",
-                (gflops = (flops/1e9)/(time_total)),
-                time_butterfly / time_total * 100.,
-                time_facto     / time_total * 100.);
-    }
-    (void)gflops;
-
-    if(check) {
+        if(loud > 2) printf("Done\n");
 
 #if defined(CHECK_B)
         dplasma_zhetrs(parsec, uplo,
