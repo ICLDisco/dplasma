@@ -41,30 +41,40 @@ int main(int argc, char ** argv)
                                    rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, nodes/P, uplo));
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zplghe( parsec, (double)(N), uplo,
-                    (parsec_tiled_matrix_t *)&dcA, random_seed);
-    if(loud > 3) printf("Done\n");
+    if(check)
+        nruns = 0;
 
-    if (async) {
-        PASTE_CODE_ENQUEUE_KERNEL(parsec, zpoinv,
-                                  (uplo, (parsec_tiled_matrix_t*)&dcA, &info));
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zpoinv);
-        dplasma_zpoinv_Destruct( PARSEC_zpoinv );
-    }
-    else {
-        SYNC_TIME_START();
-        info = dplasma_zpoinv_sync( parsec, uplo, (parsec_tiled_matrix_t*)&dcA );
-        SYNC_TIME_PRINT(rank, ("zpoinv\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
-                               P, Q, NB, N,
-                               gflops=(flops/1e9)/sync_time_elapsed));
-    }
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zplghe( parsec, (double)(N), uplo,
+                        (parsec_tiled_matrix_t *)&dcA, random_seed);
+        if(loud > 3) printf("Done\n");
 
-    if( 0 == rank && info != 0 ) {
-        printf("-- Factorization is suspicious (info = %d) ! \n", info);
-        ret |= 1;
+        if (async) {
+            PASTE_CODE_ENQUEUE_KERNEL(parsec, zpoinv,
+                                      (uplo, (parsec_tiled_matrix_t*)&dcA, &info));
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zpoinv, t);
+            dplasma_zpoinv_Destruct( PARSEC_zpoinv );
+        }
+        else {
+            SYNC_TIME_START();
+            info = dplasma_zpoinv_sync( parsec, uplo, (parsec_tiled_matrix_t*)&dcA );
+            if(t > 0) {
+                SYNC_TIME_PRINT(rank, ("zpoinv\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
+                        P, Q, NB, N,
+                        gflops=(flops/1e9)/sync_time_elapsed));
+                gflops_avg += gflops/nruns;
+            }
+        }
+
+        if( 0 == rank && info != 0 ) {
+            printf("-- Factorization is suspicious (info = %d) ! \n", info);
+            ret |= 1;
+        }
     }
+    PASTE_CODE_PERF_LOOP_DONE();
+
     if( !info && check ) {
         /* Check the factorization */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,

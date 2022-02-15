@@ -45,12 +45,30 @@ int main(int argc, char *argv[])
                                                       rank, MB+1, NB+2, MB+1, (NB+2)*NT, 0, 0,
                                                       MB+1, (NB+2)*NT, 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
 
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+    double time_avg = 0.0;
 
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt,
-                              ((parsec_tiled_matrix_t*)&dcA));
+    for(int t = 0; t < nruns+1; t++) {
+        if(loud > 2) printf("+++ Generate matrices ... ");
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+        if(loud > 2) printf("Done\n");
 
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt,
+                                  ((parsec_tiled_matrix_t*)&dcA));
+
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt, t);
+        if(t > 0) {
+            time_avg += sync_time_elapsed/nruns;
+        }
+        dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
+    }
+    PASTE_PROF_INFO;
+    if(loud >= 5 && rank == 0) {
+        printf("<DartMeasurement name=\"duration\" type=\"numeric/double\"\n"
+               "                 encoding=\"none\" compression=\"none\">\n"
+               "%g\n"
+               "</DartMeasurement>\n",
+               time_avg);
+    }
 
     if( check ) {
         printf( "No check implemented yet.\n" );
@@ -111,7 +129,6 @@ int main(int argc, char *argv[])
         }
 #endif  /* defined(PARSEC_HAVE_MPI) */
     }
-    dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
 
     parsec_data_free(dcA.mat);
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);

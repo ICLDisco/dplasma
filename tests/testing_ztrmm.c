@@ -68,24 +68,24 @@ int main(int argc, char ** argv)
             dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, N, N );
         }
 
-        /* matrix generation */
-        if(loud > 2) printf("+++ Generate matrices ... ");
-        dplasma_zplghe( parsec, 0., uplo, dcA, Aseed);
-        dplasma_zplrnt( parsec, 0,        (parsec_tiled_matrix_t *)&dcC, Cseed);
-        if(loud > 2) printf("Done\n");
+        for(int t = 0; t < nruns+1; t++) {
+            /* matrix generation */
+            if(loud > 2) printf("+++ Generate matrices ... ");
+            dplasma_zplghe( parsec, 0., uplo, dcA, Aseed);
+            dplasma_zplrnt( parsec, 0,        (parsec_tiled_matrix_t *)&dcC, Cseed);
+            if(loud > 2) printf("Done\n");
 
-        int t;
-        for(t = 0; t < nruns; t++) {
             parsec_devices_release_memory();
             /* Create PaRSEC */
             PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, ztrmm,
-                                      (side, uplo, trans, diag,
-                                       1.0, dcA,
-                                       (parsec_tiled_matrix_t *)&dcC),
-                                      dplasma_ztrmm_Destruct( PARSEC_ztrmm ));
+                                                        (side, uplo, trans, diag,
+                                                                1.0, dcA,
+                                                                (parsec_tiled_matrix_t *)&dcC),
+                                                                dplasma_ztrmm_Destruct( PARSEC_ztrmm ), t);
 
             parsec_devices_reset_load(parsec);
         }
+        PASTE_CODE_PERF_LOOP_DONE();
         free(dcA);
     }
     else

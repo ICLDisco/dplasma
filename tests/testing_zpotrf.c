@@ -40,7 +40,7 @@ int main(int argc, char ** argv)
                                    rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, nodes/P, uplo));
     int t;
-    for(t = 0; t < nruns; t++) {
+    for(t = 0; t < nruns+1; t++) {
         /* matrix (re)generation */
         if(loud > 3) printf("+++ Generate matrices ... ");
         dplasma_zplghe( parsec, (double)(N), uplo,
@@ -57,9 +57,11 @@ int main(int argc, char ** argv)
             /* Set the recursive size */
             dplasma_zpotrf_setrecursive( PARSEC_zpotrf, iparam[IPARAM_HMB] );
             parsec_context_add_taskpool(parsec, PARSEC_zpotrf);
-            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+            if( loud > 2 && t > 0) {
+                SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+            }
 
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf, t);
             dplasma_zpotrf_Destruct( PARSEC_zpotrf );
 
             parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
@@ -69,11 +71,11 @@ int main(int argc, char ** argv)
         {
             PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zpotrf, 
                                       ( uplo, (parsec_tiled_matrix_t*)&dcA, &info),
-                                      dplasma_zpotrf_Destruct( PARSEC_zpotrf ));
+                                      dplasma_zpotrf_Destruct( PARSEC_zpotrf ), t);
         }
         parsec_devices_reset_load(parsec);
-
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if( 0 == rank && info != 0 ) {
         printf("-- Factorization is suspicious (info = %d) ! \n", info);

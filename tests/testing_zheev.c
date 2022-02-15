@@ -51,56 +51,64 @@ int main(int argc, char *argv[])
         parsec_matrix_block_cyclic, (&dcT, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, IB, NB, MT*IB, N, 0, 0,
                                MT*IB, N, P, nodes/P, KP, KP, IP, JQ));
-
-    /* Fill A with randomness */
-    dplasma_zplghe( parsec, (double)N, uplo,
-                    (parsec_tiled_matrix_t *)&dcA, 3872);
-#ifdef PRINTF_HEAVY
-    printf("########### A (initial, tile storage)\n");
-    dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_t *)&dcA );
-#endif
-
-    /* Step 1 - Reduction A to band matrix */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zherbt,
-                              (uplo, IB,
-                               (parsec_tiled_matrix_t*)&dcA,
-                               (parsec_tiled_matrix_t*)&dcT));
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt);
-#ifdef PRINTF_HEAVY
-    printf("########### A (reduced to band form)\n");
-    dplasma_zprint( parsec, uplo, &dcA);
-#endif
-
-goto fin;
-
-    /* Step 2 - Conversion of the tiled band to 1D band storage */
     PASTE_CODE_ALLOCATE_MATRIX(dcBAND, 1,
-        parsec_matrix_block_cyclic, (&dcBAND, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
-                               rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
-                               MB+1, (NB+2)*(NT+1), 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
-    SYNC_TIME_START();
-    parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((parsec_matrix_sym_block_cyclic_t*)&dcA, &dcBAND,
-                                                                                            MT, NT, MB, NB, sizeof(dplasma_complex64_t));
-    parsec_arena_datatype_t* adt = &PARSEC_diag_band_to_rect->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX];
-    dplasma_add2arena_tile(adt,
-                           MB*NB*sizeof(dplasma_complex64_t),
-                           PARSEC_ARENA_ALIGNMENT_SSE,
-                           parsec_datatype_double_complex_t, MB);
-    rc = parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)PARSEC_diag_band_to_rect);
-    PARSEC_CHECK_ERROR(rc, "parsec_context_add_taskpool");
-    rc = parsec_context_start(parsec);
-    PARSEC_CHECK_ERROR(rc, "parsec_context_start");
-    rc = parsec_context_wait(parsec);
-    PARSEC_CHECK_ERROR(rc, "parsec_context_wait");
-    SYNC_TIME_PRINT(rank, ( "diag_band_to_rect N= %d NB = %d : %f s\n", N, NB, sync_time_elapsed));
+                               parsec_matrix_block_cyclic, (&dcBAND, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                                       rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
+                                       MB+1, (NB+2)*(NT+1), 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
+
+    for(int t = 0; t < nruns+1; t++) {
+        /* Fill A with randomness */
+        dplasma_zplghe( parsec, (double)N, uplo,
+                        (parsec_tiled_matrix_t *)&dcA, 3872);
 #ifdef PRINTF_HEAVY
-    printf("########### BAND (converted from A)\n");
-    dplasma_zprint(parsec, dplasmaUpperLower, &dcBAND);
+        printf("########### A (initial, tile storage)\n");
+        dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_t *)&dcA );
 #endif
 
-    /* Step 3 - Reduce band to bi-diag form */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt, ((parsec_tiled_matrix_t*)&dcBAND));
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
+        /* Step 1 - Reduction A to band matrix */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zherbt,
+                                  (uplo, IB,
+                                          (parsec_tiled_matrix_t*)&dcA,
+                                          (parsec_tiled_matrix_t*)&dcT));
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt, t);
+#ifdef PRINTF_HEAVY
+        printf("########### A (reduced to band form)\n");
+        dplasma_zprint( parsec, uplo, &dcA);
+#endif
+        dplasma_zherbt_Destruct( PARSEC_zherbt );
+
+        /* Step 2 - Conversion of the tiled band to 1D band storage */
+        SYNC_TIME_START();
+        parsec_diag_band_to_rect_taskpool_t* PARSEC_diag_band_to_rect = parsec_diag_band_to_rect_new((parsec_matrix_sym_block_cyclic_t*)&dcA, &dcBAND,
+                                                                                                     MT, NT, MB, NB, sizeof(dplasma_complex64_t));
+        parsec_arena_datatype_t* adt = &PARSEC_diag_band_to_rect->arenas_datatypes[PARSEC_diag_band_to_rect_DEFAULT_ADT_IDX];
+        dplasma_add2arena_tile(adt,
+                               MB*NB*sizeof(dplasma_complex64_t),
+                               PARSEC_ARENA_ALIGNMENT_SSE,
+                               parsec_datatype_double_complex_t, MB);
+        rc = parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)PARSEC_diag_band_to_rect);
+        PARSEC_CHECK_ERROR(rc, "parsec_context_add_taskpool");
+        rc = parsec_context_start(parsec);
+        PARSEC_CHECK_ERROR(rc, "parsec_context_start");
+        rc = parsec_context_wait(parsec);
+        PARSEC_CHECK_ERROR(rc, "parsec_context_wait");
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ( "diag_band_to_rect N= %d NB = %d : %f s\n", N, NB, sync_time_elapsed));
+        }
+        dplasma_matrix_del2arena(adt);
+        PARSEC_OBJ_RELEASE(PARSEC_diag_band_to_rect);
+        parsec_taskpool_free( &PARSEC_diag_band_to_rect->super );
+#ifdef PRINTF_HEAVY
+        printf("########### BAND (converted from A)\n");
+        dplasma_zprint(parsec, dplasmaUpperLower, &dcBAND);
+#endif
+
+
+        /* Step 3 - Reduce band to bi-diag form */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt, ((parsec_tiled_matrix_t*)&dcBAND));
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt, t);
+        dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
+    }
 
     if( check ) {
         dplasma_complex64_t *A0  = (dplasma_complex64_t *)malloc(LDA*N*sizeof(dplasma_complex64_t));
@@ -242,10 +250,6 @@ goto fin;
         }
         free(W0); free(D); free(E);
     }
-
-    dplasma_zherbt_Destruct( PARSEC_zherbt );
-    parsec_taskpool_free( &PARSEC_diag_band_to_rect->super );
-    dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
 
     parsec_data_free(dcBAND.mat);
     parsec_data_free(dcA.mat);

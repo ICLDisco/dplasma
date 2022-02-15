@@ -358,12 +358,6 @@ int main(int argc, char **argv)
 
     parsec_dtd_data_collection_init((parsec_data_collection_t *)&dcA);
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zplghe( parsec, (double)(N), uplo,
-                    (parsec_tiled_matrix_t *)&dcA, random_seed);
-    if(loud > 3) printf("Done\n");
-
     parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new( );
 
     /* Default type */
@@ -373,55 +367,66 @@ int main(int argc, char **argv)
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
-    /* Registering the handle with parsec context */
-    parsec_context_add_taskpool( parsec, dtd_tp );
+    for(int t = 0; t < nruns+1; t++) {
+        /* matrix generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zplghe( parsec, (double)(N), uplo,
+                        (parsec_tiled_matrix_t *)&dcA, random_seed);
+        if(loud > 3) printf("Done\n");
 
-    SYNC_TIME_START();
+        /* Registering the handle with parsec context */
+        parsec_context_add_taskpool( parsec, dtd_tp );
 
-    /* #### PaRSEC context starting #### */
+        SYNC_TIME_START();
 
-    /* Start parsec context */
-    parsec_context_start(parsec);
+        /* #### PaRSEC context starting #### */
 
-    int *iteration = malloc(sizeof(int));
-    *iteration = 0;
-    int total;
-    if( dplasmaLower == uplo ) {
-        total = dcA.super.mt;
-        parsec_dtd_insert_task( dtd_tp,       insert_task_lower, 0, PARSEC_DEV_CPU, "insert_task_lower",
-                           sizeof(int),           &total,              PARSEC_VALUE,
-                           sizeof(int),           iteration,           PARSEC_REF,
-                           sizeof(int),           &uplo,               PARSEC_VALUE,
-                           sizeof(int *),         &info,               PARSEC_REF,
-                           sizeof(parsec_matrix_sym_block_cyclic_t *), &dcA, PARSEC_REF,
-                           PARSEC_DTD_ARG_END );
+        /* Start parsec context */
+        parsec_context_start(parsec);
 
-    } else {
-        total = dcA.super.nt;
-        parsec_dtd_insert_task( dtd_tp,       insert_task_upper, 0, PARSEC_DEV_CPU, "insert_task_upper",
-                           sizeof(int),           &total,              PARSEC_VALUE,
-                           sizeof(int),           iteration,           PARSEC_REF,
-                           sizeof(int),           &uplo,               PARSEC_VALUE,
-                           sizeof(int *),         &info,               PARSEC_REF,
-                           sizeof(parsec_matrix_sym_block_cyclic_t *), &dcA, PARSEC_REF,
-                           PARSEC_DTD_ARG_END );
+        int *iteration = malloc(sizeof(int));
+        *iteration = 0;
+        int total;
+        if( dplasmaLower == uplo ) {
+            total = dcA.super.mt;
+            parsec_dtd_insert_task( dtd_tp,       insert_task_lower, 0, PARSEC_DEV_CPU, "insert_task_lower",
+                                    sizeof(int),           &total,              PARSEC_VALUE,
+                                    sizeof(int),           iteration,           PARSEC_REF,
+                                    sizeof(int),           &uplo,               PARSEC_VALUE,
+                                    sizeof(int *),         &info,               PARSEC_REF,
+                                    sizeof(parsec_matrix_sym_block_cyclic_t *), &dcA, PARSEC_REF,
+                                    PARSEC_DTD_ARG_END );
 
+        } else {
+            total = dcA.super.nt;
+            parsec_dtd_insert_task( dtd_tp,       insert_task_upper, 0, PARSEC_DEV_CPU, "insert_task_upper",
+                                    sizeof(int),           &total,              PARSEC_VALUE,
+                                    sizeof(int),           iteration,           PARSEC_REF,
+                                    sizeof(int),           &uplo,               PARSEC_VALUE,
+                                    sizeof(int *),         &info,               PARSEC_REF,
+                                    sizeof(parsec_matrix_sym_block_cyclic_t *), &dcA, PARSEC_REF,
+                                    PARSEC_DTD_ARG_END );
+
+        }
+
+        /* Finishing all the tasks inserted, but not finishing the handle */
+        parsec_dtd_taskpool_wait( dtd_tp );
+
+        /* Waiting on all handle and turning everything off for this context */
+        parsec_context_wait(parsec);
+
+        /* #### PaRSEC context is done #### */
+
+        if(t > 0) {
+            SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
+                    P, Q, NB, N,
+                    gflops=(flops/1e9)/sync_time_elapsed));
+            gflops_avg += gflops/nruns;
+        }
     }
-
-    /* Finishing all the tasks inserted, but not finishing the handle */
-    parsec_dtd_taskpool_wait( dtd_tp );
-
-    /* Waiting on all handle and turning everything off for this context */
-    parsec_context_wait(parsec);
-
-    /* #### PaRSEC context is done #### */
-
-    SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
-                           P, Q, NB, N,
-                           gflops=(flops/1e9)/sync_time_elapsed));
-
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if( 0 == rank && info != 0 ) {
         printf("-- Factorization is suspicious (info = %d) ! \n", info);
