@@ -52,12 +52,14 @@ class GenConversion:
     else:
       lfile = path.join(self.srcdir, file);
     """Reads the file and determines if the file needs generation."""
-    for line in open(path.realpath(lfile), 'r'):
+    fh = open(path.realpath(lfile), 'r')
+    for line in fh:
       m = self.rex.match(line);
       if m is None: continue;
       else:
         match = m.groups();
         break;
+    fh.close()
 
     """This file need to go through precision generation script"""
     if match is None:
@@ -117,10 +119,10 @@ class GenConversion:
         search = work[i][prec_from];
         replace = work[i][prec_to];
         if not search: continue;
-        replace = replace.replace('\*','*');
+        replace = replace.replace(r'\*','*');
         if sub_type != 'tracing' :
-          replace = replace.replace('\(','(');
-          replace = replace.replace('\)',')');
+          replace = replace.replace(r'\(','(');
+          replace = replace.replace(r'\)',')');
         data = re.sub(search, replace, data);
       except:
         print 'Bad replacement pair ',i,'in',sub_type;
