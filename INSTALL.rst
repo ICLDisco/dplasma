@@ -4,6 +4,18 @@ INSTALLING DPLASMA
 
 .. contents:: Table of Contents
 
+
+TL;DR
+=====
+
+.. code:: bash
+
+  mkdir builddir && cd builddir
+  ${srcdir}/configure --with-hwloc --with-mpi --with-blas=Intel10_64lp_seq --disable-debug --prefix=$PWD/install
+  make install
+  mpiexec -n 8 tests/testing_dpotrf -N 1000 -x -v
+
+
 Software Dependencies
 =====================
 
@@ -25,7 +37,7 @@ of this software package.
 
 .. _CMake: http://www.cmake.org/
 .. _LAPACKE: https://github.com/Reference-LAPACK/lapack
-.. _PaRSEC: https://bitbucket.org/icldistcomp/parsec/
+.. _PaRSEC: https://github.com/icldisco/parsec/
 .. _hwloc: http://www.open-mpi.org/projects/hwloc/
 .. _CUDA: https://developer.nvidia.com/cuda-zone
 
@@ -699,16 +711,6 @@ after the DPLASMA arguments, by separating the DPLASMA arguments from the PaRSEC
 ``mpirun -np 8 ./testing_dpotrf -c 8 -N 1000 -- --mca mca_sched ap`` would tell DPLASMA to use 8 cores, and PaRSEC 
 to use the AP (Absolute Priority) scheduling heuristic). A complete list of MCA parameters can be found by passing 
 ``--help`` to the PaRSEC runtime engine (e.g. ``mpirun -np 1 ./testing_dpotrf -c 1 -N 100 -- --help``).
-
-TL;DR
-=====
-
-.. code:: bash
-
-  mkdir builddir && cd builddir
-  ${srcdir}/configure --with-hwloc --with-mpi --with-blas=Intel10_64lp_seq --disable-debug --prefix=$PWD/install
-  make install
-  mpiexec -n 8 tests/testing_dpotrf -N 1000 -x -v
 
 ______
 
