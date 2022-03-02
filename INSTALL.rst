@@ -15,6 +15,8 @@ TL;DR
   make install
   mpiexec -n 8 tests/testing_dpotrf -N 1000 -x -v
 
+This example assumes you are using Intel MKL BLAS. Refer to `Choosing a BLAS`_
+when using another BLAS library.
 
 Software Dependencies
 =====================
