@@ -1,0 +1,62 @@
+cff-version: 1.2.0
+message: "Please cite this software using the metadata from 'preferred-citation'."
+authors:
+- family-names: "Bosilca"
+  given-names: "George"
+  orcid: "https://orcid.org/0000-0003-2411-8495"
+- family-names: "Bouteiller"
+  given-names: "Aurelien"
+  orcid: "https://orcid.org/0000-0001-5108-509X"
+- family-names: "Herault"
+  given-names: "Thomas"
+  orcid: "https://orcid.org/0000-0001-6756-6189"
+title: "Distributed Parallel Linear Algebra Software for Multiple Architectures"
+url: "https://github.com/icldisco/dplasma"
+license: BSD-3-Clause-Open-MPI
+preferred-citation:
+  type: conference-paper
+  title: "Flexible Development of Dense Linear Algebra Algorithms on Massively Parallel Architectures with DPLASMA"
+  authors:
+  - family-names: "Bosilca"
+    given-names: "George"
+    orcid: "https://orcid.org/0000-0003-2411-8495"
+  - family-names: "Bouteiller"
+    given-names: "Aurelien"
+    orcid: "https://orcid.org/0000-0001-5108-509X"
+  - family-names: "Danalis"
+    given-names: "Anthony"
+  - family-names: "Faverge"
+    given-names: "Mathieu"
+  - family-names: "Haidar"
+    given-names: "Azzam"
+  - family-names: "Herault"
+    given-names: "Thomas"
+    orcid: "https://orcid.org/0000-0001-6756-6189"
+  - family-names: "Kurzak" 
+    given-names: "Jakub"
+  - family-names: "Langou"
+    given-names: "Julien"
+  - family-names: "Lemarinier"
+    given-names: "Pierre"
+  - family-names: "Ltaief"
+    given-names: "Hatem"
+  - family-names: "Luszczek"
+    given-names: "Piotr"
+  - family-names: "YarKhan"
+    given-names: "Asim"
+  - family-names: "Dongarra"
+    given-names: "Jack"
+  doi: "10.1109/IPDPS.2011.299"
+  collection-title: "2011 IEEE International Symposium on Parallel and Distributed Processing Workshops and Phd Forum (IPDPSW)"
+  month: 5
+  year: 2011
+  start: 1432 # First page number
+  end: 1441 # Last page number
+  issn: "1530-2075"
+  editors:
+  - name: "IEEE"
+
+
+
+
+
