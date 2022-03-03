@@ -160,7 +160,7 @@ Some influential environment variables:
 Use these variables to override the choices made by 'configure' or to help
 it to find libraries and programs with nonstandard names/locations.
 
-Please report bugs to <https://bitbucket.org/icldistcomp/dplasma/issues>
+Please report bugs to <https://github.com/icldisco/dplasma/issues>
 
 EOF
 [ -z "$1" ] || cat >&2 <<EOF
