@@ -14,11 +14,11 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include "parsec/interfaces/dtd/insert_function.h"
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 #include "parsec/parsec_internal.h"
 #include "parsec/mca/device/cuda/device_cuda.h"
 #include <cublas.h>
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 /* Global index for the full tile datatype */
 static int TILE_FULL;
@@ -102,7 +102,7 @@ parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     return PARSEC_HOOK_RETURN_DONE;
 }
 
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
 static int
 gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
                                        parsec_gpu_task_t * gpu_task,
@@ -131,8 +131,8 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
 #if defined(PARSEC_DEBUG_NOISIER)
     {
         char tmp[MAX_TASK_STRLEN];
-        PARSEC_DEBUG_VERBOSE(10, parsec_cuda_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
-                             gpu_device->cuda_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
+        PARSEC_DEBUG_VERBOSE(10, parsec_gpu_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
+                             gpu_device->super.device_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
                                                                           (parsec_task_t *) this_task),
                              this_task->priority);
     }
@@ -196,7 +196,7 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     (void)es;
     return parsec_cuda_kernel_scheduler(es, gpu_task, dev_index);
 }
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 int main(int argc, char **argv)
 {
@@ -214,7 +214,6 @@ int main(int argc, char **argv)
     /* Set defaults for non argv iparams */
     iparam_default_facto(iparam);
     iparam_default_ibnbmb(iparam, 0, 180, 180);
-    iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
@@ -265,11 +264,11 @@ int main(int argc, char **argv)
     /**
      * To be or not to be: CUDA or plain CPU ?
      */
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
     parsec_dtd_funcptr_t* gemm_fct = parsec_core_cuda_gemm;
 #else
     parsec_dtd_funcptr_t* gemm_fct = parsec_core_gemm;
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
     if( dplasmaLower == uplo ) {
 
@@ -341,11 +340,11 @@ int main(int argc, char **argv)
                     ldan = BLKLDD(&dcA.super, n);
                     parsec_dtd_insert_task( dtd_tp,  gemm_fct,
                                        (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
                                        PARSEC_DEV_CUDA,
 #else
                                        PARSEC_DEV_CPU,
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
                                        "Gemm",
                                        sizeof(int),        &transA_g,           PARSEC_VALUE,
                                        sizeof(int),        &transB,             PARSEC_VALUE,
@@ -432,11 +431,11 @@ int main(int argc, char **argv)
                    ldan = BLKLDD(&dcA.super, n);
                    parsec_dtd_insert_task( dtd_tp,  gemm_fct,
                                       (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-#if defined(PARSEC_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA)
                                       PARSEC_DEV_CUDA,
 #else
                                       PARSEC_DEV_CPU,
-#endif  /* defined(PARSEC_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
                                       "Gemm",
                                       sizeof(int),        &transA_g,           PARSEC_VALUE,
                                       sizeof(int),        &transB,             PARSEC_VALUE,
