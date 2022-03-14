@@ -24,12 +24,12 @@ The main repository for DPLASMA documentation is the distribution
 also available online on the respective websites:
 http://icl.utk.edu/dplasma/ and http://icl.utk.edu/parsec. For
 installation instructions please refer to the
-[PaRSEC bitbucket wiki page](https://bitbucket.org/icldistcomp/parsec/wiki/Home)
-and [DPLASMA bitbucket wiki page](https://bitbucket.org/icldistcomp/dplasma/wiki/Home).
+[PaRSEC wiki page](https://github.com/icldisco/parsec/wiki/Home)
+and [DPLASMA wiki page](https://github.com/icldisco/dplasma/wiki/Home).
 
-In addition, the bitbucket issue tracking systems for
-[DPLASMA](https://bitbucket.org/icldistcomp/dplasma/issues) or
-[PaRSEC](https://bitbucket.org/icldistcomp/parsec/issues) can be used
+In addition, the repository issue tracking systems for
+[DPLASMA](https://github.com/icldisco/dplasma/issues) or
+[PaRSEC](https://github.com/icldisco/parsec/issues) can be used
 to post general questions and comments as well as to report technical
 problem.
 
