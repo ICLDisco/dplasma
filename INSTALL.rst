@@ -136,7 +136,7 @@ Submodule or External PaRSEC
 By default, DPLASMA will try to detect as system (or speficied in the
 ``PaRSEC_ROOT`` environment variable) automatically. If an installed
 PaRSEC is not found, DPLASMA will download an appropriate version of
-PaRSEC from ``bitbucket.org`` and setup a ``git submodule``. This
+PaRSEC from ``github.com`` and setup a ``git submodule``. This
 Submodule PaRSEC will be configured and built at the same time as
 DPLASMA. Passing ``--without-parsec`` to ``configure``  will force using
 the submodule PaRSEC instead of looking for an installed version.

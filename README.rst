@@ -42,7 +42,7 @@ Installation
 Please read the INSTALL.rst_ file for the software dependencies and the installation
 instructions. In addition, the `PaRSEC wiki`_ might contain additional information.
 
-.. _INSTALL.rst: https://github.com/abouteiller/dplasma/INSTALL.rst
+.. _INSTALL.rst: https://github.com/ICLDisco/dplasma/blob/master/INSTALL.rst
 .. _`PaRSEC wiki`: https://github.com/icldisco/parsec/wiki
 
 
