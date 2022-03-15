@@ -15,7 +15,7 @@
  * NOTE: we are operating with the following condition:
  * For a given datacollection, if we reuse the datatype for one shape on different
  * locations, then other shapes will also be reusing a datatype for those locations.
- * The same happens betweenn layouts.
+ * The same happens between layouts.
  *
  * E.g.:
  *    if LAPACK ( DFULL_T | DC00 | DTOP) --> dtt1
@@ -92,10 +92,10 @@ void dplasma_setup_adtt_loc(dplasma_data_collection_t * ddc,
  * for a GIVEN DATACOLLECTION:
  * - on lapack different matrix can have different shapes (e.g. != LDA)
  * - always different extractions of data imply different shapes (UPPER, LOWER, etc).
- * Workarround to deal with external datatype provided on the data collection.
+ * Workaround to deal with external datatype provided on the data collection.
  * Assuming datatype from the data collection corresponds with the extraction of a full
- * tile (no upper, lower) and forcing its reusage on that case by checking if uplo & diag.
- * The other datatypes created by this call use the dplama reuse of datatypes.
+ * tile (no upper, lower) and forcing its reuse on that case by checking if uplo & diag.
+ * The other datatypes created by this call use the dplasma reuse of datatypes.
  */
 static inline
 void dplasma_setup_adtt_all_loc(dplasma_data_collection_t * ddc, parsec_datatype_t parsec_type,
@@ -202,4 +202,3 @@ void dplasma_clean_adtt_all_loc(const dplasma_data_collection_t * ddc, int max_s
 }
 
 #endif  /* DPLASMA_LAPACK_DATATYPE_H_HAS_BEEN_INCLUDED */
-
