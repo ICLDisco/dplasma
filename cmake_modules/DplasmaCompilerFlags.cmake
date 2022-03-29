@@ -1,4 +1,5 @@
 include (CheckCCompilerFlag)
+include (CheckFortranCompilerFlag)
 
 #
 # This is a convenience function that will check a given option
