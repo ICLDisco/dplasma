@@ -477,12 +477,18 @@ BODY [type=HIP
 
     /* Quick and dirty emulation of the next GEMM */
     if( k == descC->mt -1 ) {
+        unsigned int chore_id = 0;
+        for(chore_id = 0; chore_id < 8*sizeof(this_task->chore_mask); chore_id++) {
+            if( (this_task->chore_mask & (1<<chore_id)) != 0 )
+                break;
+        }
+        assert(chore_id < 8*sizeof(this_task->chore_mask));
         __parsec_zgemm_NN_gpu_GEMM_task_t next_gemm;
         memcpy(&next_gemm, this_task, sizeof(__parsec_zgemm_NN_gpu_GEMM_task_t));
         next_gemm.locals.k.value = descC->mt -1;
-        assert( PARSEC_DEV_HIP == next_gemm.task_class->incarnations[this_task->chore_id].type );
-        if(NULL != next_gemm.task_class->incarnations[this_task->chore_id].evaluate) {
-            if( next_gemm.task_class->incarnations[this_task->chore_id].evaluate((parsec_task_t*)&next_gemm) ==
+        assert( PARSEC_DEV_HIP == next_gemm.task_class->incarnations[chore_id].type );
+        if(NULL != next_gemm.task_class->incarnations[chore_id].evaluate) {
+            if( next_gemm.task_class->incarnations[chore_id].evaluate((parsec_task_t*)&next_gemm) ==
                 PARSEC_HOOK_RETURN_NEXT ) {
                     /* The next GEMM wants to run on the CPUs... */
                     gpu_task->pushout |= (1 << 0);
