@@ -21,8 +21,8 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 ## Environment (please complete the following information):
- - DPLASMA version: [e.g., git hash]
- - PaRSEC version: [e.g., git hash]
+ - DPLASMA version: [e.g. git hash]
+ - PaRSEC status: external/internal and version: [e.g., git hash]
  - OS: [e.g. CentOS/7]
  - Compiler: [e.g. GCC/7.3.0]
  - MPI version: [e.g. Open MPI/4.1.2]
