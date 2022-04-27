@@ -42,6 +42,8 @@ int main(int argc, char ** argv)
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);
 
+    dplasma_warmup(parsec);
+
     LDB = max(LDB, M);
     LDC = max(LDC, M);
 
@@ -74,7 +76,7 @@ int main(int argc, char ** argv)
                                        rank, MB, NB, LDA, Am, 0, 0,
                                        Am, Am, P, nodes/P, uplo));
 
-        for(int t = 0; t < nruns+1; t++) {
+        for(int t = 0; t < nruns; t++) {
             /* matrix generation */
             if (loud > 2) printf("Generate matrices ... ");
             dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB,  Bseed);
@@ -90,7 +92,7 @@ int main(int argc, char ** argv)
                                               beta,  (parsec_tiled_matrix_t *)&dcC));
 
             /* lets rock! */
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zsymm, t);
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zsymm);
 
             dplasma_zsymm_Destruct( PARSEC_zsymm );
         }

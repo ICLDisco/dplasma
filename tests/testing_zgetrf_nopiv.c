@@ -35,6 +35,9 @@ int main(int argc, char ** argv)
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
+
+    dplasma_warmup(parsec);
+
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZGETRF, ((DagDouble_t)M,(DagDouble_t)N));
 
@@ -52,7 +55,7 @@ int main(int argc, char ** argv)
                                                       M, N, P, nodes/P, KP, KQ, IP, JQ));
 
     int t;
-    for(t = 0; t < nruns+1; t++) {
+    for(t = 0; t < nruns; t++) {
         /* matrix (re)generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, random_seed);
@@ -65,7 +68,7 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgetrf_nopiv, 
                           ((parsec_tiled_matrix_t*)&dcA, &info),
-                          dplasma_zgetrf_nopiv_Destruct( PARSEC_zgetrf_nopiv ), t);
+                          dplasma_zgetrf_nopiv_Destruct( PARSEC_zgetrf_nopiv ));
 
         if(loud > 2) printf("Done.\n");
 

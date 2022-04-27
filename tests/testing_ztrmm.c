@@ -39,6 +39,9 @@ int main(int argc, char ** argv)
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);
+
+    dplasma_warmup(parsec);
+
     /* initializing matrix structure */
     int Am = max(M, N);
     LDA = max(LDA, Am);
@@ -68,7 +71,7 @@ int main(int argc, char ** argv)
             dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, N, N );
         }
 
-        for(int t = 0; t < nruns+1; t++) {
+        for(int t = 0; t < nruns; t++) {
             /* matrix generation */
             if(loud > 2) printf("+++ Generate matrices ... ");
             dplasma_zplghe( parsec, 0., uplo, dcA, Aseed);
@@ -81,7 +84,7 @@ int main(int argc, char ** argv)
                                                         (side, uplo, trans, diag,
                                                                 1.0, dcA,
                                                                 (parsec_tiled_matrix_t *)&dcC),
-                                                                dplasma_ztrmm_Destruct( PARSEC_ztrmm ), t);
+                                                                dplasma_ztrmm_Destruct( PARSEC_ztrmm ));
 
             parsec_devices_reset_load(parsec);
         }

@@ -757,3 +757,122 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
     (void)iparam;
 }
 
+void dplasma_warmup(parsec_context_t *parsec)
+{
+    int Aseed = 3872;
+    int Bseed = 4674;
+    int Cseed = 2873;
+    int tA = dplasmaNoTrans;
+    int tB = dplasmaNoTrans;
+
+    // DPLASMA might have been compiled with only one precision, or any subset of the 4 possible
+    // precisions. The following logic tries to find /a/ kernel we can use. We check in the
+    // arbitrary order d, s, c, z, but really we just want any of them.
+#if defined(DPLASMA_DGEMM_NN)
+    double alpha =  0.51;
+    double beta  = -0.42;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_DOUBLE;
+#define KERNEL_NEW      dplasma_dgemm_New
+#define KERNEL_DESTRUCT dplasma_dgemm_Destruct
+#define INIT_MATRIX     dplasma_dplrnt
+#elif defined(DPLASMA_SGEMM_NN)
+    float alpha =  0.51;
+    float beta  = -0.42;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_FLOAT;
+#define KERNEL_NEW      dplasma_sgemm_New
+#define KERNEL_DESTRUCT dplasma_sgemm_Destruct
+#define INIT_MATRIX     dplasma_splrnt
+#elif defined(DPLASMA_CGEMM_NN)
+    dplasma_complex32_t alpha =  0.51 + I * 0.32;
+    dplasma_complex32_t beta  = -0.42 + I * 0.21;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_COMPLEX_FLOAT;
+#define KERNEL_NEW      dplasma_cgemm_New
+#define KERNEL_DESTRUCT dplasma_cgemm_Destruct
+#define INIT_MATRIX     dplasma_cplrnt
+#elif defined(DPLASMA_ZGEMM_NN)
+    dplasma_complex64_t alpha =  0.51 + I * 0.32;
+    dplasma_complex64_t beta  = -0.42 + I * 0.21;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_COMPLEX_DOUBLE;
+#define KERNEL_NEW      dplasma_zgemm_New
+#define KERNEL_DESTRUCT dplasma_zgemm_Destruct
+#define INIT_MATRIX     dplasma_zplrnt
+#else
+#warning "DPLASMA is configured without any of the sdcz precisions... Warmup will be no-op"
+#endif
+
+#if defined(KERNEL_NEW)
+    int M, N, K;
+    int MB;
+    int LDA, LDB, LDC;
+    int P, Q;
+
+    int rank = parsec->my_rank;
+    int nodes = parsec->nb_nodes;
+
+    int gpus = 0;
+
+#if defined(DPLASMA_HAVE_CUDA)
+    int devid;
+    for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
+        parsec_device_module_t *device = parsec_mca_device_get(devid);
+        if( PARSEC_DEV_CUDA == device->type ) {
+            gpus++;
+        }
+    }
+#endif
+
+    if(0 == gpus) {
+        MB = 512;
+        N = nodes * parsec->virtual_processes[0]->nb_cores * 3 * MB;
+        P = nodes;
+        Q = 1;
+    } else {
+        MB = 64;
+        N = nodes * gpus * 3 * MB;
+        P = nodes;
+        Q = 1;
+    }
+    M = MB;
+    K = MB;
+
+    LDA = MB;
+    LDB = MB;
+    LDC = MB;
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
+        parsec_matrix_block_cyclic, (&dcC, mtype, PARSEC_MATRIX_TILE,
+                               rank, MB, MB, LDC, N, 0, 0,
+                               M, N, nodes, P, Q, 1, 0, 0));
+
+    /* initializing matrix structure */
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+        parsec_matrix_block_cyclic, (&dcA, mtype, PARSEC_MATRIX_TILE,
+                                rank, MB, MB, LDA, K, 0, 0,
+                                M, K, nodes, P, Q, 1, 0, 0));
+    PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
+        parsec_matrix_block_cyclic, (&dcB, mtype, PARSEC_MATRIX_TILE,
+                                rank, MB, MB, LDB, N, 0, 0,
+                                K, N, nodes, P, Q, 1, 0, 0));
+
+    /* matrix generation */
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcA, Aseed);
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcB, Bseed);
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
+
+    parsec_devices_release_memory();
+    parsec_taskpool_t* PARSEC_gemm = KERNEL_NEW (tA, tB, alpha, (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcB, beta, (parsec_tiled_matrix_t *)&dcC); 
+    PARSEC_CHECK_ERROR(parsec_context_add_taskpool(parsec, PARSEC_gemm), "parsec_context_add_taskpool"); 
+    PARSEC_CHECK_ERROR(parsec_context_start(parsec), "parsec_context_start"); 
+    PARSEC_CHECK_ERROR(parsec_context_wait(parsec), "parsec_context_wait"); 
+    KERNEL_DESTRUCT ( PARSEC_gemm );
+    parsec_devices_reset_load(parsec);
+
+    parsec_data_free(dcA.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
+    parsec_data_free(dcB.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcB);
+    parsec_data_free(dcC.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcC);
+
+#endif
+}

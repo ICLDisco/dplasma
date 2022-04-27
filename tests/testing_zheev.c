@@ -36,6 +36,9 @@ int main(int argc, char *argv[])
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
+
+    dplasma_warmup(parsec);
+
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS_COUNT(FADDS_ZHEEV, FMULS_ZHEEV, ((DagDouble_t)N));
 
@@ -56,7 +59,7 @@ int main(int argc, char *argv[])
                                        rank, MB+1, NB+2, MB+1, (NB+2)*(NT+1), 0, 0,
                                        MB+1, (NB+2)*(NT+1), 1, nodes, 1, KQ, IP, JQ /* 1D cyclic */ ));
 
-    for(int t = 0; t < nruns+1; t++) {
+    for(int t = 0; t < nruns; t++) {
         /* Fill A with randomness */
         dplasma_zplghe( parsec, (double)N, uplo,
                         (parsec_tiled_matrix_t *)&dcA, 3872);
@@ -70,7 +73,7 @@ int main(int argc, char *argv[])
                                   (uplo, IB,
                                           (parsec_tiled_matrix_t*)&dcA,
                                           (parsec_tiled_matrix_t*)&dcT));
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt, t);
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt);
 #ifdef PRINTF_HEAVY
         printf("########### A (reduced to band form)\n");
         dplasma_zprint( parsec, uplo, &dcA);
@@ -92,9 +95,7 @@ int main(int argc, char *argv[])
         PARSEC_CHECK_ERROR(rc, "parsec_context_start");
         rc = parsec_context_wait(parsec);
         PARSEC_CHECK_ERROR(rc, "parsec_context_wait");
-        if(t > 0) {
-            SYNC_TIME_PRINT(rank, ( "diag_band_to_rect N= %d NB = %d : %f s\n", N, NB, sync_time_elapsed));
-        }
+        SYNC_TIME_PRINT(rank, ( "diag_band_to_rect N= %d NB = %d : %f s\n", N, NB, sync_time_elapsed));
         dplasma_matrix_del2arena(adt);
         PARSEC_OBJ_RELEASE(PARSEC_diag_band_to_rect);
         parsec_taskpool_free( &PARSEC_diag_band_to_rect->super );
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
 
         /* Step 3 - Reduce band to bi-diag form */
         PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt, ((parsec_tiled_matrix_t*)&dcBAND));
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt, t);
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
         dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
     }
 
@@ -257,7 +258,6 @@ int main(int argc, char *argv[])
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcBAND);
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcT);
-fin:
     cleanup_parsec(parsec, iparam);
 
     return EXIT_SUCCESS;

@@ -41,6 +41,8 @@ int main(int argc, char ** argv)
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
 
+    dplasma_warmup(parsec);
+
     /* Make sure KP and KQ are set to 1, since it conflicts with HQR */
     iparam[IPARAM_KP] = 1;
     iparam[IPARAM_KQ] = 1;
@@ -76,7 +78,7 @@ int main(int argc, char ** argv)
     lu_tab = (int *)malloc( dplasma_imin(MT, NT)*sizeof(int) );
 
     int t;
-    for(t = 0; t < nruns+1; t++) {
+    for(t = 0; t < nruns; t++) {
         /* matrix (re)generation */
         if(loud > 2) printf("+++ Generate matrices ... ");
         dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
@@ -104,7 +106,7 @@ int main(int argc, char ** argv)
                          iparam[IPARAM_QR_HLVL_SZE], alpha, lu_tab,
                          &info));
         /* lets rock! */
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_qrf, t);
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zgetrf_qrf);
         dplasma_zgetrf_qrf_Destruct( PARSEC_zgetrf_qrf );
         if(loud > 2) printf("Done.\n");
 

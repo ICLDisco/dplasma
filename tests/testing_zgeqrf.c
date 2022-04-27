@@ -37,6 +37,9 @@ int main(int argc, char ** argv)
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
+
+    dplasma_warmup(parsec);
+
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZGEQRF, ((DagDouble_t)M, (DagDouble_t)N));
 
@@ -55,7 +58,7 @@ int main(int argc, char ** argv)
 
     if(!check) {
         int t;
-        for(t = 0; t < nruns+1; t++) {
+        for(t = 0; t < nruns; t++) {
             /* matrix (re)generation */
             if(loud > 3) printf("+++ Generate matrices ... ");
             dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
@@ -74,7 +77,7 @@ int main(int argc, char ** argv)
                 parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
                 if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zgeqrf\tDAG created\n"));
 
-                PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf, t);
+                PASTE_CODE_PROGRESS_KERNEL(parsec, zgeqrf);
                 dplasma_zgeqrf_Destruct( PARSEC_zgeqrf );
 
                 parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
@@ -84,7 +87,7 @@ int main(int argc, char ** argv)
                 PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
                                                             ((parsec_tiled_matrix_t*)&dcA,
                                                                     (parsec_tiled_matrix_t*)&dcT),
-                                                                    dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ), t);
+                                                                    dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ));
             }
             parsec_devices_reset_load(parsec);
 
