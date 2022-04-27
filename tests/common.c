@@ -779,12 +779,6 @@ void dplasma_warmup(parsec_context_t *parsec)
     float beta  = -0.42;
     parsec_matrix_type_t mtype = PARSEC_MATRIX_FLOAT;
 #define DPLASMA_KERNEL  dplasma_sgemm
-#define INIT_MATRIX     dplasma_splrnt
-#elif defined(DPLASMA_CGEMM_NN)
-    dplasma_complex32_t alpha =  0.51 + I * 0.32;
-    dplasma_complex32_t beta  = -0.42 + I * 0.21;
-    parsec_matrix_type_t mtype = PARSEC_MATRIX_COMPLEX_FLOAT;
-#define DPLASMA_KERNEL  dplasma_cgemm
 #define INIT_MATRIX     dplasma_cplrnt
 #elif defined(DPLASMA_ZGEMM_NN)
     dplasma_complex64_t alpha =  0.51 + I * 0.32;
@@ -797,11 +791,7 @@ void dplasma_warmup(parsec_context_t *parsec)
 #endif
 
 #if defined(DPLASMA_KERNEL)
-    int M, N, K;
     int MB;
-    int LDA, LDB, LDC;
-    int P, Q;
-
     int rank = 0;
     int nodes = 1;
 #if defined(PARSEC_HAVE_MPI)
