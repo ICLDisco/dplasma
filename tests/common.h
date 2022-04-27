@@ -135,7 +135,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
 typedef double DagDouble_t;
 #define PASTE_CODE_FLOPS( FORMULA, PARAMS )                             \
   double gflops = -1.0, flops = FORMULA PARAMS;                         \
-  double gflops_avg = 0.0;
+  double gflops_avg = 0.0; (void)gflops_avg;
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
 #define PASTE_CODE_FLOPS_COUNT(FADD,FMUL,PARAMS)                        \
@@ -233,20 +233,18 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_BUT_LEVEL", iparam[IPARAM_BUT_LEVEL]);  \
     PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  
 
-#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL, ITERATION)           \
+#define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)           \
     SYNC_TIME_START();                                                  \
     PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
     TIME_START();                                                       \
     PARSEC_CHECK_ERROR(parsec_context_wait(PARSEC), "parsec_context_wait"); \
-    if( (ITERATION) > 0) {                                              \
-        SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQxg= %3d %-3d %d NB= %4d N= %7d : %14f gflops\n", \
-                        P, Q, gpus, NB, N,                              \
-                        gflops=(flops/1e9)/sync_time_elapsed));         \
-        gflops_avg += gflops/nruns;                                     \
-    }
+    SYNC_TIME_PRINT(rank, (#KERNEL "\tPxQxg= %3d %-3d %d NB= %4d N= %7d : %14f gflops\n", \
+                    P, Q, gpus, NB, N,                              \
+                    gflops=(flops/1e9)/sync_time_elapsed));         \
+    gflops_avg += gflops/nruns;
 
 
-#define PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(PARSEC, KERNEL, PARAMS, DESTRUCT, ITERATION)\
+#define PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(PARSEC, KERNEL, PARAMS, DESTRUCT)\
     SYNC_TIME_START();                                                  \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS; \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");\
@@ -262,7 +260,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     DESTRUCT;                                                           \
     SYNC_TIME_STOP();                                                   \
     double stime_C = sync_time_elapsed;                                 \
-    if(rank==0 && (ITERATION) > 0) {                                    \
+    if(rank==0) {                                                       \
         printf("[****] TIME(s) %12.5f : " #KERNEL "\tPxQxg= %3d %-3d %d NB= %4d N= %7d : %14f gflops"\
                   " - ENQ&PROG&DEST %12.5f : %14f gflops"               \
                   " - ENQ %12.5f - DEST %12.5f\n",                      \
@@ -285,5 +283,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                gflops_avg);                                             \
     }                                                                   \
 } while(0)
+
+void dplasma_warmup(parsec_context_t *parsec);
 
 #endif /* _TESTSCOMMON_H */

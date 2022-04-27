@@ -27,6 +27,9 @@ int main(int argc, char *argv[])
     iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED;
 
     parsec = setup_parsec(argc, argv, iparam);
+
+    dplasma_warmup(parsec);
+
     PASTE_CODE_IPARAM_LOCALS(iparam);
     if(P != 1)
         fprintf(stderr, "!!! This algorithm works on a band 1D matrix. The value of P=%d has been overriden, the actual grid is %dx%d\n", P, 1, nodes);
@@ -47,7 +50,7 @@ int main(int argc, char *argv[])
 
     double time_avg = 0.0;
 
-    for(int t = 0; t < nruns+1; t++) {
+    for(int t = 0; t < nruns; t++) {
         if(loud > 2) printf("+++ Generate matrices ... ");
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
         if(loud > 2) printf("Done\n");
@@ -55,10 +58,8 @@ int main(int argc, char *argv[])
         PASTE_CODE_ENQUEUE_KERNEL(parsec, zhbrdt,
                                   ((parsec_tiled_matrix_t*)&dcA));
 
-        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt, t);
-        if(t > 0) {
-            time_avg += sync_time_elapsed/nruns;
-        }
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zhbrdt);
+        time_avg += sync_time_elapsed/nruns;
         dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
     }
     PASTE_PROF_INFO;

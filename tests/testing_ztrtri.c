@@ -31,6 +31,8 @@ int main(int argc, char ** argv)
     parsec = setup_parsec(argc, argv, iparam);
     PASTE_CODE_IPARAM_LOCALS(iparam);
 
+    dplasma_warmup(parsec);
+
     /* initializing matrix structure */
     int Am = dplasma_imax(M, N);
 
@@ -54,7 +56,7 @@ int main(int argc, char ** argv)
 
         PASTE_CODE_FLOPS(FLOPS_ZTRTRI, ((DagDouble_t)Am));
 
-        for(int t = 0; t < nruns+1; t++) {
+        for(int t = 0; t < nruns; t++) {
             /* matrix generation */
             if(loud > 2) printf("+++ Generate matrices ... ");
             /* Generate matrix A with diagonal dominance to keep stability during computation */
@@ -70,7 +72,7 @@ int main(int argc, char ** argv)
                                       (uplo, diag, (parsec_tiled_matrix_t *)&dcA, &info));
 
             /* lets rock! */
-            PASTE_CODE_PROGRESS_KERNEL(parsec, ztrtri, t);
+            PASTE_CODE_PROGRESS_KERNEL(parsec, ztrtri);
 
             dplasma_ztrtri_Destruct( PARSEC_ztrtri );
         }

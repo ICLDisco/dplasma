@@ -27,6 +27,9 @@ int main(int argc, char ** argv)
 
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
+
+    dplasma_warmup(parsec);
+
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZPOTRF, ((DagDouble_t)N));
     flops += FLOPS_ZPOTRI((DagDouble_t)N);
@@ -44,7 +47,7 @@ int main(int argc, char ** argv)
     if(check)
         nruns = 0;
 
-    for(int t = 0; t < nruns+1; t++) {
+    for(int t = 0; t < nruns; t++) {
         /* matrix generation */
         if(loud > 3) printf("+++ Generate matrices ... ");
         dplasma_zplghe( parsec, (double)(N), uplo,
@@ -54,18 +57,16 @@ int main(int argc, char ** argv)
         if (async) {
             PASTE_CODE_ENQUEUE_KERNEL(parsec, zpoinv,
                                       (uplo, (parsec_tiled_matrix_t*)&dcA, &info));
-            PASTE_CODE_PROGRESS_KERNEL(parsec, zpoinv, t);
+            PASTE_CODE_PROGRESS_KERNEL(parsec, zpoinv);
             dplasma_zpoinv_Destruct( PARSEC_zpoinv );
         }
         else {
             SYNC_TIME_START();
             info = dplasma_zpoinv_sync( parsec, uplo, (parsec_tiled_matrix_t*)&dcA );
-            if(t > 0) {
-                SYNC_TIME_PRINT(rank, ("zpoinv\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
-                        P, Q, NB, N,
-                        gflops=(flops/1e9)/sync_time_elapsed));
-                gflops_avg += gflops/nruns;
-            }
+            SYNC_TIME_PRINT(rank, ("zpoinv\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
+                            P, Q, NB, N,
+                            gflops=(flops/1e9)/sync_time_elapsed));
+            gflops_avg += gflops/nruns;
         }
 
         if( 0 == rank && info != 0 ) {
