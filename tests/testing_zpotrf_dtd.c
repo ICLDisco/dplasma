@@ -261,14 +261,32 @@ int main(int argc, char **argv)
     /* start parsec context */
     parsec_context_start( parsec );
 
+    parsec_task_class_t *gemm_tc = parsec_dtd_create_task_class( dtd_tp, "Gemm",
+                                            /* transA_g */ sizeof(int), PARSEC_VALUE,
+                                            /* transB   */ sizeof(int), PARSEC_VALUE,
+                                            /* tempmm   */ sizeof(int), PARSEC_VALUE,
+                                            /* mb       */ sizeof(int), PARSEC_VALUE,
+                                            /* mb       */ sizeof(int), PARSEC_VALUE,
+                                            /* alpha    */ sizeof(double), PARSEC_VALUE,
+                                            /* A(n, k)  */ PASSED_BY_REF, PARSEC_INPUT | TILE_FULL,
+                                            /* ldan     */ sizeof(int), PARSEC_VALUE,
+                                            /* A(m, k)  */ PASSED_BY_REF, PARSEC_INPUT | TILE_FULL,
+                                            /* ldam     */ sizeof(int), PARSEC_VALUE,
+                                            /* beta     */ sizeof(double), PARSEC_VALUE,
+                                            /* A(m, n)  */ PASSED_BY_REF, PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
+                                            /* ldan     */ sizeof(int), PARSEC_VALUE,
+                                            PARSEC_DTD_ARG_END);
     /**
      * To be or not to be: CUDA or plain CPU ?
      */
+    int gemm_device = PARSEC_DEV_CPU;
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_dtd_funcptr_t* gemm_fct = parsec_core_cuda_gemm;
-#else
-    parsec_dtd_funcptr_t* gemm_fct = parsec_core_gemm;
+    /* If CUDA is available, prefer the CUDA version, so add it first to the chores */
+    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CUDA, parsec_core_cuda_gemm);
+    gemm_device |= PARSEC_DEV_CUDA;
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CPU, parsec_core_gemm);
+
 
     if( dplasmaLower == uplo ) {
 
@@ -338,27 +356,22 @@ int main(int argc, char **argv)
 
                 for( n = m+1; n < total; n++ ) {
                     ldan = BLKLDD(&dcA.super, n);
-                    parsec_dtd_insert_task( dtd_tp,  gemm_fct,
+                    parsec_dtd_insert_task_with_task_class( dtd_tp,  gemm_tc,
                                        (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-#if defined(DPLASMA_HAVE_CUDA)
-                                       PARSEC_DEV_CUDA,
-#else
-                                       PARSEC_DEV_CPU,
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-                                       "Gemm",
-                                       sizeof(int),        &transA_g,           PARSEC_VALUE,
-                                       sizeof(int),        &transB,             PARSEC_VALUE,
-                                       sizeof(int),        &tempmm,             PARSEC_VALUE,
-                                       sizeof(int),        &dcA.super.mb,    PARSEC_VALUE,
-                                       sizeof(int),        &dcA.super.mb,    PARSEC_VALUE,
-                                       sizeof(dplasma_complex64_t),        &alpha_herk,         PARSEC_VALUE,
-                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, n, k), PARSEC_INPUT | TILE_FULL,
-                                       sizeof(int),        &ldan,               PARSEC_VALUE,
-                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, m, k), PARSEC_INPUT | TILE_FULL,
-                                       sizeof(int),        &ldam,               PARSEC_VALUE,
-                                       sizeof(dplasma_complex64_t),        &beta,               PARSEC_VALUE,
-                                       PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, n, m), PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                                       sizeof(int),        &ldan,               PARSEC_VALUE,
+                                       gemm_device,
+                                       PARSEC_DTD_EMPTY_FLAG,        &transA_g,
+                                       PARSEC_DTD_EMPTY_FLAG,        &transB,
+                                       PARSEC_DTD_EMPTY_FLAG,        &tempmm,
+                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
+                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
+                                       PARSEC_DTD_EMPTY_FLAG,        &alpha_syrk,
+                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, n, k),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldan,
+                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, m, k),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldam,
+                                       PARSEC_DTD_EMPTY_FLAG,        &beta,
+                                       n == total-1 ? PARSEC_PUSHOUT : PARSEC_DTD_EMPTY_FLAG,   PARSEC_DTD_TILE_OF(A, n, m),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldan,
                                        PARSEC_DTD_ARG_END );
                 }
                 parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, m, k) );
@@ -429,28 +442,23 @@ int main(int argc, char **argv)
 
                 for( n = m+1; n < total; n++ ) {
                    ldan = BLKLDD(&dcA.super, n);
-                   parsec_dtd_insert_task( dtd_tp,  gemm_fct,
-                                      (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
-#if defined(DPLASMA_HAVE_CUDA)
-                                      PARSEC_DEV_CUDA,
-#else
-                                      PARSEC_DEV_CPU,
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-                                      "Gemm",
-                                      sizeof(int),        &transA_g,           PARSEC_VALUE,
-                                      sizeof(int),        &transB,             PARSEC_VALUE,
-                                      sizeof(int),        &dcA.super.mb,    PARSEC_VALUE,
-                                      sizeof(int),        &tempmm,             PARSEC_VALUE,
-                                      sizeof(int),        &dcA.super.mb,    PARSEC_VALUE,
-                                      sizeof(dplasma_complex64_t),        &alpha_herk,         PARSEC_VALUE,
-                                      PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, k, m), PARSEC_INPUT | TILE_FULL,
-                                      sizeof(int),        &ldak,               PARSEC_VALUE,
-                                      PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, k, n), PARSEC_INPUT | TILE_FULL,
-                                      sizeof(int),        &ldak,               PARSEC_VALUE,
-                                      sizeof(dplasma_complex64_t),        &beta,               PARSEC_VALUE,
-                                      PASSED_BY_REF,      PARSEC_DTD_TILE_OF(A, m, n), PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
-                                      sizeof(int),        &ldan,               PARSEC_VALUE,
-                                      PARSEC_DTD_ARG_END );
+                   parsec_dtd_insert_task_with_task_class( dtd_tp,  gemm_tc,
+                                       (total - m) * (total - m) * (total - m) + 3 * ((2 * total) - m - n - 3) * (m - n) + 6 * (m - k) /*priority*/,
+                                       gemm_device,
+                                       PARSEC_DTD_EMPTY_FLAG,        &transA_g,
+                                       PARSEC_DTD_EMPTY_FLAG,        &transB,
+                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
+                                       PARSEC_DTD_EMPTY_FLAG,        &tempmm,
+                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
+                                       PARSEC_DTD_EMPTY_FLAG,        &alpha_syrk,
+                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, k, m),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldak,
+                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, k, n),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldak,
+                                       PARSEC_DTD_EMPTY_FLAG,        &beta,
+                                       n == total-1 ? PARSEC_PUSHOUT : PARSEC_DTD_EMPTY_FLAG,   PARSEC_DTD_TILE_OF(A, m, n),
+                                       PARSEC_DTD_EMPTY_FLAG,        &ldan,
+                                       PARSEC_DTD_ARG_END );
                 }
                 parsec_dtd_data_flush( dtd_tp, PARSEC_DTD_TILE_OF(A, k, m) );
             }
@@ -470,6 +478,8 @@ int main(int argc, char **argv)
     SYNC_TIME_PRINT(rank, ("\tPxQ= %3d %-3d NB= %4d N= %7d : %14f gflops\n",
                            P, Q, NB, N,
                            gflops=(flops/1e9)/sync_time_elapsed));
+
+    parsec_dtd_task_class_release(dtd_tp, gemm_tc );
 
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );
