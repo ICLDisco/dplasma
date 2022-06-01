@@ -97,7 +97,8 @@ int GD_cpQR( int p, int q ) {
 
 int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int loud,
                 int M, int N, int LDA, int MB, int NB, int IB, int P, int Q, int hmb,
-                int ltre0, int htre0, int ltree, int htree, int ts, int domino, int rbidiag )
+                int ltre0, int htre0, int ltree, int htree, int ts, int domino, int rbidiag,
+                int nruns)
 {
     int ret = 0;
     dplasma_qrtree_t qrtre0, qrtree, lqtree;
@@ -106,7 +107,6 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
     int MT = (M%MB==0) ? (M/MB) : (M/MB+1);
     int NT = (N%NB==0) ? (N/NB) : (N/NB+1);
     int cp = -1;
-    int i, nbrun = 3;
     int rc;
 
     //PASTE_CODE_FLOPS(FLOPS_ZGEBRD, ((DagDouble_t)M, (DagDouble_t)N));
@@ -280,13 +280,15 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
     }
 
 #if defined(PARSEC_SIM)
-    nbrun = 1;
+    nruns = 1;
 #endif
 
-    for (i=0; i<nbrun; i++) {
+    for (int t=0; t<nruns+1; t++) {
 
+        if(loud > 3) printf("+++ Generate matrices ... ");
         /* Generate the matrix on rank 0 */
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, 3872);
+        if(loud > 3) printf("Done\n");
 
         /* Create Parsec */
         PASTE_CODE_ENQUEUE_KERNEL(parsec, zgebrd_ge2gbx,
@@ -313,21 +315,23 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
         time_avg += sync_time_elapsed;
         gflops = (flops/1.e9)/(sync_time_elapsed);
 
-        if (rank == 0){
-            fprintf(stdout,
-                    "zgebrd_ge2gb M= %2d N= %2d NP= %2d NC= %2d P= %2d Q= %2d NB= %2d IB= %2d R-bidiag= %2d treeh= %2d treel_rb= %2d qr_a= %2d QR(domino= %2d treel_qr= %2d ) : %.2f s %f gflops\n",
-                    M, N, nodes, cores, P, Q, NB, IB,
-                    rbidiag, htree, ltree, ts, domino, ltre0,
-                    sync_time_elapsed, gflops);
+        if(t > 0) {
+            if (rank == 0){
+                fprintf(stdout,
+                        "zgebrd_ge2gb M= %2d N= %2d NP= %2d NC= %2d P= %2d Q= %2d NB= %2d IB= %2d R-bidiag= %2d treeh= %2d treel_rb= %2d qr_a= %2d QR(domino= %2d treel_qr= %2d ) : %.2f s %f gflops\n",
+                        M, N, nodes, cores, P, Q, NB, IB,
+                        rbidiag, htree, ltree, ts, domino, ltre0,
+                        sync_time_elapsed, gflops);
+            }
+            gflops_min = (gflops_min > gflops) ? gflops : gflops_min;
+            gflops_max = (gflops_max < gflops) ? gflops : gflops_max;
+            gflops_avg += gflops;
+            gflops_sum += (gflops * gflops);
         }
-        gflops_min = (gflops_min > gflops) ? gflops : gflops_min;
-        gflops_max = (gflops_max < gflops) ? gflops : gflops_max;
-        gflops_avg += gflops;
-        gflops_sum += (gflops * gflops);
     }
-    time_avg   = time_avg   / (double)nbrun;
-    gflops_avg = gflops_avg / (double)nbrun;
-    gflops_sum = sqrt( (gflops_sum/(double)nbrun) - (gflops_avg * gflops_avg) );
+    time_avg   = time_avg   / (double)nruns;
+    gflops_avg = gflops_avg / (double)nruns;
+    gflops_sum = sqrt( (gflops_sum/(double)nruns) - (gflops_avg * gflops_avg) );
 
 #if defined(PARSEC_SIM)
     {
@@ -348,6 +352,7 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
                      time_avg, gflops_avg, gflops_min, gflops_max, gflops_sum));
 #endif
     fflush(stdout);
+    PASTE_CODE_PERF_LOOP_DONE();
 
     dplasma_hqr_finalize( &qrtree );
     dplasma_hqr_finalize( &lqtree );
@@ -421,7 +426,8 @@ int main(int argc, char ** argv)
                     m, m, LDA, MB, NB, IB, P, Q, iparam[IPARAM_HMB],
                     iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                     ltree, iparam[IPARAM_HIGHLVL_TREE],
-                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR] );
+                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR],
+                    iparam[IPARAM_NRUNS]);
     }
 
     for (m=N; m<=M; m+=K ) {
@@ -429,7 +435,8 @@ int main(int argc, char ** argv)
                     m, N, LDA, MB, NB, IB, P, Q, iparam[IPARAM_HMB],
                     iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                     ltree, iparam[IPARAM_HIGHLVL_TREE],
-                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR] );
+                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR],
+                    iparam[IPARAM_NRUNS] );
     }
 
     cleanup_parsec(parsec, iparam);

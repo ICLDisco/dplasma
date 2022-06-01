@@ -273,7 +273,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     /* Default seed */
     iparam[IPARAM_RANDOM_SEED] = 3872;
     iparam[IPARAM_MATRIX_INIT] = dplasmaMatrixRandom;
-    iparam[IPARAM_NRUNS] = 1;
+    iparam[IPARAM_NRUNS] = 3;
 
     do {
 #if defined(PARSEC_HAVE_GETOPT_LONG)
@@ -443,14 +443,18 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     if(0 == iparam[IPARAM_N] && optind < argc) {
         iparam[IPARAM_N] = atoi(argv[optind++]);
     }
+
+    /* If we ask for check (-x), then we do '0' run, i.e. only the 'warmup'
+     * run, which is sometimes used to initialize the data and do the initial
+     * computation */
+    if(iparam[IPARAM_CHECK]) {
+        iparam[IPARAM_NRUNS] = 0;
+    }
     (void)rc;
 }
 
 static void parse_arguments(int *iparam) {
     int verbose = iparam[IPARAM_RANK] ? 0 : iparam[IPARAM_VERBOSE];
-
-    /* we want to run at least once, right? */
-    if(iparam[IPARAM_NRUNS] < 1) iparam[IPARAM_NRUNS] = 1;
 
     if(iparam[IPARAM_NGPUS] < 0) iparam[IPARAM_NGPUS] = 0;
     if(iparam[IPARAM_NGPUS] > 0) {
@@ -753,3 +757,109 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
     (void)iparam;
 }
 
+void dplasma_warmup(parsec_context_t *parsec)
+{
+    int Aseed = 3872;
+    int Bseed = 4674;
+    int Cseed = 2873;
+    int tA = dplasmaNoTrans;
+    int tB = dplasmaNoTrans;
+
+    // DPLASMA might have been compiled with only one precision, or any subset of the 4 possible
+    // precisions. The following logic tries to find /a/ kernel we can use. We check in the
+    // arbitrary order d, s, c, z, but really we just want any of them.
+#if defined(DPLASMA_DGEMM_NN)
+    double alpha =  0.51;
+    double beta  = -0.42;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_DOUBLE;
+#define DPLASMA_KERNEL  dplasma_dgemm
+#define INIT_MATRIX     dplasma_dplrnt
+#elif defined(DPLASMA_SGEMM_NN)
+    float alpha =  0.51;
+    float beta  = -0.42;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_FLOAT;
+#define DPLASMA_KERNEL  dplasma_sgemm
+#define INIT_MATRIX     dplasma_cplrnt
+#elif defined(DPLASMA_ZGEMM_NN)
+    dplasma_complex64_t alpha =  0.51 + I * 0.32;
+    dplasma_complex64_t beta  = -0.42 + I * 0.21;
+    parsec_matrix_type_t mtype = PARSEC_MATRIX_COMPLEX_DOUBLE;
+#define DPLASMA_KERNEL  dplasma_zgemm
+#define INIT_MATRIX     dplasma_zplrnt
+#else
+#warning "DPLASMA is configured without any of the sdcz precisions... Warmup will be no-op"
+#endif
+
+#if defined(DPLASMA_KERNEL)
+    int MB;
+    int rank = 0;
+    int nodes = 1;
+#if defined(PARSEC_HAVE_MPI)
+    MPI_Comm_size(MPI_COMM_WORLD, &nodes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+    int gpus = 0;
+
+#if defined(DPLASMA_HAVE_CUDA)
+    int devid;
+    for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
+        parsec_device_module_t *device = parsec_mca_device_get(devid);
+        if( PARSEC_DEV_CUDA == device->type ) {
+            gpus++;
+        }
+    }
+#endif
+
+    if(0 == gpus) {
+        MB = 64;
+        N = nodes * parsec->virtual_processes[0]->nb_cores * 3 * MB;
+        P = nodes;
+        Q = 1;
+    } else {
+        MB = 512;
+        N = nodes * gpus * 3 * MB;
+        P = nodes;
+        Q = 1;
+    }
+    M = MB;
+    K = MB;
+
+    LDA = max(M, K);
+    LDB = max(K, N);
+    LDC = max(K, M);
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
+        parsec_matrix_block_cyclic, (&dcC, mtype, PARSEC_MATRIX_TILE,
+                               rank, MB, MB, LDC, N, 0, 0,
+                               M, N, nodes, P, Q, 1, 0, 0));
+
+    /* initializing matrix structure */
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+        parsec_matrix_block_cyclic, (&dcA, mtype, PARSEC_MATRIX_TILE,
+                                rank, MB, MB, LDA, K, 0, 0,
+                                M, K, nodes, P, Q, 1, 0, 0));
+    PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
+        parsec_matrix_block_cyclic, (&dcB, mtype, PARSEC_MATRIX_TILE,
+                                rank, MB, MB, LDB, N, 0, 0,
+                                K, N, nodes, P, Q, 1, 0, 0));
+
+    /* matrix generation */
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcA, Aseed);
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcB, Bseed);
+    INIT_MATRIX( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
+
+    parsec_devices_release_memory();
+    DPLASMA_KERNEL( parsec, tA, tB, alpha, (parsec_tiled_matrix_t *)&dcA, (parsec_tiled_matrix_t *)&dcB, beta, (parsec_tiled_matrix_t *)&dcC );
+    MPI_Barrier(MPI_COMM_WORLD);
+    parsec_devices_reset_load(parsec);
+
+    parsec_data_free(dcA.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
+    parsec_data_free(dcB.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcB);
+    parsec_data_free(dcC.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcC);
+
+#endif
+}

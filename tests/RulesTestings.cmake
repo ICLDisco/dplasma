@@ -30,6 +30,7 @@ function(testings_addexec OUTPUTLIST PRECISIONS)
                             PRIVATE dplasma_tests_common
                             PUBLIC dplasma
                             $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>)
+      set_target_properties(${exec} PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
     endif(NOT TARGET ${exec})
 
     if( CMAKE_Fortran_COMPILER_WORKS )

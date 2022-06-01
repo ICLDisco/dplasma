@@ -29,6 +29,8 @@ int main(int argc, char ** argv)
     PASTE_CODE_IPARAM_LOCALS(iparam);
     PASTE_CODE_FLOPS(FLOPS_ZPOTRF, ((DagDouble_t)N));
 
+    dplasma_warmup(parsec);
+
     /* initializing matrix structure */
     LDA = dplasma_imax( LDA, N );
     LDB = dplasma_imax( LDB, N );
@@ -57,7 +59,9 @@ int main(int argc, char ** argv)
             /* Set the recursive size */
             dplasma_zpotrf_setrecursive( PARSEC_zpotrf, iparam[IPARAM_HMB] );
             parsec_context_add_taskpool(parsec, PARSEC_zpotrf);
-            if( loud > 2 ) SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+            if( loud > 2 ) {
+                SYNC_TIME_PRINT(rank, ( "zpotrf\tDAG created\n"));
+            }
 
             PASTE_CODE_PROGRESS_KERNEL(parsec, zpotrf);
             dplasma_zpotrf_Destruct( PARSEC_zpotrf );
@@ -72,8 +76,8 @@ int main(int argc, char ** argv)
                                       dplasma_zpotrf_Destruct( PARSEC_zpotrf ));
         }
         parsec_devices_reset_load(parsec);
-
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if( 0 == rank && info != 0 ) {
         printf("-- Factorization is suspicious (info = %d) ! \n", info);

@@ -41,6 +41,8 @@ int main(int argc, char ** argv)
     /* Initialize PaRSEC */
     parsec = setup_parsec(argc, argv, iparam);
 
+    dplasma_warmup(parsec);
+
     /* Make sure KP and KQ are set to 1, since it conflicts with HQR */
     iparam[IPARAM_KP] = 1;
     iparam[IPARAM_KQ] = 1;
@@ -135,6 +137,7 @@ int main(int argc, char ** argv)
             printf("\n");
         }
     }
+    PASTE_CODE_PERF_LOOP_DONE();
 
     if ( info != 0 ) {
         if( rank == 0 && loud ) printf("-- Factorization is suspicious (info = %d) ! \n", info );
