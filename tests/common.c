@@ -764,6 +764,7 @@ void dplasma_warmup(parsec_context_t *parsec)
     int Cseed = 2873;
     int tA = dplasmaNoTrans;
     int tB = dplasmaNoTrans;
+    int M, N, K, P, Q, LDA, LDB, LDC;
 
     // DPLASMA might have been compiled with only one precision, or any subset of the 4 possible
     // precisions. The following logic tries to find /a/ kernel we can use. We check in the
