@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -58,10 +58,10 @@ extern "C" %{
  *      - potrf_zpotrf(k)    : (MT-k)**3
  *      - potrf_zherk(k,m)   : (MT-m)**3 + 3 * (m - k)
  *      - potrf_ztrsm(m,k)   : (MT-m)**3 + 3 * (m - k) * (2 * MT - k - m - 1)
- *      - potrf_zgemm(m,n,k) : (MT-m)**3 + 3 * (m - n) * (2 * MT - m - n - 1) + 6 * (m - k)
+ *      - potrf_zgemm(m,n,k) : (MT-m)**3 + 3 * (m - n) * (2 * MT - m - n - 3) + 6 * (m - k)
  *
  * So max priority is:
- *      (MT - PRI_CHANGE)**3 + 3 * MT * (2 * MT - PRI_CHANGE - 1) + 6 * MT  < (MT**3 + 6 MT**2 + 3 MT)
+ *      (MT - PRI_CHANGE)**3 + 3 * MT * (2 * MT - PRI_CHANGE - 1) + 6 * MT  < (MT**3 + 6 MT**2 + 6 MT)
  *
  * WARNING: If mt is greater than 1200, we might get integer overflow.
  */
@@ -76,7 +76,7 @@ descA      [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_dat
 INFO       [type = "int*"]
 
 PRI_CHANGE    [type = "int" hidden = on default = 0 ]
-PRI_MAX       [type = "int" hidden = on default = "(descA->mt * ( 3 + descA->mt * ( 2 + descA->mt )))" ]
+PRI_MAX       [type = "int" hidden = on default = "(descA->mt * ( 6 + descA->mt * ( 6 + descA->mt )))" ]
 smallnb       [type = "int" hidden = on default = "descA->mb" ]
 CuHandlesID   [type = "int" hidden = on default = -1 ]
 POWorkspaceID [type = "int" hidden = on default = -1 ]
