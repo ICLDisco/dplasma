@@ -113,14 +113,18 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
     int transA, transB;
     int m, n, k, lda, ldb, ldc;
     dplasma_complex64_t alpha, beta;
-    dplasma_complex64_t *A;
-    dplasma_complex64_t *B;
-    dplasma_complex64_t *C;
+    dplasma_complex64_t *A, *Ag;
+    dplasma_complex64_t *B, *Bg;
+    dplasma_complex64_t *C, *Cg;
     parsec_task_t *this_task = gpu_task->ec;
     parsec_cuda_exec_stream_t *cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
 
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
                            &A, &lda, &B, &ldb, &beta, &C, &ldc);
+    Ag = parsec_dtd_get_dev_ptr(this_task, 0);
+    Bg = parsec_dtd_get_dev_ptr(this_task, 1);
+    Cg = parsec_dtd_get_dev_ptr(this_task, 2);
+
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -145,9 +149,9 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
     cublasSetKernelStream( cuda_stream->cuda_stream );
     cublasZgemm( 'N', dplasma_lapack_const(dplasmaConjTrans),
                  n, n, k,
-                 mzone, (cuDoubleComplex*)A, lda,
-                 (cuDoubleComplex*)B, ldb,
-                 zone,  (cuDoubleComplex*)C, ldc );
+                 mzone, (cuDoubleComplex*)Ag, lda,
+                 (cuDoubleComplex*)Bg, ldb,
+                 zone,  (cuDoubleComplex*)Cg, ldc );
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
                              {return -1;} );
@@ -173,7 +177,7 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
     dev_index = parsec_get_best_device((parsec_task_t *) this_task, &task_load);
     assert(dev_index >= 0);
-    if (dev_index < 2) {
+    if (!parsec_mca_device_is_gpu(dev_index)) {
         /* Fallback to the CPU only version */
         return parsec_core_gemm(es, this_task);
     }
@@ -196,7 +200,7 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     (void)es;
     return parsec_cuda_kernel_scheduler(es, gpu_task, dev_index);
 }
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
+#endif /* defined(DPLASMA_HAVE_CUDA) */
 
 int main(int argc, char **argv)
 {
@@ -284,7 +288,7 @@ int main(int argc, char **argv)
     int gemm_device = PARSEC_DEV_CPU;
 #if defined(DPLASMA_HAVE_CUDA)
     /* If CUDA is available, prefer the CUDA version, so add it first to the chores */
-    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CUDA, parsec_core_cuda_gemm);
+    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CUDA, gpu_kernel_submit_dpotrf_U_potrf_dgemm);
     gemm_device |= PARSEC_DEV_CUDA;
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
     parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CPU, parsec_core_gemm);
