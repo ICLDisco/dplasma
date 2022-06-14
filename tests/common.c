@@ -31,6 +31,10 @@
 #include <cublas.h>
 #include <cusolverDn.h>
 #endif
+#if defined(DPLASMA_HAVE_HIP)
+#include "dplasmaaux.h"
+#include <hipblas.h>
+#endif
 
 char *PARSEC_SCHED_NAME[] = {
     "", /* default */
@@ -316,7 +320,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                 break;
 
             case 'g':
-#if !defined(DPLASMA_HAVE_CUDA)
+#if !defined(DPLASMA_HAVE_CUDA) && !defined(DPLASMA_HAVE_HIP)
                 iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED; /* force an error message */
 #endif
                 if(iparam[IPARAM_NGPUS] == DPLASMA_ERR_NOT_SUPPORTED) {
@@ -328,6 +332,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
 
                 rc = asprintf(&value, "%d", iparam[IPARAM_NGPUS]);
                 parsec_setenv_mca_param( "device_cuda_enabled", value, &environ );
+                parsec_setenv_mca_param( "device_hip_enabled", value, &environ );
                 free(value);
                 break;
 
@@ -645,6 +650,16 @@ static void destroy_cuda_handles(void *_h, void *_n)
 }
 #endif
 
+#if defined(DPLASMA_HAVE_HIP)
+static void destroy_hip_handles(void *_h, void *_n)
+{
+    dplasma_hip_handles_t *handles = (dplasma_hip_handles_t*)_h;
+    (void)_n;
+    hipblasDestroy(handles->hipblas_handle);
+    free(handles);
+}
+#endif
+
 parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 {
 #ifdef PARSEC_PROF_TRACE
@@ -732,6 +747,12 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
                              NULL);
     }
 #endif
+#if defined(DPLASMA_HAVE_HIP)
+    parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
+                         destroy_hip_handles, NULL,
+                         dplasma_create_hip_handles, NULL,
+                         NULL);
+#endif
 
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
     return ctx;
@@ -744,7 +765,10 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
     parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
     cublasShutdown();
 #endif
-
+#if defined(DPLASMA_HAVE_HIP)
+    parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+    parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
+#endif
     parsec_fini(&parsec);
 
 #ifdef PARSEC_HAVE_MPI
