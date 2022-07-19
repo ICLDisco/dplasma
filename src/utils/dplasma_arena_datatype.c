@@ -96,18 +96,26 @@ int dplasma_get_or_construct_arena(parsec_arena_t** parena,
     parsec_key_t k = (parsec_key_t)elem_size; //arena_key(elem_size, alignment);
 
     if( NULL == dplasma_arenas ) {
-        dplasma_arenas = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(dplasma_arenas,
+        parsec_hash_table_t *new_ht;
+        new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
+        parsec_hash_table_init(new_ht,
                                offsetof(dplasma_arena_t, ht_item),
                                16, arena_key_fns, NULL);
-        parsec_context_at_fini(dplasma_arenas_fini, NULL );
-    } else {
-        arena_entry = (dplasma_arena_t *)parsec_hash_table_nolock_find(dplasma_arenas, k);
-        if( NULL != arena_entry ) {
-            *parena = arena_entry->arena;
-            PARSEC_OBJ_RETAIN(*parena);
-            return 0;
+        if(parsec_atomic_cas_ptr(&dplasma_arenas, NULL, new_ht)) {
+            parsec_context_at_fini(dplasma_arenas_fini, NULL );
+        } else {
+            parsec_hash_table_fini(new_ht);
+            PARSEC_OBJ_RELEASE(new_ht);
         }
+    }
+
+    parsec_hash_table_lock_bucket(dplasma_arenas, k);
+    arena_entry = (dplasma_arena_t *)parsec_hash_table_nolock_find(dplasma_arenas, k);
+    if( NULL != arena_entry ) {
+        *parena = arena_entry->arena;
+        PARSEC_OBJ_RETAIN(*parena);
+        parsec_hash_table_unlock_bucket(dplasma_arenas, k);
+        return 0;
     }
     /* New arena entry */
     *parena = PARSEC_OBJ_NEW(parsec_arena_t);
@@ -119,8 +127,10 @@ int dplasma_get_or_construct_arena(parsec_arena_t** parena,
         arena_entry->arena = *parena;
         parsec_hash_table_nolock_insert(dplasma_arenas, &arena_entry->ht_item);
         PARSEC_OBJ_RETAIN(*parena);
+        parsec_hash_table_unlock_bucket(dplasma_arenas, k);
         return 0;
     }
+    parsec_hash_table_unlock_bucket(dplasma_arenas, k);
     PARSEC_OBJ_RELEASE(*parena);
 #else
     /* New arena */
@@ -173,12 +183,12 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
         parsec_hash_table_init(new_ht,
                                offsetof(dplasma_datatype_t, ht_item),
                                16, dtt_key_fns, NULL);
-	if(parsec_atomic_cas_ptr(&dplasma_datatypes, NULL, new_ht)) {
+        if(parsec_atomic_cas_ptr(&dplasma_datatypes, NULL, new_ht)) {
             parsec_context_at_fini(dplasma_datatypes_fini, NULL);
-	} else {
-  	    parsec_hash_table_fini(new_ht);
-	    PARSEC_OBJ_RELEASE(new_ht);
-	}
+        } else {
+            parsec_hash_table_fini(new_ht);
+            PARSEC_OBJ_RELEASE(new_ht);
+        }
     }
 
     parsec_hash_table_lock_bucket(dplasma_datatypes, k);
