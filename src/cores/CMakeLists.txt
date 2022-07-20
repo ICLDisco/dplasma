@@ -149,31 +149,34 @@ if( DPLASMA_HAVE_CUDA )
                       ${ZSOURCES_CUDA}
                       PRECISIONS "${DPLASMA_PRECISIONS}")
 
-  add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_cores_cuda})
+  if( NOT "${generated_cores_cuda}" STREQUAL "")
+    add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_cores_cuda})
 
-  # Create a separate object library so that we can set cuda specific flags for these objects.
-  add_library(dplasma_cores_cuda OBJECT ${generated_cores_cuda})
-  add_dependencies(dplasma_cores_cuda dplasma_includes
-                                      dplasma_cores_includes)
-  set_target_properties(dplasma_cores_cuda PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
-  target_include_directories(dplasma_cores_cuda
-    PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}
-    $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_SOURCE_DIR}>)
-  target_link_libraries(dplasma_cores_cuda
-    PRIVATE
-    PaRSEC::parsec
-    LAPACKE::LAPACKE
-    m
-    CUDA::cublas)
+    # Create a separate object library so that we can set cuda specific flags for these objects.
+    add_library(dplasma_cores_cuda OBJECT ${generated_cores_cuda})
 
-  # dplasma_cores is an object library, and linking an object library from an object library is 
-  # currently broken (CMake 3.12). So we pull-in the sources of dplasma_cores_cuda directly.
-  target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores_cuda>)
+    add_dependencies(dplasma_cores_cuda dplasma_includes
+                                        dplasma_cores_includes)
+    set_target_properties(dplasma_cores_cuda PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
+    target_include_directories(dplasma_cores_cuda
+      PRIVATE
+      ${CMAKE_CURRENT_BINARY_DIR}
+      $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_SOURCE_DIR}>)
+    target_link_libraries(dplasma_cores_cuda
+      PRIVATE
+      PaRSEC::parsec
+      LAPACKE::LAPACKE
+      m
+      CUDA::cublas)
 
-  # Ability to generate .cu files into _smXY.so has been removed because it was unused and broke.
-  # If needed again, use enable_language(CUDA) and add .cu files to add_library/target_sources, with
-  # the PROPERTY CUDA_ARCHITECTURES set appropriately on the target library. Do not use find_package(CUDA).
+    # dplasma_cores is an object library, and linking an object library from an object library is 
+    # currently broken (CMake 3.12). So we pull-in the sources of dplasma_cores_cuda directly.
+    target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores_cuda>)
 
+    # Ability to generate .cu files into _smXY.so has been removed because it was unused and broke.
+    # If needed again, use enable_language(CUDA) and add .cu files to add_library/target_sources, with
+    # the PROPERTY CUDA_ARCHITECTURES set appropriately on the target library. Do not use find_package(CUDA).
+
+  endif( NOT "${generated_cores_cuda}" STREQUAL "")
 endif( DPLASMA_HAVE_CUDA )
 
