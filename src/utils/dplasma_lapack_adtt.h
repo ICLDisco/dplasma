@@ -71,16 +71,20 @@ struct dplasma_datatype_lapack_helper_s {
 };
 typedef struct dplasma_datatype_lapack_helper_s dplasma_datatype_lapack_helper_t;
 
-int dplasma_set_datatype_info( const dplasma_data_collection_t *dc, parsec_arena_datatype_t adt,
-                               lapack_info_t info);
+int dplasma_set_datatype_info( const dplasma_data_collection_t *dc,
+                               parsec_arena_datatype_t adt,
+                               const lapack_info_t* info);
 
 int dplasma_get_info_from_datatype( const dplasma_data_collection_t *dc, parsec_datatype_t dtt,
-                                    lapack_info_t *info, parsec_arena_datatype_t **adt);
+                                    const lapack_info_t **info,
+                                    const parsec_arena_datatype_t **adt);
 int dplasma_get_datatype_from_info( const dplasma_data_collection_t *dc,
-                                    lapack_info_t *info, parsec_arena_datatype_t **adt);
+                                    lapack_info_t *info,
+                                    const parsec_arena_datatype_t **adt);
 
 int dplasma_cleanup_datatype_info( const dplasma_data_collection_t *dc,
-                                   lapack_info_t info, parsec_arena_datatype_t *adt);
+                                   const lapack_info_t* info,
+                                   parsec_arena_datatype_t *adt);
 
 /***************************************************************************/
 /* Management of dplasma_data_collection_t to wrap parsec_datacollections */
