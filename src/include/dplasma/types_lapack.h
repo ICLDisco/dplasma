@@ -193,7 +193,13 @@ void dplasma_clean_adtt_all_loc(const dplasma_data_collection_t * ddc, int max_s
                 if ( dplasma_cleanup_datatype_info(ddc, &info, &adt) == 0) {
                     /* Retained when reusing it, not set on JDF array, not release by taskpool destructor */
                     PARSEC_OBJ_RELEASE(adt.arena);
-                    dplasma_matrix_del2arena(&adt);
+                    /* A datatype being registered with multiple info we should
+                     * only release the datatype once all info have been
+                     * removed. We can track this using the refcount on the
+                     * arena itself.
+                     */
+                    if( NULL == adt.arena )
+                        dplasma_matrix_del2arena(&adt);
                 }
             }
         }
