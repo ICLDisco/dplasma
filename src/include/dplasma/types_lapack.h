@@ -68,21 +68,21 @@ void dplasma_setup_adtt_loc(dplasma_data_collection_t * ddc,
     info.shape = shape;
     info.layout = layout;
 
-    if ( (adt_default != NULL) && (full_rows == rows) && (full_cols == cols) ){
+    if ( (adt_default != NULL) && (full_rows == rows) && (full_cols == cols) ) {
         /* Reuse external datatype */
         /* Reuse arena through dplasma reuse, otherwise we don't know how to release
          * during destruct.
          */
         PARSEC_OBJ_RETAIN(adt_default->arena);
-        dplasma_set_datatype_info(ddc, *adt_default, info);
-    }else{
+        dplasma_set_datatype_info(ddc, *adt_default, &info);
+    } else {
         /* Reuse dplasma arena & datatype */
         dplasma_get_or_construct_adt(&adt, parsec_type,
                                      PARSEC_ARENA_ALIGNMENT_SSE,
                                      uplo, diag,
                                      rows, cols, ld,
                                      -1/* resized = -1 for all dplasma types */);
-        dplasma_set_datatype_info(ddc, adt, info);
+        dplasma_set_datatype_info(ddc, adt, &info);
     }
 }
 
@@ -190,10 +190,16 @@ void dplasma_clean_adtt_all_loc(const dplasma_data_collection_t * ddc, int max_s
                 info.loc = loc;
                 info.shape = shape;
                 info.layout = layout;
-                if ( dplasma_cleanup_datatype_info(ddc, info, &adt) == 0){
+                if ( dplasma_cleanup_datatype_info(ddc, &info, &adt) == 0) {
                     /* Retained when reusing it, not set on JDF array, not release by taskpool destructor */
                     PARSEC_OBJ_RELEASE(adt.arena);
-                    dplasma_matrix_del2arena( &adt);
+                    /* A datatype being registered with multiple info we should
+                     * only release the datatype once all info have been
+                     * removed. We can track this using the refcount on the
+                     * arena itself.
+                     */
+                    if( NULL == adt.arena )
+                        dplasma_matrix_del2arena(&adt);
                 }
             }
         }
