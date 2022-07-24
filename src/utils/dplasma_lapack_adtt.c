@@ -70,17 +70,25 @@ dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt.opaque_dtt);
     parsec_key_t k = (uint64_t)static_desc;
     if( NULL == dplasma_datatypes_lapack_helper ) {
-        dplasma_datatypes_lapack_helper = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(dplasma_datatypes_lapack_helper,
+        parsec_hash_table_t* new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
+        parsec_hash_table_init(new_ht,
                                offsetof(dplasma_datatype_lapack_helper_t, ht_item),
                                16, dtt_lapack_key_fns, NULL);
-        parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
-    } else {
-        dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
-        if( NULL != dtt_entry ) {
-            assert(dtt_entry->info.lda == info->lda);
-            return 0;
+        if(parsec_atomic_cas_ptr(&dplasma_datatypes_lapack_helper, NULL, new_ht)) {
+            parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
+        } else {
+             parsec_hash_table_fini(new_ht);
+             PARSEC_OBJ_RELEASE(new_ht);
         }
+    }
+
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
+    /* Find the entry */
+    dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
+    if( NULL != dtt_entry ) {
+        assert(dtt_entry->info.lda == info->lda);
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
+        return 0;
     }
 
     dtt_entry = (dplasma_datatype_lapack_helper_t *)malloc(sizeof(dplasma_datatype_lapack_helper_t));
@@ -88,6 +96,7 @@ dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
     dtt_entry->info = *info;
     dtt_entry->adt = adt;
     parsec_hash_table_nolock_insert(dplasma_datatypes_lapack_helper, &dtt_entry->ht_item);
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
         " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
         info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
