@@ -40,6 +40,10 @@ static parsec_key_fn_t dtt_lapack_key_fns = {
 
 parsec_hash_table_t *dplasma_datatypes_lapack_helper = NULL;
 
+/*************************************************************/
+/* Static helper functions that are not protected.           */
+/*************************************************************/
+
 static void dplasma_datatypes_lapack_helper_release(void *item, void*cb_data)
 {
     (void)cb_data;
@@ -59,6 +63,28 @@ static void dplasma_datatypes_info_fini()
     }
 }
 
+/*************************************************************/
+/* Static helper functions that are lock protected.          */
+/*************************************************************/
+
+static inline int
+dplasma_set_helper_hash_table_atomic(void)
+{
+    if( NULL == dplasma_datatypes_lapack_helper ) {
+        parsec_hash_table_t* new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
+        parsec_hash_table_init(new_ht,
+                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
+                               16, dtt_lapack_key_fns, NULL);
+        if(parsec_atomic_cas_ptr(&dplasma_datatypes_lapack_helper, NULL, new_ht)) {
+            parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
+            return 1;
+        }
+        parsec_hash_table_fini(new_ht);
+        PARSEC_OBJ_RELEASE(new_ht);
+    }
+    return 0;
+}
+
 static int
 dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
                          parsec_arena_datatype_t adt,
@@ -69,18 +95,8 @@ dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt.opaque_dtt);
     parsec_key_t k = (uint64_t)static_desc;
-    if( NULL == dplasma_datatypes_lapack_helper ) {
-        parsec_hash_table_t* new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(new_ht,
-                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
-                               16, dtt_lapack_key_fns, NULL);
-        if(parsec_atomic_cas_ptr(&dplasma_datatypes_lapack_helper, NULL, new_ht)) {
-            parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
-        } else {
-             parsec_hash_table_fini(new_ht);
-             PARSEC_OBJ_RELEASE(new_ht);
-        }
-    }
+
+    (void)dplasma_set_helper_hash_table_atomic();
 
     parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
     /* Find the entry */
@@ -113,18 +129,8 @@ dplasma_set_info_to_dtt( const dplasma_data_collection_t *dc,
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info->loc, info->shape, info->layout);
     parsec_key_t k = (uint64_t)static_desc;
-    if( NULL == dplasma_datatypes_lapack_helper ) {
-        parsec_hash_table_t* new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(new_ht,
-                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
-                               16, dtt_lapack_key_fns, NULL);
-        if(parsec_atomic_cas_ptr(&dplasma_datatypes_lapack_helper, NULL, new_ht)) {
-            parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
-        } else {
-             parsec_hash_table_fini(new_ht);
-             PARSEC_OBJ_RELEASE(new_ht);
-        }
-    }
+
+    (void)dplasma_set_helper_hash_table_atomic();
 
     parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
     /* Find the entry */
