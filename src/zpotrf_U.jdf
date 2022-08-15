@@ -50,7 +50,9 @@ extern "C" %{
  *
  */
 
-#include "zpotrf_U.h"
+#if defined(DPLASMA_WITH_RECURSIVE)
+static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_callback_t* data);
+#endif  /* defined(DPLASMA_WITH_RECURSIVE) */
 
 /*
  * Priorities used in this jdf:
@@ -89,6 +91,8 @@ potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLE
 // Execution space
 k = 0 .. descA->nt-1
 
+// Locals
+info = 0  /* For the info in the case of recursive calls */
 loc_T = %{ return LOC(descA, k, k); %}
 
 // Parallel partitioning
@@ -107,7 +111,6 @@ RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(d
 BODY [type=RECURSIVE]
 {
     int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
-    int iinfo = 0;
 
     if (tempkn > smallnb)
     {
@@ -118,17 +121,16 @@ BODY [type=RECURSIVE]
                                            smallnb, smallnb, 0, 0, tempkn, tempkn );
         small_descT->mat = T;
 
-        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, &iinfo );
+        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, &info );
 
         parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_zpotrf, dplasma_zpotrf_Destruct,
+                             parsec_zpotrf, zpotrf_U_update_INFO,
                              1, small_descT);
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        /* Go for the sequential CPU version */
-        return PARSEC_HOOK_RETURN_NEXT;
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -270,9 +272,8 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        /* Go for the sequential CPU version */
-        return PARSEC_HOOK_RETURN_NEXT;
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -375,9 +376,8 @@ BODY [type=RECURSIVE]
                              2, small_descA, small_descT);
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        /* Go for the sequential CPU version */
-        return PARSEC_HOOK_RETURN_NEXT;
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -518,9 +518,8 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        /* Go to CPU sequential kernel */
-        return PARSEC_HOOK_RETURN_NEXT;
+    /* Go to CPU sequential kernel */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -546,3 +545,33 @@ BODY
               1.0, m, n, C, ldam_C);
 }
 END
+
+extern "C" %{
+
+#if defined(DPLASMA_WITH_RECURSIVE)
+/*
+ * A function to recursively update the value of the INFO argument for
+ * recursive calls. We need a special function because the recursive calls being asynchronous
+ * will be completed by another thread at a later date. This means we cannot use the stack of
+ * the thread creating the recursive algorithm to store any temporary value (such as INFO).
+ * We are therefore forced to create a local variable on the task, and use it as the INFO
+ * for the recursive calls.
+ *
+ * As we are handling the diagonal tiles recursively, we have to scale the INFO in case of errors
+ * to reflect the position in the global matrix and not on the current tile.
+ */
+static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_callback_t* data)
+{
+    parsec_zpotrf_U_taskpool_t* tp = (parsec_zpotrf_U_taskpool_t*)_tp;
+    __parsec_zpotrf_U_potrf_zpotrf_task_t* task = (__parsec_zpotrf_U_potrf_zpotrf_task_t*)data->task;
+
+    if( (0 < task->locals.info.value) && (0 == *tp->_g_INFO) ) {
+        /* we need to scale the INFO according to the parent taskpool tile size */
+        *tp->_g_INFO = task->locals.info.value + task->locals.k.value * ((parsec_zpotrf_U_taskpool_t*)task->taskpool)->_g_descA->nb;
+    }
+    dplasma_zpotrf_Destruct(_tp);
+}
+#endif  /* defined(DPLASMA_WITH_RECURSIVE) */
+
+%}
+
