@@ -37,6 +37,7 @@ set(JDF
   zlaswp.jdf
   zpltmg_chebvand.jdf zpltmg_fiedler.jdf zpltmg_hankel.jdf zpltmg_toeppd.jdf
   zprint.jdf
+  zwarmup.jdf
   #
   # BLAS Level 3
   #
@@ -128,6 +129,7 @@ set(SOURCES
   zpltmg_wrapper.c
   zlatms_wrapper.c
   zprint_wrapper.c
+  zwarmup_wrapper.c
   # Level 3 Blas
   zgemm_wrapper.c
   zhemm_wrapper.c

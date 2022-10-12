@@ -39,6 +39,23 @@ int main(int argc, char ** argv)
         parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                    rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, nodes/P, uplo));
+
+
+    printf("+++ Warming up matrix ... \n");
+    SYNC_TIME_START();
+    dplasma_zplghe(parsec, (double)(N), uplo, &dcA, random_seed);
+    dplasma_zwarmup(parsec, &dcA);
+    SYNC_TIME_PRINT(rank, ("WARMUP_blocks\tPxQpg %3d %-3d %d NB= % 4d N=%7d\n", \
+                P, Q, gpus, NB, N));
+    if(loud > 3) printf("+++ Warming up cublas/rocm ... \n");
+    SYNC_TIME_START();
+    parsec_matrix_sym_block_cyclic_t *dcW;
+    int Nw = dplasma_imin(N, dplasma_imax(4*MB*P, 4*NB*Q));
+    dcW = parsec_tiled_matrix_submatrix(&dcA, 0, 0, Nw, Nw);
+    dplasma_zpotrf(parsec, uplo, dcW);
+    //TODO: parsec_matrix_destroy(dcW)
+    SYNC_TIME_PRINT(rank, ("WARMUP_potrf\tPxQxg %3d %-3d %d NB= %4d N= %7d\n", \
+                P, Q, gpus, NB, Nw));
     int t;
     for(t = 0; t < nruns; t++) {
         /* matrix (re)generation */

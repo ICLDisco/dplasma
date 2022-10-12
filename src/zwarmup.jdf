@@ -1,0 +1,58 @@
+extern "C" %{
+/*
+ * Copyright (c) 2022-     The University of Tennessee and The University
+ *                         of Tennessee Research Foundation. All rights
+ *                         reserved.
+ *
+ * @precisions normal z -> s d c
+ * $COPYRIGHT
+ *
+ */
+#include "dplasmajdf.h"
+#include "dplasmaaux.h"
+#include "parsec/data_dist/matrix/matrix.h"
+#include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
+#include "utils/dplasma_lapack_adtt.h"
+
+%}
+
+/*
+ * Globals
+ */
+
+ddescA     [type = "dplasma_data_collection_t*"]
+descA      [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_data_collection_t*)ddescA)->dc_original" aligned=ddescA]
+descAs     [type = "parsec_matrix_sym_block_cyclic_t*" hidden=on default="(parsec_matrix_sym_block_cyclic_t*)descA" aligned=ddescA]
+
+/**************************************************
+ *                       WARMUP                   *
+ **************************************************/
+WARMUP(m, n)
+
+// Execution space
+m = 0 .. descA->mt-1
+n = 0 .. descA->nt-1
+
+// Parallel partitioning
+: descA(m, n)
+
+// Parameters
+RW   A <- (descA->dtype & parsec_matrix_sym_block_cyclic_type && descAs->uplo == PARSEC_MATRIX_UPPER && m <= n)? ddescA(m, n)
+       <- (descA->dtype & parsec_matrix_sym_block_cyclic_type && descAs->uplo == PARSEC_MATRIX_LOWER && m >= n)? ddescA(m, n)
+       <- (descA->dtype == parsec_matrix_block_cyclic_type)? ddescA(m, n)
+       -> ddescA(m, n)
+
+BODY [type=CUDA]
+{
+    //printf("CUDA M=%d N=%d A=%p\n", m, n, A);
+    /* do nothing */
+}
+END
+
+BODY [type=HIP]
+{
+    //printf("HIP  M=%d N=%d A=%p\n", m, n, A);
+    /* do nothing */
+}
+END
+
