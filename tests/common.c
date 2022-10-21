@@ -283,8 +283,6 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
         c = getopt(argc, argv, GETOPT_STRING);
         (void) opt;
 #endif  /* defined(PARSEC_HAVE_GETOPT_LONG) */
-
-        // printf("%c: %s = %s\n", c, long_options[opt].name, optarg);
         switch(c)
         {
             case 'c': iparam[IPARAM_NCORES] = atoi(optarg); break;
@@ -436,12 +434,6 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
             *_argc = tmpc;
             *_argv = tmp;
         }
-    }
-    
-    /* Set matrices dimensions to default values if not provided */
-    /* Search for N as a bare number if not provided by -N */
-    if(0 == iparam[IPARAM_N] && optind < argc) {
-        iparam[IPARAM_N] = atoi(argv[optind++]);
     }
     (void)rc;
 }
