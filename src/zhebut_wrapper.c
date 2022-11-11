@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -152,7 +152,7 @@ dplasma_zhebut_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, in
 
         if( type_exists ){
             adt = &((parsec_zhebut_taskpool_t*)parsec_zhebut)->arenas_datatypes[i];
-            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            dplasma_add2arena_rectangle( adt, m_sz*A->nb*sizeof(dplasma_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE, parsec_datatype_double_complex_t, A->mb, A->nb, -1 );
         }
     }
 
@@ -166,7 +166,7 @@ dplasma_zhebut_Destruct( parsec_taskpool_t *tp )
     parsec_zhebut_taskpool_t *obut = (parsec_zhebut_taskpool_t *)tp;
 
     for(i=0; i<36; i++){
-        parsec_del2arena( &obut->arenas_datatypes[i] );
+        dplasma_matrix_del2arena( &obut->arenas_datatypes[i] );
     }
 
     parsec_taskpool_free(tp);
@@ -223,7 +223,7 @@ dplasma_zgebut_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, in
 
         if( type_exists ){
             adt = &((parsec_zgebut_taskpool_t*)parsec_zgebut)->arenas_datatypes[i];
-            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            dplasma_add2arena_rectangle( adt, m_sz*A->nb*sizeof(dplasma_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE, parsec_datatype_double_complex_t, A->mb, A->nb, -1 );
         }
     }
 
@@ -294,7 +294,7 @@ dplasma_zgebmm_New( parsec_tiled_matrix_t *A, dplasma_complex64_t *U_but_vec, in
 
         if( type_exists ){
             adt = &((parsec_zgebmm_taskpool_t*)parsec_zgebmm)->arenas_datatypes[i];
-            parsec_add2arena_rect( adt, parsec_datatype_double_complex_t, m_sz, A->nb, A->mb );
+            dplasma_add2arena_rectangle( adt, m_sz*A->nb*sizeof(dplasma_complex64_t), PARSEC_ARENA_ALIGNMENT_SSE, parsec_datatype_double_complex_t, A->mb, A->nb, -1 );
         }
     }
 
