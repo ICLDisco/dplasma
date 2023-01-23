@@ -377,7 +377,7 @@ int main(int argc, char ** argv)
     parsec_dtd_data_flush_all( dtd_tp, (parsec_data_collection_t *)&dcIPIV );
 
     /* finishing all the tasks inserted, but not finishing the handle */
-    parsec_dtd_taskpool_wait( dtd_tp );
+    parsec_taskpool_wait( dtd_tp );
 
     /* Waiting on all handle and turning everything off for this context */
     parsec_context_wait( parsec );
