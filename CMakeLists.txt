@@ -92,6 +92,10 @@ option(DPLASMA_SCALAPACK_WRAPPER
 
 option(DPLASMA_WITH_RECURSIVE
   "Enable recursive kernels to be called when available" ON)
+if(DPLASMA_WITH_RECURSIVE)
+  add_definitions(-DPARSEC_HAVE_RECURSIVE)
+  message(STATUS "PARSEC_HAVE_RECURSIVE is defined.")
+endif(DPLASMA_WITH_RECURSIVE)
 
 option(DPLASMA_TRACE_KERNELS
   "Enable tracing dplasma kernel calls for debugging (slow)" OFF)
