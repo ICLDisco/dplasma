@@ -226,9 +226,11 @@ CTL Z <- Z LOCAL_BARRIER( m/(tB*tP), n/(tC*tQ), 0, u, v )
 BODY
   if( nb_cuda_devices > 0 ) {
       int g = (n / tQ) % nb_cuda_devices;
-      parsec_advise_data_on_device( _f_C->original,
-                                    cuda_device_index[g],
-                                    PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+      if( _f_C->original->preferred_device <= 0 ) {
+          parsec_advise_data_on_device( _f_C->original,
+                                        cuda_device_index[g],
+                                        PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+      }
   }
 END
 
