@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The University of Tennessee and The University
+ * Copyright (c) 2011-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -33,6 +33,8 @@ parsec_taskpool_t* dplasma_zhbrdt_New(parsec_tiled_matrix_t* A /* data A */)
 
 void dplasma_zhbrdt_Destruct( parsec_taskpool_t *tp )
 {
+    parsec_zhbrdt_taskpool_t *zhbrdt_tp = (parsec_zhbrdt_taskpool_t*)tp;
+    dplasma_matrix_del2arena( &zhbrdt_tp->arenas_datatypes[PARSEC_zhbrdt_DEFAULT_ADT_IDX] );
     parsec_taskpool_free(tp);
 }
 

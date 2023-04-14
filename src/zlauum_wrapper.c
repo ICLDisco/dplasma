@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -127,7 +127,7 @@ dplasma_zlauum_Destruct( parsec_taskpool_t *tp )
     parsec_zlauum_L_taskpool_t *olauum = (parsec_zlauum_L_taskpool_t *)tp;
 
     dplasma_matrix_del2arena( &olauum->arenas_datatypes[PARSEC_zlauum_L_DEFAULT_ADT_IDX   ] );
-    dplasma_matrix_del2arena( &olauum->arenas_datatypes[PARSEC_zlauum_L_LOWER_TILE_ADT_IDX] );
+    dplasma_matrix_del2arena( &olauum->arenas_datatypes[PARSEC_zlauum_L_LOWER_TILE_ADT_IDX] ); // lower and upper have the same index
     parsec_taskpool_free(tp);
 }
 
