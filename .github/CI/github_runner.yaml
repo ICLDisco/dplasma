@@ -17,7 +17,6 @@ spack:
     - scalapack
 
   view: true
-  concretization: together
   specs:
     - matrix:
       - [$pkgs]
