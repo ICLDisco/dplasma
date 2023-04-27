@@ -328,7 +328,7 @@ static parsec_taskpool_t **iterate_ops(parsec_tiled_matrix_t *A, int tmp_level,
                                     int destroy, int *info)
 {
     if(tmp_level == target_level){
-        if( (i_block == j_block) ){
+        if( i_block == j_block ){
             if( destroy ){
                 dplasma_zhebut_Destruct(*subop);
             }else{
