@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2019       The University of Tennessee and the University
+# Copyright (c) 2019-2022  The University of Tennessee and the University
 #                          of Tennessee Research Foundation.  All rights
 #                          reserved.
 #
@@ -20,6 +20,7 @@ class Dplasma(CMakePackage):
     version('2.0.0', '')
 
     depends_on('cmake@3.16.0:', type='build')
+    depends_on('blas')
     depends_on('parsec')
     depends_on('mpi')
 
