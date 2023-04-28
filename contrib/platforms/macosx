@@ -6,7 +6,7 @@ Note about BLAS on Mac OS X:
 Apple Veclib does not contain LAPACKE, you have to either compile your
 own LAPACKE library that links with Apple Veclib -- or -- simpler
 use OpenBLAS (e.g., from `brew`).
-The performance hit of using OpenBLAS on M1 Mac is significant though,
+The performance hit of using OpenBLAS on M1/M2 Mac is significant though,
 for this reason the Apple VecLib remains the default option.
 ============================
 EOF
@@ -30,9 +30,9 @@ if [ "x$enable_fortran" != xno -a ! -x "$(command -v "$CC")" ]; then
   done
 fi
 
-# We have Brew OpenBLAS, lets make sure it gets auto-detected if requested
+# We have Brew OpenBLAS, lets make sure it gets auto-detected, if requested
 if [ -d /usr/local/opt/openblas/lib ]; then
-  ENVVARS+=" LDFLAGS+=' -L/usr/local/opt/openblas/lib'"
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/usr/local/opt/openblas/lib'"
 fi
 
 # OS-X 12.2 provides Bison 2.3, we need Bison 3 or better

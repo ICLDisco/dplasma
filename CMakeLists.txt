@@ -87,7 +87,7 @@ else (SUPPORT_C11)
 endif( SUPPORT_C11 )
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-option(DPLASMA_SCALAPACK_WRAPPER
+option(DPLASMA_WITH_SCALAPACK_WRAPPER
   "Build a ScaLAPACK compatible API to DPLASMA" ON)
 
 option(DPLASMA_WITH_RECURSIVE
@@ -285,18 +285,14 @@ endif()
 
 
 set(CMAKE_Fortran_LINKER_PREFERENCE_PROPAGATES TRUE)
-Add_Subdirectory(src)
+add_subdirectory(src)
+add_subdirectory(src/scalapack_wrappers)
 IF( BUILD_TESTING )
-  Add_Subdirectory(tests)
+  add_subdirectory(tests)
 ENDIF( BUILD_TESTING )
-Add_Subdirectory(examples)
-Add_Subdirectory(docs)
+add_subdirectory(examples)
+add_subdirectory(docs)
 
-
-if(DPLASMA_SCALAPACK_WRAPPER)
-  # Generate ScaLAPACK wrappers provided by DPLASMA
-  add_subdirectory(src/wrappers)
-endif(DPLASMA_SCALAPACK_WRAPPER)
 
 set(DPLASMA_SHARE_DIRECTORY_SOURCE ${PROJECT_SOURCE_DIR}/share)
 set(DPLASMA_SHARE_DIRECTORY_INSTALL ${CMAKE_INSTALL_DATADIR}/dplasma)
