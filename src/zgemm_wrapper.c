@@ -36,7 +36,7 @@
 #include "parsec/utils/mca_param.h"
 
 static parsec_taskpool_t *
-dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
+dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
                         dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
                         dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                         dplasma_info_t opt)
@@ -128,7 +128,7 @@ dplasma_Zgemm_New_summa(dplasma_enum_t transA, dplasma_enum_t transB,
 }
 
 static parsec_taskpool_t *
-dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
+dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
                           dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
                           dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                           dplasma_info_t opt)
@@ -190,7 +190,7 @@ dplasma_Zgemm_New_default(dplasma_enum_t transA, dplasma_enum_t transB,
 
 #if defined(DPLASMA_HAVE_CUDA)
 static parsec_taskpool_t*
-dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
+dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
                        dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
                        dplasma_complex64_t beta,  parsec_tiled_matrix_t* C,
                        dplasma_info_t opt)
@@ -215,7 +215,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     int b, c, d, p, q, look_ahead;
 
     if( dplasmaNoTrans != transA || dplasmaNoTrans != transB ) {
-        dplasma_error("dplasma_Zgemm_New_gpu", "NoTrans for A or B not implemented yet in JDF for GPUs");
+        dplasma_error("dplasma_zgemm_gpu_new", "NoTrans for A or B not implemented yet in JDF for GPUs");
         return NULL;
     }
 
@@ -252,7 +252,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     if( info_found ) {
         vd = strtod(info_value, NULL);
         if(vd <= 0.0 || vd > 1.0) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:mem_ratio. Mem ratio must be real in ]0, 1]");
             goto cleanup;
         }
@@ -274,7 +274,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     if( info_found ) {
         vd = strtod(info_value, NULL);
         if(vd <= 0.0 || vd >= 1.0) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:c_ratio. Ratio of memory dedicated to hosting tiles of C must be real in ]0, 1[");
             goto cleanup;
         }
@@ -291,7 +291,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     if( info_found ) {
         look_ahead = atoi(info_value);
         if(look_ahead <= 0) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:look_ahead. Look ahead must be 1 or more");
             goto cleanup;
         }
@@ -301,13 +301,14 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     int c_per_gpu = c / nbgpu;
     int maxd = (nb_tile_per_gpu - b*c_per_gpu)/(b+c_per_gpu) - 1;
     d = maxd < kt ? maxd : kt;
+    d = d < 1? 1: d;
 
     // Now we let the user overwrite the b, c and d parameters
     dplasma_info_get(opt, "DPLASMA:GEMM:GPU:b", DPLASMA_MAX_INFO_VAL, info_value, &info_found);
     if( info_found ) {
         b = atoi(info_value);
         if(b <= 0 || b*p > A->mt) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:b. b must be > 0 and b*P less or equal to A.mt");
             goto cleanup;
         }
@@ -316,7 +317,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     if( info_found ) {
         c = atoi(info_value);
         if(c <= 0 || c*q > A->nt) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:c. c must be > 0 and c*Q less or equal to A.nt");
             goto cleanup;
         }
@@ -325,7 +326,7 @@ dplasma_Zgemm_New_gpu( dplasma_enum_t transA, dplasma_enum_t transB,
     if( info_found ) {
         d = atoi(info_value);
         if(d <= 0 || d > B->mt) {
-            dplasma_error("dplasma_Zgemm_New_gpu",
+            dplasma_error("dplasma_zgemm_gpu_new",
                           "Invalid value for DPLASMA:GEMM:GPU:d. d must be > 0 and less or equal to B.mt");
             goto cleanup;
         }
@@ -479,15 +480,15 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
                 transA == dplasmaNoTrans &&
                 transB == dplasmaNoTrans &&
                 (nb_active_tiles_per_gpu > 0.95* nb_tile_per_gpu) ) {
-                zgemm_tp = dplasma_Zgemm_New_gpu(transA, transB, alpha, A, B, beta, C, opt);
+                zgemm_tp = dplasma_zgemm_gpu_new(transA, transB, alpha, A, B, beta, C, opt);
                 return zgemm_tp;
             }
         }
 #endif /* DPLASMA_HAVE_CUDA */
-        zgemm_tp = dplasma_Zgemm_New_summa(transA, transB, alpha, A, B, beta, C, opt);
+        zgemm_tp = dplasma_zgemm_summa_new(transA, transB, alpha, A, B, beta, C, opt);
         return zgemm_tp;
     }
-    zgemm_tp = dplasma_Zgemm_New_default(transA, transB, alpha, A, B, beta, C, opt);
+    zgemm_tp = dplasma_zgemm_default_new(transA, transB, alpha, A, B, beta, C, opt);
     return zgemm_tp;
 }
 
