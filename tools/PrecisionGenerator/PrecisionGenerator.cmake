@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2020 The University of Tennessee and The University
+# Copyright (c) 2009-2023 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 #
@@ -13,7 +13,7 @@
 # PaRSEC Internal: generation of various floating point precision files from a template.
 #
 include(ParseArguments)
-find_package(Python COMPONENTS Interpreter REQUIRED)
+find_package(Python 3 COMPONENTS Interpreter REQUIRED QUIET)
 
 if(NOT DEFINED PRECISIONGENERATOR_LOCATION)
   message(FATAL_ERROR "PRECISIONGENERATOR_LOCATION is not defined as it

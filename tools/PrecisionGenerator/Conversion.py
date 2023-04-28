@@ -59,7 +59,7 @@ def check_gen(file, work, rex):
 ## Simple grep a string in a list
 def grep(string,list):
   expr = re.compile(string)
-  return filter(expr.search,list)
+  return list(filter(expr.search,list))
 
 ## Filter function to exclude files starting with '.'
 def hidden(file):
@@ -147,13 +147,13 @@ class Conversion:
     self.copy = [];
     self.converted = [];
     load = False;
-    if self.debug: print '|'.join(self.types), self.precision, relpath(path.join(self.file[0],self.file[1]));
+    if self.debug: print('|'.join(self.types), self.precision, relpath(path.join(self.file[0],self.file[1])));
     for precision in self.precisions:
       """For each destination precision, make the appropriate changes to the file name/data."""
       new_file = self.convert(self.file[1], precision);
-      if self.debug: print precision,':',
+      if self.debug: print(precision,':', end=' ')
       copy = False;
-      if new_file <> self.file[1] or self.prefix is not None:
+      if new_file != self.file[1] or self.prefix is not None:
         if self.prefix is None:
           """If no prefix is specified, use the file's current folder."""
           prefix = ''
@@ -170,31 +170,31 @@ class Conversion:
         if self.make:
           """If in GNU Make mode, write the rule to create the file."""
           file_in = relpath(path.join(self.file[0],self.file[1]));
-          print file_out+':',file_in;
-          print "\t$(PYTHON)",path.realpath(sys.argv[0]),makeprefix,'-p',precision,"--file",file_in;
+          print(file_out+':',file_in);
+          print("\t$(PYTHON)",path.realpath(sys.argv[0]),makeprefix,'-p',precision,"--file",file_in);
         self.names.append(new_file);
         self.files_out.append(file_out);
         self.dependencies.append( (path.join(self.file[0],self.file[1]), precision, file_out) );
-        if self.debug: print relpath(conversion), ':',
+        if self.debug: print(relpath(conversion), ':', end=' ')
         try:
           """Try to emulate Make like time based dependencies."""
           date = path.getmtime(conversion);
           diff = self.date - date;
           self.dates.append(diff);
           if self.debug:
-            if diff > 0: print 'Old',
-            else: print 'Current',
-            print diff;
+            if diff > 0: print('Old', end=' ')
+            else: print('Current', end=' ')
+            print(diff);
           if diff > 0: load = True;
         except:
-          if self.debug: print 'Missing';
+          if self.debug: print('Missing');
           self.dates.append(None);
           load = True;
-      elif precision <> self.precision :
+      elif precision != self.precision :
         """There was no change in the file's name, thus,
         no work can be done without overwriting the original."""
-        if self.debug: print '<No Change>',':';
-        else: print >> sys.stderr, new_file, 'had no change for', precision;
+        if self.debug: print('<No Change>',':');
+        else: print(new_file, 'had no change for', precision, file=sys.stderr);
         self.names.append(None);
         self.dates.append(None);
       self.copy.append(copy);
@@ -256,7 +256,7 @@ class Conversion:
           replace = replace.replace(r'\)',')');
         data = re.sub(search, replace, data);
       except:
-        print 'Bad replacement pair ',i,'in',sub_type;
+        print('Bad replacement pair ',i,'in',sub_type);
         continue;
     return data;
 
@@ -276,7 +276,7 @@ class Conversion:
       if sub_type == 'all': continue;
       try:
         data = self.substitute(sub_type, data, precision);
-      except Exception, e:
+      except Exception as e:
         raise ValueError('I encountered an unrecoverable error while working in subtype:',sub_type+'.');
     """Replace the replacement keywork with one that signifies this is an output file,
     to prevent multiple replacement issues if run again."""

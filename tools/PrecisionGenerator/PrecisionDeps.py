@@ -84,7 +84,7 @@ class GenConversion:
     for precision in self.precisions:
       """For each destination precision, make the appropriate changes to the file name/data."""
       new_file = self.convert(filename, precision);
-      if new_file <> filename or self.prefix is not None:
+      if new_file != filename or self.prefix is not None:
         if self.prefix is None:
           """If no prefix is specified, use the file's current folder."""
           prefix = ''
@@ -125,7 +125,7 @@ class GenConversion:
           replace = replace.replace(r'\)',')');
         data = re.sub(search, replace, data);
       except:
-        print 'Bad replacement pair ',i,'in',sub_type;
+        print('Bad replacement pair ',i,'in',sub_type);
         continue;
     return data;
 
@@ -145,7 +145,7 @@ class GenConversion:
       if sub_type == 'all': continue;
       try:
         data = self.substitute(sub_type, data, precision);
-      except Exception, e:
+      except Exception as e:
         raise ValueError('I encountered an unrecoverable error while working in subtype:',sub_type+'.');
     return data;
 
@@ -207,11 +207,11 @@ def main():
     try:
       """Try creating and executing a converter."""
       result += c.run(file);
-    except Exception, e:
-      print >> sys.stderr, str(e);
+    except Exception as e:
+      print(str(e), file=sys.stderr);
       continue;
 
-  print result;
+  print(result);
 
 if __name__ == "__main__":
     main();
