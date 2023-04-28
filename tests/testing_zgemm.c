@@ -95,12 +95,6 @@ int main(int argc, char ** argv)
     }
     else {
         int Am, An, Bm, Bn;
-        PASTE_CODE_ALLOCATE_MATRIX(dcC2, check,
-            parsec_matrix_block_cyclic, (&dcC2, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
-                                   rank, MB, NB, LDC, N, 0, 0,
-                                   M, N, P, nodes/P, KP, KQ, IP, JQ));
-
-        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC2, Cseed);
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
         for(tA=0; tA<3; tA++) {
@@ -128,9 +122,6 @@ int main(int argc, char ** argv)
                                            rank, MB, NB, LDB, LDB, 0, 0,
                                            Bm, Bn, P, nodes/P, KP, KQ, IP, JQ));
 
-                dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, Aseed);
-                dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, Bseed);
-
                 if ( rank == 0 ) {
                     printf("***************************************************\n");
                     printf(" ----- TESTING ZGEMM (%s, %s) -------- \n",
@@ -139,9 +130,14 @@ int main(int argc, char ** argv)
 
                 /* matrix generation */
                 if(loud) printf("Generate matrices ... ");
-                dplasma_zlacpy( parsec, dplasmaUpperLower,
-                                (parsec_tiled_matrix_t *)&dcC2, (parsec_tiled_matrix_t *)&dcC );
+                dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, Aseed);
+                dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, Bseed);
+                dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
                 if(loud) printf("Done\n");
+
+                /* reset device load incurred by prior rounds, if any */
+                parsec_devices_release_memory();
+                parsec_devices_reset_load(parsec);
 
                 /* Create GEMM PaRSEC */
                 if(loud) printf("Compute ... ... ");
@@ -181,8 +177,6 @@ int main(int argc, char ** argv)
                 }
             }
         }
-        parsec_data_free(dcC2.mat);
-        parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcC2);
     }
 
     parsec_data_free(dcC.mat);
