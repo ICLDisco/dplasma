@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2021 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -210,6 +210,7 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
 #else
     parsec_zpotrf->_g_CuHandlesID = PARSEC_INFO_ID_UNDEFINED;
     parsec_zpotrf->_g_POWorkspaceID = PARSEC_INFO_ID_UNDEFINED;
+    (void)uid; (void)workspace_info_name;
 #endif
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,

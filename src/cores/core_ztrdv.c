@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 The University of Tennessee and The University
+ * Copyright (c) 2011-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -94,7 +94,7 @@ int CORE_zlarfx2c(int uplo,
                 PLASMA_Complex64_t *C3)
 {
     static PLASMA_Complex64_t zzero = 0.0;
-    PLASMA_Complex64_t T2, SUM, TEMP;
+    PLASMA_Complex64_t V2, T2, SUM, TEMP;
 
     /* Quick return */
     if (TAU == zzero)
@@ -136,24 +136,24 @@ int CORE_zlarfx2c(int uplo,
       // For Left : use TAU       and conj(V).
       // For Right: use conj(TAU) and conj(V).
       // Right 1 ==> C1 C2
-      V       = conj(V);
+      V2      = conj(V);
       TEMP    = conj(C2[0]); // copy C2 here before modifying it.
-      T2      = conj(TAU)*conj(V);
-      SUM     = C1[0]   + V*C2[0];
+      T2      = conj(TAU)*V2;
+      SUM     = C1[0]   + V2*C2[0];
       C1[0]   = C1[0]   - SUM*conj(TAU);
       C2[0]   = C2[0]   - SUM*T2;
       // Right 2 ==> TEMP C3
-      SUM     = TEMP    + V*C3[0];
+      SUM     = TEMP    + V2*C3[0];
       TEMP    = TEMP    - SUM*conj(TAU);
       C3[0]   = C3[0]   - SUM*T2;
       // Left 1 ==> C1
       //            TEMP. NB: no need to compute corner (2,1)=TEMP
-      T2      = TAU*V;
-      SUM     = C1[0]   + conj(V)*TEMP;
+      T2      = TAU*V2;
+      SUM     = C1[0]   + V2*TEMP;
       C1[0]   = C1[0]   - SUM*TAU;
       // Left 2 ==> C2
       //            C3
-      SUM     = C2[0]   + conj(V)*C3[0];
+      SUM     = C2[0]   + V2*C3[0];
       C2[0]   = C2[0]   - SUM*TAU;
       C3[0]   = C3[0]   - SUM*T2;
  }
