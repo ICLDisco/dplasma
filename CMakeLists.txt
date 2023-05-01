@@ -266,11 +266,11 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     # we need and not the default value provided to the first OPTION call.
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
     add_subdirectory(parsec)
-    # Import targets and load dependent libraries
-    find_package(parsec-submodule NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED)
-    set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
     message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
     message(STATUS "########################################################################")
+    # Import targets and load dependent libraries
+    find_package(parsec-submodule NO_DEFAULT_PATH PATHS ${CMAKE_CURRENT_BINARY_DIR}/parsec REQUIRED QUIET)
+    set(DPLASMA_FORCE_INTERNAL_PARSEC ${PaRSEC_FOUND} CACHE BOOL "Force using the internal PaRSEC submodule (submodule used in previous configure)" FORCE)
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
