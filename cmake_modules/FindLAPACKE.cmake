@@ -45,7 +45,7 @@
 #
 
 # ==============================================================================
-# Copyright (c) 2019-2020 The University of Tennessee and The University
+# Copyright (c) 2019-2023 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 #
@@ -302,16 +302,12 @@ foreach(_comp ${LAPACKE_FIND_COMPONENTS})
   else()
     message(FATAL_ERROR "Unknown component: ${_comp}")
   endif()
-  mark_as_advanced(
-    LAPACKE_${_comp}_LIB
-    LAPACKE_${_comp}_INCLUDE_DIR)
 endforeach()
 
 # ==============================================================================
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LAPACKE
-  FOUND_VAR LAPACKE_FOUND
   REQUIRED_VARS ${LAPACKE_REQUIRED_VARS}
   HANDLE_COMPONENTS)
 
@@ -389,22 +385,13 @@ if(LAPACKE_FOUND)
 
   # ----------------------------------------------------------------------------
 
-  if(NOT LAPACKE_FIND_QUIETLY)
-    message(STATUS "Found LAPACKE and defined the following imported targets:")
-    list(SORT LAPACKE_FIND_COMPONENTS) # print back in normal order
-    foreach(_comp ${LAPACKE_FIND_COMPONENTS})
-      message(STATUS  "  - LAPACKE::${_comp}:")
-      message(STATUS  "      + library: ${LAPACKE_${_comp}_LIB}")
-      message(STATUS  "      + include: ${LAPACKE_${_comp}_INCLUDE_DIR}")
-      message(VERBOSE "      + depends: ${_fallback_${_comp}}")
-    endforeach()
-  endif()
+  list(SORT LAPACKE_FIND_COMPONENTS) # print back in normal order
+  foreach(_comp ${LAPACKE_FIND_COMPONENTS})
+    message(TRACE "  - LAPACKE::${_comp}:")
+    message(TRACE "      + library: ${LAPACKE_${_comp}_LIB}")
+    message(TRACE "      + include: ${LAPACKE_${_comp}_INCLUDE_DIR}")
+    message(TRACE "      + depends: ${_fallback_${_comp}}")
+  endforeach()
 endif()
 
 # ==============================================================================
-
-mark_as_advanced(
-  LAPACKE_FOUND
-  LAPACKE_INCLUDE_DIRS
-  LAPACKE_LIBRARIES
-  )
