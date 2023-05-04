@@ -56,31 +56,27 @@ include(CheckCSourceCompiles)
 check_c_source_compiles("extern void Cblacs2sys_handle(void); int main(void) { Cblacs2sys_handle(); return 0; }" BLAS_HAS_ScaLAPACK)
 cmake_pop_check_state()
 
-if(NOT BLAS_HAS_ScaLAPACK)
+if(BLAS_HAS_ScaLAPACK)
+  list(APPEND ScaLAPACK_REQUIRED_VARS BLAS_HAS_ScaLAPACK)
 
+else(BLAS_HAS_ScaLAPACK)
+  if(BLAS_LIBRARIES)
+    list(GET BLAS_LIBRARIES 0 blas_main_library)
+    get_filename_component(blas_dir ${blas_main_library} DIRECTORY)
+  endif()
   set(ScaLAPACK_SEARCH_PATHS
-    ${ScaLAPACK_ROOT}
-    $ENV{ScaLAPACK_ROOT}
-    ${ScaLAPACK_ROOT}/scalapack
-    $ENV{ScaLAPACK_ROOT}/scalapack
-    ${BLAS_LIBRARY}
-    ${ScaLAPACK_DIR}
-    $ENV{ScaLAPACK_DIR}
-    ${CMAKE_PREFIX_PATH}
-    $ENV{CMAKE_PREFIX_PATH}
-    /usr
-    /usr/local/
+    ${blas_dir}
+    $ENV{MKLROOT}
+    $ENV{MKLROOT}/mkl
     /usr/local/opt # homebrew on mac
     /opt
     /opt/local
-    /opt/ScaLAPACK
   )
 
   set(LIB_PATH_SUFFIXES
-    lib64
-    lib
-    lib/x86_64-linux-gnu
-    lib32
+    intel64
+    mkl/lib mkl/lib/intel64
+    compiler/lib compiler/lib/intel64
   )
 
   if(APPLE)
@@ -89,28 +85,26 @@ if(NOT BLAS_HAS_ScaLAPACK)
     list(APPEND ScaLAPACK_SEARCH_PATHS "C:/Program Files (x86)/ScaLAPACK")
     list(APPEND ScaLAPACK_SEARCH_PATHS "C:/Program Files/ScaLAPACK")
   endif()
-  
-  find_library(ScaLAPACK_LIB
-    NAMES scalapack
+
+  # We actually need only the BLACS part, but it is inside ref-scalapack
+  # We use the lp64 always, as this is how our own generic headers declare the functions
+  find_library(ScaLAPACK_LIBRARY
+    NAMES mkl_blacs_openmpi_lp64 mkl_blacs_intelmpi_lp64 scalapack
     NAMES_PER_DIR
     PATHS ${ScaLAPACK_SEARCH_PATHS}
     PATH_SUFFIXES ${LIB_PATH_SUFFIXES})
-  if(ScaLAPACK_LIB)
+  list(APPEND ScaLAPACK_REQUIRED_VARS ScaLAPACK_LIBRARY)
+
+  if(ScaLAPACK_LIBRARY)
     # check it works
     cmake_push_check_state()
-    set(CMAKE_REQUIRED_LIBRARIES ${ScaLAPACK_LIB};LAPACKE::LAPACK;LAPACKE::BLAS;MPI::MPI_C)
+    set(CMAKE_REQUIRED_LIBRARIES ${ScaLAPACK_LIBRARY};LAPACKE::LAPACK;LAPACKE::BLAS;MPI::MPI_C)
     include(CheckCSourceCompiles)
     check_c_source_compiles("extern void Cblacs2sys_handle(void); int main(void) { Cblacs2sys_handle(); return 0; }" ScaLAPACK_FOUND_BLACS)
-    if(CMAKE_Fortran_COMPILER_WORKS)
-      include(CheckFortranFunctionExists)
-      check_fortran_function_exists(pdtrsm ScaLAPACK_FOUND_PDTRSM)
-    else()
-      check_c_source_compiles("extern void pdtrsm_(); int main(void) { pdtrsm_(); return 0; }" ScaLAPACK_FOUND_PDTRSM)
-    endif()
     cmake_pop_check_state()
-    list(APPEND ScaLAPACK_REQUIRED_VARS "ScaLAPACK_LIB;ScaLAPACK_FOUND_BLACS;ScaLAPACK_FOUND_PDTRSM")
+    list(APPEND ScaLAPACK_REQUIRED_VARS ScaLAPACK_FOUND_BLACS)
   endif()
-endif(NOT BLAS_HAS_ScaLAPACK)
+endif(BLAS_HAS_ScaLAPACK)
 
 
 include(FindPackageHandleStandardArgs)
@@ -120,8 +114,8 @@ find_package_handle_standard_args(ScaLAPACK
 
 if(ScaLAPACK_FOUND)
   set(ScaLAPACK_INCLUDE_DIRS "")
-  set(ScaLAPACK_LIBRARIES "${ScaLAPACK_LIB}")
-  get_filename_component(LIB_EXT "${ScaLAPACK_LIB}" EXT)
+  set(ScaLAPACK_LIBRARIES "${ScaLAPACK_LIBRARY}")
+  get_filename_component(LIB_EXT "${ScaLAPACK_LIBRARY}" EXT)
   if(LIB_EXT STREQUAL "" OR LIB_EXT STREQUAL ".framework")
      set(LIB_TYPE INTERFACE)
   elseif(LIB_EXT STREQUAL ".a" OR LIB_EXT STREQUAL ".lib")
@@ -134,9 +128,9 @@ if(ScaLAPACK_FOUND)
     set_target_properties(ScaLAPACK::scalapack PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${ScaLAPACK_INCLUDE_DIRS}")
   endif()
-  if(EXISTS "${ScaLAPACK_LIB}" AND NOT "${LIB_TYPE}" STREQUAL INTERFACE)
+  if(EXISTS "${ScaLAPACK_LIBRARY}" AND NOT "${LIB_TYPE}" STREQUAL INTERFACE)
     set_target_properties(ScaLAPACK::scalapack PROPERTIES
-      IMPORTED_LOCATION "${ScaLAPACK_LIB}")
+      IMPORTED_LOCATION "${ScaLAPACK_LIBRARY}")
     if(CMAKE_Fortran_COMPILER_WORKS)
       set_target_properties(ScaLAPACK::scalapack PROPERTIES
          LINKER_LANGUAGE "Fortran")
