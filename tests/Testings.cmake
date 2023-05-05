@@ -1,8 +1,3 @@
-# Prevent cmake from complaining about variable substitution
-if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 NEW)
-endif()
-
 #
 # A more compact representation of the DPLASMA tests. We can compose any number
 # of tests, by providing the epilogue in ALL_TESTS and have the corresponding

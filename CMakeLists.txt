@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required(VERSION 3.18)
 project (DPLASMA C)
 
 include(CMakePushCheckState)
@@ -17,22 +17,6 @@ set(DPLASMA_VERSION "${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}")
 ############################################################################
 # CMake Policies Tuning
 set(CMAKE_NO_SYSTEM_FROM_IMPORTED True)
-
-if(POLICY CMP0074)
-  # CMP0074: Starting with CMake 3.12, all FIND_<something> use <something>_ROOT in the search path
-  #          in addition to the specified paths
-  cmake_policy(SET CMP0074 NEW)
-endif(POLICY CMP0074)
-if(POLICY CMP0079)
-  # CMP0079: CMake 3.13 now allows the target_link_libraries() command to be called from any directory
-  # to add link dependencies and link interface libraries to targets created in other directories.
-  cmake_policy(SET CMP0079 NEW)
-endif(POLICY CMP0079)
-if(POLICY CMP0094)
-  # CMP0094: Starting with CMake 3.16, all FIND_Python will use the first matching version instead of
-  #          of searching for the largest available version number (which defeats our selection logic)
-  cmake_policy(SET CMP0094 NEW)
-endif(POLICY CMP0094)
 
 ############################################################################
 # Options
