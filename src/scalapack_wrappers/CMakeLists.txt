@@ -6,9 +6,9 @@ if(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
 endif(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
 
 if(NOT TARGET dplasma_scalapack_common)
-  find_package(ScaLAPACK)
-  if(NOT TARGET ScaLAPACK::scalapack)
-    return() # ScaLAPACK not found, can't build them
+  find_package(BLACS)
+  if(NOT TARGET BLACS::blacs)
+    return() # BLACS not found, can't build them
   endif()
   add_library(dplasma_scalapack_common OBJECT common.c)
   target_include_directories(dplasma_scalapack_common
@@ -18,7 +18,7 @@ if(NOT TARGET dplasma_scalapack_common)
     PUBLIC
     dplasma
     PaRSEC::parsec
-    ScaLAPACK::scalapack)
+    BLACS::blacs)
   set_target_properties(dplasma_scalapack_common PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
   if(SCALAPACK_SUP_UNDERSCORE)
     target_compile_definitions(dplasma_scalapack_common PUBLIC SCALAPACK_SUP_UNDERSCORE)
