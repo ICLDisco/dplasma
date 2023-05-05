@@ -41,7 +41,7 @@ function(precisions_rules_py)
   CAR(OUTPUTLIST ${PREC_RULE_DEFAULT_ARGS})
   # Everything else should be source files.
   CDR(SOURCES ${PREC_RULE_DEFAULT_ARGS})
-  MESSAGE(STATUS "Generate precision dependencies in ${CMAKE_CURRENT_SOURCE_DIR}\t${OUTPUTLIST}")
+  message(STATUS "Generate precision dependencies in ${CMAKE_CURRENT_SOURCE_DIR}\t${OUTPUTLIST}")
 
   set(PRECISIONPP_arg "-P")
   # By default the TARGETDIR is the current binary directory
@@ -128,6 +128,6 @@ function(precisions_rules_py)
     endif()
   endforeach()
 
-  #MESSAGE(STATUS "Generate precision dependencies in ${CMAKE_CURRENT_SOURCE_DIR}\t${OUTPUTLIST} : Done")
+  #message(STATUS "Generate precision dependencies in ${CMAKE_CURRENT_SOURCE_DIR}\t${OUTPUTLIST} : Done")
   set(${OUTPUTLIST} ${outputlist} PARENT_SCOPE)
 endfunction(precisions_rules_py)

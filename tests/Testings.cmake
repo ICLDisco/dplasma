@@ -1,7 +1,7 @@
 # Prevent cmake from complaining about variable substitution
-IF (CMAKE_VERSION VERSION_GREATER "3.1")
+if(POLICY CMP0054)
   cmake_policy(SET CMP0054 NEW)
-ENDIF (CMAKE_VERSION VERSION_GREATER "3.1")
+endif()
 
 #
 # A more compact representation of the DPLASMA tests. We can compose any number
