@@ -143,19 +143,6 @@ check_and_set_compiler_option(OPTION "-Og" NAME DPLASMA_HAVE_Og CONFIG RELWITHDE
 check_and_set_compiler_option(OPTION "-Wall" NAME DPLASMA_HAVE_WALL)
 check_and_set_compiler_option(OPTION "-Wextra" NAME DPLASMA_HAVE_WEXTRA)
 
-# Flex-generated files make some compilers generate a significant
-# amount of warnings. We define here warning silent options
-# that are passed only to Flex-generated files if they are
-# supported by the compilers.
-SET(DPLASMA_FLEX_GENERATED_OPTIONS)
-foreach(_flag "-Wno-misleading-indentation" "-Wno-sign-compare")
-  string(REPLACE "-" "_" SAFE_flag ${_flag})
-  check_c_compiler_flag("${_flag}" _has${SAFE_flag})
-  if( _has${_flag} )
-    list(APPEND DPLASMA_FLEX_GENERATED_OPTIONS "${_flag}")
-  endif( _has${_flag} )
-endforeach()
-
 #
 # flags for Intel icc
 #
