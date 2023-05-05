@@ -1,6 +1,4 @@
 # Generate ScaLAPACK wrappers provided by DPLASMA
-include(DplasmaCompilerFlags)
-
 if(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
   return() # told to not build them
 endif(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
