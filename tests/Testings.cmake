@@ -1,8 +1,3 @@
-# Prevent cmake from complaining about variable substitution
-IF (CMAKE_VERSION VERSION_GREATER "3.1")
-  cmake_policy(SET CMP0054 NEW)
-ENDIF (CMAKE_VERSION VERSION_GREATER "3.1")
-
 #
 # A more compact representation of the DPLASMA tests. We can compose any number
 # of tests, by providing the epilogue in ALL_TESTS and have the corresponding

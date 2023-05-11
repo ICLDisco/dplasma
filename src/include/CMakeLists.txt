@@ -37,7 +37,7 @@ add_custom_target(dplasma_includes_gen ALL
                  SOURCES ${generated_headers} )
 
 add_dependencies(dplasma_includes dplasma_includes_gen)
-	       
+
 ### install the dplasma headers
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/dplasma.h

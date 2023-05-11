@@ -1,15 +1,14 @@
 # Generate ScaLAPACK wrappers provided by DPLASMA
-include(DplasmaCompilerFlags)
-
 if(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
   return() # told to not build them
 endif(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
 
+if(NOT TARGET BLACS::blacs)
+  message(WARNING "DPLASMA ScaLAPACK wrappers were requested but BLACS could not be found: disabling the wrappers")
+  return()
+endif()
+
 if(NOT TARGET dplasma_scalapack_common)
-  find_package(BLACS)
-  if(NOT TARGET BLACS::blacs)
-    return() # BLACS not found, can't build them
-  endif()
   add_library(dplasma_scalapack_common OBJECT common.c)
   target_include_directories(dplasma_scalapack_common
     PUBLIC
