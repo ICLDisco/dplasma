@@ -170,7 +170,7 @@ void pdpotrf_w(char * UPLO,
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
           DESCA[WRAPPER_RSRC1_], DESCA[WRAPPER_CSRC1_], DESCA[WRAPPER_LLD1_]);
 
-    parsec_init_wrapped_call((void*)comm_A);
+    parsec_init_wrapped_call(comm_A);
 
     dplasma_enum_t uplo_parsec = OP_UPLO(*UPLO);
 

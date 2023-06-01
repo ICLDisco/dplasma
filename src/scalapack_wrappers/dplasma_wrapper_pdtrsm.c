@@ -252,7 +252,7 @@ void pdtrsm_w( char* SIDE, char* UPLO, char* TRANS, char* DIAG,
 
     assert(comm_index_A == comm_index_B);
 
-    parsec_init_wrapped_call((void*)comm_A);
+    parsec_init_wrapped_call(comm_A);
 
     int Am, An, Bm, Bn;
     if ( side == dplasmaLeft ) {

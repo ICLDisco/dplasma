@@ -193,7 +193,7 @@ void pdgetrf_w(int * M,
           DESCA[WRAPPER_M1_], DESCA[WRAPPER_N1_], DESCA[WRAPPER_MB1_], DESCA[WRAPPER_NB1_],
           DESCA[WRAPPER_RSRC1_], DESCA[WRAPPER_CSRC1_], DESCA[WRAPPER_LLD1_]);
 
-    parsec_init_wrapped_call((void*)comm_A);
+    parsec_init_wrapped_call(comm_A);
 
     parsec_matrix_block_cyclic_t dcA_lapack;
     parsec_matrix_block_cyclic_lapack_init(&dcA_lapack, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_LAPACK,
