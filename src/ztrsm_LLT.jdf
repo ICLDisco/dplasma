@@ -91,7 +91,6 @@ zgemm(k,m,n) [ flops = inline_c%{ return FLOPS_ZGEMM(descB->mb, CLEAN_NB(descB, 
           -> (m>=(k+2)) ? E zgemm(k+1, m, n)
 
 BODY [type=CUDA
-      dyld=cublasZgemm dyldtype=cublas_zgemm_t
       weight=(n+1-k)]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -112,7 +111,7 @@ BODY [type=CUDA
     cublasStatus_t status;
 
     cublasSetKernelStream( parsec_body.stream );
-    parsec_body.dyld_fn( dplasma_lapack_const(trans), 'N',
+    cublasZgemm( dplasma_lapack_const(trans), 'N',
                          descB->mb, tempnn, tempkm,
                          mzone,  (cuDoubleComplex*)C, lda,
                                  (cuDoubleComplex*)D, ldb,
