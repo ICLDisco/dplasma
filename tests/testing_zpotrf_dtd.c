@@ -106,9 +106,9 @@ parsec_core_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 
 #if defined(DPLASMA_HAVE_CUDA)
 static int
-gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
-                                       parsec_gpu_task_t * gpu_task,
-                                       parsec_gpu_exec_stream_t * gpu_stream)
+parsec_cuda_gemm(parsec_device_gpu_module_t * gpu_device,
+                 parsec_gpu_task_t * gpu_task,
+                 parsec_gpu_exec_stream_t * gpu_stream)
 {
     int transA, transB;
     int m, n, k, lda, ldb, ldc;
@@ -125,13 +125,12 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
     Bg = parsec_dtd_get_dev_ptr(this_task, 1);
     Cg = parsec_dtd_get_dev_ptr(this_task, 2);
 
-
 #if defined(PRECISION_z) || defined(PRECISION_c)
-    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
-    cuDoubleComplex mzone = make_cuDoubleComplex(-1., 0.);
+    cuDoubleComplex alphag = make_cuDoubleComplex( creal(alpha), cimag(alpha));
+    cuDoubleComplex betag  = make_cuDoubleComplex( creal(beta),  cimag(beta));
 #else
-    double zone  =  1.;
-    double mzone = -1.;
+    double alphag = alpha;
+    double betag  = beta;
 #endif
 
 #if defined(PARSEC_DEBUG_NOISIER)
@@ -147,58 +146,16 @@ gpu_kernel_submit_dpotrf_U_potrf_dgemm(parsec_device_gpu_module_t * gpu_device,
     cublasStatus_t status;
 
     cublasSetKernelStream( cuda_stream->cuda_stream );
-    cublasZgemm( 'N', dplasma_lapack_const(dplasmaConjTrans),
-                 n, n, k,
-                 mzone, (cuDoubleComplex*)Ag, lda,
+    cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
+                 m, n, k,
+                 alphag, (cuDoubleComplex*)Ag, lda,
                  (cuDoubleComplex*)Bg, ldb,
-                 zone,  (cuDoubleComplex*)Cg, ldc );
+                 betag,  (cuDoubleComplex*)Cg, ldc );
     status = cublasGetError();
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
                              {return -1;} );
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
-}
-
-int
-parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
-{
-    parsec_gpu_task_t *gpu_task;
-    int64_t task_load;
-    int dev_index;
-    int transA, transB;
-    int m, n, k, lda, ldb, ldc;
-    dplasma_complex64_t alpha, beta;
-    dplasma_complex64_t *A;
-    dplasma_complex64_t *B;
-    dplasma_complex64_t *C;
-
-    parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
-                           &A, &lda, &B, &ldb, &beta, &C, &ldc);
-
-    dev_index = parsec_get_best_device((parsec_task_t *) this_task, &task_load);
-    assert(dev_index >= 0);
-    if (!parsec_mca_device_is_gpu(dev_index)) {
-        /* Fallback to the CPU only version */
-        return parsec_core_gemm(es, this_task);
-    }
-
-    gpu_task = (parsec_gpu_task_t *) calloc(1, sizeof(parsec_gpu_task_t));
-    PARSEC_OBJ_CONSTRUCT(gpu_task, parsec_list_item_t);
-    gpu_task->ec = (parsec_task_t *) this_task;
-    gpu_task->submit = &gpu_kernel_submit_dpotrf_U_potrf_dgemm;
-    gpu_task->task_type = 0;
-    gpu_task->load = task_load;
-    gpu_task->last_data_check_epoch = -1;	/* force at least one validation for the task */
-    gpu_task->pushout = 0;
-    gpu_task->flow[0] = NULL; /*&flow_of_dpotrf_U_potrf_dgemm_for_C;*/
-    if ((m == (k + 1))) {
-        gpu_task->pushout |= (1 << 0);
-    }
-    gpu_task->flow[1] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_A; */
-    gpu_task->flow[2] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_B; */
-
-    (void)es;
-    return parsec_cuda_kernel_scheduler(es, gpu_task, dev_index);
 }
 #endif /* defined(DPLASMA_HAVE_CUDA) */
 
@@ -273,12 +230,12 @@ int main(int argc, char **argv)
                                             /* tempmm   */ sizeof(int), PARSEC_VALUE,
                                             /* mb       */ sizeof(int), PARSEC_VALUE,
                                             /* mb       */ sizeof(int), PARSEC_VALUE,
-                                            /* alpha    */ sizeof(double), PARSEC_VALUE,
+                                            /* alpha    */ sizeof(dplasma_complex64_t), PARSEC_VALUE,
                                             /* A(n, k)  */ PASSED_BY_REF, PARSEC_INPUT | TILE_FULL,
                                             /* ldan     */ sizeof(int), PARSEC_VALUE,
                                             /* A(m, k)  */ PASSED_BY_REF, PARSEC_INPUT | TILE_FULL,
                                             /* ldam     */ sizeof(int), PARSEC_VALUE,
-                                            /* beta     */ sizeof(double), PARSEC_VALUE,
+                                            /* beta     */ sizeof(dplasma_complex64_t), PARSEC_VALUE,
                                             /* A(m, n)  */ PASSED_BY_REF, PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
                                             /* ldan     */ sizeof(int), PARSEC_VALUE,
                                             PARSEC_DTD_ARG_END);
@@ -288,7 +245,7 @@ int main(int argc, char **argv)
     int gemm_device = PARSEC_DEV_CPU;
 #if defined(DPLASMA_HAVE_CUDA)
     /* If CUDA is available, prefer the CUDA version, so add it first to the chores */
-    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CUDA, gpu_kernel_submit_dpotrf_U_potrf_dgemm);
+    parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CUDA, parsec_cuda_gemm);
     gemm_device |= PARSEC_DEV_CUDA;
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
     parsec_dtd_task_class_add_chore(dtd_tp, gemm_tc, PARSEC_DEV_CPU, parsec_core_gemm);
