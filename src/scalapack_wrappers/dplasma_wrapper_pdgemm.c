@@ -280,7 +280,7 @@ void pdgemm_w( char* TRANSA, char* TRANSB,
     assert(comm_index_A == comm_index_B);
     assert(comm_index_A == comm_index_C);
 
-    parsec_init_wrapped_call((void*)comm_A);
+    parsec_init_wrapped_call(comm_A);
 
 //    A: M x K
 //    B: K x N

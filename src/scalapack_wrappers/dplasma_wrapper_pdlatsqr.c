@@ -260,7 +260,7 @@ void pdlatsqr_w(int * M,
         return;
     }
 
-    parsec_init_wrapped_call((void*)comm_A);
+    parsec_init_wrapped_call(comm_A);
 
     parsec_matrix_block_cyclic_t dcA_lapack;
     parsec_matrix_block_cyclic_lapack_init(&dcA_lapack, PARSEC_MATRIX_DOUBLE, PARSEC_MATRIX_LAPACK,
