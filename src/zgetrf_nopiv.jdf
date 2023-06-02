@@ -196,7 +196,6 @@ loc_C = %{ return LOC(descA, m, n); %}
             -> ((m >  (k+1)) && (n >  (k+1))) ? C zgemm(k+1, m, n)  /* dep OUT: rely on datacopy dtt for sending */
 
 BODY [type=CUDA
-      dyld=cublasZgemm dyldtype=cublas_zgemm_t
       weight="dplasma_imin( m-k, n-k )"
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -226,7 +225,7 @@ BODY [type=CUDA
                  k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 
     cublasSetKernelStream( parsec_body.stream );
-    parsec_body.dyld_fn( 'N', 'N',
+    cublasZgemm( 'N', 'N',
              tempmm, tempnn, descA->mb,
              mzone, (cuDoubleComplex*)A, ldam_A,
                     (cuDoubleComplex*)B, ldak_B,
