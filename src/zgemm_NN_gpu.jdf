@@ -362,8 +362,7 @@ RW   C <- k == 0 ? C READ_C(m, n)
 CTL Z <- ( k > 0 ) & ((k % tD) == 0)              ? Z LOCAL_BARRIER(x, y, z, u, v)
       -> ((k == descB->mt-1) | (k == (z+1)*tD-1)) ? Z LOCAL_BARRIER(xn, yn, zn, u, v)
 
-BODY [type=CUDA
-      weight=(descA->nt-k)]
+BODY [type=CUDA]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex lalpha = make_cuDoubleComplex(creal(alpha), cimag(alpha));

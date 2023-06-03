@@ -196,7 +196,6 @@ loc_C = %{ return LOC(descA, m, n); %}
             -> ((m >  (k+1)) && (n >  (k+1))) ? C zgemm(k+1, m, n)  /* dep OUT: rely on datacopy dtt for sending */
 
 BODY [type=CUDA
-      weight="dplasma_imin( m-k, n-k )"
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}

@@ -206,7 +206,6 @@ CTL ctla -> (k < (descA->mt-lookQ)) ? ctla RING_A(k+lookQ, m, n%Q)
 CTL ctlb -> (k < (descA->mt-lookP)) ? ctlb RING_B(n, k+lookP, m%P)
 
 BODY [type=CUDA
-      weight=(descA->mt-k)
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
       C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
