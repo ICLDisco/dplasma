@@ -33,9 +33,6 @@ option(BUILD_SHARED_LIBS
 option(DPLASMA_WITH_SCALAPACK_WRAPPER
   "Build a ScaLAPACK compatible API to DPLASMA" ON)
 
-option(DPLASMA_WITH_RECURSIVE
-  "Enable recursive kernels to be called when available" ON)
-
 option(DPLASMA_TRACE_KERNELS
   "Enable tracing dplasma kernel calls for debugging (slow)" OFF)
 

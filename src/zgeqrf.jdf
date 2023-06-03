@@ -13,10 +13,8 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
-#if defined(DPLASMA_WITH_RECURSIVE)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
-#endif
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include "cores/dplasma_zcores.h"
