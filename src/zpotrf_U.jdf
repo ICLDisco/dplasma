@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2022 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -11,15 +11,13 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
-#if defined(DPLASMA_WITH_RECURSIVE)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
-#endif
+static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_callback_t* data);
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
 #include "potrf_cublas_utils.h"
-
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 /* Define the different shapes this JDF is using */
@@ -49,10 +47,6 @@ extern "C" %{
  * tasks and that information is lost) the approach is to force a reshapping.
  *
  */
-
-#if defined(DPLASMA_WITH_RECURSIVE)
-static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_callback_t* data);
-#endif  /* defined(DPLASMA_WITH_RECURSIVE) */
 
 /*
  * Priorities used in this jdf:
@@ -544,7 +538,6 @@ END
 
 extern "C" %{
 
-#if defined(DPLASMA_WITH_RECURSIVE)
 /*
  * A function to recursively update the value of the INFO argument for
  * recursive calls. We need a special function because the recursive calls being asynchronous
@@ -567,7 +560,6 @@ static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
     }
     dplasma_zpotrf_Destruct(_tp);
 }
-#endif  /* defined(DPLASMA_WITH_RECURSIVE) */
 
 %}
 
