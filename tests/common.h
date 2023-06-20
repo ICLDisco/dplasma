@@ -283,6 +283,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                "</DartMeasurement>\n",                                  \
                gflops);                                                 \
     }                                                                   \
+    if(rank==0) fflush(stdout);                                         \
     (void)gflops;
 
 #endif /* _TESTSCOMMON_H */
