@@ -67,6 +67,8 @@ double time_elapsed = 0.0;
 double sync_time_elapsed = 0.0;
 double alpha = 1.;
 
+uint64_t *dev_stats = NULL;
+
 /**********************************
  * Command line arguments
  **********************************/
@@ -733,6 +735,8 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
     parsec_info_id_t CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
 #endif
+
+    if(NULL != dev_stats) parsec_devices_free_statistics(&dev_stats);
 
     parsec_fini(&parsec);
 
