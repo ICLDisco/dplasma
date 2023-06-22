@@ -365,7 +365,6 @@ CTL Z <- ( k > 0 ) & ((k % tD) == 0)              ? Z LOCAL_BARRIER(x, y, z, u, 
       -> ((k == descB->mt-1) | (k == (z+1)*tD-1)) ? Z LOCAL_BARRIER(xn, yn, zn, u, v)
 
 BODY [type=CUDA
-      dyld=cublasZgemm dyldtype=cublas_zgemm_t
       weight=(descA->nt-k)]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -396,7 +395,7 @@ BODY [type=CUDA
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
-    parsec_body.dyld_fn( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
+    cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
              tempmm, tempnn, tempkk,
              lalpha, (cuDoubleComplex*)A, ldam,
                      (cuDoubleComplex*)B, ldbk,

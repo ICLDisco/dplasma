@@ -2,12 +2,10 @@
 #define DPLASMA_CONFIG_H_HAS_BEEN_INCLUDED
 
 /* Optional features */
-#cmakedefine DPLASMA_WITH_RECURSIVE
 #cmakedefine DPLASMA_TRACE_KERNELS
 
 /* GPU Backends */
 #cmakedefine DPLASMA_HAVE_CUDA
-#cmakedefine DPLASMA_GPU_WITH_MAGMA
 
 /* system feature tests */
 #cmakedefine DPLASMA_HAVE_COMPLEX_H

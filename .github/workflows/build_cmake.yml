@@ -29,7 +29,7 @@ jobs:
       BUILD_DIRECTORY : "${{github.workspace}}/build/${{ matrix.build_type }}/shared_${{matrix.shared_type}}"
       INSTALL_DIRECTORY : "${{github.workspace}}/install/${{ matrix.build_type }}/shared_${{matrix.shared_type}}"
       RUNNER_ENV : github_runner
-      # Disable DPLASMA_WITH_RECURSIVE in CI tests until a real solution to https://github.com/ICLDisco/parsec/issues/548 is implemented
+      # Disable RECURSIVE in CI tests until a real solution to https://github.com/ICLDisco/parsec/issues/548 is implemented
       BUILD_CONFIG : >
         -G Ninja
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -37,7 +37,7 @@ jobs:
         -DMPIEXEC_PREFLAGS='--bind-to;none;--oversubscribe'
         -DCMAKE_INSTALL_PREFIX=$INSTALL_DIRECTORY
         -DDPLASMA_PRECISIONS=d
-        -DPLASMA_WITH_RECURSIVE=OFF
+        -DPARSEC_HAVE_DEV_RECURSIVE_SUPPORT=OFF
 
     steps:
     - uses: actions/checkout@v2

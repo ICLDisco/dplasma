@@ -206,7 +206,6 @@ CTL ctla -> (k < (descA->mt-lookQ)) ? ctla RING_A(k+lookQ, m, n%Q)
 CTL ctlb -> (k < (descA->mt-lookP)) ? ctlb RING_B(k+lookP, n, m%P)
 
 BODY [type=CUDA
-      dyld=cublasZgemm dyldtype=cublas_zgemm_t
       weight=(descA->mt-k)
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
@@ -232,7 +231,7 @@ BODY [type=CUDA
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
-    parsec_body.dyld_fn( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
+    cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
              tempmm, tempnn, tempkk,
              lalpha, (cuDoubleComplex*)A, ldak,
                      (cuDoubleComplex*)B, ldbk,
