@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -16,79 +16,7 @@ static int check_solution( parsec_context_t *parsec, int loud,
                                                       int Bm, int Bn, int Bseed,
                            dplasma_complex64_t beta,  int M,  int N,  int Cseed,
                            parsec_matrix_block_cyclic_t *dcCfinal );
-
-static void warmup_zgemm(int rank, int nodes, int random_seed, parsec_context_t *parsec)
-{
-    int MB = 64;
-    int NB = 64;
-    int KB = 64;
-    int MT = nodes;
-    int NT = 1;
-    int KT = 1;
-    int M = MT*MB;
-    int N = NT*NB;
-    int K = KT*KB;
-    int did;
-    unsigned int rs = (unsigned int)random_seed;
-    int Aseed = rand_r(&rs);
-    int Bseed = rand_r(&rs);
-    int Cseed = rand_r(&rs);
-    int tA = dplasmaNoTrans;
-    int tB = dplasmaNoTrans;
-    dplasma_complex64_t alpha =  0.51;
-    dplasma_complex64_t beta  = -0.42;
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
-            parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
-                                   rank, MB, KB, M, K, 0, 0,
-                                   M, K, nodes, 1, 1, 1, 0, 0));
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
-            parsec_matrix_block_cyclic, (&dcB, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
-                                   rank, KB, NB, K, N, 0, 0,
-                                   K, N, 1, 1, 1, 1, 0, 0));
-
-    PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
-            parsec_matrix_block_cyclic, (&dcC, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
-                                   rank, MB, NB, M, N, 0, 0,
-                                   M, N, nodes, 1, 1, 1, 0, 0));
-
-    /* Do the CPU warmup first */
-    dplasma_zplrnt( parsec, 0, &dcA.super, Aseed);
-    dplasma_zplrnt( parsec, 0, &dcB.super, Bseed);
-    dplasma_zplrnt( parsec, 0, &dcC.super, Cseed);
-    parsec_taskpool_t *zgemm = dplasma_zgemm_New(tA, tB, alpha, &dcA.super, &dcB.super, beta, &dcC.super);
-    zgemm->devices_index_mask = 1<<0; /* Only CPU ! */
-    parsec_context_add_taskpool(parsec, zgemm);
-    parsec_context_start(parsec);
-    parsec_context_wait(parsec);
-    dplasma_zgemm_Destruct(zgemm);
-
-    /* Now do the other devices, skipping RECURSIVE */
-    /* We know that there is a GPU-enabled version of this operation, so warm it up if some device is enabled */
-    for(did = 2; did < (int)parsec_nb_devices; did++) {
-        for(int i = 0; i < MT; i++) {
-            for(int j = 0; j < NT; j++) {
-                if( rank == (int)dcC.super.super.rank_of(&dcC.super.super, i, j) ) {
-                    parsec_data_t *dta = dcC.super.super.data_of(&dcC.super.super, i, j);
-                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
-                }
-            }
-        }
-        dplasma_zplrnt( parsec, 0, &dcA.super, Aseed);
-        dplasma_zplrnt( parsec, 0, &dcB.super, Bseed);
-        dplasma_zplrnt( parsec, 0, &dcC.super, Cseed);
-        dplasma_zgemm(parsec, tA, tB, alpha, &dcA.super, &dcB.super, beta, &dcC.super);
-        parsec_devices_release_memory();
-    }
-
-    parsec_data_free(dcA.mat); dcA.mat = NULL;
-    parsec_tiled_matrix_destroy( &dcA.super );   
-    parsec_data_free(dcB.mat); dcB.mat = NULL;
-    parsec_tiled_matrix_destroy( &dcB.super );   
-    parsec_data_free(dcC.mat); dcC.mat = NULL;
-    parsec_tiled_matrix_destroy( &dcC.super );   
-}
+static void warmup_zgemm(int rank, int nodes, int random_seed, parsec_context_t *parsec);
 
 int main(int argc, char ** argv)
 {
@@ -356,4 +284,77 @@ static int check_solution( parsec_context_t *parsec, int loud,
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcC);
 
     return info_solution;
+}
+
+static void warmup_zgemm(int rank, int nodes, int random_seed, parsec_context_t *parsec)
+{
+    int MB = 64;
+    int NB = 64;
+    int KB = 64;
+    int MT = nodes;
+    int NT = 1;
+    int KT = 1;
+    int M = MT*MB;
+    int N = NT*NB;
+    int K = KT*KB;
+    int did;
+    unsigned int rs = (unsigned int)random_seed;
+    int Aseed = rand_r(&rs);
+    int Bseed = rand_r(&rs);
+    int Cseed = rand_r(&rs);
+    int tA = dplasmaNoTrans;
+    int tB = dplasmaNoTrans;
+    dplasma_complex64_t alpha =  0.51;
+    dplasma_complex64_t beta  = -0.42;
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+            parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                                   rank, MB, KB, M, K, 0, 0,
+                                   M, K, nodes, 1, 1, 1, 0, 0));
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcB, 1,
+            parsec_matrix_block_cyclic, (&dcB, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                                   rank, KB, NB, K, N, 0, 0,
+                                   K, N, 1, 1, 1, 1, 0, 0));
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
+            parsec_matrix_block_cyclic, (&dcC, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                                   rank, MB, NB, M, N, 0, 0,
+                                   M, N, nodes, 1, 1, 1, 0, 0));
+
+    /* Do the CPU warmup first */
+    dplasma_zplrnt( parsec, 0, &dcA.super, Aseed);
+    dplasma_zplrnt( parsec, 0, &dcB.super, Bseed);
+    dplasma_zplrnt( parsec, 0, &dcC.super, Cseed);
+    parsec_taskpool_t *zgemm = dplasma_zgemm_New(tA, tB, alpha, &dcA.super, &dcB.super, beta, &dcC.super);
+    zgemm->devices_index_mask = 1<<0; /* Only CPU ! */
+    parsec_context_add_taskpool(parsec, zgemm);
+    parsec_context_start(parsec);
+    parsec_context_wait(parsec);
+    dplasma_zgemm_Destruct(zgemm);
+
+    /* Now do the other devices, skipping RECURSIVE */
+    /* We know that there is a GPU-enabled version of this operation, so warm it up if some device is enabled */
+    for(did = 2; did < (int)parsec_nb_devices; did++) {
+        for(int i = 0; i < MT; i++) {
+            for(int j = 0; j < NT; j++) {
+                if( rank == (int)dcC.super.super.rank_of(&dcC.super.super, i, j) ) {
+                    parsec_data_t *dta = dcC.super.super.data_of(&dcC.super.super, i, j);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                }
+            }
+        }
+        dplasma_zplrnt( parsec, 0, &dcA.super, Aseed);
+        dplasma_zplrnt( parsec, 0, &dcB.super, Bseed);
+        dplasma_zplrnt( parsec, 0, &dcC.super, Cseed);
+        dplasma_zgemm(parsec, tA, tB, alpha, &dcA.super, &dcB.super, beta, &dcC.super);
+        parsec_devices_release_memory();
+    }
+
+    parsec_data_free(dcA.mat); dcA.mat = NULL;
+    parsec_tiled_matrix_destroy( &dcA.super );
+    parsec_data_free(dcB.mat); dcB.mat = NULL;
+    parsec_tiled_matrix_destroy( &dcB.super );
+    parsec_data_free(dcC.mat); dcC.mat = NULL;
+    parsec_tiled_matrix_destroy( &dcC.super );
 }

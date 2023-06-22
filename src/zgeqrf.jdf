@@ -497,7 +497,6 @@ BODY [type=CUDA device=%{ return n; %}
                          parsec_body.stream );
 
       parsec_gpu_push_workspace(gpu_device, gpu_stream);
-      parsec_gpu_push_workspace(gpu_device, gpu_stream);
 }
 END
 

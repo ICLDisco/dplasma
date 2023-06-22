@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2017-2020 The University of Tennessee and The University
+ * Copyright (c) 2017-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -18,7 +18,7 @@ extern "C" %{
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
-    
+
 static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
 {
     int xn = *x, yn = *y, zn = *z;
@@ -41,7 +41,7 @@ static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
         } else {
             zn = zn+1;
         }
-        
+
         l--;
     }
     *x = xn;
@@ -58,13 +58,13 @@ static int succ_x(int x, int y, int z, int xMax, int yMax, int zMax, int l)
 static int succ_y(int x, int y, int z, int xMax, int yMax, int zMax, int l)
 {
     succ(&x, &y, &z, xMax, yMax, zMax, l);
-    return y;  
+    return y;
 }
 
 static int succ_z(int x, int y, int z, int xMax, int yMax, int zMax, int l)
 {
     succ(&x, &y, &z, xMax, yMax, zMax, l);
-    return z;  
+    return z;
 }
 
 static void pred(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)
@@ -356,7 +356,7 @@ GEMM(m, n, k)
 
 READ A <- A READ_A(m, k, x, y, z)
 READ B <- B READ_B(k, n, x, y, z)
-RW   C <- k == 0 ? C READ_C(m, n)                    
+RW   C <- k == 0 ? C READ_C(m, n)
                  : C GEMM(m, n, k-1 )
        -> k + 1 == descB->mt ? descC(m, n)
                              : C GEMM(m, n, k+1)
