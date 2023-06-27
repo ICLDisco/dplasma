@@ -165,8 +165,7 @@ RW   C <- (k == 0)             ? ddescC(m, n)         [ type        = %{ return 
 CTL ctla -> (k < (descA->nt-lookQ)) ? ctla READ_A(m, k+lookQ)
 CTL ctlb -> (k < (descA->nt-lookP)) ? ctlb READ_B(k+lookP, n)
 
-BODY [type=CUDA
-      weight=(descA->nt-k)]
+BODY [type=CUDA]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex lalpha = make_cuDoubleComplex(creal(alpha), cimag(alpha));

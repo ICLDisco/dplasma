@@ -61,6 +61,10 @@ static void zpotrf_U_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
  * WARNING: If mt is greater than 1200, we might get integer overflow.
  */
 
+static int64_t zpotrf_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev);
+static int64_t ztrsm_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev);
+static int64_t zherk_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev);
+static int64_t zgemm_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev);
 %}
 
 /* Globals
@@ -80,7 +84,9 @@ POWorkspaceID [type = "int" hidden = on default = -1 ]
 /**************************************************
  *               potrf_zpotrf                     *
  **************************************************/
-potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLEAN_NB(descA, k) ); %}]
+potrf_zpotrf(k) [high_priority = on
+                 flops = inline_c %{ return FLOPS_ZPOTRF( CLEAN_NB(descA, k) ); %}
+                 time_estimate = zpotrf_time_estimate]
 
 // Execution space
 k = 0 .. descA->nt-1
@@ -182,7 +188,9 @@ END
 /**************************************************
  *               potrf_ztrsm                      *
  **************************************************/
-potrf_ztrsm(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, descA->mb, CLEAN_NB(descA, n)); %}]
+potrf_ztrsm(k, n) [high_priority = on
+                   flops = inline_c %{ return FLOPS_ZTRSM(PlasmaLeft, descA->mb, CLEAN_NB(descA, n)); %}
+                   time_estimate = ztrsm_time_estimate]
 
 // Execution space
 k = 0   .. descA->nt-2
@@ -207,8 +215,7 @@ RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - k - n - 1) * (n - k) : PRI_MAX
 
-BODY [type=CUDA
-      weight=(k+n)]
+BODY [type=CUDA]
 {
     int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
     int ldak_T = LDA(ddescA, T);
@@ -294,7 +301,9 @@ END
 /**************************************************
  *               potrf_zherk                      *
  **************************************************/
-potrf_zherk(k, n) [high_priority = on flops = inline_c %{ return FLOPS_ZHERK(CLEAN_NB(descA, n), descA->mb); %}]
+potrf_zherk(k, n) [high_priority = on
+                   flops = inline_c %{ return FLOPS_ZHERK(CLEAN_NB(descA, n), descA->mb); %}
+                   time_estimate = zherk_time_estimate]
 
 // Execution space
 k = 0   .. descA->nt-2
@@ -316,8 +325,7 @@ RW    T <- (k == 0)   ? ddescA(n, n)          [ type        = %{ return ADTT_REA
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * (n - k) : PRI_MAX
 
-BODY [type=CUDA
-      weight=(k+n)]
+BODY [type=CUDA]
 {
     int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
     int ldak = LDA(ddescA, A);
@@ -396,7 +404,8 @@ END
  *               potrf_zgemm                      *
  **************************************************/
 // Name
-potrf_zgemm(m, n, k) [ flops = inline_c %{ return FLOPS_ZGEMM(descA->mb, CLEAN_NB(descA, n), descA->nb); %}]
+potrf_zgemm(m, n, k) [ flops = inline_c %{ return FLOPS_ZGEMM(descA->mb, CLEAN_NB(descA, n), descA->nb); %}
+                       time_estimate = zgemm_time_estimate]
 
 // Execution space
 k = 0   .. descA->mt-3
@@ -421,7 +430,6 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - m - n - 3) * (n - m) + 6 * (n - k) : PRI_MAX
 
 BODY [type=CUDA
-      weight=(m+1-k)
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -537,6 +545,24 @@ BODY
 END
 
 extern "C" %{
+
+/* Compute the time estimates based on device capabilities and flops for the task */
+static int64_t zpotrf_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev) {
+    int mb = ((parsec_zpotrf_U_taskpool_t*)task->taskpool)->_g_descA->mb;
+    return (int64_t)FLOPS_ZPOTRF(mb) / dev->gflops_fp64;
+}
+static int64_t ztrsm_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev) {
+    int mb = ((parsec_zpotrf_U_taskpool_t*)task->taskpool)->_g_descA->mb;
+    return (int64_t)FLOPS_ZTRSM(PlasmaLeft, mb, mb) / dev->gflops_fp64;
+}
+static int64_t zherk_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev) {
+    int mb = ((parsec_zpotrf_U_taskpool_t*)task->taskpool)->_g_descA->mb;
+    return (int64_t)FLOPS_ZHERK(mb, mb) / dev->gflops_fp64;
+}
+static int64_t zgemm_time_estimate(const parsec_task_t *task, parsec_device_module_t *dev) {
+    int mb = ((parsec_zpotrf_U_taskpool_t*)task->taskpool)->_g_descA->mb;
+    return (int64_t)FLOPS_ZGEMM(mb, mb, mb) / dev->gflops_fp64;
+}
 
 /*
  * A function to recursively update the value of the INFO argument for

@@ -89,8 +89,7 @@ zgemm(k,m,n) [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), descB->
           -> (n>=(k+2)) ? E zgemm(k+1, m, n)
           -> ((k+1)==n) ? B ztrsm(n, m)
 
-BODY [type=CUDA
-      weight=(n+1-k)]
+BODY [type=CUDA]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex mzone = make_cuDoubleComplex(-1., 0.);

@@ -157,7 +157,7 @@ int
 parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
     parsec_gpu_task_t *gpu_task;
-    double ratio;
+    int64_t task_load;
     int dev_index;
     int transA, transB;
     int m, n, k, lda, ldb, ldc;
@@ -169,8 +169,7 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     parsec_dtd_unpack_args(this_task, &transA, &transB, &m, &n, &k, &alpha,
                            &A, &lda, &B, &ldb, &beta, &C, &ldc);
 
-    ratio = ((m + 1) - k);
-    dev_index = parsec_get_best_device((parsec_task_t *) this_task, ratio);
+    dev_index = parsec_get_best_device((parsec_task_t *) this_task, &task_load);
     assert(dev_index >= 0);
     if (dev_index < 2) {
         /* Fallback to the CPU only version */
@@ -182,7 +181,7 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     gpu_task->ec = (parsec_task_t *) this_task;
     gpu_task->submit = &gpu_kernel_submit_dpotrf_U_potrf_dgemm;
     gpu_task->task_type = 0;
-    gpu_task->load = ratio * parsec_device_sweight[dev_index];
+    gpu_task->load = task_load;
     gpu_task->last_data_check_epoch = -1;	/* force at least one validation for the task */
     gpu_task->pushout = 0;
     gpu_task->flow[0] = NULL; /*&flow_of_dpotrf_U_potrf_dgemm_for_C;*/
@@ -191,7 +190,6 @@ parsec_core_cuda_gemm(parsec_execution_stream_t *es, parsec_task_t *this_task)
     }
     gpu_task->flow[1] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_A; */
     gpu_task->flow[2] = NULL;  /* &flow_of_dpotrf_U_potrf_dgemm_for_B; */
-    parsec_device_load[dev_index] += gpu_task->load;
 
     (void)es;
     return parsec_cuda_kernel_scheduler(es, gpu_task, dev_index);
