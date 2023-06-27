@@ -174,7 +174,7 @@ int dplasma_get_or_construct_datatype(parsec_datatype_t *newtype, parsec_datatyp
 #ifdef REUSE_ARENA_DATATYPE
     dplasma_datatype_t * dtt_entry = NULL;
     char static_desc[DATATYPE_KEY_STR_SZ];
-    snprintf( static_desc, DATATYPE_KEY_STR_SZ, "%p|%d|%d|%d|%d|%d|%d", (void*)oldtype, uplo, diag, m, n, ld, resized);
+    snprintf( static_desc, DATATYPE_KEY_STR_SZ, "%"PRIxPTR"|%d|%d|%d|%d|%d|%d", (intptr_t)oldtype, uplo, diag, m, n, ld, resized);
     parsec_key_t k = (uint64_t)static_desc;
 
     if( NULL == dplasma_datatypes ) {

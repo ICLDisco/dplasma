@@ -65,7 +65,7 @@ static int dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc, parsec_
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
 
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
-    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%p|-1|-1|-1", dc, adt.opaque_dtt);
+    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt.opaque_dtt);
     parsec_key_t k = (uint64_t)static_desc;
     if( NULL == dplasma_datatypes_lapack_helper ) {
         dplasma_datatypes_lapack_helper = PARSEC_OBJ_NEW(parsec_hash_table_t);
@@ -87,8 +87,8 @@ static int dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc, parsec_
     dtt_entry->adt = adt;
     parsec_hash_table_nolock_insert(dplasma_datatypes_lapack_helper, &dtt_entry->ht_item);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-        " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
-        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, adt.opaque_dtt, adt.arena, static_desc);
+        " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %"PRIxPTR" arena %p (%30s)",
+        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, (intptr_t)adt.opaque_dtt, adt.arena, static_desc);
     return 0;
 }
 
@@ -120,8 +120,8 @@ static int dplasma_set_info_to_dtt( const dplasma_data_collection_t *dc, parsec_
     dtt_entry->adt = adt;
     parsec_hash_table_nolock_insert(dplasma_datatypes_lapack_helper, &dtt_entry->ht_item);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-        " insert dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
-        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, adt.opaque_dtt, adt.arena, static_desc);
+        " insert dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %"PRIxPTR" arena %p (%30s)",
+        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, (intptr_t)adt.opaque_dtt, adt.arena, static_desc);
     return 0;
 }
 
@@ -139,7 +139,7 @@ int dplasma_get_info_from_datatype( const dplasma_data_collection_t *dc, parsec_
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
-    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%p|-1|-1|-1", dc, dtt);
+    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)dtt);
     parsec_key_t k = (uint64_t)static_desc;
     assert(dplasma_datatypes_lapack_helper!= NULL);
     dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
@@ -184,14 +184,14 @@ int dplasma_cleanup_datatype_info( const dplasma_data_collection_t *dc,
             info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, adt->opaque_dtt, adt->arena, static_desc);
         dplasma_datatypes_lapack_helper_release((void*)dtt_entry, NULL);
 
-        snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%p|-1|-1|-1", dc, adt->opaque_dtt);
+        snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt->opaque_dtt);
         k = (uint64_t)static_desc;
         dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
         if(dtt_entry != NULL){ /* same desc + dtt can be reuse for several loc & shape */
             PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-                " remove dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
+                " remove dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %"PRIxPTR" arena %p (%30s)",
                 dtt_entry->info.lda, dtt_entry->info.rows, dtt_entry->info.cols, dtt_entry->info.loc, dtt_entry->info.shape, dtt_entry->info.layout,
-                adt->opaque_dtt, adt->arena, static_desc);
+                (intptr_t)adt->opaque_dtt, adt->arena, static_desc);
             dplasma_datatypes_lapack_helper_release((void*)dtt_entry, NULL);
         }
         return 0;
@@ -255,8 +255,8 @@ static parsec_data_t* data_of(parsec_data_collection_t *desc, ...)
     assert(rc == 0);
     if(cp->dtt != adt->opaque_dtt){
         PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-            "data_of CP %p [old type %p] loc %d -> dtt %p target_shape %d layout %d",
-            cp, cp->dtt, loc, adt->opaque_dtt, info.shape, info.layout);
+            "data_of CP %p [old type %"PRIxPTR"] loc %d -> dtt %"PRIxPTR" target_shape %d layout %d",
+            cp, (intptr_t)cp->dtt, loc, (intptr_t)adt->opaque_dtt, info.shape, info.layout);
         dt = parsec_data_create_with_type( dt->dc,
                                            dt->key, cp->device_private, dt->nb_elts,
                                            adt->opaque_dtt);
