@@ -242,7 +242,7 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
     parsec_zpotrf->_g_cuda_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
     (void)uid; (void)workspace_info_name;
 #endif
-#if defined(PARSEC_HAVE_HIP)
+#if defined(DPLASMA_HAVE_HIP)
     /* It doesn't cost anything to define these infos if we have HIP but
      * don't have GPUs on the current machine, so we do it non-conditionally */
     parsec_zpotrf->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
