@@ -178,24 +178,24 @@ END
 BODY [type=HIP]
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
-    int ldak = BLKLDD( descA, k );
+    int ldak = LDA(descA, T);
 
     rocblas_status status;
     rocblas_fill rocblas_uplo;
     dplasma_potrf_gpu_workspaces_t *wp;
     int *d_iinfo;
+    dplasma_hip_handles_t *handles;
 
     if( PlasmaLower == uplo )
         rocblas_uplo = rocblas_fill_lower;
     if( PlasmaUpper == uplo )
         rocblas_uplo = rocblas_fill_upper;
 
-    dplasma_hip_handles_t *handles;
     handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
-
     wp = parsec_info_get(&gpu_device->super.infos, hip_workspaces_infokey);
     assert(NULL != wp);
+
     d_iinfo = (int*)wp->tmpmem;
 
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkm, T, ldak, d_iinfo);
@@ -250,54 +250,6 @@ RW    C <- (k == 0) ? ddescA(m, k)               [ type        = %{ return ADTT_
 
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - k - m - 1) * (m - k) : PRI_MAX
 
-BODY [type=CUDA]
-{
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-    int ldak = LDA(ddescA, T);
-    int ldam = LDA(ddescA, C);
-    dplasma_cuda_handles_t *handles;
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
-#else
-    double zone = 1.;
-#endif
-    cublasStatus_t status;
-    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
-    assert(NULL != handles);
-    status = cublasZtrsm_v2(handles->cublas_handle,
-                            CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
-                            CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
-                            tempmm, descA->nb,
-                            &zone, T, ldak, C, ldam);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
-                            {return PARSEC_HOOK_RETURN_ERROR;} );
-}
-END
-
-BODY [type=HIP]
-{
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    hipblasDoubleComplex zone  = { 1., 0. };
-#else
-    double zone = 1.;
-#endif
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-    int ldak = LDA(ddescA, T);
-    int ldam = LDA(ddescA, C);
-
-    hipblasStatus_t status;
-    dplasma_hip_handles_t *handles;
-    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
-    assert(NULL != handles);
-    status = hipblasZtrsm(handles->hipblas_handle,
-                                 HIPBLAS_SIDE_RIGHT, HIPBLAS_FILL_MODE_LOWER,
-                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
-                                 tempmm, descA->nb,
-                                 &zone, T, ldak, C, ldam);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
-}
-END
-
 BODY [type=RECURSIVE]
 {
     int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
@@ -331,6 +283,52 @@ BODY [type=RECURSIVE]
     }
     /* Go for the sequential CPU version */
     return PARSEC_HOOK_RETURN_NEXT;
+}
+END
+
+BODY [type=CUDA]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldak = LDA(ddescA, T);
+    int ldam = LDA(ddescA, C);
+    dplasma_cuda_handles_t *handles;
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+#else
+    double zone = 1.;
+#endif
+    cublasStatus_t status;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    status = cublasZtrsm_v2(handles->cublas_handle,
+                            CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
+                            CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
+                            tempmm, descA->nb,
+                            &zone, T, ldak, C, ldam);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldak = LDA(ddescA, T);
+    int ldam = LDA(ddescA, C);
+    dplasma_hip_handles_t *handles;
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex zone  = { 1., 0. };
+#else
+    double zone = 1.;
+#endif
+    hipblasStatus_t status;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZtrsm(handles->hipblas_handle,
+                                 HIPBLAS_SIDE_RIGHT, HIPBLAS_FILL_MODE_LOWER,
+                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
+                                 tempmm, descA->nb,
+                                 &zone, T, ldak, C, ldam);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -406,14 +404,14 @@ END
 
 BODY [type=HIP]
 {
-    double zone  =  1.;
-    double mzone = -1.;
     int tempmm = m == descA->mt-1 ? descA->m - m*descA->mb : descA->mb;
     int ldam_A = LDA(ddescA, A);
     int ldam_T = LDA(ddescA, T);
-
-    hipblasStatus_t status;
     dplasma_hip_handles_t *handles;
+    double zone  =  1.;
+    double mzone = -1.;
+    hipblasStatus_t status;
+
     handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
     status = hipblasZherk( handles->hipblas_handle,
@@ -506,79 +504,6 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
 
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - m - n - 3) * (m - n) + 6 * (m - k) : PRI_MAX
 
-BODY [type=CUDA
-      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
-      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
-      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
-      A.dc=ddescA B.dc=ddescA C.dc=ddescA
-      stage_in=dplasma_cuda_lapack_stage_in
-      stage_out=dplasma_cuda_lapack_stage_out]
-{
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
-    cuDoubleComplex mzone = make_cuDoubleComplex(-1., 0.);
-#else
-    double zone  =  1.;
-    double mzone = -1.;
-#endif
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-    int ldam_A = LDA(ddescA, A);
-    int ldan_B = LDA(ddescA, B);
-    int ldam_C = LDA(ddescA, C);
-
-    dplasma_cuda_handles_t *handles;
-    cublasStatus_t status;
-    assert( ldam_A <= descA->mb );
-    assert( ldan_B <= descA->mb );
-    assert( ldam_C <= descA->mb );
-
-    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
-    assert(NULL != handles);
-
-    status = cublasZgemm_v2( handles->cublas_handle,
-                             CUBLAS_OP_N, CUBLAS_OP_C,
-                             tempmm, descA->mb, descA->mb,
-                             &mzone, (cuDoubleComplex*)A, ldam_A,
-                                     (cuDoubleComplex*)B, ldan_B,
-                             &zone,  (cuDoubleComplex*)C, ldam_C );
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status,
-                            {return PARSEC_HOOK_RETURN_ERROR;} );
-}
-END
-
-BODY [type=HIP
-      stage_in=dplasma_hip_lapack_stage_in
-      stage_out=dplasma_hip_lapack_stage_out]
-{
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    hipblasDoubleComplex zone  = {  1., 0. };
-    hipblasDoubleComplex mzone = { -1., 0. };
-#else
-    double zone  =  1.;
-    double mzone = -1.;
-#endif
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-    int ldam_A = LDA(ddescA, A);
-    int ldan_B = LDA(ddescA, B);
-    int ldam_C = LDA(ddescA, C);
-    assert( ldam_A <= descA->mb );
-    assert( ldan_B <= descA->mb );
-    assert( ldam_C <= descA->mb );
-
-    hipblasStatus_t status;
-    dplasma_hip_handles_t *handles;
-    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
-    assert(NULL != handles);
-    status = hipblasZgemm( handles->hipblas_handle,
-                                  HIPBLAS_OP_N, HIPBLAS_OP_C,
-                                  tempmm, descA->mb, descA->mb,
-                                  &mzone, A, ldam_A,
-                                          B, ldan_B,
-                                  &zone,  C, ldam_C );
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
-}
-END
-
 BODY [type=RECURSIVE]
 {
     int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
@@ -617,6 +542,83 @@ BODY [type=RECURSIVE]
     }
     /* Go to CPU sequential kernel */
     return PARSEC_HOOK_RETURN_NEXT;
+}
+END
+
+BODY [type=CUDA
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+    cuDoubleComplex mzone = make_cuDoubleComplex(-1., 0.);
+#else
+    double zone  =  1.;
+    double mzone = -1.;
+#endif
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldam_A = LDA(ddescA, A);
+    int ldan_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
+    assert( ldam_A <= descA->mb );
+    assert( ldan_B <= descA->mb );
+    assert( ldam_C <= descA->mb );
+
+    cublasStatus_t status;
+    dplasma_cuda_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+
+    status = cublasZgemm_v2( handles->cublas_handle,
+                             CUBLAS_OP_N, CUBLAS_OP_C,
+                             tempmm, descA->mb, descA->mb,
+                             &mzone, (cuDoubleComplex*)A, ldam_A,
+                                     (cuDoubleComplex*)B, ldan_B,
+                             &zone,  (cuDoubleComplex*)C, ldam_C );
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status,
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
+      stage_in=dplasma_hip_lapack_stage_in
+      stage_out=dplasma_hip_lapack_stage_out]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex zone  = {  1., 0. };
+    hipblasDoubleComplex mzone = { -1., 0. };
+#else
+    double zone  =  1.;
+    double mzone = -1.;
+#endif
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldam_A = LDA(ddescA, A);
+    int ldan_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
+    assert( ldam_A <= descA->mb );
+    assert( ldan_B <= descA->mb );
+    assert( ldam_C <= descA->mb );
+
+    hipblasStatus_t status;
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+
+    status = hipblasZgemm( handles->hipblas_handle,
+                                  HIPBLAS_OP_N, HIPBLAS_OP_C,
+                                  tempmm, descA->mb, descA->mb,
+                                  &mzone, A, ldam_A,
+                                          B, ldan_B,
+                                  &zone,  C, ldam_C );
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
