@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -495,6 +495,8 @@ BODY [type=CUDA device=%{ return n; %}
                          WORK,  ib,
                          WORKC, descA->mb,
                          parsec_body.stream );
+
+      parsec_gpu_push_workspace(gpu_device, gpu_stream);
 }
 END
 

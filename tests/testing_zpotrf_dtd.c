@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020 The University of Tennessee and The University
+ * Copyright (c) 2013-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -19,6 +19,8 @@
 #include "parsec/mca/device/cuda/device_cuda.h"
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+
+static void warmup_zpotrf(int rank, dplasma_enum_t uplo, int random_seed, parsec_context_t *parsec);
 
 /* Global index for the full tile datatype */
 static int TILE_FULL;
@@ -223,6 +225,8 @@ int main(int argc, char **argv)
     LDB = dplasma_imax( LDB, N );
     KP = 1;
     KQ = 1;
+
+    warmup_zpotrf(rank, uplo, random_seed, parsec);
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
@@ -541,4 +545,70 @@ int main(int argc, char **argv)
 
     cleanup_parsec(parsec, iparam);
     return ret;
+}
+
+static uint32_t always_local_rank_of(parsec_data_collection_t * desc, ...)
+{
+    return desc->myrank;
+}
+
+static uint32_t always_local_rank_of_key(parsec_data_collection_t * desc, parsec_data_key_t key)
+{
+    (void)key;
+    return desc->myrank;
+}
+
+static void warmup_zpotrf(int rank, dplasma_enum_t uplo, int random_seed, parsec_context_t *parsec)
+{
+    int MB = 64;
+    int NB = 64;
+    int MT = 4;
+    int NT = 4;
+    int N = NB*NT;
+    int M = MB*MT;
+    int did;
+    int info;
+
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+        parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
+                                   rank, MB, NB, M, N, 0, 0,
+                                   M, N, 1, 1, uplo));
+    dcA.super.super.rank_of = always_local_rank_of;
+    dcA.super.super.rank_of_key = always_local_rank_of_key;
+
+    /* Do the CPU warmup first */
+    dplasma_zplghe(parsec, (double)(N), uplo, &dcA.super, random_seed);
+    parsec_taskpool_t *zpotrf = dplasma_zpotrf_New(uplo, &dcA.super, &info );
+    zpotrf->devices_index_mask = 1<<0; /* Only CPU ! */
+    parsec_context_add_taskpool(parsec, zpotrf);
+    parsec_context_start(parsec);
+    parsec_context_wait(parsec);
+    dplasma_zpotrf_Destruct(zpotrf);
+
+    /* Now do the other devices, skipping RECURSIVE */
+    /* We know that there is a GPU-enabled version of this operation, so warm it up if some device is enabled */
+    for(did = 2; did < (int)parsec_nb_devices; did++) {
+        if(PARSEC_MATRIX_LOWER == uplo) {
+            for(int i = 0; i < MT; i++) {
+                for(int j = 0; j <= i; j++) {
+                    parsec_data_t *dta = dcA.super.super.data_of(&dcA.super.super, i, j);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                }
+            }
+        } else {
+            for(int i = 0; i < MT; i++) {
+                for(int j = i; j < NT; j++) {
+                    parsec_data_t *dta = dcA.super.super.data_of(&dcA.super.super, i, j);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                }
+            }
+        }
+        dplasma_zplghe( parsec, (double)(N), uplo,
+                        (parsec_tiled_matrix_t *)&dcA, random_seed);
+        dplasma_zpotrf( parsec, uplo, &dcA.super );
+        parsec_devices_release_memory();
+    }
+
+    parsec_data_free(dcA.mat); dcA.mat = NULL;
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA );
 }

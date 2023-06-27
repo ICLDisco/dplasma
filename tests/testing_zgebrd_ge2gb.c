@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The University of Tennessee and The University
+ * Copyright (c) 2011-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2015-2016 Inria, CNRS (LaBRI - UMR 5800), University of
@@ -95,9 +95,20 @@ int GD_cpQR( int p, int q ) {
     }
 }
 
+static uint32_t always_local_rank_of(parsec_data_collection_t * desc, ...)
+{
+    return desc->myrank;
+}
+
+static uint32_t always_local_rank_of_key(parsec_data_collection_t * desc, parsec_data_key_t key)
+{
+    (void)key;
+    return desc->myrank;
+}
+
 int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int loud,
                 int M, int N, int LDA, int MB, int NB, int IB, int P, int Q, int hmb,
-                int ltre0, int htre0, int ltree, int htree, int ts, int domino, int rbidiag )
+                int ltre0, int htre0, int ltree, int htree, int ts, int domino, int rbidiag, int nbrun )
 {
     int ret = 0;
     dplasma_qrtree_t qrtre0, qrtree, lqtree;
@@ -106,7 +117,7 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
     int MT = (M%MB==0) ? (M/MB) : (M/MB+1);
     int NT = (N%NB==0) ? (N/NB) : (N/NB+1);
     int cp = -1;
-    int i, nbrun = 3;
+    int i;
     int rc;
 
     //PASTE_CODE_FLOPS(FLOPS_ZGEBRD, ((DagDouble_t)M, (DagDouble_t)N));
@@ -151,6 +162,21 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
         parsec_matrix_block_cyclic, (&dcBand, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_LAPACK,
                                rank, MB+1, NB, MB+1, minMN, 0, 0,
                                MB+1, minMN, 1, 1, 1, 1, 0, 0));
+    if(rank > 0 && nodes == 1 && loud == -1) {
+        /* Fix distributions for local-only testing */
+        dcA.super.super.rank_of = always_local_rank_of;
+        dcA.super.super.rank_of_key = always_local_rank_of_key;
+        dcTS0.super.super.rank_of = always_local_rank_of;
+        dcTS0.super.super.rank_of_key = always_local_rank_of_key;
+        dcTT0.super.super.rank_of = always_local_rank_of;
+        dcTT0.super.super.rank_of_key = always_local_rank_of_key;
+        dcTS.super.super.rank_of = always_local_rank_of;
+        dcTS.super.super.rank_of_key = always_local_rank_of_key;
+        dcTT.super.super.rank_of = always_local_rank_of;
+        dcTT.super.super.rank_of_key = always_local_rank_of_key;
+        dcBand.super.super.rank_of = always_local_rank_of;
+        dcBand.super.super.rank_of_key = always_local_rank_of_key;
+    }
 
     /* Initialize the matrix */
     if(loud > 3) printf("+++ Generate matrices ... ");
@@ -313,7 +339,7 @@ int RunOneTest( parsec_context_t *parsec, int nodes, int cores, int rank, int lo
         time_avg += sync_time_elapsed;
         gflops = (flops/1.e9)/(sync_time_elapsed);
 
-        if (rank == 0){
+        if (rank == 0 && loud >= 0){
             fprintf(stdout,
                     "zgebrd_ge2gb M= %2d N= %2d NP= %2d NC= %2d P= %2d Q= %2d NB= %2d IB= %2d R-bidiag= %2d treeh= %2d treel_rb= %2d qr_a= %2d QR(domino= %2d treel_qr= %2d ) : %.2f s %f gflops\n",
                     M, N, nodes, cores, P, Q, NB, IB,
@@ -401,6 +427,13 @@ int main(int argc, char ** argv)
     int ltree = iparam[IPARAM_LOWLVL_TREE] == DPLASMA_GREEDY_TREE ? DPLASMA_GREEDY1P_TREE : iparam[IPARAM_LOWLVL_TREE];
     ltree = iparam[IPARAM_ASYNC] ? ltree : 9;
 
+    /* Warmup run */
+    RunOneTest(parsec, 1, iparam[IPARAM_NCORES], rank, -1, 1000, 1000, 1000, 100, 100, 10, 1, 1,
+                iparam[IPARAM_HMB], iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
+                ltree, iparam[IPARAM_HIGHLVL_TREE], iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], 
+                iparam[IPARAM_QR_TSRR], 1);
+
+
     /**
      * Test for varying matrix sizes m-by-n where:
      *    1) m = M .. N .. K, and n = m  (square)
@@ -421,7 +454,7 @@ int main(int argc, char ** argv)
                     m, m, LDA, MB, NB, IB, P, Q, iparam[IPARAM_HMB],
                     iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                     ltree, iparam[IPARAM_HIGHLVL_TREE],
-                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR] );
+                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR], iparam[IPARAM_NRUNS] );
     }
 
     for (m=N; m<=M; m+=K ) {
@@ -429,7 +462,7 @@ int main(int argc, char ** argv)
                     m, N, LDA, MB, NB, IB, P, Q, iparam[IPARAM_HMB],
                     iparam[IPARAM_LOWLVL_TREE], iparam[IPARAM_HIGHLVL_TREE],
                     ltree, iparam[IPARAM_HIGHLVL_TREE],
-                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR] );
+                    iparam[IPARAM_QR_TS_SZE], iparam[IPARAM_QR_DOMINO], iparam[IPARAM_QR_TSRR], iparam[IPARAM_NRUNS] );
     }
 
     cleanup_parsec(parsec, iparam);

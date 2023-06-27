@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 The University of Tennessee and The University
+ * Copyright (c) 2011-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -21,6 +21,8 @@ static int check_solution( parsec_context_t *parsec, int loud,
                            parsec_tiled_matrix_t *dcB,
                            parsec_tiled_matrix_t *dcX );
 
+static void warmup_zgelqf(int rank, int random_seed, parsec_context_t *parsec);
+
 int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
@@ -41,6 +43,8 @@ int main(int argc, char ** argv)
     PASTE_CODE_FLOPS(FLOPS_ZGELQF, ((DagDouble_t)M, (DagDouble_t)N));
 
     LDA = max(M, LDA);
+    warmup_zgelqf(rank, random_seed, parsec);
+
     /* initializing matrix structure */
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
@@ -361,4 +365,89 @@ static int check_solution( parsec_context_t *parsec, int loud,
     }
 
     return info_solution;
+}
+
+static uint32_t always_local_rank_of(parsec_data_collection_t * desc, ...)
+{
+    return desc->myrank;
+}
+
+static uint32_t always_local_rank_of_key(parsec_data_collection_t * desc, parsec_data_key_t key)
+{
+    (void)key;
+    return desc->myrank;
+}
+
+static void warmup_zgelqf(int rank, int random_seed, parsec_context_t *parsec)
+{
+    int MB = 64;
+    int IB = 40;
+    int NB = 64;
+    int MT = 4;
+    int NT = 4;
+    int N = NB*NT;
+    int M = MB*MT;
+    int matrix_init = dplasmaMatrixRandom;
+
+    /* initializing matrix structure */
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+        parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                               rank, MB, NB, M, N, 0, 0,
+                               M, N, 1, 1, 1, 1, 0, 0));
+    dcA.super.super.rank_of = always_local_rank_of;
+    dcA.super.super.rank_of_key = always_local_rank_of_key;
+    PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
+        parsec_matrix_block_cyclic, (&dcT, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, 1, 1, 1, 1, 0, 0));
+    dcT.super.super.rank_of = always_local_rank_of;
+    dcT.super.super.rank_of_key = always_local_rank_of_key;
+
+    /* Do the CPU warmup first */
+    dplasma_zplrnt( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
+    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t*)&dcT );
+    parsec_taskpool_t *zgelqf = dplasma_zgelqf_New((parsec_tiled_matrix_t*)&dcA,
+                            (parsec_tiled_matrix_t*)&dcT);
+    zgelqf->devices_index_mask = 1<<0; /* Only CPU ! */
+    parsec_context_add_taskpool(parsec, zgelqf);
+    parsec_context_start(parsec);
+    parsec_context_wait(parsec);
+
+    /* Check for which device type (skipping RECURSIVE), we need to warmup this operation */
+    for(int dtype = PARSEC_DEV_RECURSIVE+1; dtype < PARSEC_DEV_MAX_NB_TYPE; dtype++) {
+        for(int i = 0; i < (int)zgelqf->nb_task_classes; i++) {
+            for(int j = 0; NULL != zgelqf->task_classes_array[i]->incarnations[j].hook; j++) {
+                if( zgelqf->task_classes_array[i]->incarnations[j].type == dtype ) {
+                    goto do_run; /* We found one class that was on that device, no need to try more incarnations or task classes */
+                }
+            }
+        }
+        continue; /* No incarnation of this device type on any task class; try another type */
+    do_run:
+        for(int did = 0; did < (int)parsec_nb_devices; did++) {
+            parsec_device_module_t *dev = parsec_mca_device_get(did);
+            if(dev->type != dtype)
+                continue;
+            /* This should work, right? Unfortunately, we can't test until there is a <dev>-enabled implementation for this test */
+            for(int m = 0; m < MT; m++) {
+                for(int n = 0; n < NT; n++) {
+                    parsec_data_t *dta = dcA.super.super.data_of(&dcA.super.super, m, n);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                    dta = dcT.super.super.data_of(&dcT.super.super, m, n);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                }
+            }
+            dplasma_zplrnt( parsec, matrix_init, (parsec_tiled_matrix_t *)&dcA, random_seed );
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_t*)&dcT );
+            parsec_taskpool_t *zgelqf_device = dplasma_zgelqf_New((parsec_tiled_matrix_t*)&dcA,
+                                    (parsec_tiled_matrix_t*)&dcT);
+            parsec_context_add_taskpool(parsec, zgelqf_device);
+            parsec_context_start(parsec);
+            parsec_context_wait(parsec);
+            dplasma_zgelqf_Destruct(zgelqf_device);
+        }
+    }
+
+    dplasma_zgelqf_Destruct(zgelqf);
+
 }

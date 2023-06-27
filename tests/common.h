@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 The University of Tennessee and The University
+ * Copyright (c) 2009-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -283,6 +283,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                "</DartMeasurement>\n",                                  \
                gflops);                                                 \
     }                                                                   \
+    if(rank==0) fflush(stdout);                                         \
     (void)gflops;
 
 #endif /* _TESTSCOMMON_H */

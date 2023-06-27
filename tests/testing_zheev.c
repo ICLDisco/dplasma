@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The University of Tennessee and The University
+ * Copyright (c) 2011-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -21,6 +21,7 @@
 #undef PRINTF_HEAVY
 
 static int check_solution(int N, double *E1, double *E2, double eps);
+static void warmup_zherbt(int rank, int random_seed, int uplo, parsec_context_t *parsec);
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +44,8 @@ int main(int argc, char *argv[])
     LDA = dplasma_imax( LDA, N );
     LDB = dplasma_imax( LDB, N );
 
+    warmup_zherbt(rank, random_seed, uplo, parsec);
+
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                rank, MB, NB, LDA, N, 0, 0,
@@ -52,25 +55,27 @@ int main(int argc, char *argv[])
                                rank, IB, NB, MT*IB, N, 0, 0,
                                MT*IB, N, P, nodes/P, KP, KP, IP, JQ));
 
-    /* Fill A with randomness */
-    dplasma_zplghe( parsec, (double)N, uplo,
-                    (parsec_tiled_matrix_t *)&dcA, 3872);
+    for(int t = 0; t < nruns; t++) {
+        /* Fill A with randomness */
+        dplasma_zplghe( parsec, (double)N, uplo,
+                        (parsec_tiled_matrix_t *)&dcA, random_seed);
 #ifdef PRINTF_HEAVY
-    printf("########### A (initial, tile storage)\n");
-    dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_t *)&dcA );
+        printf("########### A (initial, tile storage)\n");
+        dplasma_zprint( parsec, uplo, (parsec_tiled_matrix_t *)&dcA );
 #endif
 
-    /* Step 1 - Reduction A to band matrix */
-    PASTE_CODE_ENQUEUE_KERNEL(parsec, zherbt,
-                              (uplo, IB,
-                               (parsec_tiled_matrix_t*)&dcA,
-                               (parsec_tiled_matrix_t*)&dcT));
-    PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt);
+        /* Step 1 - Reduction A to band matrix */
+        PASTE_CODE_ENQUEUE_KERNEL(parsec, zherbt,
+                                (uplo, IB,
+                                (parsec_tiled_matrix_t*)&dcA,
+                                (parsec_tiled_matrix_t*)&dcT));
+        PASTE_CODE_PROGRESS_KERNEL(parsec, zherbt);
 #ifdef PRINTF_HEAVY
-    printf("########### A (reduced to band form)\n");
-    dplasma_zprint( parsec, uplo, &dcA);
+        printf("########### A (reduced to band form)\n");
+        dplasma_zprint( parsec, uplo, &dcA);
 #endif
-
+        dplasma_zherbt_Destruct( PARSEC_zherbt );
+    }
 goto fin;
 
     /* Step 2 - Conversion of the tiled band to 1D band storage */
@@ -243,17 +248,16 @@ goto fin;
         free(W0); free(D); free(E);
     }
 
-    dplasma_zherbt_Destruct( PARSEC_zherbt );
     parsec_taskpool_free( &PARSEC_diag_band_to_rect->super );
     dplasma_zhbrdt_Destruct( PARSEC_zhbrdt );
 
     parsec_data_free(dcBAND.mat);
+    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcBAND);
+fin:
     parsec_data_free(dcA.mat);
     parsec_data_free(dcT.mat);
-    parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcBAND);
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcT);
-fin:
     cleanup_parsec(parsec, iparam);
 
     return EXIT_SUCCESS;
@@ -297,3 +301,85 @@ static int check_solution(int N, double *E1, double *E2, double eps)
     return info_solution;
 }
 
+static uint32_t always_local_rank_of(parsec_data_collection_t * desc, ...)
+{
+    return desc->myrank;
+}
+
+static uint32_t always_local_rank_of_key(parsec_data_collection_t * desc, parsec_data_key_t key)
+{
+    (void)key;
+    return desc->myrank;
+}
+
+static void warmup_zherbt(int rank, int random_seed, int uplo, parsec_context_t *parsec)
+{
+    int MB = 64;
+    int IB = 40;
+    int NB = 64;
+    int MT = 4;
+    int NT = 4;
+    int N = NB*NT;
+    int LDA = N;
+
+    /* initializing matrix structure */
+    PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
+        parsec_matrix_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                               rank, MB, NB, LDA, N, 0, 0,
+                               N, N, 1, 1, 1, 1, 0, 0));
+    dcA.super.super.rank_of = always_local_rank_of;
+    dcA.super.super.rank_of_key = always_local_rank_of_key;
+    PASTE_CODE_ALLOCATE_MATRIX(dcT, 1,
+        parsec_matrix_block_cyclic, (&dcT, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
+                               rank, IB, NB, MT*IB, N, 0, 0,
+                               MT*IB, N, 1, 1, 1, 1, 0, 0));
+    dcT.super.super.rank_of = always_local_rank_of;
+    dcT.super.super.rank_of_key = always_local_rank_of_key;
+
+    /* Do the CPU warmup first */
+    dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_t *)&dcA, random_seed);
+    parsec_taskpool_t *zherbt = dplasma_zherbt_New(uplo, IB,
+                                (parsec_tiled_matrix_t*)&dcA,
+                                (parsec_tiled_matrix_t*)&dcT);
+    zherbt->devices_index_mask = 1<<0; /* Only CPU ! */
+    parsec_context_add_taskpool(parsec, zherbt);
+    parsec_context_start(parsec);
+    parsec_context_wait(parsec);
+
+        /* Check for which device type (skipping RECURSIVE), we need to warmup this operation */
+    for(int dtype = PARSEC_DEV_RECURSIVE+1; dtype < PARSEC_DEV_MAX_NB_TYPE; dtype++) {
+        for(int i = 0; i < (int)zherbt->nb_task_classes; i++) {
+            for(int j = 0; NULL != zherbt->task_classes_array[i]->incarnations[j].hook; j++) {
+                if( zherbt->task_classes_array[i]->incarnations[j].type == dtype ) {
+                    goto do_run; /* We found one class that was on that device, no need to try more incarnations or task classes */
+                }
+            }
+        }
+        continue; /* No incarnation of this device type on any task class; try another type */
+    do_run:
+        for(int did = 0; did < (int)parsec_nb_devices; did++) {
+            parsec_device_module_t *dev = parsec_mca_device_get(did);
+            if(dev->type != dtype)
+                continue;
+            /* This should work, right? Unfortunately, we can't test until there is a <dev>-enabled implementation for this test */
+            for(int m = 0; m < MT; m++) {
+                for(int n = 0; n < NT; n++) {
+                    parsec_data_t *dta = dcA.super.super.data_of(&dcA.super.super, m, n);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                    dta = dcT.super.super.data_of(&dcT.super.super, m, n);
+                    parsec_advise_data_on_device( dta, did, PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+                }
+            }
+            dplasma_zplghe( parsec, (double)N, uplo, (parsec_tiled_matrix_t *)&dcA, random_seed);
+            parsec_taskpool_t *zherbt_device = dplasma_zherbt_New(uplo, IB,
+                                        (parsec_tiled_matrix_t*)&dcA,
+                                        (parsec_tiled_matrix_t*)&dcT);
+            parsec_context_add_taskpool(parsec, zherbt_device);
+            parsec_context_start(parsec);
+            parsec_context_wait(parsec);
+            dplasma_zherbt_Destruct(zherbt_device);
+        }
+    }
+
+    dplasma_zherbt_Destruct(zherbt);
+}
