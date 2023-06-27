@@ -432,8 +432,7 @@ BODY [type=CUDA]
 }
 END
 
-BODY [type=HIP
-      weight=(descA->nt-k)]
+BODY [type=HIP]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     hipblasDoubleComplex lalpha = { creal(alpha), cimag(alpha) };
