@@ -183,16 +183,15 @@ BODY [type=HIP]
     rocblas_fill rocblas_uplo;
     dplasma_potrf_gpu_workspaces_t *wp;
     int *d_iinfo;
+    dplasma_hip_handles_t *handles;
 
     if( PlasmaLower == uplo )
         rocblas_uplo = rocblas_fill_lower;
     if( PlasmaUpper == uplo )
         rocblas_uplo = rocblas_fill_upper;
 
-    dplasma_hip_handles_t *handles;
     handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
-
     wp = parsec_info_get(&gpu_device->super.infos, hip_workspaces_infokey);
     assert(NULL != wp);
     d_iinfo = (int*)wp->tmpmem;
@@ -251,55 +250,6 @@ RW    C <- (k == 0) ? ddescA(k, n)               [ type        = %{ return ADTT_
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - k - n - 1) * (n - k) : PRI_MAX
 
-BODY [type=CUDA]
-{
-    int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak_T = LDA(ddescA, T);
-    int ldak_C = LDA(ddescA, C);
-    dplasma_cuda_handles_t *handles;
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
-#else
-    double zone = 1.;
-#endif
-
-    cublasStatus_t status;
-    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
-    assert(NULL != handles);
-    status = cublasZtrsm_v2(handles->cublas_handle,
-                            CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
-                            CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
-                            descA->mb, tempnn,
-                            &zone, T, ldak_T, C, ldak_C);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
-                            {return PARSEC_HOOK_RETURN_ERROR;} );
-}
-END
-
-BODY [type=HIP]
-{
-#if defined(PRECISION_z) || defined(PRECISION_c)
-    hipblasDoubleComplex zone  = { 1., 0. };
-#else
-    double zone = 1.;
-#endif
-    int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
-    int ldak_T = LDA(ddescA, T);
-    int ldak_C = LDA(ddescA, C);
-
-    hipblasStatus_t status;
-    dplasma_hip_handles_t *handles;
-    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
-    assert(NULL != handles);
-    status = hipblasZtrsm(handles->hipblas_handle,
-                                 HIPBLAS_SIDE_LEFT, HIPBLAS_FILL_MODE_UPPER,
-                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
-                                 descA->mb, tempnn,
-                                 &zone, T, ldak_T, C, ldak_C);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
-}
-END
-
 BODY [type=RECURSIVE]
 {
     int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
@@ -333,6 +283,55 @@ BODY [type=RECURSIVE]
     }
     /* Go for the sequential CPU version */
     return PARSEC_HOOK_RETURN_NEXT;
+}
+END
+
+BODY [type=CUDA]
+{
+    int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
+    int ldak_T = LDA(ddescA, T);
+    int ldak_C = LDA(ddescA, C);
+    dplasma_cuda_handles_t *handles;
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
+#else
+    double zone = 1.;
+#endif
+
+    cublasStatus_t status;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    status = cublasZtrsm_v2(handles->cublas_handle,
+                            CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
+                            CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
+                            descA->mb, tempnn,
+                            &zone, T, ldak_T, C, ldak_C);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status,
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempnn = n == descA->nt - 1 ? descA->n - n * descA->nb : descA->nb;
+    int ldak_T = LDA(ddescA, T);
+    int ldak_C = LDA(ddescA, C);
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex zone  = { 1., 0. };
+#else
+    double zone = 1.;
+#endif
+
+    hipblasStatus_t status;
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZtrsm(handles->hipblas_handle,
+                                 HIPBLAS_SIDE_LEFT, HIPBLAS_FILL_MODE_UPPER,
+                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
+                                 descA->mb, tempnn,
+                                 &zone, T, ldak_T, C, ldak_C);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -385,49 +384,6 @@ RW    T <- (k == 0)   ? ddescA(n, n)          [ type        = %{ return ADTT_REA
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * (n - k) : PRI_MAX
 
-BODY [type=CUDA]
-{
-    int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
-    int ldak = LDA(ddescA, A);
-    int ldan = LDA(ddescA, T);
-    dplasma_cuda_handles_t *handles;
-    double zone  =  1.;
-    double mzone = -1.;
-    cublasStatus_t status;
-
-    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
-    assert(NULL != handles);
-    status = cublasZherk_v2( handles->cublas_handle,
-                             CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C,
-                             tempnn, descA->mb,
-                             &mzone, A, ldak,
-                             &zone, T, ldan);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
-                            {return PARSEC_HOOK_RETURN_ERROR;} );
-}
-END
-
-BODY [type=HIP]
-{
-    double zone  =  1.;
-    double mzone = -1.;
-    int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
-    int ldak = LDA(ddescA, A );
-    int ldan = LDA(ddescA, T );
-
-    hipblasStatus_t status;
-    dplasma_hip_handles_t *handles;
-    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
-    assert(NULL != handles);
-    status = hipblasZherk(handles->hipblas_handle,
-                                  HIPBLAS_FILL_MODE_UPPER, HIPBLAS_OP_T,
-                                  tempnn, descA->mb,
-                                  &mzone, A, ldak,
-                                  &zone, T, ldan);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_ERROR;});
-}
-END
-
 BODY [type=RECURSIVE]
 {
     int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
@@ -457,6 +413,49 @@ BODY [type=RECURSIVE]
     }
     /* Go for the sequential CPU version */
     return PARSEC_HOOK_RETURN_NEXT;
+}
+END
+
+BODY [type=CUDA]
+{
+    int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
+    int ldak = LDA(ddescA, A);
+    int ldan = LDA(ddescA, T);
+    dplasma_cuda_handles_t *handles;
+    double zone  =  1.;
+    double mzone = -1.;
+    cublasStatus_t status;
+
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    status = cublasZherk_v2( handles->cublas_handle,
+                             CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C,
+                             tempnn, descA->mb,
+                             &mzone, A, ldak,
+                             &zone, T, ldan);
+    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status,
+                            {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempnn = n == descA->nt-1 ? descA->n - n*descA->nb : descA->nb;
+    int ldak = LDA(ddescA, A );
+    int ldan = LDA(ddescA, T );
+    double zone  =  1.;
+    double mzone = -1.;
+
+    hipblasStatus_t status;
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZherk(handles->hipblas_handle,
+                                  HIPBLAS_FILL_MODE_UPPER, HIPBLAS_OP_T,
+                                  tempnn, descA->mb,
+                                  &mzone, A, ldak,
+                                  &zone, T, ldan);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -508,6 +507,47 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
         -> (m == k+1) ? C potrf_ztrsm(m, n) : C potrf_zgemm(m, n, k+1) /* dep OUT: rely on datacopy dtt for sending */
 
 ; (n >= (descA->nt - PRI_CHANGE)) ? (descA->nt - n) * (descA->nt - n) * (descA->nt - n) + 3 * ((2 * descA->nt) - m - n - 3) * (n - m) + 6 * (n - k) : PRI_MAX
+
+BODY [type=RECURSIVE]
+{
+    int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
+
+    if ( (tempnn > smallnb) || (descA->mb > smallnb) )
+    {
+        subtile_desc_t *small_descA;
+        subtile_desc_t *small_descB;
+        subtile_desc_t *small_descC;
+        parsec_taskpool_t *parsec_zgemm;
+
+        small_descA = subtile_desc_create( descA, k, m,
+                                           smallnb, smallnb, 0, 0, descA->mb, descA->nb );
+        small_descA->mat = A;
+
+        small_descB = subtile_desc_create( descA, k, n,
+                                           smallnb, smallnb, 0, 0, descA->mb, tempnn );
+        small_descB->mat = B;
+
+        small_descC = subtile_desc_create( descA, m, n,
+                                           smallnb, smallnb, 0, 0, descA->mb, tempnn );
+        small_descC->mat = C;
+
+        parsec_zgemm = dplasma_zgemm_New(dplasmaConjTrans, dplasmaNoTrans,
+                                        (dplasma_complex64_t)-1.0,
+                                        (parsec_tiled_matrix_t *)small_descA,
+                                        (parsec_tiled_matrix_t *)small_descB,
+                                        (dplasma_complex64_t) 1.0,
+                                        (parsec_tiled_matrix_t *)small_descC);
+
+        parsec_recursivecall((parsec_task_t*)this_task,
+                             parsec_zgemm, dplasma_zgemm_Destruct,
+                             3, small_descA, small_descB, small_descC );
+
+        return PARSEC_HOOK_RETURN_ASYNC;
+    }
+    /* Go to CPU sequential kernel */
+    return PARSEC_HOOK_RETURN_NEXT;
+}
+END
 
 BODY [type=CUDA
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -561,6 +601,10 @@ BODY [type=CUDA
 END
 
 BODY [type=HIP
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
       stage_in=dplasma_hip_lapack_stage_in
       stage_out=dplasma_hip_lapack_stage_out]
 {
@@ -591,47 +635,6 @@ BODY [type=HIP
                                           B, ldak_B,
                                   &zone,  C, ldam_C);
     DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
-}
-END
-
-BODY [type=RECURSIVE]
-{
-    int tempnn = n == descA->nt-1 ? descA->n - n * descA->nb : descA->nb;
-
-    if ( (tempnn > smallnb) || (descA->mb > smallnb) )
-    {
-        subtile_desc_t *small_descA;
-        subtile_desc_t *small_descB;
-        subtile_desc_t *small_descC;
-        parsec_taskpool_t *parsec_zgemm;
-
-        small_descA = subtile_desc_create( descA, k, m,
-                                           smallnb, smallnb, 0, 0, descA->mb, descA->nb );
-        small_descA->mat = A;
-
-        small_descB = subtile_desc_create( descA, k, n,
-                                           smallnb, smallnb, 0, 0, descA->mb, tempnn );
-        small_descB->mat = B;
-
-        small_descC = subtile_desc_create( descA, m, n,
-                                           smallnb, smallnb, 0, 0, descA->mb, tempnn );
-        small_descC->mat = C;
-
-        parsec_zgemm = dplasma_zgemm_New(dplasmaConjTrans, dplasmaNoTrans,
-                                        (dplasma_complex64_t)-1.0,
-                                        (parsec_tiled_matrix_t *)small_descA,
-                                        (parsec_tiled_matrix_t *)small_descB,
-                                        (dplasma_complex64_t) 1.0,
-                                        (parsec_tiled_matrix_t *)small_descC);
-
-        parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_zgemm, dplasma_zgemm_Destruct,
-                             3, small_descA, small_descB, small_descC );
-
-        return PARSEC_HOOK_RETURN_ASYNC;
-    }
-    /* Go to CPU sequential kernel */
-    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
