@@ -15,6 +15,9 @@ typedef struct {
   char         *tmpmem;
   void         *memory;
   int           lwork;
+  void*         params;
+  size_t        host_size;
+  void*         host_buffer;
 } dplasma_potrf_workspace_t;
 
 typedef cusolverStatus_t (*cublas_spotrf_v2_t) (
@@ -36,6 +39,8 @@ typedef cusolverStatus_t (*cublas_zpotrf_v2_t) (
         cusolverDnHandle_t handle, cublasFillMode_t uplo,
         int n, cuDoubleComplex *A, int lda,
         cuDoubleComplex *Workspace, int Lwork, int *devInfo );
+
+char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
 
 #endif
 

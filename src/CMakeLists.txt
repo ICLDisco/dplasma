@@ -27,6 +27,9 @@ set(EXTRA_SOURCES
 if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
+if( DPLASMA_HAVE_CUDA )
+  list(APPEND EXTRA_SOURCES dplasmaaux_cuda.c)
+endif()
 
 ### Generate .c files from .jdf for all required precisions
 set(JDF
@@ -213,6 +216,7 @@ target_ptg_sources(dplasma PRIVATE
   ${generated_jdf})
 
 Add_Subdirectory(cores)
+Add_Subdirectory(dtd_wrappers)
 
 target_include_directories(dplasma
     INTERFACE
