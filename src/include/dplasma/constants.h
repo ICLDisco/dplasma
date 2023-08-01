@@ -209,4 +209,45 @@ enum dplasma_matrix_type_e {
 extern char *dplasma_lapack_const_strings[];
 #define dplasma_lapack_const(plasma_const) (dplasma_lapack_const_strings[plasma_const][0])
 
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas.h>
+
+#define dplasma_cublas_side(side)                                         \
+    assert( (side == dplasmaRight) || (side == dplasmaLeft) );            \
+    side = (side == dplasmaRight) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT;
+
+
+#define dplasma_cublas_diag(diag)                                              \
+    assert( (diag == dplasmaNonUnit) || (diag == dplasmaUnit) );               \
+    diag = (diag == dplasmaNonUnit) ? CUBLAS_DIAG_NON_UNIT : CUBLAS_DIAG_UNIT;
+
+#define dplasma_cublas_fill(fill)                                                    \
+    assert( (fill == dplasmaLower) || (fill == dplasmaUpper) );                      \
+    fill = (fill == dplasmaLower) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER;
+
+#if defined(PRECISION_z) || defined(PRECISION_c)
+#define dplasma_cublas_op(trans)                 \
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) || (trans == dplasmaConjTrans) ); \
+    switch(trans){                               \
+        case dplasmaNoTrans:                     \
+            trans = CUBLAS_OP_N;                 \
+            break;                               \
+        case dplasmaTrans:                       \
+            trans = CUBLAS_OP_T;                 \
+            break;                               \
+        case dplasmaConjTrans:                   \
+            trans = CUBLAS_OP_C;                 \
+            break;                               \
+        default:                                 \
+            trans = CUBLAS_OP_N;                 \
+            break;                               \
+    }
+#else
+#define dplasma_cublas_op(trans)                                    \
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) ); \
+    trans = (trans == dplasmaNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+#endif /* PRECISION_z || PRECISION_c */
+
+#endif /* DPLASMA_HAVE_CUDA */
+
 #endif /* _DPLASMA_CONSTANTS_H_ */

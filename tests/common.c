@@ -716,8 +716,6 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         }
     }
     if( nbgpu > 0 ) {
-        cublasStatus_t status = cublasInit();
-        assert(CUBLAS_STATUS_SUCCESS == status);
         parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
                              destroy_cuda_handles, NULL,
                              dplasma_create_cuda_handles, NULL,

@@ -110,14 +110,7 @@ extern void *dplasma_pcomm;
 #endif /* defined(DPLASMA_DEBUG) */
 
 #if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#include "parsec/mca/device/cuda/device_cuda.h"
-typedef struct {
-    cublasHandle_t cublas_handle;
-    void * cusolverDn_handle;
-} dplasma_cuda_handles_t;
-void *dplasma_create_cuda_handles(void *obj, void *user);
-
+#include "dplasmaaux_cuda.h"
 #endif
 
 #endif /* _DPLASMAAUX_H_INCLUDED */
