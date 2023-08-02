@@ -6,6 +6,11 @@
  * @precisions normal z -> s d c
  *
  */
+#include "dplasma/config.h"
+
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 #include "dplasma_z_dtd.h"
 
@@ -66,6 +71,8 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
     }
 #endif /* defined(PARSEC_DEBUG_NOISIER) */
 
+    parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
+    cublasSetStream( handles->cublas_handle, cuda_stream->cuda_stream );
     status = cublasZherk(handles->cublas_handle, uplo, trans,
                           m, n,
                           &alpha, (cuDoubleComplex*)Ag, lda,

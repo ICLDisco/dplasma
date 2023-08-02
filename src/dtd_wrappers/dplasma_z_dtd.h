@@ -20,7 +20,6 @@
 #include "parsec/utils/zone_malloc.h"
 #include "dplasmaaux.h"
 #include "potrf_cublas_utils.h"
-#include <cublas_v2.h>
 
 /* probably need to add this to substitions */
 #if defined(PRECISION_s)

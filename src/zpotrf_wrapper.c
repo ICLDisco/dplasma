@@ -12,9 +12,12 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasma/types_lapack.h"
-#include "dplasmaaux.h"
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
 #include "potrf_cublas_utils.h"
 #include "parsec/utils/zone_malloc.h"
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
+#include "dplasmaaux.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"

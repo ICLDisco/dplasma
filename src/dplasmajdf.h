@@ -37,9 +37,5 @@
 #undef TEMP_TYPE
 #endif  /* PARSEC_HAVE_MPI */
 
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-
 #endif /* _DPLASMAJDF_H_ */
 
