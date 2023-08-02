@@ -82,6 +82,8 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
 
     handles = parsec_info_get(&gpu_stream->infos, CuHI);
 
+    parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
+    cublasSetStream( handles->cublas_handle, cuda_stream->cuda_stream );
     status = cublasZgemm(handles->cublas_handle, transA, transB,
                           n, m, k,
                           &alphag, (cuDoubleComplex*)Ag, lda,
