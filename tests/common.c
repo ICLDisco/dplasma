@@ -27,8 +27,8 @@
 #include <mpi.h>
 #endif
 #if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
 #include "dplasmaaux.h"
-#include <cublas.h>
 #include <cusolverDn.h>
 #endif
 
@@ -732,7 +732,6 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 #if defined(DPLASMA_HAVE_CUDA)
     parsec_info_id_t CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
-    cublasShutdown();
 #endif
 
     parsec_fini(&parsec);

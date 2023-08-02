@@ -6,6 +6,11 @@
  * @precisions normal z -> s d c
  *
  */
+#include "dplasma/config.h"
+
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
 #include "dplasma_z_dtd.h"
 

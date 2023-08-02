@@ -5,11 +5,12 @@
  * $COPYRIGHT
  *
  */
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#include "potrf_cublas_utils.h"
+#include "dplasma/config.h"
 #include "parsec/utils/zone_malloc.h"
+#include "parsec/utils/show_help.h"
+#include <cublas_v2.h>
 #include "dplasmaaux_cuda.h"
+#include "potrf_cublas_utils.h"
 
 /* 
  * Global info ID's for cublas handles and workspaces
