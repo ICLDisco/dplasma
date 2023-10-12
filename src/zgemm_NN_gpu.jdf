@@ -18,9 +18,8 @@ extern "C" %{
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
-
 #if defined(DPLASMA_HAVE_HIP)
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #endif  /* defined(DPLASMA_HAVE_HIP) */
 
 static void succ(int *x, int *y, int *z, int xMax, int yMax, int zMax, int l)

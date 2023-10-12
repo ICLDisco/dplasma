@@ -23,14 +23,11 @@
 #   include <stdio.h>
 #   define printlog(str, ...) fprintf(stderr, "thread %d VP %d " str "\n", \
                                       es->th_id, es->virtual_process->vp_id, __VA_ARGS__)
-#   define printlogcuda(str, ...) fprintf(stderr, "cuda %d " str "\n", \
-                                          gpu_device->super.device_index, __VA_ARGS__)
-#   define printloghip(str, ...) fprintf(stderr, "hip %d " str "\n", \
+#   define printloggpu(str, ...) fprintf(stderr, "GPU %d " str "\n", \
                                           gpu_device->super.device_index, __VA_ARGS__)
 #else
 #   define printlog(...) do {} while(0)
-#   define printlogcuda(...) do {} while(0)
-#   define printloghip(...) do {} while(0)
+#   define printloggpu(...) do {} while(0)
 #endif
 
 #ifndef PARSEC_HAVE_MPI
@@ -39,15 +36,6 @@
 #define MPITYPE ((parsec_datatype_t)QUOTEME(TEMP_TYPE))
 #undef TEMP_TYPE
 #endif  /* PARSEC_HAVE_MPI */
-
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-
-#if defined(DPLASMA_HAVE_HIP)
-#include <hipblas.h>
-#endif  /* defined(DPLASMA_HAVE_HIP) */
-
 
 #endif /* _DPLASMAJDF_H_ */
 

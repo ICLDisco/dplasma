@@ -27,13 +27,13 @@
 #include <mpi.h>
 #endif
 #if defined(DPLASMA_HAVE_CUDA)
+#include <cublas_v2.h>
 #include "dplasmaaux.h"
-#include <cublas.h>
 #include <cusolverDn.h>
 #endif
 #if defined(DPLASMA_HAVE_HIP)
 #include "dplasmaaux.h"
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #endif
 
 char *PARSEC_SCHED_NAME[] = {
@@ -731,8 +731,6 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         }
     }
     if( nbgpu > 0 ) {
-        cublasStatus_t status = cublasInit();
-        assert(CUBLAS_STATUS_SUCCESS == status);
         parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
                              destroy_cuda_handles, NULL,
                              dplasma_create_cuda_handles, NULL,
@@ -755,7 +753,6 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 #if defined(DPLASMA_HAVE_CUDA)
     parsec_info_id_t CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
-    cublasShutdown();
 #endif
 #if defined(DPLASMA_HAVE_HIP)
     parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
