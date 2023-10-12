@@ -11,6 +11,9 @@ typedef struct {
   char         *tmpmem;
   void         *memory;
   int           lwork;
+  void*         params;
+  size_t        host_size;
+  void*         host_buffer;
 } dplasma_potrf_gpu_workspaces_t;
 
 #endif //DPLASMA_POTRF_GPU_WORKSPACES_H

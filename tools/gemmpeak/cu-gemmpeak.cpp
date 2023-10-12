@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "cuda.h"
-#include "cuda_runtime_api.h"
-#include "cublas.h"
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#include <cublas.h>
 
 inline float mmax( float a, float b ) { return a > b ? a : b; }
 

@@ -13,7 +13,7 @@
 
 /* Support for TILED/LAPACK matrix with non homogeneous datatypes across tiles.
  * NOTE: we are operating with the following condition:
- * For a given datacollection, if we reuse the datatype for one shape on different
+ * For a given data collection, if we reuse the datatype for one shape on different
  * locations, then other shapes will also be reusing a datatype for those locations.
  * The same happens between layouts.
  *

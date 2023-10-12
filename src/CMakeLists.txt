@@ -23,12 +23,15 @@ set(EXTRA_SOURCES
   utils/dplasma_arena_datatype.c
   utils/dplasma_lapack_adtt.c
   utils/dplasma_info.c
-  cuda/lapack_cuda_stage_in.c
 )
 if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
+if( DPLASMA_HAVE_CUDA )
+  list(APPEND EXTRA_SOURCES dplasmaaux_cuda.c cuda/lapack_cuda_stage_in.c)
+endif()
 if( DPLASMA_HAVE_HIP )
+  list(APPEND EXTRA_SOURCES dplasmaaux_hip.c)
   FILE(GLOB cuda_sources cuda/[^\\.]*.[ch])
   find_package(Perl REQUIRED)
   find_program(HIPIFY_PERL_COMMAND NAMES hipify-perl HINTS ${HIP_BIN_INSTALL_DIR} REQUIRED)
@@ -232,6 +235,7 @@ target_ptg_sources(dplasma PRIVATE
   ${generated_jdf})
 
 Add_Subdirectory(cores)
+Add_Subdirectory(dtd_wrappers)
 
 target_include_directories(dplasma
     INTERFACE

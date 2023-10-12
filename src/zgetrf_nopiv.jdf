@@ -219,7 +219,7 @@ BODY [type=CUDA
 
     cublasStatus_t status;
 
-    printlogcuda("CUDA_zgemm(%d, %d, %d)\n"
+    printloggpu("CUDA_zgemm(%d, %d, %d)\n"
                  "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam %d, A(%d,%d)[%p], ldak %d, 1.000000, A(%d,%d)[%p], ldam %d)\n",
                  k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 
