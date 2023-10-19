@@ -240,7 +240,6 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
 #else
     parsec_zpotrf->_g_cuda_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
     parsec_zpotrf->_g_cuda_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
-    (void)uid; (void)workspace_info_name;
 #endif
 #if defined(DPLASMA_HAVE_HIP)
     /* It doesn't cost anything to define these infos if we have HIP but
