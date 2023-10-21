@@ -40,6 +40,10 @@ static parsec_key_fn_t dtt_lapack_key_fns = {
 
 parsec_hash_table_t *dplasma_datatypes_lapack_helper = NULL;
 
+/*************************************************************/
+/* Static helper functions that are not protected.           */
+/*************************************************************/
+
 static void dplasma_datatypes_lapack_helper_release(void *item, void*cb_data)
 {
     (void)cb_data;
@@ -59,74 +63,99 @@ static void dplasma_datatypes_info_fini()
     }
 }
 
-static int dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc, parsec_arena_datatype_t adt,
-                                    lapack_info_t info)
+/*************************************************************/
+/* Static helper functions that are lock protected.          */
+/*************************************************************/
+
+static inline int
+dplasma_set_helper_hash_table_atomic(void)
+{
+    if( NULL == dplasma_datatypes_lapack_helper ) {
+        parsec_hash_table_t* new_ht = PARSEC_OBJ_NEW(parsec_hash_table_t);
+        parsec_hash_table_init(new_ht,
+                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
+                               16, dtt_lapack_key_fns, NULL);
+        if(parsec_atomic_cas_ptr(&dplasma_datatypes_lapack_helper, NULL, new_ht)) {
+            parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
+            return 1;
+        }
+        parsec_hash_table_fini(new_ht);
+        PARSEC_OBJ_RELEASE(new_ht);
+    }
+    return 0;
+}
+
+static int
+dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
+                         parsec_arena_datatype_t adt,
+                         const lapack_info_t* info)
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
 
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt.opaque_dtt);
     parsec_key_t k = (uint64_t)static_desc;
-    if( NULL == dplasma_datatypes_lapack_helper ) {
-        dplasma_datatypes_lapack_helper = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(dplasma_datatypes_lapack_helper,
-                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
-                               16, dtt_lapack_key_fns, NULL);
-        parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
-    } else {
-        dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
-        if( NULL != dtt_entry ) {
-            assert(dtt_entry->info.lda == info.lda);
-            return 0;
-        }
+
+    (void)dplasma_set_helper_hash_table_atomic();
+
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
+    /* Find the entry */
+    dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
+    if( NULL != dtt_entry ) {
+        assert(dtt_entry->info.lda == info->lda);
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
+        return 0;
     }
 
     dtt_entry = (dplasma_datatype_lapack_helper_t *)malloc(sizeof(dplasma_datatype_lapack_helper_t));
     dtt_entry->ht_item.key = (uint64_t)strdup(static_desc);
-    dtt_entry->info = info;
+    dtt_entry->info = *info;
     dtt_entry->adt = adt;
     parsec_hash_table_nolock_insert(dplasma_datatypes_lapack_helper, &dtt_entry->ht_item);
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-        " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %"PRIxPTR" arena %p (%30s)",
-        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, (intptr_t)adt.opaque_dtt, adt.arena, static_desc);
+        " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
+        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
     return 0;
 }
 
-static int dplasma_set_info_to_dtt( const dplasma_data_collection_t *dc, parsec_arena_datatype_t adt,
-                                    lapack_info_t info)
+static int
+dplasma_set_info_to_dtt( const dplasma_data_collection_t *dc,
+                         parsec_arena_datatype_t adt,
+                         const lapack_info_t* info)
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
 
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
-    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info.loc, info.shape, info.layout);
+    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info->loc, info->shape, info->layout);
     parsec_key_t k = (uint64_t)static_desc;
-    if( NULL == dplasma_datatypes_lapack_helper ) {
-        dplasma_datatypes_lapack_helper = PARSEC_OBJ_NEW(parsec_hash_table_t);
-        parsec_hash_table_init(dplasma_datatypes_lapack_helper,
-                               offsetof(dplasma_datatype_lapack_helper_t, ht_item),
-                               16, dtt_lapack_key_fns, NULL);
-        parsec_context_at_fini(dplasma_datatypes_info_fini, NULL);
-    } else {
-        dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
-        if( NULL != dtt_entry ) {
-            assert(dtt_entry->adt.opaque_dtt == adt.opaque_dtt);
-            return 0;
-        }
+
+    (void)dplasma_set_helper_hash_table_atomic();
+
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
+    /* Find the entry */
+    dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
+    if( NULL != dtt_entry ) {
+        assert(dtt_entry->adt.opaque_dtt == adt.opaque_dtt);
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
+        return 0;
     }
 
     dtt_entry = (dplasma_datatype_lapack_helper_t *)malloc(sizeof(dplasma_datatype_lapack_helper_t));
     dtt_entry->ht_item.key = (uint64_t)strdup(static_desc);
-    dtt_entry->info = info;
+    dtt_entry->info = *info;
     dtt_entry->adt = adt;
     parsec_hash_table_nolock_insert(dplasma_datatypes_lapack_helper, &dtt_entry->ht_item);
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-        " insert dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %"PRIxPTR" arena %p (%30s)",
-        info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, (intptr_t)adt.opaque_dtt, adt.arena, static_desc);
+        " insert dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
+        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
     return 0;
 }
 
-int dplasma_set_datatype_info( const dplasma_data_collection_t *dc, parsec_arena_datatype_t adt,
-                               lapack_info_t info)
+int dplasma_set_datatype_info( const dplasma_data_collection_t *dc,
+                               parsec_arena_datatype_t adt,
+                               const lapack_info_t* info)
 {
     dplasma_set_dtt_to_info(dc, adt, info);
     dplasma_set_info_to_dtt(dc, adt, info);
@@ -134,58 +163,67 @@ int dplasma_set_datatype_info( const dplasma_data_collection_t *dc, parsec_arena
 }
 
 int dplasma_get_info_from_datatype( const dplasma_data_collection_t *dc, parsec_datatype_t dtt,
-                                    lapack_info_t *info,
-                                    parsec_arena_datatype_t **adt)
+                                    const lapack_info_t **info,
+                                    const parsec_arena_datatype_t **adt)
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)dtt);
     parsec_key_t k = (uint64_t)static_desc;
     assert(dplasma_datatypes_lapack_helper!= NULL);
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
     dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
     assert(dtt_entry != NULL);
-    *info = dtt_entry->info;
+    *info = &dtt_entry->info;
     *adt  = &dtt_entry->adt;
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     return 0;
 }
 
 int dplasma_get_datatype_from_info( const dplasma_data_collection_t *dc,
                                     lapack_info_t *info,
-                                    parsec_arena_datatype_t **adt)
+                                    const parsec_arena_datatype_t **adt)
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info->loc, info->shape, info->layout);
     parsec_key_t k = (uint64_t)static_desc;
     assert(dplasma_datatypes_lapack_helper!= NULL);
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
     dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
     assert(dtt_entry != NULL);
     *info = dtt_entry->info;
     *adt = &dtt_entry->adt;
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     return 0;
 }
 
 int dplasma_cleanup_datatype_info( const dplasma_data_collection_t *dc,
-                                   lapack_info_t info,
+                                   const lapack_info_t* info,
                                    parsec_arena_datatype_t *adt)
 {
     dplasma_datatype_lapack_helper_t * dtt_entry = NULL;
     char static_desc[LAPACK_ADT_KEY_STR_SZ];
     parsec_key_t k;
+
     assert(dplasma_datatypes_lapack_helper!= NULL);
+
     /* Remove the two entries from the hash table */
-    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info.loc, info.shape, info.layout);
+    snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|-1|%d|%d|%d", dc, info->loc, info->shape, info->layout);
     k = (uint64_t)static_desc;
+    parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the info bucket */
     dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
     if(dtt_entry != NULL) {
         *adt = dtt_entry->adt;
         PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
             " remove dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
-            info.lda, info.rows, info.cols, info.loc, info.shape, info.layout, adt->opaque_dtt, adt->arena, static_desc);
+            info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
         dplasma_datatypes_lapack_helper_release((void*)dtt_entry, NULL);
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);  /* release the loc on the info bucket */
 
         snprintf( static_desc, LAPACK_ADT_KEY_STR_SZ, "%p|%"PRIxPTR"|-1|-1|-1", dc, (intptr_t)adt->opaque_dtt);
         k = (uint64_t)static_desc;
+        parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the datatype bucket */
         dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
         if(dtt_entry != NULL){ /* same desc + dtt can be reuse for several loc & shape */
             PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
@@ -194,15 +232,17 @@ int dplasma_cleanup_datatype_info( const dplasma_data_collection_t *dc,
                 (intptr_t)adt->opaque_dtt, adt->arena, static_desc);
             dplasma_datatypes_lapack_helper_release((void*)dtt_entry, NULL);
         }
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);  /* release the lock on the datatype bucket */
         return 0;
     }
+    parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);  /* release the lock on the info bucket */
     /* No found */
     return -1;
 }
 
 
 /***************************************************************************/
-/* Management of dplasma_data_collection_t to wrap parsec_datacollecctions */
+/* Management of dplasma_data_collection_t to wrap parsec_data_collection  */
 /***************************************************************************/
 
 static parsec_data_t* data_of(parsec_data_collection_t *desc, ...)
@@ -224,42 +264,27 @@ static parsec_data_t* data_of(parsec_data_collection_t *desc, ...)
     /* Correct datatype if not default because of location */
     int loc = dplasma_tile_location( ddc->dc_original, m, n);
 
-    // if(loc != DFULL_T){
-    //     lapack_info_t info;
-    //     parsec_arena_datatype_t *adt;
-    //     /* obtain the shape */
-    //     rc = dplasma_get_info_from_datatype(ddc->dc_original, cp->dtt, &info, &adt);
-    //     assert(rc == 0);
-    //     /* obtain appropriate dtt for that location, shape and layout */
-    //     info.loc = loc;
-    //     rc = dplasma_get_datatype_from_info(ddc->dc_original, &info, &adt);
-    //     assert(rc == 0);
+    const lapack_info_t *cp_info;
+    const parsec_arena_datatype_t *adt;
 
-    //     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-    //          "data_of CP %p [old type %p] loc %d -> dtt %p target_shape %d layout %d",
-    //          cp, cp->dtt, loc, adt->opaque_dtt, info.shape, info.layout);
-    //     parsec_data_create_with_type( dt->dc,
-    //                                   dt->key, cp->device_private, dt->nb_elts,
-    //                                   adt->opaque_dtt);
-    // }
-    // return dt;
-
-    lapack_info_t info;
-    parsec_arena_datatype_t *adt;
-    /* obtain the shape */
-    rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &info, &adt);
+    /* obtain the shape of the original copy (aka device[0]) */
+    rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &cp_info, &adt);
     assert(rc == 0);
-    /* obtain appropriate dtt for that location, shape and layout */
-    info.loc = loc;
-    rc = dplasma_get_datatype_from_info(ddc, &info, &adt);
-    assert(rc == 0);
-    if(cp->dtt != adt->opaque_dtt){
-        PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
-            "data_of CP %p [old type %"PRIxPTR"] loc %d -> dtt %"PRIxPTR" target_shape %d layout %d",
-            cp, (intptr_t)cp->dtt, loc, (intptr_t)adt->opaque_dtt, info.shape, info.layout);
-        dt = parsec_data_create_with_type( dt->dc,
-                                           dt->key, cp->device_private, dt->nb_elts,
-                                           adt->opaque_dtt);
+    if( loc != cp_info->loc ) {  /* if we are looking for a different shape/location */
+        /* obtain appropriate dtt for that location, shape and layout */
+        /* make a copy of the info, don't alter the one currently in the hash table */
+        lapack_info_t info = *cp_info;
+        info.loc = loc;
+        rc = dplasma_get_datatype_from_info(ddc, &info, &adt);
+        assert(rc == 0);
+        if(cp->dtt != adt->opaque_dtt){
+            PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
+                "data_of CP %p [old type %p] loc %d -> dtt %p target_shape %d layout %d",
+                cp, cp->dtt, loc, adt->opaque_dtt, info.shape, info.layout);
+            dt = parsec_data_create_with_type( dt->dc,
+                                               dt->key, cp->device_private, dt->nb_elts,
+                                               adt->opaque_dtt);
+        }
     }
 
     return dt;
