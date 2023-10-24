@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2023 The University of Tennessee and The University
+ * Copyright (c) 2011-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -109,4 +109,3 @@ dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_t *A )
         return dplasma_imax( ceil( alpha ), 2 );
     }
 }
-
