@@ -266,7 +266,7 @@ BODY [type=CUDA]
 #endif
 
     cublasStatus_t status;
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrsm_v2(handles->cublas_handle,
@@ -397,7 +397,7 @@ BODY [type=CUDA]
     double mzone = -1.;
     cublasStatus_t status;
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZherk_v2( handles->cublas_handle,
@@ -540,7 +540,7 @@ BODY [type=CUDA
     assert( ldak_B <= descA->mb );
     assert( ldam_C <= descA->mb );
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
 
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
@@ -552,7 +552,7 @@ BODY [type=CUDA
                              &zone,  (cuDoubleComplex*)C, ldam_C);
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 
-    printlogcuda("CUDA_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
+    printloggpu("CUDA_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
                  m, n, k,
                  &dplasma_lapack_const( dplasmaConjTrans ),  &dplasma_lapack_const( dplasmaNoTrans ),
                  descA->mb, tempnn, descA->nb,
