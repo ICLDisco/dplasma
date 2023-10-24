@@ -115,7 +115,7 @@ dplasma_set_dtt_to_info( const dplasma_data_collection_t *dc,
     parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
         " insert dtt -> info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
-        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
+        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt.opaque_dtt, adt.arena, static_desc);
     return 0;
 }
 
@@ -149,7 +149,7 @@ dplasma_set_info_to_dtt( const dplasma_data_collection_t *dc,
     parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
     PARSEC_DEBUG_VERBOSE(27, parsec_debug_output,
         " insert dtt <- info lda %d rows %d cols %d loc %d shape %d layout %d dtt %p arena %p (%30s)",
-        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt->opaque_dtt, adt->arena, static_desc);
+        info->lda, info->rows, info->cols, info->loc, info->shape, info->layout, adt.opaque_dtt, adt.arena, static_desc);
     return 0;
 }
 
