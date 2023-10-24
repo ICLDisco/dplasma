@@ -11,7 +11,7 @@
 #include "parsec/arena.h"
 #include "parsec/class/parsec_hash_table.h"
 
-#define REUSE_ARENA_DATATYPE
+#undef REUSE_ARENA_DATATYPE
 #define DATATYPE_KEY_STR_SZ 100
 
 extern parsec_hash_table_t *dplasma_arenas;
