@@ -398,10 +398,10 @@ int main(int argc, char **argv)
     }
 
     /* Cleaning data arrays we allocated for communication */
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
     dplasma_matrix_del2arena( tile_full );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_RECTANGLE);
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
     dplasma_matrix_del2arena( tile_rectangle );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_RECTANGLE);
 
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcT );
