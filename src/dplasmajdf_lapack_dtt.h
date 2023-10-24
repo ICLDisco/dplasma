@@ -32,27 +32,27 @@ static inline
 int LDA_internal(const dplasma_data_collection_t *ddc, parsec_data_copy_t *cp)
 {
     int rc;
-    lapack_info_t info;
-    parsec_arena_datatype_t *adt;
+    const lapack_info_t *info;
+    const parsec_arena_datatype_t *adt;
     (void)rc;
     /* obtain the lda of this dc->dtt */
     rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &info, &adt);
     assert(rc == 0);
     PARSEC_DEBUG_VERBOSE(4, parsec_debug_output,
-        "CP %p [%p] [type %p] lda %d", cp, cp->device_private, cp->dtt, info.lda);
-    return info.lda;
+        "CP %p [%p] [type %p] lda %d", cp, cp->device_private, cp->dtt, info->lda);
+    return info->lda;
 }
 #define LDA(ddc, FLOW_NAME)\
     LDA_internal(ddc, _f_##FLOW_NAME)
 
 /* Obtain the appropriate parsec_arena_datatype_t for a given location and shape in the datacollection
  */
-static inline
-parsec_arena_datatype_t* ADTT_DC(const dplasma_data_collection_t *ddc, int loc, int target_shape, int target_layout)
+static inline const parsec_arena_datatype_t*
+ADTT_DC(const dplasma_data_collection_t *ddc, int loc, int target_shape, int target_layout)
 {
     int rc;
     lapack_info_t info;
-    parsec_arena_datatype_t *adt;
+    const parsec_arena_datatype_t *adt;
     (void)rc;
 
     info.loc = loc;
@@ -71,15 +71,15 @@ parsec_arena_datatype_t* ADTT_DC(const dplasma_data_collection_t *ddc, int loc, 
 /* Obtain the appropriate parsec_arena_datatype_t that represents the type of the datacopy with the given shape
  */
 static parsec_arena_datatype_t adt_null_dc;
-static inline
-parsec_arena_datatype_t* ADTT_CP(parsec_data_copy_t *cp, const dplasma_data_collection_t *ddc, int target_loc, int target_shape)
+static inline const parsec_arena_datatype_t*
+ADTT_CP(parsec_data_copy_t *cp, const dplasma_data_collection_t *ddc, int target_loc, int target_shape)
 {
+    const parsec_arena_datatype_t *adt;
+    const lapack_info_t* cp_info;
     int rc;
-    lapack_info_t info;
-    parsec_arena_datatype_t *adt;
     (void)rc;
 
-    if(cp == NULL){
+    if(cp == NULL) {
       /* this flow is not actually originating an output dep */
       /* this case happens because the JDF generated code obtains the ADT before
        * evaluating the guards for the successors during iterate successors.
@@ -88,24 +88,26 @@ parsec_arena_datatype_t* ADTT_CP(parsec_data_copy_t *cp, const dplasma_data_coll
     }
 
     /* obtain the location & layout of this dc->dtt */
-    rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &info, &adt);
+    rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &cp_info, &adt);
     assert(rc == 0);
 
-    if(( info.shape == target_shape )||(target_shape == DPLASMA_SHAPE_SAME)){
+    if(( cp_info->shape == target_shape )||(target_shape == DPLASMA_SHAPE_SAME)){
       PARSEC_DEBUG_VERBOSE(8, parsec_debug_output,
-        "CP %p [type %p] -> target_shape %d target_loc %d dtt %p",
-         cp, cp->dtt, target_shape, target_loc, adt->opaque_dtt);
+                           "CP %p [type %p] -> target_shape %d target_loc %d dtt %p",
+                            cp, cp->dtt, target_shape, target_loc, adt->opaque_dtt);
       return adt;
     }
 
+    /* make a copy of the info, don't alter the one currently in the hash table */
+    lapack_info_t info = *cp_info;
     info.loc = target_loc;
     info.shape = target_shape;
     /* obtain the equivalent dtt for the same location with the target_shape */
     rc = dplasma_get_datatype_from_info(ddc, &info, &adt);
     assert(rc == 0);
     PARSEC_DEBUG_VERBOSE(8, parsec_debug_output,
-        "CP %p [type %p] loc %d layout %d -> dtt %p target_shape %d",
-         cp, cp->dtt, target_loc, info.layout, adt->opaque_dtt, target_shape);
+                         "CP %p [type %p] loc %d layout %d -> dtt %p target_shape %d",
+                          cp, cp->dtt, target_loc, info.layout, adt->opaque_dtt, target_shape);
     return adt;
 }
 
@@ -114,16 +116,16 @@ static inline
 void ADTT_INFO_internal(parsec_data_copy_t *cp, const dplasma_data_collection_t *ddc, int *lda, int *rows, int *cols)
 {
     int rc;
-    lapack_info_t info;
-    parsec_arena_datatype_t *adt;
+    const lapack_info_t* info;
+    const parsec_arena_datatype_t *adt;
     (void)rc;
     assert(cp != NULL);
     /* obtain the location & layout of this dc->dtt */
     rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &info, &adt);
     assert(rc == 0);
-    *lda = info.lda;
-    *rows = info.rows;
-    *cols = info.cols;
+    *lda = info->lda;
+    *rows = info->rows;
+    *cols = info->cols;
 }
 
 #define ADTT_INFO(ddc, FLOW_NAME, lda, rows, cols)\

@@ -122,32 +122,6 @@ RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(d
 
 ; (k >= (descA->mt - PRI_CHANGE)) ? (descA->mt - k) * (descA->mt - k) * (descA->mt - k) : PRI_MAX
 
-BODY [type=RECURSIVE]
-{
-    int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
-
-    if (tempkm > smallnb)
-    {
-        subtile_desc_t *small_descT;
-        parsec_taskpool_t *parsec_zpotrf;
-
-        small_descT = subtile_desc_create( descA, k, k,
-                                           smallnb, smallnb, 0, 0, tempkm, tempkm );
-        small_descT->mat = T;
-
-        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, (int*)&info );
-
-        parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_zpotrf, zpotrf_recursive_cb,
-                             1, small_descT);
-
-        return PARSEC_HOOK_RETURN_ASYNC;
-    }
-    /* Go for the sequential CPU version */
-    return PARSEC_HOOK_RETURN_NEXT;
-}
-END
-
 BODY [type=CUDA]
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
@@ -206,6 +180,32 @@ BODY [type=HIP]
 }
 END
 
+BODY [type=RECURSIVE]
+{
+    int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
+
+    if (tempkm > smallnb)
+    {
+        subtile_desc_t *small_descT;
+        parsec_taskpool_t *parsec_zpotrf;
+
+        small_descT = subtile_desc_create( descA, k, k,
+                                           smallnb, smallnb, 0, 0, tempkm, tempkm );
+        small_descT->mat = T;
+
+        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, (int*)&info );
+
+        parsec_recursivecall((parsec_task_t*)this_task,
+                             parsec_zpotrf, zpotrf_recursive_cb,
+                             1, small_descT);
+
+        return PARSEC_HOOK_RETURN_ASYNC;
+    }
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
+}
+END
+
 BODY
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
@@ -253,42 +253,6 @@ RW    C <- (k == 0) ? ddescA(m, k)               [ type        = %{ return ADTT_
 
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - k - m - 1) * (m - k) : PRI_MAX
 
-BODY [type=RECURSIVE]
-{
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-
-    if ( (tempmm > smallnb) || (descA->nb > smallnb) )
-    {
-        subtile_desc_t *small_descT;
-        subtile_desc_t *small_descC;
-        parsec_taskpool_t* parsec_ztrsm;
-
-
-        small_descT = subtile_desc_create( descA, k, k,
-                                           smallnb, smallnb, 0, 0, descA->nb, descA->nb );
-        small_descT->mat = T;
-
-        small_descC = subtile_desc_create( descA, m, k,
-                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
-        small_descC->mat = C;
-
-        parsec_ztrsm = dplasma_ztrsm_New(dplasmaRight, dplasmaLower,
-                                        dplasmaConjTrans, dplasmaNonUnit,
-                                        (dplasma_complex64_t)1.0,
-                                        (parsec_tiled_matrix_t *)small_descT,
-                                        (parsec_tiled_matrix_t *)small_descC );
-
-        parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_ztrsm, ztrsm_recursive_cb,
-                             2, small_descT, small_descC );
-
-        return PARSEC_HOOK_RETURN_ASYNC;
-    }
-    /* Go for the sequential CPU version */
-    return PARSEC_HOOK_RETURN_NEXT;
-}
-END
-
 BODY [type=CUDA]
 {
     int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
@@ -333,6 +297,42 @@ BODY [type=HIP]
                                  tempmm, descA->nb,
                                  &zone, T, ldak, C, ldam);
     DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
+}
+END
+
+BODY [type=RECURSIVE]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+
+    if ( (tempmm > smallnb) || (descA->nb > smallnb) )
+    {
+        subtile_desc_t *small_descT;
+        subtile_desc_t *small_descC;
+        parsec_taskpool_t* parsec_ztrsm;
+
+
+        small_descT = subtile_desc_create( descA, k, k,
+                                           smallnb, smallnb, 0, 0, descA->nb, descA->nb );
+        small_descT->mat = T;
+
+        small_descC = subtile_desc_create( descA, m, k,
+                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
+        small_descC->mat = C;
+
+        parsec_ztrsm = dplasma_ztrsm_New(dplasmaRight, dplasmaLower,
+                                        dplasmaConjTrans, dplasmaNonUnit,
+                                        (dplasma_complex64_t)1.0,
+                                        (parsec_tiled_matrix_t *)small_descT,
+                                        (parsec_tiled_matrix_t *)small_descC );
+
+        parsec_recursivecall((parsec_task_t*)this_task,
+                             parsec_ztrsm, ztrsm_recursive_cb,
+                             2, small_descT, small_descC );
+
+        return PARSEC_HOOK_RETURN_ASYNC;
+    }
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -508,47 +508,6 @@ RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_
 
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * ((2 * descA->mt) - m - n - 3) * (m - n) + 6 * (m - k) : PRI_MAX
 
-BODY [type=RECURSIVE]
-{
-    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
-
-    if ( (tempmm > smallnb) || (descA->nb > smallnb) )
-    {
-        subtile_desc_t *small_descA;
-        subtile_desc_t *small_descB;
-        subtile_desc_t *small_descC;
-        parsec_taskpool_t *parsec_zgemm;
-
-        small_descA = subtile_desc_create( descA, m, k,
-                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
-        small_descA->mat = A;
-
-        small_descB = subtile_desc_create( descA, n, k,
-                                           smallnb, smallnb, 0, 0, descA->mb, descA->nb );
-        small_descB->mat = B;
-
-        small_descC = subtile_desc_create( descA, m, n,
-                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
-        small_descC->mat = C;
-
-        parsec_zgemm = dplasma_zgemm_New(dplasmaNoTrans, dplasmaConjTrans,
-                                        (dplasma_complex64_t)-1.0,
-                                        (parsec_tiled_matrix_t *)small_descA,
-                                        (parsec_tiled_matrix_t *)small_descB,
-                                        (dplasma_complex64_t) 1.0,
-                                        (parsec_tiled_matrix_t *)small_descC);
-
-        parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_zgemm, zgemm_recursive_cb,
-                             3, small_descA, small_descB, small_descC );
-
-        return PARSEC_HOOK_RETURN_ASYNC;
-    }
-    /* Go to CPU sequential kernel */
-    return PARSEC_HOOK_RETURN_NEXT;
-}
-END
-
 BODY [type=CUDA
       A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
@@ -623,6 +582,47 @@ BODY [type=HIP
                                           B, ldan_B,
                                   &zone,  C, ldam_C );
     DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
+}
+END
+
+BODY [type=RECURSIVE]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+
+    if ( (tempmm > smallnb) || (descA->nb > smallnb) )
+    {
+        subtile_desc_t *small_descA;
+        subtile_desc_t *small_descB;
+        subtile_desc_t *small_descC;
+        parsec_taskpool_t *parsec_zgemm;
+
+        small_descA = subtile_desc_create( descA, m, k,
+                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
+        small_descA->mat = A;
+
+        small_descB = subtile_desc_create( descA, n, k,
+                                           smallnb, smallnb, 0, 0, descA->mb, descA->nb );
+        small_descB->mat = B;
+
+        small_descC = subtile_desc_create( descA, m, n,
+                                           smallnb, smallnb, 0, 0, tempmm, descA->nb );
+        small_descC->mat = C;
+
+        parsec_zgemm = dplasma_zgemm_New(dplasmaNoTrans, dplasmaConjTrans,
+                                        (dplasma_complex64_t)-1.0,
+                                        (parsec_tiled_matrix_t *)small_descA,
+                                        (parsec_tiled_matrix_t *)small_descB,
+                                        (dplasma_complex64_t) 1.0,
+                                        (parsec_tiled_matrix_t *)small_descC);
+
+        parsec_recursivecall((parsec_task_t*)this_task,
+                             parsec_zgemm, zgemm_recursive_cb,
+                             3, small_descA, small_descB, small_descC );
+
+        return PARSEC_HOOK_RETURN_ASYNC;
+    }
+    /* Go to CPU sequential kernel */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
