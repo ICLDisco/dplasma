@@ -13,12 +13,14 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
 static void zgeqrt_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void zunmqr_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void ztsqrt_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void ztsmqr_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include "cores/dplasma_zcores.h"
@@ -586,6 +588,7 @@ BODY
 END
 
 extern "C" %{
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 static void zgeqrt_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data) {
     (void)data;
     dplasma_zgeqrfr_geqrt_Destruct(tp);
@@ -602,4 +605,5 @@ static void ztsmqr_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_ca
     (void)data;
     dplasma_zgeqrfr_tsmqr_Destruct(tp);
 }
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 %}
