@@ -18,12 +18,14 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
 static void zpotrf_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void zgemm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void zherk_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void ztrsm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT 0
@@ -553,6 +555,7 @@ static int64_t zgemm_time_estimate(const parsec_task_t *task, parsec_device_modu
     return (int64_t)FLOPS_ZGEMM(mb, mb, mb) / dev->gflops_fp64;
 }
 
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 /*
  * A function to recursively update the value of the INFO argument for
  * recursive calls. We need a special function because the recursive calls being asynchronous
@@ -587,6 +590,6 @@ static void ztrsm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_cal
     (void)data;
     dplasma_ztrsm_Destruct(tp);
 }
-
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 %}
 
