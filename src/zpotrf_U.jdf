@@ -114,32 +114,6 @@ RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(d
 
 ; (k >= (descA->nt - PRI_CHANGE)) ? (descA->nt - k) * (descA->nt - k) * (descA->nt - k) : PRI_MAX
 
-BODY [type=RECURSIVE]
-{
-    int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
-
-    if (tempkn > smallnb)
-    {
-        subtile_desc_t *small_descT;
-        parsec_taskpool_t *parsec_zpotrf;
-
-        small_descT = subtile_desc_create( descA, k, k,
-                                           smallnb, smallnb, 0, 0, tempkn, tempkn );
-        small_descT->mat = T;
-
-        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, (int*)&info );
-
-        parsec_recursivecall((parsec_task_t*)this_task,
-                             parsec_zpotrf, zpotrf_recursive_cb,
-                             1, small_descT);
-
-        return PARSEC_HOOK_RETURN_ASYNC;
-    }
-    /* Go for the sequential CPU version */
-    return PARSEC_HOOK_RETURN_NEXT;
-}
-END
-
 BODY [type=CUDA
       weigth=k]
 {
@@ -168,6 +142,32 @@ BODY [type=CUDA
 
     status = cusolverDnZpotrf( handles->cusolverDn_handle, cublas_uplo, tempkn, T, ldak, workspace, wp->lwork, d_iinfo);
     PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=RECURSIVE]
+{
+    int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
+
+    if (tempkn > smallnb)
+    {
+        subtile_desc_t *small_descT;
+        parsec_taskpool_t *parsec_zpotrf;
+
+        small_descT = subtile_desc_create( descA, k, k,
+                                           smallnb, smallnb, 0, 0, tempkn, tempkn );
+        small_descT->mat = T;
+
+        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_t *)small_descT, (int*)&info );
+
+        parsec_recursivecall((parsec_task_t*)this_task,
+                             parsec_zpotrf, zpotrf_recursive_cb,
+                             1, small_descT);
+
+        return PARSEC_HOOK_RETURN_ASYNC;
+    }
+    /* Go for the sequential CPU version */
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
