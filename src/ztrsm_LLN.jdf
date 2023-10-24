@@ -115,8 +115,7 @@ BODY [type=CUDA]
                                  (cuDoubleComplex*)D, ldbk,
                          lalpha, (cuDoubleComplex*)E, ldb );
     status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status,
-                             {return -1;} );
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
