@@ -14,12 +14,14 @@ extern "C" %{
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 #include "parsec/data_dist/matrix/subtile.h"
 #include "parsec/recursive.h"
 static void zpotrf_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void zgemm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void zherk_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void ztrsm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
@@ -517,8 +519,8 @@ BODY [type=CUDA
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       A.dc=ddescA B.dc=ddescA C.dc=ddescA
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -684,6 +686,7 @@ static int64_t zgemm_time_estimate(const parsec_task_t *task, parsec_device_modu
     return (int64_t)FLOPS_ZGEMM(mb, mb, mb) / dev->gflops_fp64;
 }
 
+#if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 /*
  * A function to recursively update the value of the INFO argument for
  * recursive calls. We need a special function because the recursive calls being asynchronous
@@ -718,6 +721,6 @@ static void ztrsm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_cal
     (void)data;
     dplasma_ztrsm_Destruct(tp);
 }
-
+#endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 %}
 
