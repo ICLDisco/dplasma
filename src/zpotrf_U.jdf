@@ -114,8 +114,7 @@ RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(d
 
 ; (k >= (descA->nt - PRI_CHANGE)) ? (descA->nt - k) * (descA->nt - k) * (descA->nt - k) : PRI_MAX
 
-BODY [type=CUDA
-      weigth=k]
+BODY [type=CUDA]
 {
     int tempkn = k == descA->nt-1 ? descA->n - k*descA->nb : descA->nb;
     int ldak = LDA(ddescA, T);
