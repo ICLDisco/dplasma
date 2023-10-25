@@ -267,8 +267,8 @@ int main(int argc, char ** argv)
         parsec_taskpool_free( dtd_tp );
 
         /* Cleaning data arrays we allocated for communication */
-        parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
         dplasma_matrix_del2arena( tile_full );
+        parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
         parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
 
         parsec_data_free(dcA.mat);
@@ -519,8 +519,8 @@ int main(int argc, char ** argv)
                 parsec_taskpool_free( dtd_tp );
 
                 /* Cleaning data arrays we allocated for communication */
-                parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
                 dplasma_matrix_del2arena( tile_full );
+                parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
                 parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
 
                 parsec_data_free(dcA.mat);

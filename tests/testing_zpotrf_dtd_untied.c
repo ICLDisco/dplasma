@@ -476,8 +476,8 @@ int main(int argc, char **argv)
         parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcX );
     }
 
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
     dplasma_matrix_del2arena( tile_full );
+    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_data_free(dcA.mat); dcA.mat = NULL;
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
