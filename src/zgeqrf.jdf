@@ -489,8 +489,8 @@ BODY [type=CUDA device=%{ return n; %}
     int ldam_V  = descA->mb;
     int ldam_T  = descT->mb;
 
-    WORK  = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
-    WORKC = parsec_gpu_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
+    WORK  = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
+    WORKC = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
 
     dplasma_cuda_ztsmqr( dplasmaLeft, dplasmaConjTrans,
                          descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
@@ -502,7 +502,7 @@ BODY [type=CUDA device=%{ return n; %}
                          WORKC, descA->mb,
                          parsec_body.stream );
 
-      parsec_gpu_push_workspace(gpu_device, gpu_stream);
+      parsec_device_push_workspace(gpu_device, gpu_stream);
 }
 END
 
