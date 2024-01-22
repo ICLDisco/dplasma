@@ -66,6 +66,7 @@ typedef struct {
 } dplasma_cuda_handles_t;
 
 void *dplasma_create_cuda_handles(void *obj, void *user);
+void dplasma_destroy_cuda_handles(void *_h, void *_n);
 
 #define DPLASMA_CUBLAS_CHECK_STATUS( STR, STATUS, CODE )                     \
     do {                                                                     \
