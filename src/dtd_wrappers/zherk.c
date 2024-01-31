@@ -60,7 +60,7 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
     dplasma_cublas_op(trans);
     dplasma_cublas_fill(uplo);
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHI);
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
 
 #if defined(PARSEC_DEBUG_NOISIER)
     {

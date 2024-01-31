@@ -116,9 +116,9 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
 
     dplasma_cublas_fill(uplo);
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHI);
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
     assert(NULL != handles);
-    wp = parsec_info_get(&gpu_device->super.infos, WoSI);
+    wp = parsec_info_get(&gpu_device->super.infos, dplasma_dtd_cuda_workspace_infoid);
     assert(NULL != wp);
 
     workspace = (cuDoubleComplex*)wp->tmpmem;

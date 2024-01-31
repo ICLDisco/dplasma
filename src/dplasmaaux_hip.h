@@ -58,14 +58,14 @@
     trans = (trans == dplasmaNoTrans) ? HIPBLAS_OP_N : HIPBLAS_OP_T;
 #endif /* PRECISION_z || PRECISION_c */
 
-extern parsec_info_id_t CuHI;
-extern parsec_info_id_t WoSI;
+extern parsec_info_id_t dplasma_dtd_hip_infoid;
 
 typedef struct {
     hipblasHandle_t hipblas_handle;
 } dplasma_hip_handles_t;
 
 void *dplasma_create_hip_handles(void *obj, void *user);
+void dplasma_destroy_hip_handles(void *_h, void *_n);
 
 #define DPLASMA_ROCBLAS_CHECK_ERROR(STR, ERROR, CODE) \
     do { \
