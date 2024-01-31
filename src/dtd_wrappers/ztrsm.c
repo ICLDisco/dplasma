@@ -62,7 +62,7 @@ parsec_core_ztrsm_cuda(parsec_device_gpu_module_t* gpu_device,
     dplasma_cublas_op(trans);
     dplasma_cublas_diag(diag);
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHI);
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex alphag = make_cuDoubleComplex( creal(alpha), cimag(alpha));

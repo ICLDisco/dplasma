@@ -14,6 +14,14 @@
 #include <hipblas/hipblas.h>
 #include <hipsolver/hipsolver.h>
 
+/* 
+ * Global info ID's for cublas handles and workspaces
+ * Should be initialized in the tests
+ * with the return of parsec_info_register
+ * or parsec_info_lookup
+ */
+parsec_info_id_t dplasma_dtd_hip_infoid = -1;
+
 /* Unfortunately, HIPBLAS does not provide a error to string function */
 char *dplasma_hipblas_error_to_string(hipblasStatus_t hipblas_status)
 {
@@ -78,3 +86,10 @@ void *dplasma_create_hip_handles(void *obj, void *_n)
     return new;
 }
 
+void dplasma_destroy_hip_handles(void *_h, void *_n)
+{
+    dplasma_hip_handles_t *handles = (dplasma_hip_handles_t*)_h;
+    (void)_n;
+    hipblasDestroy(handles->hipblas_handle);
+    free(handles);
+}

@@ -704,29 +704,34 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     print_arguments(iparam);
 
 #if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
-    int dev, nbgpu = 0;
+    int dev, nb_cuda_gpu = 0, nb_hip_gpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
         if( PARSEC_DEV_CUDA == device->type ) {
-            nbgpu++;
+            nb_cuda_gpu++;
+        }
+        else if( PARSEC_DEV_HIP == device->type ) {
+            nb_hip_gpu++;
         }
     }
-    if( nbgpu > 0 ) {
 #if defined(DPLASMA_HAVE_CUDA)
+    if( nb_cuda_gpu > 0 ) {
         dplasma_dtd_cuda_infoid = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
                                     dplasma_destroy_cuda_handles, NULL,
                                     dplasma_create_cuda_handles, NULL,
                                     NULL);
         assert(-1 != dplasma_dtd_cuda_infoid);
+    }
 #endif
 #if defined(DPLASMA_HAVE_HIP)
+    if( nb_hip_gpu > 0 ) {
         dplasma_dtd_hip_infoid =  parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
                                     dplasma_destroy_hip_handles, NULL,
                                     dplasma_create_hip_handles, NULL,
                                     NULL);
         assert(-1 != dplasma_dtd_hip_infoid);
-#endif
     }
+#endif
 #endif
 
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
