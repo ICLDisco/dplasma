@@ -97,3 +97,12 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
 
     return new;
 }
+
+void dplasma_destroy_cuda_handles(void *_h, void *_n)
+{
+    dplasma_cuda_handles_t *handles = (dplasma_cuda_handles_t*)_h;
+    (void)_n;
+    cublasDestroy_v2(handles->cublas_handle);
+    cusolverDnDestroy(handles->cusolverDn_handle);
+    free(handles);
+}

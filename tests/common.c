@@ -628,17 +628,6 @@ char cwd[1024];
 int unix_timestamp;
 #endif
 
-#if defined(DPLASMA_HAVE_CUDA)
-static void destroy_cuda_handles(void *_h, void *_n)
-{
-    dplasma_cuda_handles_t *handles = (dplasma_cuda_handles_t*)_h;
-    (void)_n;
-    cublasDestroy_v2(handles->cublas_handle);
-    cusolverDnDestroy(handles->cusolverDn_handle);
-    free(handles);
-}
-#endif
-
 parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 {
 #ifdef PARSEC_PROF_TRACE
@@ -718,10 +707,11 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         }
     }
     if( nbgpu > 0 ) {
-        parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
-                             destroy_cuda_handles, NULL,
-                             dplasma_create_cuda_handles, NULL,
-                             NULL);
+        CuHI = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
+                                   dplasma_destroy_cuda_handles, NULL,
+                                   dplasma_create_cuda_handles, NULL,
+                                   NULL);
+        assert(-1 != CuHI);
     }
 #endif
 

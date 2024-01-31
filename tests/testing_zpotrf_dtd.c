@@ -96,10 +96,6 @@ int main(int argc, char **argv)
 
 #if defined(DPLASMA_HAVE_CUDA)
     zpotrf_dtd_workspace_info_t* infos = (zpotrf_dtd_workspace_info_t*) malloc(sizeof(zpotrf_dtd_workspace_info_t));
-    if( gpus > 0 ){
-        CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
-        assert(CuHI != -1);
-    }
 #endif
 
     if( dplasmaLower == uplo ) {
