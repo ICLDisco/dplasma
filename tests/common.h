@@ -35,6 +35,7 @@
 extern char *PARSEC_SCHED_NAME[];
 extern int unix_timestamp;
 extern char cwd[];
+extern uint64_t *dev_stats;
 
 /* Update PASTE_CODE_PROGRESS_KERNEL below if you change this list */
 enum iparam_t {
@@ -231,6 +232,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_SCHEDULER", iparam[IPARAM_SCHEDULER]);  
 
 #define PASTE_CODE_PROGRESS_KERNEL(PARSEC, KERNEL)                      \
+    parsec_devices_save_statistics(&dev_stats);                         \
     SYNC_TIME_START();                                                  \
     PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start"); \
     TIME_START();                                                       \
@@ -239,6 +241,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                            P, Q, gpus, NB, N,                           \
                            gflops=(flops/1e9)/sync_time_elapsed));      \
     PASTE_PROF_INFO;                                                    \
+    if(loud >= 4) parsec_devices_print_statistics(PARSEC, dev_stats);   \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
@@ -246,6 +249,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                "</DartMeasurement>\n",                                  \
                gflops);                                                 \
     }                                                                   \
+    if(rank==0) fflush(stdout);                                         \
     (void)gflops;
 
 
@@ -254,6 +258,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS; \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");\
     SYNC_TIME_STOP();                                                   \
+    parsec_devices_save_statistics(&dev_stats);                         \
     double stime_A = sync_time_elapsed;                                 \
     SYNC_TIME_START();                                                  \
     PARSEC_CHECK_ERROR(parsec_context_start(PARSEC), "parsec_context_start");\
@@ -276,6 +281,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                           stime_A,stime_C);                             \
     }                                                                   \
     PASTE_PROF_INFO;                                                    \
+    if(loud >= 4) parsec_devices_print_statistics(PARSEC, dev_stats);   \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
