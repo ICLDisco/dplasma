@@ -28,8 +28,27 @@ if( NOT DPLASMA_HAVE_COMPLEX_H )
   list(APPEND EXTRA_SOURCES complex.c)
 endif()
 if( DPLASMA_HAVE_CUDA )
-  list(APPEND EXTRA_SOURCES dplasmaaux_cuda.c)
+  list(APPEND EXTRA_SOURCES dplasmaaux_cuda.c cuda/lapack_cuda_stage_in.c)
 endif()
+if( DPLASMA_HAVE_HIP )
+  list(APPEND EXTRA_SOURCES dplasmaaux_hip.c)
+  FILE(GLOB cuda_sources cuda/[^\\.]*.[ch])
+  find_package(Perl REQUIRED)
+  find_program(HIPIFY_PERL_COMMAND NAMES hipify-perl HINTS ${HIP_BIN_INSTALL_DIR} REQUIRED)
+  foreach(cuda_file ${cuda_sources})
+    file(RELATIVE_PATH cuda_filename ${CMAKE_CURRENT_SOURCE_DIR}/cuda ${cuda_file})
+    string(REPLACE cuda hip hip_file ${cuda_filename})
+    string(PREPEND hip_file "${CMAKE_CURRENT_BINARY_DIR}/hip/")
+    add_custom_command(OUTPUT ${hip_file}
+                       DEPENDS ${cuda_file} # do not use MAIN_DEPENDENCY, that overides the default .c.o rule
+                       COMMAND ${CMAKE_COMMAND} -E copy "${cuda_file}" "${hip_file}.prehip"
+                       COMMAND ${PERL_EXECUTABLE} ${HIPIFY_PERL_COMMAND} --inplace --print-stats "${hip_file}"
+                       COMMAND ${PERL_EXECUTABLE} -i -pe "s{(cuda)}{ substr uc hip | (uc \$1 ^ \$1), 0, 3 }egi" "${hip_file}" VERBATIM) # Convert all remaining cuda/CUDA
+    if(${hip_file} MATCHES [^\\.]*.c) # do not add .h to sources
+      list(APPEND EXTRA_SOURCES ${hip_file})
+    endif()
+  endforeach()
+endif( DPLASMA_HAVE_HIP )
 
 ### Generate .c files from .jdf for all required precisions
 set(JDF
@@ -236,7 +255,9 @@ target_link_libraries(dplasma
   PaRSEC::parsec
   LAPACKE::LAPACKE
   $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cublas>
-  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cusolver>)
+  $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cusolver>
+  $<$<BOOL:${DPLASMA_HAVE_HIP}>:roc::hipblas>
+  $<$<BOOL:${DPLASMA_HAVE_HIP}>:roc::rocsolver>)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                        SOVERSION ${DPLASMA_VERSION_MAJOR})
 

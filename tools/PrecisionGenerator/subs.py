@@ -69,7 +69,7 @@ subs = {
     ('#undef COMPLEX',      '#undef COMPLEX',      '#undef REAL',         '#undef REAL'         ),
     ('#define SINGLE',      '#define DOUBLE',      '#define SINGLE',      '#define DOUBLE'      ),
     ('#undef DOUBLE',       '#undef SINGLE',       '#undef DOUBLE',       '#undef SINGLE'       ),
-    ('float',               'double',              'dplasma_complex32_t',  'dplasma_complex64_t'  ),
+    ('float',               'double',              'dplasma_complex32_t',  'dplasma_complex64_t'),
     ('PARSEC_MATRIX_FLOAT',    'PARSEC_MATRIX_DOUBLE',   'PARSEC_MATRIX_COMPLEX_FLOAT', 'PARSEC_MATRIX_COMPLEX_DOUBLE'),
     ('dplasma_float',       'dplasma_double',      'dplasma_complex32',   'dplasma_complex64'   ), ## for doxygen categories
     ('dplasma_cores_float', 'dplasma_cores_double','dplasma_cores_complex32', 'dplasma_cores_complex64'), ## for doxygen categories
@@ -81,11 +81,15 @@ subs = {
     ('smatrix',             'dmatrix',             'cmatrix',             'zmatrix'             ),
     ('stwoDBC',             'dtwoDBC',             'ctwoDBC',             'ztwoDBC'             ),
     ('float',               'double',              'cuFloatComplex',      'cuDoubleComplex'     ),
+    ('float',               'double',              'hipComplex',          'hipDoubleComplex'    ),
+    ('float',               'double',              'hipblasComplex',      'hipblasDoubleComplex'), ## both needed for make_hipComplex()
     ('float',               'double',              'cuCdivf',             'cuCdiv'              ),
+    ('float',               'double',              'hipCdivf',            'hipCdiv'             ),
     ('',                    '',                    'crealf',              'creal'               ),
     ('',                    '',                    'cimagf',              'cimag'               ),
     ('',                    '',                    'conjf',               'conj'                ),
     ('',                    '',                    'cuCfmaf',             'cuCfma'              ),
+    ('',                    '',                    'hipCfmaf',            'hipCfma'             ),
 
     ('cblas_snrm2','cblas_dnrm2','cblas_scnrm2','cblas_dznrm2'),
     ('cblas_sasum','cblas_dasum','cblas_scasum','cblas_dzasum'),
@@ -279,6 +283,10 @@ subs = {
     ('cuda_s',      'cuda_d',      'cuda_c',      'cuda_z'     ),
     ('cublasS',     'cublasD',     'cublasS',     'cublasD'    ),
     ('cublasS',     'cublasD',     'cublasC',     'cublasZ'    ),
+    ('hip_s',       'hip_d',       'hip_s',       'hip_d'      ),
+    ('hip_s',       'hip_d',       'hip_c',       'hip_z'      ),
+    ('hipblasS',    'hipblasD',    'hipblasS',    'hipblasD'   ),
+    ('hipblasS',    'hipblasD',    'hipblasC',    'hipblasZ'   ),
     ('example_s',   'example_d',   'example_c',   'example_z'  ),
     ('FLOPS_SSY',   'FLOPS_DSY',   'FLOPS_CHE',   'FLOPS_ZHE'  ),
     ('FLOPS_S',     'FLOPS_D',     'FLOPS_C',     'FLOPS_Z'    ),

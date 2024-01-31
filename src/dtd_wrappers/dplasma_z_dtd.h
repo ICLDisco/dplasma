@@ -19,7 +19,7 @@
 #include "parsec/mca/device/cuda/device_cuda.h"
 #include "parsec/utils/zone_malloc.h"
 #include "dplasmaaux.h"
-#include "potrf_cublas_utils.h"
+#include "potrf_gpu_workspaces.h"
 
 /* probably need to add this to substitions */
 #if defined(PRECISION_s)

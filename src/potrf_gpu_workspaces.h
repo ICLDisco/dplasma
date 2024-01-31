@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 2020-2023 The University of Tennessee and The University
+ * Copyright (c) 2020-2021 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
  */
-#ifndef DPLASMA_POTRF_CUBLAS_UTILS_H
-#define DPLASMA_POTRF_CUBLAS_UTILS_H
-
-#if defined(DPLASMA_HAVE_CUDA)
+#ifndef DPLASMA_POTRF_GPU_WORKSPACES_H
+#define DPLASMA_POTRF_GPU_WORKSPACES_H
 
 typedef struct {
   char         *tmpmem;
@@ -16,8 +14,6 @@ typedef struct {
   void*         params;
   size_t        host_size;
   void*         host_buffer;
-} dplasma_potrf_workspace_t;
+} dplasma_potrf_gpu_workspaces_t;
 
-#endif
-
-#endif //DPLASMA_POTRF_CUBLAS_UTILS_H
+#endif //DPLASMA_POTRF_GPU_WORKSPACES_H

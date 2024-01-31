@@ -10,7 +10,7 @@
 #include "parsec/utils/show_help.h"
 #include <cublas_v2.h>
 #include "dplasmaaux_cuda.h"
-#include "potrf_cublas_utils.h"
+#include "potrf_gpu_workspaces.h"
 
 /* 
  * Global info ID's for cublas handles and workspaces
@@ -18,11 +18,11 @@
  * with the return of parsec_info_register
  * or parsec_info_lookup
  */
-parsec_info_id_t CuHI = -1;
-parsec_info_id_t WoSI = -1;
+parsec_info_id_t dplasma_dtd_cuda_infoid = -1;
+parsec_info_id_t dplasma_dtd_cuda_workspace_infoid = -1;
 
 /* Unfortunately, CUBLAS does not provide a error to string function */
-static char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
+char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
 {
     switch(cublas_status)
     {
