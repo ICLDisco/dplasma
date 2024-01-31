@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     int m, n, k, total; /* loop counter */
     /* Parameters passed on to Insert_task() */
     int tempkm, tempmm, ldak, ldam, side, transA_p, transA_g, diag, trans, transB, ldan;
-    dplasma_complex64_t alpha_trsm, beta;
+    dplasma_complex64_t alpha_trsm, alpha_gemm, beta_gemm;
     double alpha_herk, beta_herk;
 
     /* Set defaults for non argv iparams */
@@ -111,7 +111,8 @@ int main(int argc, char **argv)
         trans = dplasmaNoTrans;
         alpha_herk = -1.0;
         beta_herk = 1.0;
-        beta = 1.0;
+        alpha_gemm = -1.0;
+        beta_gemm = 1.0;
         transB = dplasmaConjTrans;
         transA_g = dplasmaNoTrans;
 
@@ -190,12 +191,12 @@ int main(int argc, char **argv)
                                        PARSEC_DTD_EMPTY_FLAG, &tempmm,
                                        PARSEC_DTD_EMPTY_FLAG, &dcA.super.mb,
                                        PARSEC_DTD_EMPTY_FLAG, &dcA.super.mb,
-                                       PARSEC_DTD_EMPTY_FLAG, &alpha_herk,
+                                       PARSEC_DTD_EMPTY_FLAG, &alpha_gemm,
                                        PARSEC_DTD_EMPTY_FLAG, PARSEC_DTD_TILE_OF(A, n, k),
                                        PARSEC_DTD_EMPTY_FLAG, &ldan,
                                        PARSEC_DTD_EMPTY_FLAG, PARSEC_DTD_TILE_OF(A, m, k),
                                        PARSEC_DTD_EMPTY_FLAG, &ldam,
-                                       PARSEC_DTD_EMPTY_FLAG, &beta,
+                                       PARSEC_DTD_EMPTY_FLAG, &beta_gemm,
                                        PARSEC_DTD_EMPTY_FLAG, PARSEC_DTD_TILE_OF(A, n, m),
                                        PARSEC_DTD_EMPTY_FLAG, &ldan,
                                        PARSEC_DTD_ARG_END );
@@ -211,7 +212,8 @@ int main(int argc, char **argv)
         trans = dplasmaConjTrans;
         alpha_herk = -1.0;
         beta_herk = 1.0;
-        beta = 1.0;
+        alpha_gemm = -1.0;
+        beta_gemm = 1.0;
         transB = dplasmaNoTrans;
         transA_g = dplasmaConjTrans;
 
@@ -287,12 +289,12 @@ int main(int argc, char **argv)
                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
                                       PARSEC_DTD_EMPTY_FLAG,        &tempmm,
                                       PARSEC_DTD_EMPTY_FLAG,        &dcA.super.mb,
-                                      PARSEC_DTD_EMPTY_FLAG,        &alpha_herk,
+                                      PARSEC_DTD_EMPTY_FLAG,        &alpha_gemm,
                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, k, m),
                                       PARSEC_DTD_EMPTY_FLAG,        &ldak,
                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, k, n),
                                       PARSEC_DTD_EMPTY_FLAG,        &ldak,
-                                      PARSEC_DTD_EMPTY_FLAG,        &beta,
+                                      PARSEC_DTD_EMPTY_FLAG,        &beta_gemm,
                                       PARSEC_DTD_EMPTY_FLAG,        PARSEC_DTD_TILE_OF(A, m, n),
                                       PARSEC_DTD_EMPTY_FLAG,        &ldan,
                                       PARSEC_DTD_ARG_END );
