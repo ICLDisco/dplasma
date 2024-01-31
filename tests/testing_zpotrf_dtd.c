@@ -96,10 +96,6 @@ int main(int argc, char **argv)
 
 #if defined(DPLASMA_HAVE_CUDA)
     zpotrf_dtd_workspace_info_t* infos = (zpotrf_dtd_workspace_info_t*) malloc(sizeof(zpotrf_dtd_workspace_info_t));
-    if( gpus > 0 ){
-        CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
-        assert(CuHI != -1);
-    }
 #endif
 
     if( dplasmaLower == uplo ) {
@@ -122,7 +118,7 @@ int main(int argc, char **argv)
         infos->mb   = dcA.super.mb;
         infos->nb   = dcA.super.nb;
         infos->uplo = uplo;
-        WoSI = parsec_info_register( &parsec_per_stream_infos, "DPLASMA::ZPOTRF::WS",
+        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_stream_infos, "DPLASMA::ZPOTRF::WS",
                                      zpotrf_dtd_destroy_workspace, NULL,
                                      zpotrf_dtd_create_workspace, infos,
                                      NULL);
@@ -223,7 +219,7 @@ int main(int argc, char **argv)
         infos->mb   = dcA.super.mb;
         infos->nb   = dcA.super.nb;
         infos->uplo = uplo;
-        WoSI = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::WS",
+        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::WS",
                                      zpotrf_dtd_destroy_workspace, NULL,
                                      zpotrf_dtd_create_workspace, infos,
                                      NULL);
@@ -326,7 +322,7 @@ int main(int argc, char **argv)
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_info_unregister(&parsec_per_device_infos, WoSI, NULL);
+    parsec_info_unregister(&parsec_per_device_infos, dplasma_dtd_cuda_workspace_infoid, NULL);
     free(infos);
 #endif
 

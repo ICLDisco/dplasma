@@ -18,8 +18,8 @@
  * with the return of parsec_info_register
  * or parsec_info_lookup
  */
-parsec_info_id_t CuHI = -1;
-parsec_info_id_t WoSI = -1;
+parsec_info_id_t dplasma_dtd_cuda_infoid = -1;
+parsec_info_id_t dplasma_dtd_cuda_workspace_infoid = -1;
 
 /* Unfortunately, CUBLAS does not provide a error to string function */
 char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
@@ -96,4 +96,13 @@ void *dplasma_create_cuda_handles(void *obj, void *_n)
     new->cusolverDn_handle = cusolver_handle;
 
     return new;
+}
+
+void dplasma_destroy_cuda_handles(void *_h, void *_n)
+{
+    dplasma_cuda_handles_t *handles = (dplasma_cuda_handles_t*)_h;
+    (void)_n;
+    cublasDestroy_v2(handles->cublas_handle);
+    cusolverDnDestroy(handles->cusolverDn_handle);
+    free(handles);
 }

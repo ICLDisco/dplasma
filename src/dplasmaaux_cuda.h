@@ -59,8 +59,8 @@
     trans = (trans == dplasmaNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
 #endif /* PRECISION_z || PRECISION_c */
 
-extern parsec_info_id_t CuHI;
-extern parsec_info_id_t WoSI;
+extern parsec_info_id_t dplasma_dtd_cuda_infoid;
+extern parsec_info_id_t dplasma_dtd_cuda_workspace_infoid;
 
 typedef struct {
     cublasHandle_t cublas_handle;
@@ -68,6 +68,7 @@ typedef struct {
 } dplasma_cuda_handles_t;
 
 void *dplasma_create_cuda_handles(void *obj, void *user);
+void dplasma_destroy_cuda_handles(void *_h, void *_n);
 
 char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status);
 
