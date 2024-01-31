@@ -633,27 +633,6 @@ char cwd[1024];
 int unix_timestamp;
 #endif
 
-#if defined(DPLASMA_HAVE_CUDA)
-static void destroy_cuda_handles(void *_h, void *_n)
-{
-    dplasma_cuda_handles_t *handles = (dplasma_cuda_handles_t*)_h;
-    (void)_n;
-    cublasDestroy_v2(handles->cublas_handle);
-    cusolverDnDestroy(handles->cusolverDn_handle);
-    free(handles);
-}
-#endif
-
-#if defined(DPLASMA_HAVE_HIP)
-static void destroy_hip_handles(void *_h, void *_n)
-{
-    dplasma_hip_handles_t *handles = (dplasma_hip_handles_t*)_h;
-    (void)_n;
-    hipblasDestroy(handles->hipblas_handle);
-    free(handles);
-}
-#endif
-
 parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 {
 #ifdef PARSEC_PROF_TRACE
@@ -734,16 +713,18 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     }
     if( nbgpu > 0 ) {
 #if defined(DPLASMA_HAVE_CUDA)
-        parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
-                             destroy_cuda_handles, NULL,
-                             dplasma_create_cuda_handles, NULL,
-                             NULL);
+        dplasma_dtd_cuda_infoid = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
+                                    dplasma_destroy_cuda_handles, NULL,
+                                    dplasma_create_cuda_handles, NULL,
+                                    NULL);
+        assert(-1 != dplasma_dtd_cuda_infoid);
 #endif
 #if defined(DPLASMA_HAVE_HIP)
-        parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
-                             destroy_hip_handles, NULL,
-                             dplasma_create_hip_handles, NULL,
-                             NULL);
+        dplasma_dtd_hip_infoid =  parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
+                                    dplasma_destroy_hip_handles, NULL,
+                                    dplasma_create_hip_handles, NULL,
+                                    NULL);
+        assert(-1 != dplasma_dtd_hip_infoid);
 #endif
     }
 #endif

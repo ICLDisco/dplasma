@@ -123,13 +123,6 @@ int main(int argc, char ** argv)
         parsec_context_start(parsec);
         parsec_task_class_t *zgemm_tc = parsec_dtd_create_zgemm_task_class(dtd_tp, TILE_FULL, PARSEC_DEV_ALL);
 
-#if defined(DPLASMA_HAVE_CUDA)
-        if( gpus > 0 ){
-            CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
-            assert( CuHI != -1);
-        }
-#endif /* defined(DPLASMA_HAVE_CUDA) */
-
         for( m = 0; m < dcC.super.mt; m++ ) {
             tempmm = m == dcC.super.mt-1 ? dcC.super.m-m*dcC.super.mb : dcC.super.mb;
             ldcm = BLKLDD(&dcC.super, m);
@@ -369,14 +362,6 @@ int main(int argc, char ** argv)
                 /* start parsec context */
                 parsec_context_start(parsec);
                 parsec_task_class_t *zgemm_tc = parsec_dtd_create_zgemm_task_class(dtd_tp, TILE_FULL, PARSEC_DEV_ALL);
-
-#if defined(DPLASMA_HAVE_CUDA)
-                if( gpus > 0 ){
-                    CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
-                    assert( CuHI != -1);
-                }
-#endif
-
 
                 for( m = 0; m < dcC.super.mt; m++ ) {
                     tempmm = m == dcC.super.mt-1 ? dcC.super.m-m*dcC.super.mb : dcC.super.mb;
