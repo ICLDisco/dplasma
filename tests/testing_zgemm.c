@@ -335,7 +335,8 @@ static void warmup_zgemm(int rank, int nodes, int random_seed, parsec_context_t 
 
     /* Now do the other devices, skipping RECURSIVE */
     /* We know that there is a GPU-enabled version of this operation, so warm it up if some device is enabled */
-    for(did = 2; did < (int)parsec_nb_devices; did++) {
+    for(did = 1; did < (int)parsec_nb_devices; did++) {
+        if(!parsec_mca_device_is_gpu(did)) continue;
         for(int i = 0; i < MT; i++) {
             for(int j = 0; j < NT; j++) {
                 if( rank == (int)dcC.super.super.rank_of(&dcC.super.super, i, j) ) {
