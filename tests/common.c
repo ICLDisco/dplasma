@@ -270,7 +270,6 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     int argc = *_argc;
     char **argv = *_argv;
     char *add_dot = NULL;
-    char *value;
 
     /* Default seed */
     iparam[IPARAM_RANDOM_SEED] = 3872;
@@ -323,12 +322,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                     fprintf(stderr, "#!!!!! This test does not have GPU support. GPU disabled.\n");
                     break;
                 }
-                if(optarg)  iparam[IPARAM_NGPUS] = atoi(optarg);
-                else        iparam[IPARAM_NGPUS] = INT_MAX;
-
-                rc = asprintf(&value, "%d", iparam[IPARAM_NGPUS]);
-                parsec_setenv_mca_param( "device_cuda_enabled", value, &environ );
-                free(value);
+                iparam[IPARAM_NGPUS] = atoi(optarg);
                 break;
 
             case 'p': case 'P': iparam[IPARAM_P] = atoi(optarg); break;
@@ -442,18 +436,17 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
 
 static void parse_arguments(int *iparam) {
     int verbose = iparam[IPARAM_RANK] ? 0 : iparam[IPARAM_VERBOSE];
+    char *value;
+    int rc;
 
     /* we want to run at least once, right? */
     if(iparam[IPARAM_NRUNS] < 1) iparam[IPARAM_NRUNS] = 1;
 
-    if(iparam[IPARAM_NGPUS] < 0) iparam[IPARAM_NGPUS] = 0;
-    if(iparam[IPARAM_NGPUS] > 0) {
-        if (iparam[IPARAM_VERBOSE] > 3) {
-            parsec_setenv_mca_param( "device_show_capabilities", "1", &environ );
-        }
-        if (iparam[IPARAM_VERBOSE] > 2) {
-            parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
-        }
+    if(iparam[IPARAM_NGPUS] == DPLASMA_ERR_NOT_SUPPORTED) iparam[IPARAM_NGPUS] = 0;
+    if(iparam[IPARAM_NGPUS] != DPLASMA_ERR_NOT_INITIALIZED) {
+        rc = asprintf(&value, "%d", iparam[IPARAM_NGPUS]); (void)rc;
+        parsec_setenv_mca_param( "device_cuda_enabled", value, &environ );
+        free(value);
     }
 
     /* Check the process grid */
@@ -501,8 +494,8 @@ static void parse_arguments(int *iparam) {
     assert(iparam[IPARAM_IB]); /* check that defaults have been set */
     if(iparam[IPARAM_NB] <= 0 && iparam[IPARAM_MB] > 0) iparam[IPARAM_NB] = iparam[IPARAM_MB];
     if(iparam[IPARAM_MB] <= 0 && iparam[IPARAM_NB] > 0) iparam[IPARAM_MB] = iparam[IPARAM_NB];
-    if(iparam[IPARAM_NGPUS] && iparam[IPARAM_MB] < 0) iparam[IPARAM_MB] = -384;
-    if(iparam[IPARAM_NGPUS] && iparam[IPARAM_NB] < 0) iparam[IPARAM_NB] = -384;
+    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_MB] < 0) iparam[IPARAM_MB] = -384;
+    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_NB] < 0) iparam[IPARAM_NB] = -384;
     if(iparam[IPARAM_MB] < 0) iparam[IPARAM_MB] = -iparam[IPARAM_MB];
     if(iparam[IPARAM_NB] < 0) iparam[IPARAM_NB] = -iparam[IPARAM_NB];
 
@@ -576,6 +569,7 @@ static void iparam_default(int* iparam)
 {
     /* Just in case someone forget to add the initialization :) */
     memset(iparam, 0, IPARAM_SIZEOF * sizeof(int));
+    iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_INITIALIZED; /* let parsec choose */
     iparam[IPARAM_NNODES] = 1;
     iparam[IPARAM_ASYNC]  = 1;
     iparam[IPARAM_QR_DOMINO]    = -1;
@@ -696,8 +690,10 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         }
         iparam[IPARAM_NCORES] = nb_total_comp_threads;
     }
-    print_arguments(iparam);
 
+    if(iparam[IPARAM_VERBOSE] >= 4) {
+        parsec_setenv_mca_param( "device_show_capabilities", "1", &environ );
+    }
 #if defined(DPLASMA_HAVE_CUDA)
     int dev, nbgpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
@@ -713,8 +709,13 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
                                    NULL);
         assert(-1 != CuHI);
     }
+    iparam[IPARAM_NGPUS] = nbgpu;
+    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
+        parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
+    }
 #endif
 
+    print_arguments(iparam);
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
     return ctx;
 }
