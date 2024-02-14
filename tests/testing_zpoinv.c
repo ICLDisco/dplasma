@@ -143,7 +143,8 @@ static void warmup_zpoinv(int rank, dplasma_enum_t uplo, int random_seed, parsec
 
     /* Now do the other devices, skipping RECURSIVE */
     /* We know that there is a GPU-enabled version of this operation, so warm it up if some device is enabled */
-    for(did = 2; did < (int)parsec_nb_devices; did++) {
+    for(did = 1; did < (int)parsec_nb_devices; did++) {
+        if(!parsec_mca_device_is_gpu(did)) continue;
         if(PARSEC_MATRIX_LOWER == uplo) {
             for(int i = 0; i < MT; i++) {
                 for(int j = 0; j <= i; j++) {
