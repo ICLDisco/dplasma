@@ -167,7 +167,7 @@ dplasma_zgetrf_qrf_New( dplasma_qrtree_t *qrtree,
     int ib = TS->mb;
     size_t sizeW = 1;
     size_t sizeReduceVec = 1;
-    int nbthreads = dplasma_imax( 1, vpmap_get_nb_threads_in_vp(0) - 1 );
+    int nbthreads = dplasma_imax( 1, parsec_vpmap_get_vp_threads(0) - 1 );
 
     /*
      * Compute W size according to criteria used.

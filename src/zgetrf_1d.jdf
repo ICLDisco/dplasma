@@ -58,7 +58,7 @@ descIPIV    [type = "parsec_tiled_matrix_t*" hidden = on default = "((dplasma_da
 
 INFO      [type = "int*"]
 
-nbmaxthrd [type = "int" hidden=on default="( dplasma_imax( 1, dplasma_imin( vpmap_get_nb_threads_in_vp(0) - 1, 48 ) ) )" ] /* 48 is the actual limit of the kernel */
+nbmaxthrd [type = "int" hidden=on default="( dplasma_imax( 1, dplasma_imin( parsec_vpmap_get_vp_threads(0) - 1, 48 ) ) )" ] /* 48 is the actual limit of the kernel */
 KT        [type = "int" hidden=on default="( dplasma_imin( descA->mt, descA->nt )-1 )" ]
 
 getrfdata [type = "CORE_zgetrf_data_t *" hidden = on default = "NULL"]

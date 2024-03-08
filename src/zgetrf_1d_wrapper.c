@@ -84,7 +84,7 @@ dplasma_zgetrf_1d_New( parsec_tiled_matrix_t *A,
                        int *INFO )
 {
     parsec_zgetrf_1d_taskpool_t *parsec_getrf_1d;
-    int nbthreads = dplasma_imax( 1, vpmap_get_nb_threads_in_vp(0) - 1 );
+    int nbthreads = dplasma_imax( 1, parsec_vpmap_get_vp_threads(0) - 1 );
     dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
     dplasma_data_collection_t * ddc_IPIV = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)IPIV);
 
