@@ -245,25 +245,28 @@ int main(int argc, char ** argv)
 
     /* Allocating data arrays to be used by comm engine */
     /* A */
-    parsec_arena_datatype_t *tile_full = parsec_dtd_create_arena_datatype(parsec, &TILE_FULL);
+    parsec_arena_datatype_t *tile_full = PARSEC_OBJ_NEW(parsec_arena_datatype_t);
     dplasma_add2arena_tile( tile_full,
                             dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
+    parsec_dtd_attach_arena_datatype(parsec, tile_full, &TILE_FULL);
 
     /* IPIV */
-    parsec_arena_datatype_t *tile_rectangle = parsec_dtd_create_arena_datatype(parsec, &TILE_RECTANGLE);
+    parsec_arena_datatype_t *tile_rectangle = PARSEC_OBJ_NEW(parsec_arena_datatype_t);
     dplasma_add2arena_rectangle( tile_rectangle,
                                  dcA.super.mb*sizeof(int),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_int_t, dcA.super.mb, 1, -1 );
+    parsec_dtd_attach_arena_datatype(parsec, tile_rectangle, &TILE_RECTANGLE);
 
     /* L */
-    parsec_arena_datatype_t *l_tile_rectangle = parsec_dtd_create_arena_datatype(parsec, &L_TILE_RECTANGLE);
+    parsec_arena_datatype_t *l_tile_rectangle = PARSEC_OBJ_NEW(parsec_arena_datatype_t);
     dplasma_add2arena_rectangle( l_tile_rectangle,
                                  dcL.super.mb*dcL.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
                                  parsec_datatype_double_complex_t, dcL.super.mb, dcL.super.nb, -1);
+    parsec_dtd_attach_arena_datatype(parsec, l_tile_rectangle, &L_TILE_RECTANGLE);
 
     /* Registering the handle with parsec context */
     parsec_context_add_taskpool( parsec, dtd_tp );
@@ -448,11 +451,11 @@ int main(int argc, char ** argv)
 
     /* Cleaning data arrays we allocated for communication */
     dplasma_matrix_del2arena( tile_full );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
+    parsec_dtd_free_arena_datatype(parsec, TILE_FULL);
     dplasma_matrix_del2arena( tile_rectangle );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_RECTANGLE);
+    parsec_dtd_free_arena_datatype(parsec, TILE_RECTANGLE);
     dplasma_matrix_del2arena( l_tile_rectangle );
-    parsec_dtd_destroy_arena_datatype(parsec, L_TILE_RECTANGLE);
+    parsec_dtd_free_arena_datatype(parsec, L_TILE_RECTANGLE);
 
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcL );
