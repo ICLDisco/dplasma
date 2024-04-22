@@ -239,8 +239,10 @@ int dplasma_cleanup_datatype( parsec_datatype_t *dtt )
 #ifdef REUSE_ARENA_DATATYPE
     /* The key of a datatype can only be constructed with the arguments used during creation.
      * Thus, datatypes will be cleaned during callback during parsec context at fini.
+     * Set the pointer to PARSEC_DATATYPE_NULL (so that adt_destruct doesn't complain) but
+     * the actual datatype shall remain as it is still referenced from the hashtable.
      */
-    (void)dtt;
+    *dtt = PARSEC_DATATYPE_NULL;
     return 0;
 #else
     return parsec_type_free( dtt );
