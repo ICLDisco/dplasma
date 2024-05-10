@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2023 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -233,6 +233,15 @@ BODY [type=CUDA
     int ldam = descA->mb;
     int ldbn = descB->mb;
     int ldcm = descC->mb;
+
+    printloggpu("CUDA_gemm( %d, %d, %d )\n"
+             "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",
+             m, n, k,
+             &dplasma_lapack_const( transA ), &dplasma_lapack_const( transB ),
+             tempmm, tempnn, tempkk,
+             creal(alpha), m, k, ldam,
+                           n, k, ldbn,
+             creal(lbeta), m, n, ldcm );
 
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
