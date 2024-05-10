@@ -241,7 +241,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                            P, Q, gpus, NB, N,                           \
                            gflops=(flops/1e9)/sync_time_elapsed));      \
     PASTE_PROF_INFO;                                                    \
-    if(loud >= 4) parsec_devices_print_statistics(PARSEC, dev_stats);   \
+    if(gpus && loud >= 3) parsec_devices_print_statistics(PARSEC, dev_stats); \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
@@ -281,7 +281,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
                           stime_A,stime_C);                             \
     }                                                                   \
     PASTE_PROF_INFO;                                                    \
-    if(loud >= 4) parsec_devices_print_statistics(PARSEC, dev_stats);   \
+    if(gpus && loud >= 3) parsec_devices_print_statistics(PARSEC, dev_stats); \
     if(loud >= 5 && rank == 0) {                                        \
         printf("<DartMeasurement name=\"performance\" type=\"numeric/double\"\n" \
                "                 encoding=\"none\" compression=\"none\">\n" \
