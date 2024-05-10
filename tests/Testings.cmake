@@ -48,6 +48,10 @@ macro(dplasma_add_test m_nameradix m_dependsradix m_types)
         set_tests_properties(dplasma_${prec}${m_nameradix}_mpi PROPERTIES DEPENDS launcher_mpi)
       endif()
     endif()
+    # enable devices only in tests that explicitely require them
+    # restrict memory use for oversubscribed runners
+    set_tests_properties(dplasma_${prec}${m_nameradix}_${m_suffix} PROPERTIES ENVIRONMENT
+      "PARSEC_MCA_device_cuda_enabled=0;PARSEC_MCA_device_hip_enabled=0;PARSEC_MCA_device_level_zero_enabled=0;PARSEC_MCA_device_cuda_memory_use=10;PARSEC_MCA_device_hip_memory_use=10;PARSEC_MCA_device_level_zero_memory_use=10")
   endforeach()
 endmacro()
 
