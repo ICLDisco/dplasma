@@ -16,6 +16,10 @@ set(DPLASMA_VERSION "${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}")
 
 ############################################################################
 # CMake Policies Tuning
+if(POLICY CMP0144)
+  # CMP0144: find_package uses upper-case <PACKAGENAME>_ROOT variables in addition to <PackageName>_ROOT
+  cmake_policy(SET CMP0144 NEW)
+endif(POLICY CMP0144)
 set(CMAKE_NO_SYSTEM_FROM_IMPORTED True)
 
 ############################################################################
@@ -231,22 +235,24 @@ endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 ############################################################################
 # Resume configuring dplasma
-option(DPLASMA_HAVE_CUDA "Use CUDA to accelerate DPLASMA routines" ${PARSEC_HAVE_CUDA})
-if(DPLASMA_HAVE_CUDA)
+option(DPLASMA_GPU_WITH_CUDA "Use CUDA to accelerate DPLASMA routines" ${PARSEC_HAVE_CUDA})
+if(DPLASMA_GPU_WITH_CUDA)
   message(STATUS "CUDA support for DPLASMA enabled")
   if(NOT TARGET CUDA::cusolver)
     find_package(CUDAToolkit REQUIRED)
   endif(NOT TARGET CUDA::cusolver)
+  set(DPLASMA_HAVE_CUDA ${PARSEC_HAVE_CUDA} CACHE BOOL "True if DPLASMA provide support for CUDA")
 endif()
-option(DPLASMA_HAVE_HIP "Use HIP to accelerate DPLASMA routines" ${PARSEC_HAVE_HIP})
-if(DPLASMA_HAVE_HIP)
+option(DPLASMA_GPU_WITH_HIP "Use HIP to accelerate DPLASMA routines" ${PARSEC_HAVE_HIP})
+if(DPLASMA_GPU_WITH_HIP)
+  message(STATUS "HIP support for DPLASMA enabled")
   # This is kinda ugly but the PATH and HINTS don't get transmitted to sub-dependents
   set(CMAKE_SYSTEM_PREFIX_PATH_save ${CMAKE_SYSTEM_PREFIX_PATH})
   list(APPEND CMAKE_SYSTEM_PREFIX_PATH /opt/rocm)
   find_package(hipblas REQUIRED)
   find_package(rocsolver REQUIRED)
   set(CMAKE_SYSTEM_PREFIX_PATH ${CMAKE_SYSTEM_PREFIX_PATH_save})
-  message(STATUS "HIP support for DPLASMA enabled")
+  set(DPLASMA_HAVE_HIP ${PARSEC_HAVE_HIP} CACHE BOOL "True if DPLASMA provide support for HIP")
 endif()
 
 ############################################################################
