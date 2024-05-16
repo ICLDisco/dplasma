@@ -707,6 +707,10 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
             nb_hip_gpu++;
         }
     }
+    iparam[IPARAM_NGPUS] = nb_cuda_gpu + nb_hip_gpu;
+    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
+        parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
+    }
 #if defined(DPLASMA_HAVE_CUDA)
     if( nb_cuda_gpu > 0 ) {
         dplasma_dtd_cuda_infoid = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
@@ -714,10 +718,6 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
                                     dplasma_create_cuda_handles, NULL,
                                     NULL);
         assert(-1 != dplasma_dtd_cuda_infoid);
-    }
-    iparam[IPARAM_NGPUS] = nb_cuda_gpu + nb_hip_gpu;
-    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
-        parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
     }
 #endif
 #if defined(DPLASMA_HAVE_HIP)
