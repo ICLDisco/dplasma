@@ -288,7 +288,7 @@ BODY [type=HIP
              tempmm, tempnn, tempkk,
              creal(alpha), m, k, ldam,
                            k, n, ldbk,
-             creal(lbeta), m, n, ldcm );
+             (k==0)? creal(beta): 1.0, m, n, ldcm );
 
     hipblasStatus_t status;
     hipblasOperation_t opA = dplasmaNoTrans == transA? HIPBLAS_OP_N: HIPBLAS_OP_T;
