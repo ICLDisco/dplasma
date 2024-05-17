@@ -8,6 +8,7 @@
  */
 
 #include "common.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
 static int check_solution( parsec_context_t *parsec, int loud,
@@ -76,6 +77,16 @@ int main(int argc, char ** argv)
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
         if(loud > 2) printf("Done\n");
 
+    /* Advice data on device */
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcA,
+            (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcB,
+            (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcC,
+            (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+#endif
+
         int t;
         for(t = 0; t < nruns; t++) {
             parsec_devices_release_memory();
@@ -141,6 +152,16 @@ int main(int argc, char ** argv)
                 /* reset device load incurred by prior rounds, if any */
                 parsec_devices_release_memory();
                 parsec_devices_reset_load(parsec);
+
+                /* Advice data on device */
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+                dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcA,
+                        (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+                dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcB,
+                        (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+                dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcC,
+                        (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+#endif
 
                 /* Create GEMM PaRSEC */
                 if(loud) printf("Compute ... ... ");
