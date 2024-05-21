@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * $COPYRIGHT
@@ -12,26 +12,18 @@
 #if defined(DPLASMA_HAVE_HIP)
 #include "parsec/mca/device/hip/device_hip.h"
 
-/**
- * DPLASMA currently supports a mix of hipblas v1 and v2, but not in the same source file. Thus,
- * the simplest way to provide common headers is to require the developer to manually specify
- * when hipblas_v2 is needed by including the header before dplasmaaux.h. Otherwise, we will include
- * hipblas.h (v1) automatically if HIP is enabled.
- */
-#if !defined(HIPBLAS_V2_H_)
 #include <hipblas/hipblas.h>
-#endif  /* !defined(HIPBLAS_V2_H_) */
 
-#define dplasma_hipblas_side(side)                                         \
+#define dplasma_hipblas_side(side)                                        \
     assert( (side == dplasmaRight) || (side == dplasmaLeft) );            \
     side = (side == dplasmaRight) ? HIPBLAS_SIDE_RIGHT : HIPBLAS_SIDE_LEFT;
 
 
-#define dplasma_hipblas_diag(diag)                                              \
+#define dplasma_hipblas_diag(diag)                                             \
     assert( (diag == dplasmaNonUnit) || (diag == dplasmaUnit) );               \
     diag = (diag == dplasmaNonUnit) ? HIPBLAS_DIAG_NON_UNIT : HIPBLAS_DIAG_UNIT;
 
-#define dplasma_hipblas_fill(fill)                                                    \
+#define dplasma_hipblas_fill(fill)                                                   \
     assert( (fill == dplasmaLower) || (fill == dplasmaUpper) );                      \
     fill = (fill == dplasmaLower) ? HIPBLAS_FILL_MODE_LOWER : HIPBLAS_FILL_MODE_UPPER;
 
@@ -40,20 +32,20 @@
     assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) || (trans == dplasmaConjTrans) ); \
     switch(trans){                               \
         case dplasmaNoTrans:                     \
-            trans = HIPBLAS_OP_N;                 \
+            trans = HIPBLAS_OP_N;                \
             break;                               \
         case dplasmaTrans:                       \
-            trans = HIPBLAS_OP_T;                 \
+            trans = HIPBLAS_OP_T;                \
             break;                               \
         case dplasmaConjTrans:                   \
-            trans = HIPBLAS_OP_C;                 \
+            trans = HIPBLAS_OP_C;                \
             break;                               \
         default:                                 \
-            trans = HIPBLAS_OP_N;                 \
+            trans = HIPBLAS_OP_N;                \
             break;                               \
     }
 #else
-#define dplasma_hipblas_op(trans)                                    \
+#define dplasma_hipblas_op(trans)                                   \
     assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) ); \
     trans = (trans == dplasmaNoTrans) ? HIPBLAS_OP_N : HIPBLAS_OP_T;
 #endif /* PRECISION_z || PRECISION_c */

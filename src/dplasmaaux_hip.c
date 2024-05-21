@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * $COPYRIGHT
@@ -14,7 +14,7 @@
 #include <hipblas/hipblas.h>
 #include <hipsolver/hipsolver.h>
 
-/* 
+/*
  * Global info ID's for cublas handles and workspaces
  * Should be initialized in the tests
  * with the return of parsec_info_register
@@ -22,25 +22,8 @@
  */
 parsec_info_id_t dplasma_dtd_hip_infoid = -1;
 
-/* Unfortunately, HIPBLAS does not provide a error to string function */
-char *dplasma_hipblas_error_to_string(hipblasStatus_t hipblas_status)
-{
-    switch(hipblas_status)
-    {
-        case HIPBLAS_STATUS_SUCCESS: return "HIPBLAS_STATUS_SUCCESS";
-        case HIPBLAS_STATUS_NOT_INITIALIZED: return "HIPBLAS_STATUS_NOT_INITIALIZED";
-        case HIPBLAS_STATUS_ALLOC_FAILED: return "HIPBLAS_STATUS_ALLOC_FAILED";
-        case HIPBLAS_STATUS_INVALID_VALUE: return "HIPBLAS_STATUS_INVALID_VALUE";
-        case HIPBLAS_STATUS_ARCH_MISMATCH: return "HIPBLAS_STATUS_ARCH_MISMATCH";
-        case HIPBLAS_STATUS_MAPPING_ERROR: return "HIPBLAS_STATUS_MAPPING_ERROR";
-        case HIPBLAS_STATUS_EXECUTION_FAILED: return "HIPBLAS_STATUS_EXECUTION_FAILED";
-        case HIPBLAS_STATUS_INTERNAL_ERROR: return "HIPBLAS_STATUS_INTERNAL_ERROR";
-        default: return "unknown HIPBLAS error";
-    }
-}
-
-/* Unfortunately, cuSolver does not provide a error to string function */
-char *dplasma_hipsolver_error_to_string(hipsolverStatus_t hipsolver_status)
+/* Unfortunately, hipSolver does not provide a error to string function */
+const char *dplasma_hipsolver_error_to_string(hipsolverStatus_t hipsolver_status)
 {
     switch(hipsolver_status) {
         case HIPSOLVER_STATUS_SUCCESS: return "HIPSOLVER_STATUS_SUCCESS";
@@ -74,7 +57,7 @@ void *dplasma_create_hip_handles(void *obj, void *_n)
             parsec_show_help("help-dplasma.txt", "gpu_alloc_failed", 1, "HIPBLAS");
         }
         parsec_fatal("Unable to create HIPBLAS Handle: %s",
-                     dplasma_hipblas_error_to_string(hipblas_status));
+                     hipblasStatusToString(hipblas_status));
         return NULL;
     }
     hipblas_status = hipblasSetStream(hipblas_handle, stream->hip_stream);

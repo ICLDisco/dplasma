@@ -23,8 +23,8 @@
 #   include <stdio.h>
 #   define printlog(str, ...) fprintf(stderr, "thread %d VP %d " str "\n", \
                                       es->th_id, es->virtual_process->vp_id, __VA_ARGS__)
-#   define printloggpu(str, ...) fprintf(stderr, "GPU %d " str "\n", \
-                                          gpu_device->super.device_index, __VA_ARGS__)
+#   define printloggpu(str, ...) fprintf(stderr, "GPU %s " str "\n", \
+                                          gpu_device->super.device_name, __VA_ARGS__)
 #else
 #   define printlog(...) do {} while(0)
 #   define printloggpu(...) do {} while(0)

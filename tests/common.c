@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2021 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -26,13 +26,12 @@
 #ifdef PARSEC_HAVE_MPI
 #include <mpi.h>
 #endif
+#include "dplasmaaux.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
-#include "dplasmaaux.h"
 #include <cusolverDn.h>
 #endif
 #if defined(DPLASMA_HAVE_HIP)
-#include "dplasmaaux.h"
 #include <hipblas/hipblas.h>
 #endif
 
@@ -696,6 +695,10 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         iparam[IPARAM_NCORES] = nb_total_comp_threads;
     }
 
+    if(iparam[IPARAM_VERBOSE] >= 4) {
+        parsec_setenv_mca_param( "device_show_capabilities", "1", &environ );
+    }
+
 #if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
     int dev, nb_cuda_gpu = 0, nb_hip_gpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
@@ -739,12 +742,14 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 {
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+  { parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
+  }
 #endif
 #if defined(DPLASMA_HAVE_HIP)
-    parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+  { parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
     parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
+  }
 #endif
 
     if(NULL != dev_stats) parsec_devices_free_statistics(&dev_stats);
