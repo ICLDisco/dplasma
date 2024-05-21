@@ -1,9 +1,10 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2023 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ *
  * $COPYRIGHT
  *
  * @precisions normal z -> s d c
@@ -407,7 +408,6 @@ BODY [type=CUDA]
                              tempnn, descA->mb,
                              &mzone, A, ldak,
                              &zone, T, ldan);
-
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
@@ -554,7 +554,7 @@ BODY [type=CUDA
                              &zone,  (cuDoubleComplex*)C, ldam_C);
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 
-    printloggpu("CUDA_zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
+    printloggpu("zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
                  m, n, k,
                  &dplasma_lapack_const( dplasmaConjTrans ),  &dplasma_lapack_const( dplasmaNoTrans ),
                  descA->mb, tempnn, descA->nb,

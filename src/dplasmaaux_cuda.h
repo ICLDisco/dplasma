@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * $COPYRIGHT
@@ -70,7 +70,7 @@ typedef struct {
 void *dplasma_create_cuda_handles(void *obj, void *user);
 void dplasma_destroy_cuda_handles(void *_h, void *_n);
 
-char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status);
+const char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status);
 
 #define DPLASMA_CUBLAS_CHECK_STATUS( STR, STATUS, CODE )                     \
     do {                                                                     \
@@ -86,7 +86,7 @@ char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status);
 /* Support for cusolve requires cublas_v2 */
 #include <cusolverDn.h>
 
-char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
+const char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
 
 #define DPLASMA_CUSOLVER_CHECK_STATUS( STR, STATUS, CODE )                                \
     do {                                                                                  \

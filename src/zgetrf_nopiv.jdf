@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -219,7 +219,7 @@ BODY [type=CUDA
 
     cublasStatus_t status;
 
-    printloggpu("CUDA_zgemm(%d, %d, %d)\n"
+    printloggpu("zgemm(%d, %d, %d)\n"
                  "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam %d, A(%d,%d)[%p], ldak %d, 1.000000, A(%d,%d)[%p], ldam %d)\n",
                  k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 

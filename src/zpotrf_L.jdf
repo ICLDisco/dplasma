@@ -1,9 +1,10 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2023 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ *
  * $COPYRIGHT
  *
  * @precisions normal z -> s d c
@@ -471,8 +472,7 @@ BODY
                tempmm, descA->mb,
                (double)-1.0, A /*A(m, k)*/, ldam_A,
                (double) 1.0, T /*A(m, m)*/, ldam_T);
-    printlog(
-             "CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
+    printlog("CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              k, m,
              &dplasma_lapack_const( dplasmaLower ), &dplasma_lapack_const( dplasmaNoTrans ),
              tempmm, descA->mb,
@@ -576,7 +576,6 @@ BODY [type=HIP
     dplasma_hip_handles_t *handles;
     handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
-
     status = hipblasZgemm( handles->hipblas_handle,
                                   HIPBLAS_OP_N, HIPBLAS_OP_C,
                                   tempmm, descA->mb, descA->mb,
