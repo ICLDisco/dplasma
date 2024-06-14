@@ -87,6 +87,49 @@ smallnb       [type = "int" hidden = on default = "descA->mb" ]
 CuHandlesID   [type = "int" hidden = on default = -1 ]
 POWorkspaceID [type = "int" hidden = on default = -1 ]
 
+nb_gpu_devices      [ type = "int"   hidden = on default = 0 ]
+gpu_device_index    [ type = "int *" hidden = on default = "NULL"]
+gpu_rows            [ type = "int" hidden = on default = 1]
+gpu_cols            [ type = "int" hidden = on default = 1]
+grid_rows           [ type = "int" hidden = on default = 1]
+grid_cols           [ type = "int" hidden = on default = 1]
+
+
+/**************************************************
+ *               potrf_bind_A                     *
+ **************************************************/
+potrf_bind_A(m, n)
+
+// Execution space
+m = 0 .. descA->mt-1
+n = 0 .. m
+
+loc_A = %{ return LOC(descA, m, n); %}
+
+// Parallel partitioning
+:descA(m, n)
+
+READ A <- ddescA(m, n)                                        [ type        = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, TILED); %}
+                                                                type_data   = %{ return ADTT_READ(ddescA, loc_A, DEFAULT, LAPACK); %} ]
+       -> (m == 0 && n == 0) ? T potrf_zpotrf(0)                      
+       -> (n == 0)? C potrf_ztrsm(m, n)                               
+       -> (m == n && n > 0) ? T potrf_zherk(0, m)                     
+       -> (m != n && n > 0) ? C potrf_zgemm(m, n, 0)                  
+
+BODY
+{
+#if defined(PARSEC_HAVE_DEV_CUDA_SUPPORT)  || defined(PARSEC_HAVE_DEV_HIP_SUPPORT)
+    if( nb_gpu_devices > 0 ) {
+        int g = (m / grid_rows % gpu_rows) * gpu_cols + n / grid_cols % gpu_cols; 
+        parsec_advise_data_on_device( _f_A->original,
+                                    gpu_device_index[g],
+                                    PARSEC_DEV_DATA_ADVICE_PREFERRED_DEVICE );
+    }
+#endif
+}
+END
+
+
 /**************************************************
  *               potrf_zpotrf                     *
  **************************************************/
@@ -106,8 +149,7 @@ loc_T = %{ return LOC(descA, k, k); %}
 
 // Parameters
 
-RW T <- (k == 0) ? ddescA(k, k)            [ type        = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, TILED); %}
-                                             type_data   = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, LAPACK); %} ]
+RW T <- (k == 0) ? A potrf_bind_A(k, k)    [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ] 
      <- (k != 0) ? T potrf_zherk(k-1, k)   [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
      -> T potrf_ztrsm(k+1..descA->mt-1, k) /* dep OUT: rely on datacopy dtt for sending */
      -> ddescA(k, k)                       [ type        = %{ return ADTT_CP(_f_T, ddescA, loc_T, DEFAULT); %}
@@ -207,8 +249,7 @@ loc_C = %{ return LOC(descA, m, k); %}
 
 // Parameters
 READ  T <- T potrf_zpotrf(k)                     [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
-RW    C <- (k == 0) ? ddescA(m, k)               [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
-                                                   type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+RW    C <- (k == 0) ? A potrf_bind_A(m, k)       [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ] 
         <- (k != 0) ? C potrf_zgemm(m, k, k-1)   [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
         -> A potrf_zherk(k, m)                   /* dep OUT: rely on datacopy dtt for sending */
         -> A potrf_zgemm(m, k+1..m-1, k)         /* dep OUT: rely on datacopy dtt for sending */
@@ -319,9 +360,8 @@ loc_T = %{ return LOC(descA, m, m); %}
 
 //Parameters
 READ  A <- C potrf_ztrsm(m, k)                [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
-RW    T <- (k == 0)   ? ddescA(m, m)          [ type        = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, TILED); %}
-                                                type_data   = %{ return ADTT_READ(ddescA, loc_T, DEFAULT, LAPACK); %} ]
-        <- (k != 0)   ? T potrf_zherk(k-1, m) [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ]
+RW    T <- (k == 0)   ? A potrf_bind_A(m, m)  [ type_remote = %{ return ADTT_DC(ddescA, loc_T, DEFAULT, TILED); %} ] 
+        <- (k != 0)   ? T potrf_zherk(k-1, m) /* dep OUT: rely on datacopy dtt for sending */ 
         -> (m == k+1) ? T potrf_zpotrf(m)  : T potrf_zherk(k+1, m) /* dep OUT: rely on datacopy dtt for sending */
 
 ; (m >= (descA->mt - PRI_CHANGE)) ? (descA->mt - m) * (descA->mt - m) * (descA->mt - m) + 3 * (m - k) : PRI_MAX
@@ -422,8 +462,7 @@ loc_C = %{ return LOC(descA, m, n); %}
 // Parameters
 READ  A <- C potrf_ztrsm(m, k)                   [ type_remote = %{ return ADTT_DC(ddescA, loc_A, DEFAULT, TILED); %} ]
 READ  B <- C potrf_ztrsm(n, k)                   [ type_remote = %{ return ADTT_DC(ddescA, loc_B, DEFAULT, TILED); %} ]
-RW    C <- (k == 0)   ? ddescA(m, n)             [ type        = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, TILED); %}
-                                                   type_data   = %{ return ADTT_READ(ddescA, loc_C, DEFAULT, LAPACK); %} ]
+RW    C <- (k == 0)   ? A potrf_bind_A(m, n)     [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ] 
         <- (k != 0)   ? C potrf_zgemm(m, n, k-1) [ type_remote = %{ return ADTT_DC(ddescA, loc_C, DEFAULT, TILED); %} ]
         -> (n == k+1) ? C potrf_ztrsm(m, n) : C potrf_zgemm(m, n, k+1) /* dep OUT: rely on datacopy dtt for sending */
 

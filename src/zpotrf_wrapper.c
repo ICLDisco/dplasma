@@ -22,6 +22,7 @@
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"
 #include "cores/dplasma_plasmatypes.h"
+#include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 
 #define MAX_SHAPES 1
 
@@ -104,6 +105,42 @@ static void destroy_workspace(void *_ws, void *_n)
     free(ws);
     (void)_n;
 }
+
+/* Find all devices */
+static void parsec_find_nb_devices(int **dev_index, int *nb) {
+    for(int i = 0; i < (int)parsec_nb_devices; i++) {
+        parsec_device_module_t *device = parsec_mca_device_get(i); 
+        if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
+            (*nb)++;
+        }
+    }
+#if defined(DPLASMA_DEBUG)
+    if((*nb) == 0) { 
+        char hostname[256];
+        gethostname(hostname, 256);
+        fprintf(stderr, "No CUDA device found on rank %d on %s\n",
+                parsec->my_rank, hostname);
+    }
+#endif
+    *dev_index = (int *)malloc((*nb) * sizeof(int));
+    *nb = 0;
+    for(int i = 0; i < (int)parsec_nb_devices; i++) {
+        parsec_device_module_t *device = parsec_mca_device_get(i);
+        if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
+            (*dev_index)[(*nb)++] = device->device_index;
+        }
+    }
+}
+
+/* Get the most suitable process/gpu grid */
+static int parsec_grid_calculation( int nb_process ) {
+    int P;
+    for( P = (int)(sqrt(nb_process + 1.0)); P > 0; P-- ) {
+        if( 0 == nb_process % P ) break;
+    }
+    return P;
+}
+
 #endif
 
 /**
@@ -210,6 +247,19 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
                                                            destroy_workspace, NULL,
                                                            zpotrf_create_workspace, parsec_zpotrf,
                                                            NULL);
+    int nb = 0, *dev_index;
+    parsec_find_nb_devices(&dev_index, &nb);
+    parsec_zpotrf->_g_nb_gpu_devices = nb;
+    parsec_zpotrf->_g_gpu_device_index = dev_index;
+    parsec_zpotrf->_g_gpu_cols = parsec_grid_calculation(nb); 
+    parsec_zpotrf->_g_gpu_rows = nb/parsec_zpotrf->_g_gpu_cols; 
+    parsec_zpotrf->_g_grid_rows = ((parsec_matrix_sym_block_cyclic_t *)A)->grid.rows;
+    parsec_zpotrf->_g_grid_cols = ((parsec_matrix_sym_block_cyclic_t *)A)->grid.cols;
+#if defined(DPLASMA_DEBUG)
+    printf("nb_gpu_devices %d gpu_rows %d gpu_cols %d grid_rows %d grid_cols %d\n",
+            parsec_zpotrf->_g_nb_gpu_devices, parsec_zpotrf->_g_gpu_rows,
+            parsec_zpotrf->_g_gpu_cols, parsec_zpotrf->_g_grid_rows, parsec_zpotrf->_g_grid_cols);
+#endif
 #else
     parsec_zpotrf->_g_CuHandlesID = PARSEC_INFO_ID_UNDEFINED;
     parsec_zpotrf->_g_POWorkspaceID = PARSEC_INFO_ID_UNDEFINED;
