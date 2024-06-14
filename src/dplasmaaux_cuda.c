@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * $COPYRIGHT
@@ -8,21 +8,23 @@
 #include "dplasma/config.h"
 #include "parsec/utils/zone_malloc.h"
 #include "parsec/utils/show_help.h"
-#include <cublas_v2.h>
-#include "dplasmaaux_cuda.h"
-#include "potrf_cublas_utils.h"
+#include "potrf_gpu_workspaces.h"
 
-/* 
+#include <cublas_v2.h>
+#include <cusolverDn.h>
+#include "dplasmaaux_cuda.h"
+
+/*
  * Global info ID's for cublas handles and workspaces
  * Should be initialized in the tests
  * with the return of parsec_info_register
  * or parsec_info_lookup
  */
-parsec_info_id_t CuHI = -1;
-parsec_info_id_t WoSI = -1;
+parsec_info_id_t dplasma_dtd_cuda_infoid = -1;
+parsec_info_id_t dplasma_dtd_cuda_workspace_infoid = -1;
 
-/* Unfortunately, CUBLAS does not provide a error to string function */
-static char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
+/* Unfortunately, CUBLAS < 11.4.2 does not provide a error to string function */
+const char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
 {
     switch(cublas_status)
     {
@@ -38,8 +40,8 @@ static char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status)
     }
 }
 
-/* Unfortunately, cuSolver does not provide a error to string function */
-char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status)
+/* Unfortunately, cuSolver < 11.4.2 does not provide a error to string function */
+const char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status)
 {
     switch(cusolver_status) {
         case CUSOLVER_STATUS_SUCCESS: return "CUSOLVER_STATUS_SUCCESS";
@@ -106,3 +108,4 @@ void dplasma_destroy_cuda_handles(void *_h, void *_n)
     cusolverDnDestroy(handles->cusolverDn_handle);
     free(handles);
 }
+

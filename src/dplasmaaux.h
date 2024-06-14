@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 The University of Tennessee and The University
+ * Copyright (c) 2011-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -109,8 +109,7 @@ extern void *dplasma_pcomm;
 #define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); } while(0)
 #endif /* defined(DPLASMA_DEBUG) */
 
-#if defined(DPLASMA_HAVE_CUDA)
 #include "dplasmaaux_cuda.h"
-#endif
+#include "dplasmaaux_hip.h"
 
 #endif /* _DPLASMAAUX_H_INCLUDED */
