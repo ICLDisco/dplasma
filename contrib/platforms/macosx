@@ -12,6 +12,27 @@ for this reason the Apple VecLib remains the default option.
 EOF
 with_blas=Apple
 
+# OpenBLAS on OSX is not in system directories,
+# lets make sure it gets auto-detected, if requested with with_blas
+if [ -d /opt/homebrew/opt/openblas/lib/cmake/OpenBLAS ]; then # brew (arm)
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/opt/homebrew/opt/openblas/lib'"
+elif [ -d /usr/local/opt/openblas/lib/cmake/OpenBLAS ]; then # brew (intel)
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/usr/local/opt/openblas/lib'"
+fi
+if [ -d /opt/local/lib/cmake/OpenBLAS ]; then # macports
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/opt/local/lib'"
+fi
+if [ -d /opt/sw/lib/cmake/OpenBLAS ]; then # fink (10.15..)
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/opt/sw/lib'"
+elif [ -d /sw/lib/cmake/OpenBLAS ]; then # fink (..10.14)
+  ENVVARS+=" CMAKE_PREFIX_PATH+=':/sw/lib'"
+fi
+
+#####################################################################
+# Everything below is imported from the parsec contrib plaform file
+# If you need to modify something below, it probably needs modified
+# in parsec first, and backported here second
+
 # if icc/CLang is not set, detect the matching gcc/gfortran pair
 # OS X has no fortran by default, and flavor varies between fink, port, self installed, etc
 # Lets try to guess and use the same version for all 3 compilers
@@ -30,24 +51,25 @@ if [ "x$enable_fortran" != xno -a ! -x "$(command -v "$CC")" ]; then
   done
 fi
 
-# We have Brew OpenBLAS, lets make sure it gets auto-detected, if requested
-if [ -d /usr/local/opt/openblas/lib ]; then
-  ENVVARS+=" CMAKE_PREFIX_PATH+=':/usr/local/opt/openblas/lib'"
-fi
-
 # OS-X 12.2 provides Bison 2.3, we need Bison 3 or better
-# Try to get the 'brew' Bison if installed
-if [ -d /usr/local/opt/bison ]; then
-  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/usr/local/opt/bison}"
+local bison_version=$(expr "$(bison --version)" : "bison.*\([0-9]\)\.[0-9]")
+# do not override valid version in PATH or user choice
+if [ "$bison_version" -lt 3 -a -z "$BISON_ROOT" ]; then
+  # Try to find Bison if installed with brew, ports, fink
+  if [ -d /opt/homebrew/opt/bison ]; then # brew (arm)
+    bison_dir=/opt/homebrew/opt/bison
+  elif [ -d /usr/local/opt/bison ]; then # brew (intel)
+    bison_dir=/usr/local/opt/bison
+  elif [ -x /opt/local/bin/bison ]; then # macports
+    bison_dir=/opt/local
+  elif [ -x /opt/sw/bin/bison ]; then # fink (10.15..)
+    bison_dir=/opt/sw
+  elif [ -x /sw/bin/bison ]; then # fink (..10.14)
+    bison_dir=/sw
+  fi
+  if [ -n "${bison_dir}" ]; then
+    echo "Default Bison is too old, will search in ${bison_dir}; override by setting BISON_ROOT"
+    ENVVARS+=" BISON_ROOT=${bison_dir}"
+  fi
 fi
-# Try to get the 'MacPort' Bison if installed
-if [ -x /opt/local/bin/bison ]; then
-  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/opt/local}"
-fi
-# Try to get the 'Fink' Bison if installed
-if [ -x /sw/bin/bison ]; then
-  ENVVARS+=" BISON_ROOT=${BISON_ROOT:-/sw}"
-fi
-# If Bison still not found, please set BISON_ROOT by hand
-
 
