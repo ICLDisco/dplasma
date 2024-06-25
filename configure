@@ -630,10 +630,10 @@ x) ;;
 esac
 
 case x$with_hip in
-xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=OFF";;
-xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=ON";;
+xno) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=OFF -DDPLASMA_GPU_WITH_HIP=OFF";;
+xyes) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=ON -DDPLASMA_GPU_WITH_HIP=ON";;
 x) ;;
-*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=ON -DHIP_ROOT=$(printf %q "$with_hip")";;
+*) CMAKE_DEFINES+=" -DPARSEC_GPU_WITH_HIP=ON -DHIP_ROOT=$(printf %q "$with_hip") -DDPLASMA_GPU_WITH_HIP=ON";;
 esac
 
 case x$with_python in

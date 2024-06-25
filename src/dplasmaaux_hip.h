@@ -80,5 +80,7 @@ void dplasma_destroy_hip_handles(void *_h, void *_n);
         } \
     } while(0)
 
+#else
+#warning "DPLASMA_HAVE_HIP not defined, this file should not be included then."
 #endif /* defined(DPLASMA_HAVE_HIP */
 #endif /* __DPLAMAAUX_HIP_H__ */

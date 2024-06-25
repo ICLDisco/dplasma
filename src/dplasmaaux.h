@@ -109,7 +109,10 @@ extern void *dplasma_pcomm;
 #define dplasma_error(__func, __msg) do { fprintf(stderr, "%s: %s\n", (__func), (__msg)); } while(0)
 #endif /* defined(DPLASMA_DEBUG) */
 
+#if defined(DPLASMA_HAVE_CUDA)
 #include "dplasmaaux_cuda.h"
+#endif
+#if defined(DPLASMA_HAVE_HIP)
 #include "dplasmaaux_hip.h"
-
+#endif
 #endif /* _DPLASMAAUX_H_INCLUDED */

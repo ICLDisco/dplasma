@@ -98,6 +98,8 @@ const char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
         }                                                                                 \
     } while(0)
 #endif  /* defined(CUBLAS_V2_H_) */
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
 
+#else
+#warning "DPLASMA_HAVE_CUDA not defined, this file should not be included then."
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #endif /* __DPLAMAAUX_CUDA_H__ */
