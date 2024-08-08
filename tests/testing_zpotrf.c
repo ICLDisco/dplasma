@@ -67,7 +67,6 @@ int main(int argc, char ** argv)
             dplasma_zpotrf_Destruct( PARSEC_zpotrf );
 
             parsec_taskpool_sync_ids(); /* recursive DAGs are not synchronous on ids */
-
         }
         else
         {
@@ -76,7 +75,6 @@ int main(int argc, char ** argv)
                                       dplasma_zpotrf_Destruct( PARSEC_zpotrf ));
         }
         parsec_devices_reset_load(parsec);
-
     }
 
     if( 0 == rank && info != 0 ) {
