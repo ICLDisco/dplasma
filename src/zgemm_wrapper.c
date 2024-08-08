@@ -222,7 +222,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     nbgpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
-        if( PARSEC_DEV_CUDA == device->type ) {
+        if( PARSEC_DEV_CUDA & device->type ) {
             parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
             nbgpu++;
             if( 0 == gpu_mem_block_size )
@@ -239,7 +239,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     nbgpu= 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
-        if( PARSEC_DEV_CUDA == device->type ) {
+        if( PARSEC_DEV_CUDA & device->type ) {
             dev_index[nbgpu++] = device->device_index;
         }
     }
@@ -461,7 +461,7 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
 		int64_t gpu_mem_nb_blocks = -1;
         for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
             parsec_device_module_t *device = parsec_mca_device_get(devid);
-            if( PARSEC_DEV_CUDA == device->type ) {
+            if( PARSEC_DEV_CUDA & device->type ) {
 				parsec_device_cuda_module_t *cuda_device = (parsec_device_cuda_module_t*)device;
                 nb_gpu_devices++;
 				if( 0 == gpu_mem_block_size )

@@ -58,11 +58,11 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
     }
 }
 
+#define USE_PARSEC_ZONE_FOR_WP_MEMORY 0
+
 #if defined(DPLASMA_HAVE_CUDA)
 void *zpotrf_create_workspace(void *obj, void *user)
 {
-    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->super.memory;
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
@@ -73,6 +73,7 @@ void *zpotrf_create_workspace(void *obj, void *user)
     size_t elt_size = sizeof(cuDoubleComplex);
     cublasFillMode_t cublas_uplo;
     dplasma_enum_t uplo = tp->_g_uplo;
+    void* tmpmem;
 
     if( PlasmaLower == uplo )
         cublas_uplo = CUBLAS_FILL_MODE_LOWER;
@@ -87,12 +88,27 @@ void *zpotrf_create_workspace(void *obj, void *user)
     assert(CUSOLVER_STATUS_SUCCESS == status);
 
     cusolverDnDestroy(cusolverDnHandle);
-
+#if USE_PARSEC_ZONE_FOR_WP_MEMORY
+    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
+    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->super.memory;
+    tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
+    if( NULL == tmpmem )
+        return NULL;
+#else
+    (void)obj;
+    cudaError_t rc = cudaMalloc(&tmpmem, workspace_size * elt_size + sizeof(int));
+    if( cudaSuccess != rc )
+        return NULL;
+#endif  /* USE_PARSEC_ZONE_FOR_WP_MEMORY */
     wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
-    wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
+    wp->tmpmem = tmpmem;
     assert(NULL != wp->tmpmem);
     wp->lwork = workspace_size;
+#if USE_PARSEC_ZONE_FOR_WP_MEMORY
     wp->memory = memory;
+#else
+    wp->memory = NULL;
+#endif  /* USE_PARSEC_ZONE_FOR_WP_MEMORY */
 
     return wp;
 }
@@ -100,7 +116,11 @@ void *zpotrf_create_workspace(void *obj, void *user)
 static void destroy_workspace(void *_ws, void *_n)
 {
     dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+#if USE_PARSEC_ZONE_FOR_WP_MEMORY
     zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+#else
+    (void)cudaFree(ws->tmpmem);
+#endif  /* USE_PARSEC_ZONE_FOR_WP_MEMORY */
     free(ws);
     (void)_n;
 }

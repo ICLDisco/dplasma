@@ -134,6 +134,7 @@ BODY [type=CUDA]
     handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
     assert(NULL != handles);
     wp = parsec_info_get(&gpu_device->super.infos, POWorkspaceID);
+    if( NULL == wp ) return PARSEC_HOOK_RETURN_AGAIN;
     assert(NULL != wp);
 
     workspace = (cuDoubleComplex*)wp->tmpmem;

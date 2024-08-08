@@ -413,7 +413,7 @@ BODY [type=CUDA]
         __parsec_zgemm_NN_gpu_GEMM_task_t next_gemm;
         memcpy(&next_gemm, this_task, sizeof(__parsec_zgemm_NN_gpu_GEMM_task_t));
         next_gemm.locals.k.value = descC->mt -1;
-        assert( PARSEC_DEV_CUDA == next_gemm.task_class->incarnations[chore_id].type );
+        assert( PARSEC_DEV_CUDA & next_gemm.task_class->incarnations[chore_id].type );
         if(NULL != next_gemm.task_class->incarnations[chore_id].evaluate) {
             if( next_gemm.task_class->incarnations[chore_id].evaluate((parsec_task_t*)&next_gemm) ==
                 PARSEC_HOOK_RETURN_NEXT ) {

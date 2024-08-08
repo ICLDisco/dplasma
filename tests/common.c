@@ -124,6 +124,7 @@ void print_usage(void)
             "\n"
             " -c --cores        : number of concurent threads (default: number of physical hyper-threads)\n"
             " -g --gpus         : number of GPU (default: 0)\n"
+	    " -D --gpu_mask     : mask of the GPUs to be used by this process either a positive number to indicate the GPU mask or -1 (to use the GPUs module the local rank of the process)\n"
             " -m --thread_multi : initialize MPI_THREAD_MULTIPLE (default: no)\n"
             " -o --scheduler    : select the scheduler (default: LFQ)\n"
             "                     Accepted values:\n"
@@ -181,6 +182,7 @@ static struct option long_options[] =
     {"scheduler",   required_argument,  0, 'o'},
     {"gpus",        required_argument,  0, 'g'},
     {"g",           required_argument,  0, 'g'},
+    {"D",           required_argument,  0, 'D'},
     {"V",           required_argument,  0, 'V'},
     {"vpmap",       required_argument,  0, 'V'},
     {"ht",          required_argument,  0, 'H'},
@@ -324,6 +326,16 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                 }
                 iparam[IPARAM_NGPUS] = atoi(optarg);
                 break;
+            case 'D':
+#if !defined(DPLASMA_HAVE_CUDA)
+                iparam[IPARAM_GPU_MASK] = DPLASMA_ERR_NOT_SUPPORTED; /* force an error message */
+#endif
+                if(iparam[IPARAM_GPU_MASK] == DPLASMA_ERR_NOT_SUPPORTED) {
+                    fprintf(stderr, "#!!!!! This test does not have GPU support. GPU disabled.\n");
+                    break;
+                }
+                iparam[IPARAM_GPU_MASK] = atoi(optarg);
+                break;
 
             case 'p': case 'P': iparam[IPARAM_P] = atoi(optarg); break;
             case 'q': case 'Q': iparam[IPARAM_Q] = atoi(optarg); break;
@@ -448,7 +460,6 @@ static void parse_arguments(int *iparam) {
         parsec_setenv_mca_param( "device_cuda_enabled", value, &environ );
         free(value);
     }
-
     /* Check the process grid */
     if(0 == iparam[IPARAM_P])
         iparam[IPARAM_P] = iparam[IPARAM_NNODES];
@@ -510,6 +521,25 @@ static void parse_arguments(int *iparam) {
     /* HQR */
     if(-'P' == iparam[IPARAM_QR_HLVL_SZE]) iparam[IPARAM_QR_HLVL_SZE] = iparam[IPARAM_P];
     if(-'Q' == iparam[IPARAM_QR_HLVL_SZE]) iparam[IPARAM_QR_HLVL_SZE] = iparam[IPARAM_Q];
+#if defined(DPLASMA_HAVE_CUDA) && defined(PARSEC_HAVE_MPI)
+    if(iparam[IPARAM_NGPUS] > 0 && (-1 == iparam[IPARAM_GPU_MASK])) {
+        MPI_Comm local_comm;
+        int local_rank, local_size;
+        MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+                            MPI_INFO_NULL, &local_comm);
+        MPI_Comm_rank(local_comm, &local_rank);
+        MPI_Comm_size(local_comm, &local_size);
+        MPI_Comm_free(&local_comm);
+        iparam[IPARAM_GPU_MASK] = 0;
+        for( int i = 0; i <= iparam[IPARAM_NGPUS]; i++ ) {
+            iparam[IPARAM_GPU_MASK] |= ((1 << local_rank) << i);
+        }
+        char* value;
+        asprintf(&value, "%d", iparam[IPARAM_GPU_MASK]);
+        parsec_setenv_mca_param("device_cuda_mask", value, &environ);
+        free(value); value = NULL;
+    }
+#endif  /* defined(DPLASMA_HAVE_CUDA) && defined(PARSEC_HAVE_MPI) */
 }
 
 static void print_arguments(int* iparam)
@@ -698,20 +728,22 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     int dev, nbgpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
-        if( PARSEC_DEV_CUDA == device->type ) {
+        if( PARSEC_DEV_CUDA & device->type ) {
             nbgpu++;
         }
     }
-    if( nbgpu > 0 ) {
-        CuHI = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
-                                   dplasma_destroy_cuda_handles, NULL,
-                                   dplasma_create_cuda_handles, NULL,
-                                   NULL);
-        assert(-1 != CuHI);
+    if( iparam[IPARAM_NGPUS] < 0 ) {
+        iparam[IPARAM_NGPUS] = nbgpu;
     }
-    iparam[IPARAM_NGPUS] = nbgpu;
-    if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
-        parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
+    if( iparam[IPARAM_NGPUS] > 0 ) {
+        if(iparam[IPARAM_VERBOSE] >= 3) {
+            parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
+        }
+        CuHI = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
+                                    dplasma_destroy_cuda_handles, NULL,
+                                    dplasma_create_cuda_handles, NULL,
+                                    NULL);
+        assert(-1 != CuHI);
     }
 #endif
 

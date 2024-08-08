@@ -471,7 +471,7 @@ static void warmup_zgeqrf_hqr(int rank, int random_seed, int *iparam, parsec_con
     for(int dtype = PARSEC_DEV_RECURSIVE+1; dtype < PARSEC_DEV_MAX_NB_TYPE; dtype++) {
         for(int i = 0; i < (int)zgeqrf_hqr->nb_task_classes; i++) {
             for(int j = 0; NULL != zgeqrf_hqr->task_classes_array[i]->incarnations[j].hook; j++) {
-                if( zgeqrf_hqr->task_classes_array[i]->incarnations[j].type == dtype ) {
+                if( zgeqrf_hqr->task_classes_array[i]->incarnations[j].type & dtype ) {
                     goto do_run; /* We found one class that was on that device, no need to try more incarnations or task classes */
                 }
             }
@@ -480,7 +480,7 @@ static void warmup_zgeqrf_hqr(int rank, int random_seed, int *iparam, parsec_con
     do_run:
         for(int did = 0; did < (int)parsec_nb_devices; did++) {
             parsec_device_module_t *dev = parsec_mca_device_get(did);
-            if(dev->type != dtype)
+            if( !(dev->type & dtype) )
                 continue;
             /* This should work, right? Unfortunately, we can't test until there is a <dev>-enabled implementation for this test */
             for(int m = 0; m < MT; m++) {

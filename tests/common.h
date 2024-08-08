@@ -74,6 +74,7 @@ enum iparam_t {
   IPARAM_BUT_LEVEL,    /* Butterfly level */
   IPARAM_SCHEDULER,    /* User-selected scheduler */
   IPARAM_NRUNS,        /* Number of times to run the kernel */
+  IPARAM_GPU_MASK,     /* The mask of GPU to be used */
   IPARAM_SIZEOF
 };
 
