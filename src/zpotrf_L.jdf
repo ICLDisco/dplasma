@@ -1,22 +1,19 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2023 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ *
  * $COPYRIGHT
  *
  * @precisions normal z -> s d c
  *
  */
 #include "dplasma/config.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas_v2.h>
-#include "potrf_cublas_utils.h"
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
+#include "potrf_gpu_workspaces.h"
 
 #if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
 #include "parsec/data_dist/matrix/subtile.h"
@@ -84,8 +81,11 @@ INFO       [type = "int*"]
 PRI_CHANGE    [type = "int" hidden = on default = 0 ]
 PRI_MAX       [type = "int" hidden = on default = "(descA->mt * ( 6 + descA->mt * ( 6 + descA->mt )))" ]
 smallnb       [type = "int" hidden = on default = "descA->mb" ]
-CuHandlesID   [type = "int" hidden = on default = -1 ]
-POWorkspaceID [type = "int" hidden = on default = -1 ]
+
+cuda_handles_infokey    [type = "int" hidden = on default = -1 ]
+cuda_workspaces_infokey [type = "int" hidden = on default = -1 ]
+hip_handles_infokey     [type = "int" hidden = on default = -1 ]
+hip_workspaces_infokey  [type = "int" hidden = on default = -1 ]
 
 /**************************************************
  *               potrf_zpotrf                     *
@@ -122,7 +122,7 @@ BODY [type=CUDA]
 
     cusolverStatus_t status;
     cublasFillMode_t cublas_uplo;
-    dplasma_potrf_workspace_t *wp;
+    dplasma_potrf_gpu_workspaces_t *wp;
     cuDoubleComplex *workspace;
     int             *d_iinfo;
     dplasma_cuda_handles_t *handles;
@@ -132,9 +132,9 @@ BODY [type=CUDA]
     if( PlasmaUpper == uplo )
         cublas_uplo = CUBLAS_FILL_MODE_UPPER;
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
-    wp = parsec_info_get(&gpu_device->super.infos, POWorkspaceID);
+    wp = parsec_info_get(&gpu_device->super.infos, cuda_workspaces_infokey);
     assert(NULL != wp);
 
     workspace = (cuDoubleComplex*)wp->tmpmem;
@@ -142,6 +142,34 @@ BODY [type=CUDA]
 
     status = cusolverDnZpotrf( handles->cusolverDn_handle, cublas_uplo, tempkm, T, ldak, workspace, wp->lwork, d_iinfo);
     PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
+    int ldak = LDA(descA, T);
+
+    rocblas_status status;
+    rocblas_fill rocblas_uplo;
+    dplasma_potrf_gpu_workspaces_t *wp;
+    int *d_iinfo;
+    dplasma_hip_handles_t *handles;
+
+    if( PlasmaLower == uplo )
+        rocblas_uplo = rocblas_fill_lower;
+    if( PlasmaUpper == uplo )
+        rocblas_uplo = rocblas_fill_upper;
+
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    wp = parsec_info_get(&gpu_device->super.infos, hip_workspaces_infokey);
+    assert(NULL != wp);
+
+    d_iinfo = (int*)wp->tmpmem;
+
+    status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkm, T, ldak, d_iinfo);
+    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -230,7 +258,7 @@ BODY [type=CUDA]
     double zone = 1.;
 #endif
     cublasStatus_t status;
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrsm_v2(handles->cublas_handle,
@@ -239,6 +267,29 @@ BODY [type=CUDA]
                             tempmm, descA->nb,
                             &zone, T, ldak, C, ldam);
     PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldak = LDA(ddescA, T);
+    int ldam = LDA(ddescA, C);
+    dplasma_hip_handles_t *handles;
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex zone  = { 1., 0. };
+#else
+    double zone = 1.;
+#endif
+    hipblasStatus_t status;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZtrsm(handles->hipblas_handle,
+                                 HIPBLAS_SIDE_RIGHT, HIPBLAS_FILL_MODE_LOWER,
+                                 HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
+                                 tempmm, descA->nb,
+                                 &zone, T, ldak, C, ldam);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -336,7 +387,7 @@ BODY [type=CUDA]
     double mzone = -1.;
     cublasStatus_t status;
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZherk_v2( handles->cublas_handle,
@@ -345,6 +396,27 @@ BODY [type=CUDA]
                              &mzone, A, ldam_A,
                              &zone, T, ldam_T);
     PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempmm = m == descA->mt-1 ? descA->m - m*descA->mb : descA->mb;
+    int ldam_A = LDA(ddescA, A);
+    int ldam_T = LDA(ddescA, T);
+    dplasma_hip_handles_t *handles;
+    double zone  =  1.;
+    double mzone = -1.;
+    hipblasStatus_t status;
+
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZherk( handles->hipblas_handle,
+                                  HIPBLAS_FILL_MODE_LOWER, HIPBLAS_OP_N,
+                                  tempmm, descA->mb,
+                                  &mzone, A, ldam_A,
+                                  &zone, T, ldam_T);
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 
@@ -390,8 +462,7 @@ BODY
                tempmm, descA->mb,
                (double)-1.0, A /*A(m, k)*/, ldam_A,
                (double) 1.0, T /*A(m, m)*/, ldam_T);
-    printlog(
-             "CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
+    printlog("CORE_zherk( %d, %d )\n\t( %s, %s, %d, %d, %f, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
              k, m,
              &dplasma_lapack_const( dplasmaLower ), &dplasma_lapack_const( dplasmaNoTrans ),
              tempmm, descA->mb,
@@ -434,8 +505,8 @@ BODY [type=CUDA
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       A.dc=ddescA B.dc=ddescA C.dc=ddescA
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -448,15 +519,13 @@ BODY [type=CUDA
     int ldam_A = LDA(ddescA, A);
     int ldan_B = LDA(ddescA, B);
     int ldam_C = LDA(ddescA, C);
-
-    cublasStatus_t status;
-    dplasma_cuda_handles_t *handles;
-
     assert( ldam_A <= descA->mb );
     assert( ldan_B <= descA->mb );
     assert( ldam_C <= descA->mb );
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHandlesID);
+    cublasStatus_t status;
+    dplasma_cuda_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
 
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
@@ -467,6 +536,43 @@ BODY [type=CUDA
                                      (cuDoubleComplex*)B, ldan_B,
                              &zone,  (cuDoubleComplex*)C, ldam_C );
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A.dc=ddescA B.dc=ddescA C.dc=ddescA
+      stage_in=dplasma_hip_lapack_stage_in
+      stage_out=dplasma_hip_lapack_stage_out]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex zone  = {  1., 0. };
+    hipblasDoubleComplex mzone = { -1., 0. };
+#else
+    double zone  =  1.;
+    double mzone = -1.;
+#endif
+    int tempmm = m == descA->mt-1 ? descA->m - m * descA->mb : descA->mb;
+    int ldam_A = LDA(ddescA, A);
+    int ldan_B = LDA(ddescA, B);
+    int ldam_C = LDA(ddescA, C);
+    assert( ldam_A <= descA->mb );
+    assert( ldan_B <= descA->mb );
+    assert( ldam_C <= descA->mb );
+
+    hipblasStatus_t status;
+    dplasma_hip_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZgemm( handles->hipblas_handle,
+                                  HIPBLAS_OP_N, HIPBLAS_OP_C,
+                                  tempmm, descA->mb, descA->mb,
+                                  &mzone, A, ldam_A,
+                                          B, ldan_B,
+                                  &zone,  C, ldam_C );
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
 }
 END
 

@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
@@ -8,15 +8,14 @@ extern "C" %{
  * $COPYRIGHT
  *
  */
-#include "dplasmajdf.h"
-#include "dplasmaaux.h"
-#include "parsec/data_dist/matrix/matrix.h"
-#include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#include <math.h>
-
+#include "dplasma/config.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+#include "dplasmajdf.h"
+#include "parsec/data_dist/matrix/matrix.h"
+#include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
+#include <math.h>
 
 /* Define the different shapes this JDF is using */
 #define A_SHAPE 0
@@ -84,6 +83,8 @@ Q      [type = "int" hidden=on default="((parsec_matrix_block_cyclic_t*)descC)->
 /* Look ahead on both dimensions */
 lookP  [type = "int" hidden=on default="dplasma_aux_getGEMMLookahead(descC)"]
 lookQ  [type = "int" hidden=on default="dplasma_aux_getGEMMLookahead(descC)"]
+
+hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 /**************************************************
  *                       READ_A                   *
@@ -210,8 +211,8 @@ BODY [type=CUDA
       B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
       C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
       A.dc=ddescA B.dc=ddescB C.dc=ddescC
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex lalpha = make_cuDoubleComplex(creal(alpha), cimag(alpha));
@@ -228,6 +229,15 @@ BODY [type=CUDA
     int ldbn = descB->mb;
     int ldcm = descC->mb;
 
+    printloggpu("gemm( %d, %d, %d )\n"
+             "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",
+             m, n, k,
+             &dplasma_lapack_const( transA ), &dplasma_lapack_const( transB ),
+             tempmm, tempnn, tempkk,
+             creal(alpha), k, m, ldak,
+                           n, k, ldbn,
+             creal(lbeta), m, n, ldcm );
+
     cublasStatus_t status;
     cublasSetKernelStream( parsec_body.stream );
     cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
@@ -240,6 +250,56 @@ BODY [type=CUDA
       printf("ISSUE\n");
     }
     PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP
+      A.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      B.size=%{ return descB->mb*descB->nb*parsec_datadist_getsizeoftype(descB->mtype);%}
+      C.size=%{ return descC->mb*descC->nb*parsec_datadist_getsizeoftype(descC->mtype);%}
+      A.dc=ddescA B.dc=ddescB C.dc=ddescC
+      stage_in=dplasma_hip_lapack_stage_in
+      stage_out=dplasma_hip_lapack_stage_out]
+{
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex lalpha;
+    lalpha.x = creal(alpha); lalpha.y = cimag(alpha);
+    hipblasDoubleComplex lbeta = { 1., 0. };
+    if(k == 0) {
+        lbeta.x = creal(beta); lbeta.y = cimag(beta);
+    }
+#else
+    double lalpha = alpha;
+    double lbeta  = (k == 0) ? beta : 1.0;
+#endif
+    int tempmm = m == descC->mt-1 ? descC->m - m * descC->mb : descC->mb;
+    int tempnn = n == descC->nt-1 ? descC->n - n * descC->nb : descC->nb;
+    int tempkk = k == descA->mt-1 ? descA->m - k * descA->nb : descA->nb;
+    int ldak = descA->mb;
+    int ldbn = descB->mb;
+    int ldcm = descC->mb;
+
+    printloggpu("gemm( %d, %d, %d )\n"
+             "    ( %s, %s, %d, %d, %d, %f, A(%d,%d), %d, B(%d,%d), %d, %f, C(%d,%d), %d)\n",
+             m, n, k,
+             &dplasma_lapack_const( transA ), &dplasma_lapack_const( transB ),
+             tempmm, tempnn, tempkk,
+             creal(alpha), k, m, ldak,
+                           n, k, ldbn,
+             (k==0)? creal(beta): 1.0, m, n, ldcm );
+
+    hipblasStatus_t status;
+    hipblasOperation_t opA = dplasmaNoTrans == transA? HIPBLAS_OP_N: HIPBLAS_OP_T;
+    hipblasOperation_t opB = dplasmaNoTrans == transB? HIPBLAS_OP_N: HIPBLAS_OP_T;
+    dplasma_hip_handles_t *handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZgemm( handles->hipblas_handle,
+                           opA, opB,
+                           tempmm, tempnn, tempkk,
+                           &lalpha, (hipblasDoubleComplex*)A, ldak,
+                                    (hipblasDoubleComplex*)B, ldbn,
+                           &lbeta,  (hipblasDoubleComplex*)C, ldcm );
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 

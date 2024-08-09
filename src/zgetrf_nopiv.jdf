@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,12 +10,12 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasmajdf.h"
-#include "parsec/data_dist/matrix/matrix.h"
-
+#include "dplasma/config.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+#include "dplasmajdf.h"
+#include "parsec/data_dist/matrix/matrix.h"
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT 0
@@ -200,8 +200,8 @@ BODY [type=CUDA
       B.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       C.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
       A.dc=ddescA B.dc=ddescA C.dc=ddescA
-      stage_in=stage_in_lapack
-      stage_out=stage_out_lapack]
+      stage_in=dplasma_cuda_lapack_stage_in
+      stage_out=dplasma_cuda_lapack_stage_out]
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
     cuDoubleComplex zone  = make_cuDoubleComplex( 1., 0.);
@@ -219,7 +219,7 @@ BODY [type=CUDA
 
     cublasStatus_t status;
 
-    printlogcuda("CUDA_zgemm(%d, %d, %d)\n"
+    printloggpu("zgemm(%d, %d, %d)\n"
                  "\t(dplasmaNoTrans, dplasmaNoTrans, tempmm, tempnn, descA->mb, -1, A(%d,%d)[%p], ldam %d, A(%d,%d)[%p], ldak %d, 1.000000, A(%d,%d)[%p], ldam %d)\n",
                  k, n, m, m, k, A, ldam_A, k, n, B, ldak_B, m, n, C, ldam_C);
 

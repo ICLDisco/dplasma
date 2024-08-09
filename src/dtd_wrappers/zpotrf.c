@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -7,11 +7,6 @@
  *
  */
 #include "dplasma/config.h"
-
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas_v2.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-
 #include "dplasma_z_dtd.h"
 
 int
@@ -39,7 +34,7 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     zpotrf_dtd_workspace_info_t *infos = (zpotrf_dtd_workspace_info_t*) user;
-    dplasma_potrf_workspace_t *wp = NULL;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
     size_t workspace_size;
     size_t host_size;
     int mb = infos->mb;
@@ -66,7 +61,7 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
 
     cusolverDnDestroy(cusolverDnHandle);
 
-    wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
     wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
     assert(NULL != wp->tmpmem);
     wp->lwork = workspace_size;
@@ -81,7 +76,7 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
 void
 zpotrf_dtd_destroy_workspace(void *_ws, void *_n)
 {
-    dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
     cusolverDnParams_t* params = ws->params;
     cusolverStatus_t status = cusolverDnDestroyParams(*params);
     assert(CUSOLVER_STATUS_SUCCESS == status);
@@ -105,7 +100,7 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
     parsec_task_t* this_task = gpu_task->ec;
     cusolverStatus_t status;
     dplasma_cuda_handles_t* handles;
-    dplasma_potrf_workspace_t *wp;
+    dplasma_potrf_gpu_workspaces_t *wp;
     cuDoubleComplex *workspace;
     cusolverDnParams_t* params;
     int             *d_iinfo;
@@ -116,9 +111,9 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
 
     dplasma_cublas_fill(uplo);
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHI);
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
     assert(NULL != handles);
-    wp = parsec_info_get(&gpu_device->super.infos, WoSI);
+    wp = parsec_info_get(&gpu_device->super.infos, dplasma_dtd_cuda_workspace_infoid);
     assert(NULL != wp);
 
     workspace = (cuDoubleComplex*)wp->tmpmem;

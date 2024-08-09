@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -7,11 +7,6 @@
  *
  */
 #include "dplasma/config.h"
-
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas_v2.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-
 #include "dplasma_z_dtd.h"
 
 int
@@ -80,7 +75,7 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
     }
 #endif /* defined(PARSEC_DEBUG_NOISIER) */
 
-    handles = parsec_info_get(&gpu_stream->infos, CuHI);
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
     assert(NULL != handles);
 
     parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;

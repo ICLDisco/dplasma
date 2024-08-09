@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-     The University of Tennessee and The University
+ * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * $COPYRIGHT
@@ -9,16 +9,18 @@
 #ifndef _DPLASMAAAUX_CUDA_H_
 #define _DPLASMAAAUX_CUDA_H_
 
+
+#if defined(DPLASMA_HAVE_CUDA)
 #include "parsec/mca/device/cuda/device_cuda.h"
 
 /**
  * DPLASMA currently supports a mix of cublas v1 and v2, but not in the same source file. Thus,
  * the simplest way to provide common headers is to require the developer to manually specify
- * when cublas_v2 is needed by including the header before dplasmaaux.h. Otherwise, we will include
- * cublas.h (v1) automatically if CUDA is enabled.
+ * when legacy cublas is needed by including the header before dplasmaaux.h. Otherwise, we will include
+ * cublas_v2.h (v2) automatically if CUDA is enabled.
  */
-#if !defined(CUBLAS_V2_H_)
-#include <cublas.h>
+#if !defined(CUBLAS_H_)
+#include <cublas_v2.h>
 #endif  /* !defined(CUBLAS_V2_H_) */
 
 #define dplasma_cublas_side(side)                                         \
@@ -57,8 +59,8 @@
     trans = (trans == dplasmaNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
 #endif /* PRECISION_z || PRECISION_c */
 
-extern parsec_info_id_t CuHI;
-extern parsec_info_id_t WoSI;
+extern parsec_info_id_t dplasma_dtd_cuda_infoid;
+extern parsec_info_id_t dplasma_dtd_cuda_workspace_infoid;
 
 typedef struct {
     cublasHandle_t cublas_handle;
@@ -68,12 +70,14 @@ typedef struct {
 void *dplasma_create_cuda_handles(void *obj, void *user);
 void dplasma_destroy_cuda_handles(void *_h, void *_n);
 
+const char *dplasma_cublas_error_to_string(cublasStatus_t cublas_status);
+
 #define DPLASMA_CUBLAS_CHECK_STATUS( STR, STATUS, CODE )                     \
     do {                                                                     \
         cublasStatus_t __cublas_status = (cublasStatus_t) (STATUS);          \
         if( CUBLAS_STATUS_SUCCESS != __cublas_status ) {                     \
             parsec_warning( "%s:%d %s%s", __FILE__, __LINE__,                \
-                            (STR), cublasGetStatusString(__cublas_status) ); \
+                            (STR), dplasma_cublas_error_to_string(__cublas_status) ); \
             CODE;                                                            \
         }                                                                    \
     } while(0)
@@ -82,7 +86,7 @@ void dplasma_destroy_cuda_handles(void *_h, void *_n);
 /* Support for cusolve requires cublas_v2 */
 #include <cusolverDn.h>
 
-char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
+const char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
 
 #define DPLASMA_CUSOLVER_CHECK_STATUS( STR, STATUS, CODE )                                \
     do {                                                                                  \
@@ -95,4 +99,7 @@ char *dplasma_cusolver_error_to_string(cusolverStatus_t cusolver_status);
     } while(0)
 #endif  /* defined(CUBLAS_V2_H_) */
 
+#else
+#warning "DPLASMA_HAVE_CUDA not defined, this file should not be included then."
+#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #endif /* __DPLAMAAUX_CUDA_H__ */

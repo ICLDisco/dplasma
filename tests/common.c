@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2021 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -26,10 +26,13 @@
 #ifdef PARSEC_HAVE_MPI
 #include <mpi.h>
 #endif
+#include "dplasmaaux.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas_v2.h>
-#include "dplasmaaux.h"
 #include <cusolverDn.h>
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+#include <hipblas/hipblas.h>
 #endif
 
 char *PARSEC_SCHED_NAME[] = {
@@ -315,7 +318,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                 break;
 
             case 'g':
-#if !defined(DPLASMA_HAVE_CUDA)
+#if !defined(DPLASMA_HAVE_CUDA) && !defined(DPLASMA_HAVE_HIP)
                 iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_SUPPORTED; /* force an error message */
 #endif
                 if(iparam[IPARAM_NGPUS] == DPLASMA_ERR_NOT_SUPPORTED) {
@@ -446,6 +449,7 @@ static void parse_arguments(int *iparam) {
     if(iparam[IPARAM_NGPUS] != DPLASMA_ERR_NOT_INITIALIZED) {
         rc = asprintf(&value, "%d", iparam[IPARAM_NGPUS]); (void)rc;
         parsec_setenv_mca_param( "device_cuda_enabled", value, &environ );
+        parsec_setenv_mca_param( "device_hip_enabled", value, &environ );
         free(value);
     }
 
@@ -694,26 +698,41 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     if(iparam[IPARAM_VERBOSE] >= 4) {
         parsec_setenv_mca_param( "device_show_capabilities", "1", &environ );
     }
-#if defined(DPLASMA_HAVE_CUDA)
-    int dev, nbgpu = 0;
+
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    int dev, nb_cuda_gpu = 0, nb_hip_gpu = 0;
     for(dev = 0; dev < (int)parsec_nb_devices; dev++) {
         parsec_device_module_t *device = parsec_mca_device_get(dev);
         if( PARSEC_DEV_CUDA == device->type ) {
-            nbgpu++;
+            nb_cuda_gpu++;
+        }
+        else if( PARSEC_DEV_HIP == device->type ) {
+            nb_hip_gpu++;
         }
     }
-    if( nbgpu > 0 ) {
-        CuHI = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
-                                   dplasma_destroy_cuda_handles, NULL,
-                                   dplasma_create_cuda_handles, NULL,
-                                   NULL);
-        assert(-1 != CuHI);
-    }
-    iparam[IPARAM_NGPUS] = nbgpu;
+    iparam[IPARAM_NGPUS] = nb_cuda_gpu + nb_hip_gpu;
     if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
         parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
     }
+#if defined(DPLASMA_HAVE_CUDA)
+    if( nb_cuda_gpu > 0 ) {
+        dplasma_dtd_cuda_infoid = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
+                                    dplasma_destroy_cuda_handles, NULL,
+                                    dplasma_create_cuda_handles, NULL,
+                                    NULL);
+        assert(-1 != dplasma_dtd_cuda_infoid);
+    }
 #endif
+#if defined(DPLASMA_HAVE_HIP)
+    if( nb_hip_gpu > 0 ) {
+        dplasma_dtd_hip_infoid =  parsec_info_register(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES",
+                                    dplasma_destroy_hip_handles, NULL,
+                                    dplasma_create_hip_handles, NULL,
+                                    NULL);
+        assert(-1 != dplasma_dtd_hip_infoid);
+    }
+#endif
+#endif /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 
     print_arguments(iparam);
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
@@ -723,8 +742,14 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 {
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_info_id_t CuHI = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
-    parsec_info_unregister(&parsec_per_stream_infos, CuHI, NULL);
+  { parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+    parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
+  }
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+  { parsec_info_id_t iid = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+    parsec_info_unregister(&parsec_per_stream_infos, iid, NULL);
+  }
 #endif
 
     if(NULL != dev_stats) parsec_devices_free_statistics(&dev_stats);

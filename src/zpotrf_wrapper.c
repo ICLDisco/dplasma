@@ -12,12 +12,9 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasma/types_lapack.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas_v2.h>
-#include "potrf_cublas_utils.h"
-#include "parsec/utils/zone_malloc.h"
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #include "dplasmaaux.h"
+#include "potrf_gpu_workspaces.h"
+#include "parsec/utils/zone_malloc.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"
@@ -59,14 +56,16 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
 }
 
 #if defined(DPLASMA_HAVE_CUDA)
-void *zpotrf_create_workspace(void *obj, void *user)
+#include <cusolverDn.h>
+
+static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 {
     parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->super.memory;
+    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
-    dplasma_potrf_workspace_t *wp = NULL;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
     int workspace_size;
     int mb = tp->_g_descA->mb;
     int nb = tp->_g_descA->nb;
@@ -88,7 +87,7 @@ void *zpotrf_create_workspace(void *obj, void *user)
 
     cusolverDnDestroy(cusolverDnHandle);
 
-    wp = (dplasma_potrf_workspace_t*)malloc(sizeof(dplasma_potrf_workspace_t));
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
     wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
     assert(NULL != wp->tmpmem);
     wp->lwork = workspace_size;
@@ -97,9 +96,35 @@ void *zpotrf_create_workspace(void *obj, void *user)
     return wp;
 }
 
-static void destroy_workspace(void *_ws, void *_n)
+static void zpotrf_destroy_cuda_workspace(void *_ws, void *_n)
 {
-    dplasma_potrf_workspace_t *ws = (dplasma_potrf_workspace_t*)_ws;
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
+    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    free(ws);
+    (void)_n;
+}
+#endif
+
+#if defined(DPLASMA_HAVE_HIP)
+static void *zpotrf_create_hip_workspace(void *obj, void *user)
+{
+    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
+    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    (void)user;
+
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
+    wp->tmpmem = zone_malloc(memory, sizeof(int));
+    assert(NULL != wp->tmpmem);
+    wp->lwork = 0;
+    wp->memory = memory;
+
+    return wp;
+}
+
+static void zpotrf_destroy_hip_workspace(void *_ws, void *_n)
+{
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
     zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
     free(ws);
     (void)_n;
@@ -178,8 +203,10 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
                     int *info )
 {
     parsec_zpotrf_L_taskpool_t *parsec_zpotrf = NULL;
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
     char workspace_info_name[64];
     static int uid = 0;
+#endif
     parsec_taskpool_t *tp = NULL;
     dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection(A);
 
@@ -204,16 +231,28 @@ dplasma_zpotrf_New( dplasma_enum_t uplo,
 #if defined(DPLASMA_HAVE_CUDA)
     /* It doesn't cost anything to define these infos if we have CUDA but
      * don't have GPUs on the current machine, so we do it non-conditionally */
-    parsec_zpotrf->_g_CuHandlesID = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+    parsec_zpotrf->_g_cuda_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
     snprintf(workspace_info_name, 64, "DPLASMA::ZPOTRF(%d)::WS", uid++);
-    parsec_zpotrf->_g_POWorkspaceID = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
-                                                           destroy_workspace, NULL,
-                                                           zpotrf_create_workspace, parsec_zpotrf,
+    parsec_zpotrf->_g_cuda_workspaces_infokey = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
+                                                           zpotrf_destroy_cuda_workspace, NULL,
+                                                           zpotrf_create_cuda_workspace, parsec_zpotrf,
                                                            NULL);
 #else
-    parsec_zpotrf->_g_CuHandlesID = PARSEC_INFO_ID_UNDEFINED;
-    parsec_zpotrf->_g_POWorkspaceID = PARSEC_INFO_ID_UNDEFINED;
-    (void)uid; (void)workspace_info_name;
+    parsec_zpotrf->_g_cuda_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+    parsec_zpotrf->_g_cuda_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    /* It doesn't cost anything to define these infos if we have HIP but
+     * don't have GPUs on the current machine, so we do it non-conditionally */
+    parsec_zpotrf->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+    snprintf(workspace_info_name, 64, "DPLASMA::ZPOTRF(%d)::WS", uid++);
+    parsec_zpotrf->_g_hip_workspaces_infokey = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
+                                                           zpotrf_destroy_hip_workspace, NULL,
+                                                           zpotrf_create_hip_workspace, parsec_zpotrf,
+                                                           NULL);
+#else
+    parsec_zpotrf->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+    parsec_zpotrf->_g_hip_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
 #endif
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
@@ -253,7 +292,10 @@ dplasma_zpotrf_Destruct( parsec_taskpool_t *tp )
     dplasma_data_collection_t * ddc_A = parsec_zpotrf->_g_ddescA;
 
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_info_unregister(&parsec_per_device_infos, parsec_zpotrf->_g_POWorkspaceID, NULL);
+    parsec_info_unregister(&parsec_per_device_infos, parsec_zpotrf->_g_cuda_workspaces_infokey, NULL);
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    parsec_info_unregister(&parsec_per_device_infos, parsec_zpotrf->_g_hip_workspaces_infokey, NULL);
 #endif
 
     parsec_taskpool_free(tp);

@@ -6,6 +6,7 @@
 
 /* GPU Backends */
 #cmakedefine DPLASMA_HAVE_CUDA
+#cmakedefine DPLASMA_HAVE_HIP
 
 /* system feature tests */
 #cmakedefine DPLASMA_HAVE_COMPLEX_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023 The University of Tennessee and The University
+ * Copyright (c) 2013-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
         infos->mb   = dcA.super.mb;
         infos->nb   = dcA.super.nb;
         infos->uplo = uplo;
-        WoSI = parsec_info_register( &parsec_per_stream_infos, "DPLASMA::ZPOTRF::WS",
+        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_stream_infos, "DPLASMA::ZPOTRF::WS",
                                      zpotrf_dtd_destroy_workspace, NULL,
                                      zpotrf_dtd_create_workspace, infos,
                                      NULL);
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
         infos->mb   = dcA.super.mb;
         infos->nb   = dcA.super.nb;
         infos->uplo = uplo;
-        WoSI = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::WS",
+        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::WS",
                                      zpotrf_dtd_destroy_workspace, NULL,
                                      zpotrf_dtd_create_workspace, infos,
                                      NULL);
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
     /* Cleaning up the parsec handle */
     parsec_taskpool_free( dtd_tp );
 #if defined(DPLASMA_HAVE_CUDA)
-    parsec_info_unregister(&parsec_per_device_infos, WoSI, NULL);
+    parsec_info_unregister(&parsec_per_device_infos, dplasma_dtd_cuda_workspace_infoid, NULL);
     free(infos);
 #endif
 
