@@ -16,11 +16,11 @@
 /**
  * DPLASMA currently supports a mix of cublas v1 and v2, but not in the same source file. Thus,
  * the simplest way to provide common headers is to require the developer to manually specify
- * when cublas_v2 is needed by including the header before dplasmaaux.h. Otherwise, we will include
- * cublas.h (v1) automatically if CUDA is enabled.
+ * when legacy cublas is needed by including the header before dplasmaaux.h. Otherwise, we will include
+ * cublas_v2.h (v2) automatically if CUDA is enabled.
  */
-#if !defined(CUBLAS_V2_H_)
-#include <cublas.h>
+#if !defined(CUBLAS_H_)
+#include <cublas_v2.h>
 #endif  /* !defined(CUBLAS_V2_H_) */
 
 #define dplasma_cublas_side(side)                                         \

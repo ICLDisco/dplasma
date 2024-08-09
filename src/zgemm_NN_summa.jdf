@@ -8,18 +8,14 @@ extern "C" %{
  * $COPYRIGHT
  *
  */
-#include "dplasmajdf.h"
-#include "dplasmaaux.h"
-#include "parsec/data_dist/matrix/matrix.h"
-#include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
-#include <math.h>
-
+#include "dplasma/config.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
-#if defined(DPLASMA_HAVE_HIP)
-#include <hipblas/hipblas.h>
-#endif  /* defined(DPLASMA_HAVE_HIP) */
+#include "dplasmajdf.h"
+#include "parsec/data_dist/matrix/matrix.h"
+#include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
+#include <math.h>
 
 /* Define the different shapes this JDF is using */
 #define A_SHAPE 0

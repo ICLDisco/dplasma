@@ -11,7 +11,7 @@ extern "C" %{
  *
  */
 #include "dplasma/config.h"
-
+#include "potrf_gpu_workspaces.h"
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
@@ -23,16 +23,6 @@ static void zgemm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_cal
 static void zherk_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 static void ztrsm_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 #endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
-
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
-#if defined(DPLASMA_HAVE_HIP)
-#include <hipblas/hipblas.h>
-#include <rocsolver/rocsolver.h>
-#endif  /* defined(DPLASMA_HAVE_HIP) */
-#include "potrf_gpu_workspaces.h"
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT 0

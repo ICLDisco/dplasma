@@ -1,6 +1,6 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2023 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -10,12 +10,12 @@ extern "C" %{
  * @precisions normal z -> s d c
  *
  */
-#include "dplasmajdf.h"
-#include "parsec/data_dist/matrix/matrix.h"
-
+#include "dplasma/config.h"
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cublas.h>
 #endif  /* defined(DPLASMA_HAVE_CUDA) */
+#include "dplasmajdf.h"
+#include "parsec/data_dist/matrix/matrix.h"
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT 0
