@@ -13,6 +13,8 @@
 #include "parsec/mca/device/hip/device_hip.h"
 
 #include <hipblas/hipblas.h>
+#include <hipsolver/hipsolver.h>
+#include <rocsolver/rocsolver.h>
 
 #define dplasma_hipblas_side(side)                                        \
     assert( (side == dplasmaRight) || (side == dplasmaLeft) );            \
