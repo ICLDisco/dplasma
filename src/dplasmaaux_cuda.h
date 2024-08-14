@@ -23,40 +23,26 @@
 #include <cublas_v2.h>
 #endif  /* !defined(CUBLAS_V2_H_) */
 
-#define dplasma_cublas_side(side)                                         \
-    assert( (side == dplasmaRight) || (side == dplasmaLeft) );            \
-    side = (side == dplasmaRight) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT;
+#define dplasma_cublas_side(side) ( \
+    assert( (side == dplasmaRight) || (side == dplasmaLeft) ), \
+    side = (side == dplasmaRight) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT)
 
+#define dplasma_cublas_diag(diag) ( \
+    assert( (diag == dplasmaNonUnit) || (diag == dplasmaUnit) ), \
+    diag = (diag == dplasmaNonUnit) ? CUBLAS_DIAG_NON_UNIT : CUBLAS_DIAG_UNIT)
 
-#define dplasma_cublas_diag(diag)                                              \
-    assert( (diag == dplasmaNonUnit) || (diag == dplasmaUnit) );               \
-    diag = (diag == dplasmaNonUnit) ? CUBLAS_DIAG_NON_UNIT : CUBLAS_DIAG_UNIT;
-
-#define dplasma_cublas_fill(fill)                                                    \
-    assert( (fill == dplasmaLower) || (fill == dplasmaUpper) );                      \
-    fill = (fill == dplasmaLower) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER;
+#define dplasma_cublas_fill(fill) ( \
+    assert( (fill == dplasmaLower) || (fill == dplasmaUpper) ), \
+    fill = (fill == dplasmaLower) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER)
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
-#define dplasma_cublas_op(trans)                 \
-    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) || (trans == dplasmaConjTrans) ); \
-    switch(trans){                               \
-        case dplasmaNoTrans:                     \
-            trans = CUBLAS_OP_N;                 \
-            break;                               \
-        case dplasmaTrans:                       \
-            trans = CUBLAS_OP_T;                 \
-            break;                               \
-        case dplasmaConjTrans:                   \
-            trans = CUBLAS_OP_C;                 \
-            break;                               \
-        default:                                 \
-            trans = CUBLAS_OP_N;                 \
-            break;                               \
-    }
+#define dplasma_cublas_op(trans) ( \
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) || (trans == dplasmaConjTrans) ), \
+    trans = (trans == dplasmaConjTrans) ? CUBLAS_OP_C: (trans == dplasmaTrans) ? CUBLAS_OP_T : CUBLAS_OP_N)
 #else
-#define dplasma_cublas_op(trans)                                    \
-    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) ); \
-    trans = (trans == dplasmaNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+#define dplasma_cublas_op(trans) ( \
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) ), \
+    trans = (trans == dplasmaNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T)
 #endif /* PRECISION_z || PRECISION_c */
 
 extern parsec_info_id_t dplasma_dtd_cuda_infoid;
