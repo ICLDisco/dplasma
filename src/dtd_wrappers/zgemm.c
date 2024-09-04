@@ -63,9 +63,6 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
     double betag  = beta;
 #endif
 
-    dplasma_cublas_op(transA);
-    dplasma_cublas_op(transB);
-
 #if defined(PARSEC_DEBUG_NOISIER)
     {
         char tmp[MAX_TASK_STRLEN];
@@ -80,7 +77,7 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
 
     parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     cublasSetStream( handles->cublas_handle, cuda_stream->cuda_stream );
-    status = cublasZgemm(handles->cublas_handle, transA, transB,
+    status = cublasZgemm(handles->cublas_handle, dplasma_cublas_op(transA), dplasma_cublas_op(transB),
                           n, m, k,
                           &alphag, (cuDoubleComplex*)Ag, lda,
                           (cuDoubleComplex*)Bg, ldb,
