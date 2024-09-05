@@ -16,6 +16,32 @@
 #include <hipsolver/hipsolver.h>
 #include <rocsolver/rocsolver.h>
 
+#include "dplasma/constants.h"
+
+static inline hipblasSideMode_t dplasma_hipblas_side(int side) {
+    assert( (side == dplasmaRight) || (side == dplasmaLeft) );
+    return (side == dplasmaRight) ? HIPBLAS_SIDE_RIGHT : HIPBLAS_SIDE_LEFT;
+}
+
+static inline hipblasDiagType_t dplasma_hipblas_diag(int diag) {
+    assert( (diag == dplasmaNonUnit) || (diag == dplasmaUnit) );
+    return (diag == dplasmaNonUnit) ? HIPBLAS_DIAG_NON_UNIT : HIPBLAS_DIAG_UNIT;
+}
+
+static inline hipblasFillMode_t dplasma_hipblas_fill(int fill) {
+    assert( (fill == dplasmaLower) || (fill == dplasmaUpper) );
+    return (fill == dplasmaLower) ? HIPBLAS_FILL_MODE_LOWER : HIPBLAS_FILL_MODE_UPPER;
+}
+
+static inline hipblasOperation_t dplasma_hipblas_op(int trans) {
+#if defined(PRECISION_d) || defined(PRECISION_s)
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) );
+#else
+    assert( (trans == dplasmaNoTrans) || (trans == dplasmaTrans) || (trans == dplasmaConjTrans) );
+#endif /* PRECISION_d || PRECISION_s */
+    return (trans == dplasmaConjTrans) ? HIPBLAS_OP_C: ((trans == dplasmaTrans) ? HIPBLAS_OP_T : HIPBLAS_OP_N);
+}
+
 extern parsec_info_id_t dplasma_dtd_hip_infoid;
 
 typedef struct {
