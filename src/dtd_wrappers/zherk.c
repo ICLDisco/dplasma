@@ -52,9 +52,6 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
     Ag = parsec_dtd_get_dev_ptr(this_task, 0);
     Cg = parsec_dtd_get_dev_ptr(this_task, 1);
 
-    dplasma_cublas_op(trans);
-    dplasma_cublas_fill(uplo);
-
     handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
 
 #if defined(PARSEC_DEBUG_NOISIER)
@@ -68,7 +65,7 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
 
     parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     cublasSetStream( handles->cublas_handle, cuda_stream->cuda_stream );
-    status = cublasZherk(handles->cublas_handle, uplo, trans,
+    status = cublasZherk(handles->cublas_handle, dplasma_cublas_fill(uplo), dplasma_cublas_op(trans),
                           m, n,
                           &alpha, (cuDoubleComplex*)Ag, lda,
                           &beta,  (cuDoubleComplex*)Cg, ldc );
