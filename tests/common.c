@@ -714,6 +714,9 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     if(iparam[IPARAM_NGPUS] > 0 && iparam[IPARAM_VERBOSE] >= 3) {
         parsec_setenv_mca_param( "device_show_statistics", "1", &environ );
     }
+#else
+    iparam[IPARAM_NGPUS] = 0;
+#endif /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 #if defined(DPLASMA_HAVE_CUDA)
     if( nb_cuda_gpu > 0 ) {
         dplasma_dtd_cuda_infoid = parsec_info_register(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES",
@@ -732,7 +735,6 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
         assert(-1 != dplasma_dtd_hip_infoid);
     }
 #endif
-#endif /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 
     print_arguments(iparam);
     if(verbose > 2) TIME_PRINT(iparam[IPARAM_RANK], ("PaRSEC initialized\n"));
