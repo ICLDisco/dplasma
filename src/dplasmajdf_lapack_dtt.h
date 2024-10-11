@@ -38,7 +38,7 @@ int LDA_internal(const dplasma_data_collection_t *ddc, parsec_data_copy_t *cp)
     /* obtain the lda of this dc->dtt */
     rc = dplasma_get_info_from_datatype(ddc, cp->dtt, &info, &adt);
     assert(rc == 0);
-    PARSEC_DEBUG_VERBOSE(4, parsec_debug_output,
+    PARSEC_DEBUG_VERBOSE(14, parsec_debug_output,
         "CP %p [%p] [type %p] lda %d", cp, cp->device_private, cp->dtt, info->lda);
     return info->lda;
 }
@@ -63,7 +63,7 @@ ADTT_DC(const dplasma_data_collection_t *ddc, int loc, int target_shape, int tar
     rc = dplasma_get_datatype_from_info(ddc, &info, &adt);
     assert(rc == 0);
 
-    PARSEC_DEBUG_VERBOSE(8, parsec_debug_output,
+    PARSEC_DEBUG_VERBOSE(18, parsec_debug_output,
         "LOC %d target_shape %d target_layout %d-> dtt %p ", loc, target_shape, target_layout, adt->opaque_dtt);
     return adt;
 }
@@ -92,7 +92,7 @@ ADTT_CP(parsec_data_copy_t *cp, const dplasma_data_collection_t *ddc, int target
     assert(rc == 0);
 
     if(( cp_info->shape == target_shape )||(target_shape == DPLASMA_SHAPE_SAME)){
-      PARSEC_DEBUG_VERBOSE(8, parsec_debug_output,
+      PARSEC_DEBUG_VERBOSE(18, parsec_debug_output,
                            "CP %p [type %p] -> target_shape %d target_loc %d dtt %p",
                             cp, cp->dtt, target_shape, target_loc, adt->opaque_dtt);
       return adt;
@@ -105,7 +105,7 @@ ADTT_CP(parsec_data_copy_t *cp, const dplasma_data_collection_t *ddc, int target
     /* obtain the equivalent dtt for the same location with the target_shape */
     rc = dplasma_get_datatype_from_info(ddc, &info, &adt);
     assert(rc == 0);
-    PARSEC_DEBUG_VERBOSE(8, parsec_debug_output,
+    PARSEC_DEBUG_VERBOSE(18, parsec_debug_output,
                          "CP %p [type %p] loc %d layout %d -> dtt %p target_shape %d",
                           cp, cp->dtt, target_loc, info.layout, adt->opaque_dtt, target_shape);
     return adt;
