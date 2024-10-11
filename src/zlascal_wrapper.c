@@ -113,10 +113,7 @@ dplasma_zlascal_New( dplasma_enum_t uplo,
                      dplasma_complex64_t alpha,
                      parsec_tiled_matrix_t *A )
 {
-    dplasma_complex64_t *a = (dplasma_complex64_t*)malloc(sizeof(dplasma_complex64_t));
-    *a = alpha;
-
-    return parsec_apply_New( uplo, A, dplasma_zlascal_operator, (void*)a );
+    return parsec_apply_New( uplo, A, dplasma_zlascal_operator, (void*)&alpha );
 }
 
 /**

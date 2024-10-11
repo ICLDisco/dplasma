@@ -117,9 +117,7 @@ dplasma_zlatms( parsec_context_t *parsec,
     /* Init the diagonal of A */
     {
         parsec_taskpool_t *tp;
-        double *condptr = malloc(sizeof( double ));
-        *condptr = cond;
-        tp = parsec_apply_New( dplasmaUpperLower, A, dplasma_zlatms_operator, condptr );
+        tp = parsec_apply_New( dplasmaUpperLower, A, dplasma_zlatms_operator, (void *)&cond );
         if ( tp != NULL ) {
             parsec_context_add_taskpool(parsec, tp);
             parsec_context_start( parsec );

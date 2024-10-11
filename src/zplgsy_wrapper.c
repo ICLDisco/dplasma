@@ -94,15 +94,10 @@ dplasma_zplgsy_operator( parsec_execution_stream_t *es,
 *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo,
+dplasma_zplgsy_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_t *A,
-                    unsigned long long int seed)
+                    void *params)
 {
-    zplgsy_args_t *params = (zplgsy_args_t*)malloc(sizeof(zplgsy_args_t));
-
-    params->bump  = bump;
-    params->seed  = seed;
-
     return parsec_apply_New( uplo, A, dplasma_zplgsy_operator, params );
 }
 
@@ -195,7 +190,9 @@ dplasma_zplgsy( parsec_context_t *parsec,
         return -3;
     }
 
-    parsec_zplgsy = dplasma_zplgsy_New( bump, uplo, A, seed );
+    zplgsy_args_t params = {.bump = bump, .seed = seed};
+
+    parsec_zplgsy = dplasma_zplgsy_New( uplo, A, (void *)&params );
 
     if ( parsec_zplgsy != NULL ) {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zplgsy);

@@ -188,11 +188,11 @@ parsec_taskpool_t* dplasma_zlanm2_New( const parsec_tiled_matrix_t *A, double *n
 parsec_taskpool_t* dplasma_zlansy_New( dplasma_enum_t ntype, dplasma_enum_t uplo, const parsec_tiled_matrix_t *A, double *result);
 parsec_taskpool_t* dplasma_zlantr_New( dplasma_enum_t ntype, dplasma_enum_t uplo, dplasma_enum_t diag, const parsec_tiled_matrix_t *A, double *result);
 parsec_taskpool_t* dplasma_zlascal_New( dplasma_enum_t type, dplasma_complex64_t alpha, parsec_tiled_matrix_t *A);
-parsec_taskpool_t* dplasma_zlaset_New( dplasma_enum_t uplo, dplasma_complex64_t alpha, dplasma_complex64_t beta, parsec_tiled_matrix_t *A);
+parsec_taskpool_t* dplasma_zlaset_New( dplasma_enum_t uplo, dplasma_complex64_t *params, parsec_tiled_matrix_t *A);
 parsec_taskpool_t* dplasma_zlaswp_New( parsec_tiled_matrix_t *A, const parsec_tiled_matrix_t *IPIV, int inc);
-parsec_taskpool_t* dplasma_zplghe_New( double            bump, dplasma_enum_t uplo, parsec_tiled_matrix_t *A, unsigned long long int seed);
-parsec_taskpool_t* dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo, parsec_tiled_matrix_t *A, unsigned long long int seed);
-parsec_taskpool_t* dplasma_zplrnt_New( int diagdom,                              parsec_tiled_matrix_t *A, unsigned long long int seed);
+parsec_taskpool_t* dplasma_zplghe_New( dplasma_enum_t uplo, parsec_tiled_matrix_t *A, void *params);
+parsec_taskpool_t* dplasma_zplgsy_New( dplasma_enum_t uplo, parsec_tiled_matrix_t *A, void *params);
+parsec_taskpool_t* dplasma_zplrnt_New( parsec_tiled_matrix_t *A, void *params);
 
 /* Sub-kernels to recursive DAGs */
 parsec_taskpool_t* dplasma_zgeqrfr_geqrt_New(parsec_tiled_matrix_t *A,  parsec_tiled_matrix_t *T,  void *work);

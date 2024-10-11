@@ -91,15 +91,9 @@ dplasma_zlaset_operator( parsec_execution_stream_t *es,
  ******************************************************************************/
 parsec_taskpool_t*
 dplasma_zlaset_New( dplasma_enum_t uplo,
-                    dplasma_complex64_t alpha,
-                    dplasma_complex64_t beta,
+                    dplasma_complex64_t *params,
                     parsec_tiled_matrix_t *A )
 {
-    dplasma_complex64_t *params = (dplasma_complex64_t*)malloc(2 * sizeof(dplasma_complex64_t));
-
-    params[0] = alpha;
-    params[1] = beta;
-
     return parsec_apply_New( uplo, A, dplasma_zlaset_operator, params );
 }
 
@@ -193,7 +187,9 @@ dplasma_zlaset( parsec_context_t *parsec,
         return -1;
     }
 
-    parsec_zlaset = dplasma_zlaset_New(uplo, alpha, beta, A);
+    dplasma_complex64_t params[2] = {alpha, beta};
+
+    parsec_zlaset = dplasma_zlaset_New(uplo, params, A);
 
     if ( parsec_zlaset != NULL ) {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zlaset);
