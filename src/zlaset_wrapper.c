@@ -12,6 +12,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
+#include "parsec/data_dist/matrix/apply.h"
 
 
 static int
@@ -126,6 +127,9 @@ dplasma_zlaset_New( dplasma_enum_t uplo,
 void
 dplasma_zlaset_Destruct( parsec_taskpool_t *tp )
 {
+    if( ((parsec_apply_taskpool_t *)tp)->_g_op_args ) {
+        free( ((parsec_apply_taskpool_t *)tp)->_g_op_args );
+    }
     parsec_apply_Destruct(tp);
 }
 

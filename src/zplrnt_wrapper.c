@@ -11,7 +11,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
-
+#include "parsec/data_dist/matrix/apply.h"
 #include "cores/core_blas.h"
 
 
@@ -143,6 +143,9 @@ dplasma_zplrnt_New( int diagdom,
 void
 dplasma_zplrnt_Destruct( parsec_taskpool_t *tp )
 {
+    if( ((parsec_apply_taskpool_t *)tp)->_g_op_args ) {
+        free( ((parsec_apply_taskpool_t *)tp)->_g_op_args );
+    }
     parsec_apply_Destruct(tp);
 }
 
