@@ -125,8 +125,10 @@ dplasma_zlatms( parsec_context_t *parsec,
             parsec_context_start( parsec );
             parsec_context_wait( parsec );
             parsec_apply_Destruct(tp);
+            free(condptr);
         }
         else {
+            free(condptr);
             return -1;
         }
     }
