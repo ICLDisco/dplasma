@@ -92,15 +92,10 @@ dplasma_zplghe_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zplghe_New( double bump, dplasma_enum_t uplo,
+dplasma_zplghe_New( dplasma_enum_t uplo,
                     parsec_tiled_matrix_t *A,
-                    unsigned long long int seed)
+                    void *params)
 {
-    zplghe_args_t *params = (zplghe_args_t*)malloc(sizeof(zplghe_args_t));
-
-    params->bump  = bump;
-    params->seed  = seed;
-
     return parsec_apply_New( uplo, A, dplasma_zplghe_operator, params );
 }
 
@@ -191,7 +186,9 @@ dplasma_zplghe( parsec_context_t *parsec,
         return -3;
     }
 
-    parsec_zplghe = dplasma_zplghe_New( bump, uplo, A, seed );
+    zplghe_args_t params = {.bump = bump, .seed = seed};
+
+    parsec_zplghe = dplasma_zplghe_New( uplo, A, (void *)&params );
 
     if ( parsec_zplghe != NULL ) {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zplghe);

@@ -114,13 +114,13 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
                         unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zpltmg = NULL;
-    zpltmg_args_t *params = (zpltmg_args_t*)malloc(sizeof(zpltmg_args_t));
+    zpltmg_args_t params;
 
-    params->mtxtype = mtxtype;
-    params->seed    = seed;
-    params->W       = W;
+    params.mtxtype = mtxtype;
+    params.seed    = seed;
+    params.W       = W;
 
-    parsec_zpltmg = parsec_apply_New( dplasmaUpperLower, A, dplasma_zpltmg_generic_operator, params );
+    parsec_zpltmg = parsec_apply_New( dplasmaUpperLower, A, dplasma_zpltmg_generic_operator, (void *)&params );
     if ( parsec_zpltmg != NULL )
     {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zpltmg);

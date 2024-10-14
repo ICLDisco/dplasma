@@ -108,16 +108,10 @@ dplasma_zplrnt_operator( parsec_execution_stream_t *es,
  *
  ******************************************************************************/
 parsec_taskpool_t*
-dplasma_zplrnt_New( int diagdom,
-                    parsec_tiled_matrix_t *A,
-                    unsigned long long int seed)
+dplasma_zplrnt_New( parsec_tiled_matrix_t *A,
+                    void *params)
 {
-    zplrnt_args_t *params = (zplrnt_args_t*)malloc(sizeof(zplrnt_args_t));
-
-    params->diagdom = diagdom;
-    params->seed    = seed;
-
-    return parsec_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, params );
+    return parsec_apply_New( dplasmaUpperLower, A, dplasma_zplrnt_operator, (void *)params );
 }
 
 /**
@@ -193,8 +187,9 @@ dplasma_zplrnt( parsec_context_t *parsec,
                 unsigned long long int seed)
 {
     parsec_taskpool_t *parsec_zplrnt = NULL;
+    zplrnt_args_t params = {.diagdom = diagdom, .seed = seed};
 
-    parsec_zplrnt = dplasma_zplrnt_New(diagdom, A, seed);
+    parsec_zplrnt = dplasma_zplrnt_New(A, (void *)&params);
 
     parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zplrnt);
     dplasma_wait_until_completion(parsec);
