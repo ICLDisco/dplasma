@@ -11,7 +11,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
-
+#include "parsec/data_dist/matrix/apply.h"
 #include "cores/core_blas.h"
 
 struct zplgsy_args_s {
@@ -129,6 +129,9 @@ dplasma_zplgsy_New( dplasma_complex64_t bump, dplasma_enum_t uplo,
 void
 dplasma_zplgsy_Destruct( parsec_taskpool_t *tp )
 {
+    if( ((parsec_apply_taskpool_t *)tp)->_g_op_args ) {
+        free( ((parsec_apply_taskpool_t *)tp)->_g_op_args );
+    }
     parsec_apply_Destruct(tp);
 }
 
