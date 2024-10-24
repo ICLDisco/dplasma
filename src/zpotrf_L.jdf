@@ -148,7 +148,7 @@ END
 BODY [type=HIP]
 {
     int tempkm = k == descA->mt-1 ? descA->m - k*descA->mb : descA->mb;
-    int ldak = LDA(descA, T);
+    int ldak = LDA(ddescA, T);
 
     rocblas_status status;
     rocblas_fill rocblas_uplo;
