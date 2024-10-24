@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021      The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include "utils/dplasma_info.h"

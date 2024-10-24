@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021-2023 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
+
 #include "common.h"
 
 /*      SUBROUTINE PDPOTRF( UPLO, N, A, IA, JA, DESCA, INFO )

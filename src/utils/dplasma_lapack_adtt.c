@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021-2023 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
+
 #include "dplasma_lapack_adtt.h"
 #include <string.h>
 
