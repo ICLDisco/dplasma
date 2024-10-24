@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ *
+ * $COPYRIGHT
  *
  * @precisions normal z -> s d c
  *
@@ -304,7 +306,6 @@ void dplasma_qrtree_print_type( parsec_tiled_matrix_t *A, dplasma_qrtree_t *qrtr
 {
     int minMN = dplasma_imin(A->mt, A->nt );
     int m, k;
-    int lm = 0;
     int lmg = 0;
     int rank = 0;
 
@@ -326,11 +327,10 @@ void dplasma_qrtree_print_type( parsec_tiled_matrix_t *A, dplasma_qrtree_t *qrtr
         for (k=dplasma_imin(minMN, lmg+1); k<minMN; k++) {
             printf( "    " );
         }
-        lm++; lmg+=qrtree->p;
+        lmg+=qrtree->p;
         if ( lmg >= A->mt ) {
             rank++;
             lmg = rank;
-            lm = 0;
         }
         printf("\n");
     }
@@ -340,7 +340,6 @@ void dplasma_qrtree_print_pivot( parsec_tiled_matrix_t *A, dplasma_qrtree_t *qrt
 {
     int minMN = dplasma_imin(A->mt, A->nt );
     int m, k;
-    int lm = 0;
     int lmg = 0;
     int rank = 0;
     printf("\n------------ Current Pivot--------------\n");
@@ -361,11 +360,10 @@ void dplasma_qrtree_print_pivot( parsec_tiled_matrix_t *A, dplasma_qrtree_t *qrt
         for (k=dplasma_imin(minMN, lmg+1); k<minMN; k++) {
             printf( "    " );
         }
-        lm++; lmg+=qrtree->p;
+        lmg+=qrtree->p;
         if ( lmg >= A->mt ) {
             rank++;
             lmg = rank;
-            lm = 0;
         }
         printf("\n");
     }
