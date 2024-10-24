@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2021-2023 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 # Generate ScaLAPACK wrappers provided by DPLASMA
 if(NOT DPLASMA_WITH_SCALAPACK_WRAPPER)
   return() # told to not build them

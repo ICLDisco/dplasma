@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2012-2019 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 set(alltreel 0 1 2 3 )    # --treel Option for local tree
 set(alltreeh 0 1 2 3 4 )  # --treeh Option for distributed tree
 set(allP 3 5 7 8)         # --qr_p  Fix the size of the distributed tree

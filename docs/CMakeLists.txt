@@ -1,6 +1,9 @@
 #
-#Use Doxygen to create the API documentation
+# Copyright (c) 2019-2023 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
 #
+# Use Doxygen to create the API documentation
 
 option(BUILD_DOCUMENTATION "Generate API documentation during the build process." OFF)
 

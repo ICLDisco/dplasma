@@ -1,4 +1,9 @@
 #
+# Copyright (c) 2010-2024 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
+#
 # A more compact representation of the DPLASMA tests. We can compose any number
 # of tests, by providing the epilogue in ALL_TESTS and have the corresponding
 # OPTION_** defined to the extra options necessary to run that particular flavor

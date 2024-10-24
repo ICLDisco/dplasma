@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2009-2023 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(BEFORE "${CMAKE_CURRENT_BINARY_DIR}/include")
 if(NOT DPLASMA_BUILD_INPLACE)

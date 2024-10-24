@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2023      The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 include(PrecisionGenerator)
 
 set(DTD_HEADERS

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2009-2019 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
+
 #ifndef TIMING_H
 #define TIMING_H
 

@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2009-2023 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 if(NOT TARGET dplasma_tests_common)
   add_library(dplasma_tests_common OBJECT common.c)
   target_include_directories(dplasma_tests_common
