@@ -3,8 +3,6 @@
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  *
- * $COPYRIGHT
- *
  */
 #ifndef INCLUDE_DPLASMA_LAPACK_DTT_H
 #define INCLUDE_DPLASMA_LAPACK_DTT_H

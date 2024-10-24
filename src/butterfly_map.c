@@ -2,7 +2,6 @@
  * Copyright (c) 2012-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
- * $COPYRIGHT
  *
  */
 

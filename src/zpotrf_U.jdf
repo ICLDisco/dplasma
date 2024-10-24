@@ -5,8 +5,6 @@ extern "C" %{
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
- * $COPYRIGHT
- *
  * @precisions normal z -> s d c
  *
  */

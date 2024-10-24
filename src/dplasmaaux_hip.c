@@ -2,7 +2,6 @@
  * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
- * $COPYRIGHT
  *
  */
 #include "dplasma/config.h"

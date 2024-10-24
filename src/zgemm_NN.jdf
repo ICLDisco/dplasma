@@ -5,7 +5,6 @@ extern "C" %{
  *                         reserved.
  *
  * @precisions normal z -> s d c
- * $COPYRIGHT
  *
  */
 #include "dplasma/config.h"
