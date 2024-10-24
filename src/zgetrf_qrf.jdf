@@ -1,9 +1,10 @@
 extern "C" %{
 /*
- * Copyright (c) 2010-2020 The University of Tennessee and The University
+ * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ *
  * $COPYRIGHT
  *
  * @precisions normal z -> s d c
@@ -1141,9 +1142,9 @@ BODY
             cond = k%2;
         }
 
-        if (alpha == 0)
+        if (alpha == 0.0)
             cond = 0;
-        if (alpha >= 9999999999)
+        if (alpha >= 1e10)
             cond = 1;
       cond_affect:
         lu_tab[k] = cond;

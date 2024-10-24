@@ -1,6 +1,15 @@
+/*
+ * Copyright (c) 2020-2024 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ *
+ * $COPYRIGHT
+ *
+ */
 #include "dplasma_arena_datatype.h"
 #include <string.h>
 
+#ifdef REUSE_ARENA_DATATYPE
 static parsec_key_fn_t arena_key_fns = {
     .key_equal = parsec_hash_table_generic_64bits_key_equal,
     .key_print = parsec_hash_table_generic_64bits_key_print,
@@ -39,6 +48,7 @@ static parsec_key_fn_t dtt_key_fns = {
     .key_print = dtt_key_print,
     .key_hash = dtt_key_hash
 };
+#endif /* REUSE_ARENA_DATATYPE */
 
 parsec_hash_table_t *dplasma_arenas = NULL;
 parsec_hash_table_t *dplasma_datatypes = NULL;
@@ -53,6 +63,7 @@ static void dplasma_arenas_release(void *item, void*cb_data)
     free(arena_entry);
 }
 
+#ifdef REUSE_ARENA_DATATYPE
 static void dplasma_datatypes_release(void *item, void*cb_data)
 {
     (void)cb_data;
@@ -81,6 +92,7 @@ static void dplasma_datatypes_fini()
         PARSEC_OBJ_RELEASE(dplasma_datatypes);
     }
 }
+#endif /* REUSE_ARENA_DATATYPE */
 
 int dplasma_get_or_construct_arena(parsec_arena_t** parena,
                                    size_t elem_size,
