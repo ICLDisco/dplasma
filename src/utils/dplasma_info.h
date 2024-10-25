@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021      The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
+
 #ifndef _DPLASMA_INFO_H
 #define _DPLASMA_INFO_H
 

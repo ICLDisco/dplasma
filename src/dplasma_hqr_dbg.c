@@ -3,8 +3,6 @@
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
- * $COPYRIGHT
- *
  * @precisions normal z -> s d c
  *
  *

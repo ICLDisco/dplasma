@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2011-2022 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 set(ZHEADERS
   dplasma_zcores.h core_zblas.h
 )

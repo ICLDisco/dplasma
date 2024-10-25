@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2020-2023 The University of Tennessee and The University
+#                         of Tennessee Research Foundation.  All rights
+#                         reserved.
+#
 set(DPLASMA_VERSION @DPLASMA_VERSION_MAJOR@.@DPLASMA_VERSION_MINOR@.@DPLASMA_VERSION_PATCH@)
 
 @PACKAGE_INIT@

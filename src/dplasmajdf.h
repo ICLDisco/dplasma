@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020-2024 The University of Tennessee and The University
+ *                         of Tennessee Research Foundation.  All rights
+ *                         reserved.
+ */
 #ifndef _DPLASMAJDF_H_
 #define _DPLASMAJDF_H_
 

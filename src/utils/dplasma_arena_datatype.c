@@ -3,8 +3,6 @@
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
- * $COPYRIGHT
- *
  */
 #include "dplasma_arena_datatype.h"
 #include <string.h>

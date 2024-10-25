@@ -3,7 +3,6 @@
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
- * $COPYRIGHT
  *
  */
 

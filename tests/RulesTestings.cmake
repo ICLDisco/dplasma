@@ -1,12 +1,7 @@
+#
 # Copyright (c) 2009-2019 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
-#
-# $COPYRIGHT$
-#
-# Additional copyrights may follow
-#
-# $HEADER$
 #
 
 include(PrecisionGenerator)

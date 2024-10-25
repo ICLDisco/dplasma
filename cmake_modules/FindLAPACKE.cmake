@@ -45,7 +45,7 @@
 #
 
 # ==============================================================================
-# Copyright (c) 2019-2023 The University of Tennessee and The University
+# Copyright (c) 2019-2024 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
 #
