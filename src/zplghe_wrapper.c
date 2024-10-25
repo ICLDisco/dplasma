@@ -11,6 +11,7 @@
 #include "dplasma.h"
 #include "dplasma/types.h"
 #include "dplasmaaux.h"
+#include "parsec/data_dist/matrix/apply.h"
 #include "cores/core_blas.h"
 
 
@@ -127,6 +128,9 @@ dplasma_zplghe_New( double bump, dplasma_enum_t uplo,
 void
 dplasma_zplghe_Destruct( parsec_taskpool_t *tp )
 {
+    if( ((parsec_apply_taskpool_t *)tp)->_g_op_args ) {
+        free( ((parsec_apply_taskpool_t *)tp)->_g_op_args );
+    }
     parsec_apply_Destruct(tp);
 }
 

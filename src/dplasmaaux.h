@@ -114,4 +114,41 @@ extern void *dplasma_pcomm;
 #if defined(DPLASMA_HAVE_HIP)
 #include "dplasmaaux_hip.h"
 #endif
+
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+/* Advise data on device arguments */
+typedef struct dplasma_advise_data_on_device_s {
+    int nb_gpu_devices;
+    int *gpu_device_index;
+    int gpu_rows;
+    int gpu_cols;
+    int grid_rows;
+    int grid_cols;
+} dplasma_advise_data_on_device_t;
+
+/* Find all GPUs
+ * Size of dev_index: at least parsec_nb_devices
+ * */
+void dplasma_find_nb_gpus(int *dev_index, int *nb);
+
+/* Get the most suitable process/gpu grid */
+int dplasma_grid_calculation( int nb_process );
+
+/* Operator 2D */
+int dplasma_advise_data_on_device_ops_2D(parsec_execution_stream_t *es,
+                        const parsec_tiled_matrix_t *descA,
+                        void *_A, parsec_matrix_uplo_t uplo,
+                        int m, int n, void *args);
+
+/* Set advise data on device
+ *
+ * If op_args == NULL, use dplasma_advise_data_on_device_t by default 
+ */
+int dplasma_advise_data_on_device( parsec_context_t *parsec,
+        parsec_matrix_uplo_t uplo,
+        parsec_tiled_matrix_t *A,
+        parsec_tiled_matrix_unary_op_t operation,
+        void *op_args );
+#endif
+
 #endif /* _DPLASMAAUX_H_INCLUDED */

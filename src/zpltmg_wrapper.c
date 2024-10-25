@@ -125,9 +125,11 @@ dplasma_zpltmg_generic( parsec_context_t *parsec,
     {
         parsec_context_add_taskpool(parsec, (parsec_taskpool_t*)parsec_zpltmg);
         dplasma_wait_until_completion(parsec);
+        free(params); 
         parsec_apply_Destruct( parsec_zpltmg );
         return 0;
     }
+    free(params); 
     return -101;
 }
 

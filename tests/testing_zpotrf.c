@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "flops.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 
@@ -18,7 +19,7 @@ int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    dplasma_enum_t uplo = dplasmaUpper;
+    dplasma_enum_t uplo = dplasmaLower;
     int info = 0;
     int ret = 0;
 
@@ -43,6 +44,13 @@ int main(int argc, char ** argv)
         parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                    rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, nodes/P, uplo));
+
+    /* Advice data on device */
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    dplasma_advise_data_on_device(parsec, uplo, (parsec_tiled_matrix_t*)&dcA,
+            (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
+#endif
+
     int t;
     for(t = 0; t < nruns; t++) {
         /* matrix (re)generation */
