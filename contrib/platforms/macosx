@@ -1,4 +1,4 @@
-#!/bin/bash
+# vim: set filetype=sh :
 
 cat <<'EOF'
 Note about BLAS on Mac OS X:
