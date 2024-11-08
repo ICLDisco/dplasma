@@ -69,19 +69,13 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
     int mb = tp->_g_descA->mb;
     int nb = tp->_g_descA->nb;
     size_t elt_size = sizeof(cuDoubleComplex);
-    cublasFillMode_t cublas_uplo;
     dplasma_enum_t uplo = tp->_g_uplo;
-
-    if( PlasmaLower == uplo )
-        cublas_uplo = CUBLAS_FILL_MODE_LOWER;
-    if( PlasmaUpper == uplo )
-        cublas_uplo = CUBLAS_FILL_MODE_UPPER;
 
     status = cusolverDnCreate(&cusolverDnHandle);
     assert(CUSOLVER_STATUS_SUCCESS == status);
     (void)status;
 
-    status = cusolverDnDpotrf_bufferSize(cusolverDnHandle, cublas_uplo, nb, NULL, mb, &workspace_size);
+    status = cusolverDnDpotrf_bufferSize(cusolverDnHandle, dplasma_cublas_fill(uplo), nb, NULL, mb, &workspace_size);
     assert(CUSOLVER_STATUS_SUCCESS == status);
 
     cusolverDnDestroy(cusolverDnHandle);

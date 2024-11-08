@@ -52,11 +52,6 @@ parsec_core_ztrsm_cuda(parsec_device_gpu_module_t* gpu_device,
     Ag = parsec_dtd_get_dev_ptr(this_task, 0);
     Cg = parsec_dtd_get_dev_ptr(this_task, 1);
 
-    dplasma_cublas_side(side);
-    dplasma_cublas_fill(uplo);
-    dplasma_cublas_op(trans);
-    dplasma_cublas_diag(diag);
-
     handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
 
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -77,7 +72,7 @@ parsec_core_ztrsm_cuda(parsec_device_gpu_module_t* gpu_device,
     parsec_cuda_exec_stream_t* cuda_stream = (parsec_cuda_exec_stream_t*)gpu_stream;
     cublasSetStream( handles->cublas_handle, cuda_stream->cuda_stream );
     status = cublasZtrsm(handles->cublas_handle,
-                          side, uplo, trans, diag,
+                          dplasma_cublas_side(side), dplasma_cublas_fill(uplo), dplasma_cublas_op(trans), dplasma_cublas_diag(diag),
                           m, n, &alphag,
                           (cuDoubleComplex*)Ag, lda,
                           (cuDoubleComplex*)Cg, ldc);
