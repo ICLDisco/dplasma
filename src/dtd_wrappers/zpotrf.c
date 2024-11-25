@@ -40,11 +40,8 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
     int mb = infos->mb;
     int nb = infos->nb;
     size_t elt_size = sizeof(cuDoubleComplex);
-    cublasFillMode_t cublas_uplo;
     dplasma_enum_t uplo = infos->uplo;
     cusolverDnParams_t* params;
-
-    cublas_uplo = (uplo == dplasmaUpper) ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER;
 
     status = cusolverDnCreate(&cusolverDnHandle);
     assert(CUSOLVER_STATUS_SUCCESS == status);
@@ -56,7 +53,7 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
     status = cusolverDnCreateParams(params);
     assert(CUSOLVER_STATUS_SUCCESS == status);
 
-    status = cusolverDnXpotrf_bufferSize(cusolverDnHandle, *params, cublas_uplo, nb, CUSOLVER_COMPUTE_TYPE, NULL, mb, CUSOLVER_COMPUTE_TYPE, &workspace_size, &host_size);
+    status = cusolverDnXpotrf_bufferSize(cusolverDnHandle, *params, dplasma_cublas_fill(uplo), nb, CUSOLVER_COMPUTE_TYPE, NULL, mb, CUSOLVER_COMPUTE_TYPE, &workspace_size, &host_size);
     assert(CUSOLVER_STATUS_SUCCESS == status);
 
     cusolverDnDestroy(cusolverDnHandle);
@@ -109,8 +106,6 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
 
     Ag = parsec_dtd_get_dev_ptr(this_task, 0);
 
-    dplasma_cublas_fill(uplo);
-
     handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
     assert(NULL != handles);
     wp = parsec_info_get(&gpu_device->super.infos, dplasma_dtd_cuda_workspace_infoid);
@@ -130,7 +125,7 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
 #endif /* defined(PARSEC_DEBUG_NOISIER) */
 
     status = cusolverDnXpotrf(handles->cusolverDn_handle, *params,
-                              uplo, m, CUSOLVER_COMPUTE_TYPE,
+                              dplasma_cublas_fill(uplo), m, CUSOLVER_COMPUTE_TYPE,
                               (cuDoubleComplex *)Ag, lda, CUSOLVER_COMPUTE_TYPE,
                               workspace, wp->lwork, wp->host_buffer, wp->host_size, d_iinfo);
 

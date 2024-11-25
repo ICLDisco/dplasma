@@ -119,16 +119,10 @@ BODY [type=CUDA]
     int ldak = LDA(ddescA, T);
 
     cusolverStatus_t status;
-    cublasFillMode_t cublas_uplo;
     dplasma_potrf_gpu_workspaces_t *wp;
     cuDoubleComplex *workspace;
     int             *d_iinfo;
     dplasma_cuda_handles_t *handles;
-
-    if( PlasmaLower == uplo )
-        cublas_uplo = CUBLAS_FILL_MODE_LOWER;
-    if( PlasmaUpper == uplo )
-        cublas_uplo = CUBLAS_FILL_MODE_UPPER;
 
     handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
@@ -138,7 +132,7 @@ BODY [type=CUDA]
     workspace = (cuDoubleComplex*)wp->tmpmem;
     d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));
 
-    status = cusolverDnZpotrf( handles->cusolverDn_handle, cublas_uplo, tempkm, T, ldak, workspace, wp->lwork, d_iinfo);
+    status = cusolverDnZpotrf( handles->cusolverDn_handle, dplasma_cublas_fill(uplo), tempkm, T, ldak, workspace, wp->lwork, d_iinfo);
     PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
