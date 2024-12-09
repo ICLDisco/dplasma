@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -57,7 +57,6 @@ int main(int argc, char ** argv)
 
     if(!check)
     {
-        dplasma_enum_t uplo  = dplasmaLower;
         dplasma_enum_t diag  = dplasmaUnit;
         int info = 0;
 
@@ -94,7 +93,7 @@ int main(int argc, char ** argv)
 
                 /* Compute */
                 printf("Compute ... ... ");
-                info = dplasma_ztrtri(parsec, uplo[u], diag[d],
+                info = dplasma_ztrtri(parsec, uplos[u], diags[d],
                                (parsec_tiled_matrix_t *)&dcAinv);
                 printf("Done\n");
 
@@ -104,7 +103,7 @@ int main(int argc, char ** argv)
 
                 } else {
                     info_solution = check_solution(parsec, rank == 0 ? loud : 0,
-                                                   uplo[u], diag[d], Am,
+                                                   uplos[u], diags[d], Am,
                                                    (parsec_tiled_matrix_t*)&dcA,
                                                    (parsec_tiled_matrix_t*)&dcAinv);
                 }

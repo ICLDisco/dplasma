@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -58,7 +58,7 @@ int main(int argc, char ** argv)
     if(loud > 2) printf("Done\n");
 
     for ( u=0; u<2; u++) {
-        if ( uplo[u] == dplasmaUpper ) {
+        if ( uplos[u] == dplasmaUpper ) {
             t1 = dplasmaConjTrans; t2 = dplasmaNoTrans;
         } else {
             t1 = dplasmaNoTrans; t2 = dplasmaConjTrans;
@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
         PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
             parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                        rank, MB, NB, LDA, N, 0, 0,
-                                       N, N, P, nodes/P, uplo[u]));
+                                       N, N, P, nodes/P, uplos[u]));
 
         /*********************************************************************
          *               First Check ( ZPOSV )
@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
             printf("***************************************************\n");
         }
         /* Create A and X */
-        dplasma_zlacpy( parsec, uplo[u],
+        dplasma_zlacpy( parsec, uplos[u],
                         (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_t *)&dcB, 2354);
@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
 
         /* Compute */
         if ( loud > 2 ) printf("Compute ... ... ");
-        info = dplasma_zposv(parsec, uplo[u],
+        info = dplasma_zposv(parsec, uplos[u],
                              (parsec_tiled_matrix_t *)&dcA,
                              (parsec_tiled_matrix_t *)&dcX );
         if ( loud > 2 ) printf("Done\n");
@@ -93,11 +93,11 @@ int main(int argc, char ** argv)
 
         /* Check the factorization */
         if ( info == 0 ) {
-            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplos[u],
                                        (parsec_tiled_matrix_t *)&dcA,
                                        (parsec_tiled_matrix_t *)&dcA0);
 
-            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplos[u],
                                       (parsec_tiled_matrix_t *)&dcA0,
                                       (parsec_tiled_matrix_t *)&dcB,
                                       (parsec_tiled_matrix_t *)&dcX);
@@ -121,7 +121,7 @@ int main(int argc, char ** argv)
         }
 
         /* Create A and X */
-        dplasma_zlacpy( parsec, uplo[u],
+        dplasma_zlacpy( parsec, uplos[u],
                         (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_t *)&dcB, 2354);
@@ -130,10 +130,10 @@ int main(int argc, char ** argv)
 
         /* Compute */
         if ( loud > 2 ) printf("Compute ... ... ");
-        info = dplasma_zpotrf(parsec, uplo[u],
+        info = dplasma_zpotrf(parsec, uplos[u],
                               (parsec_tiled_matrix_t *)&dcA );
         if ( info == 0 ) {
-            dplasma_zpotrs(parsec, uplo[u],
+            dplasma_zpotrs(parsec, uplos[u],
                            (parsec_tiled_matrix_t *)&dcA,
                            (parsec_tiled_matrix_t *)&dcX );
         }
@@ -142,11 +142,11 @@ int main(int argc, char ** argv)
 
         /* Check the solution */
         if ( info == 0 ) {
-            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplos[u],
                                        (parsec_tiled_matrix_t *)&dcA,
                                        (parsec_tiled_matrix_t *)&dcA0 );
 
-            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplos[u],
                                       (parsec_tiled_matrix_t *)&dcA0,
                                       (parsec_tiled_matrix_t *)&dcB,
                                       (parsec_tiled_matrix_t *)&dcX );
@@ -170,7 +170,7 @@ int main(int argc, char ** argv)
         }
 
         /* Create A and X */
-        dplasma_zlacpy( parsec, uplo[u],
+        dplasma_zlacpy( parsec, uplos[u],
                         (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
         dplasma_zplrnt( parsec, 0,
                         (parsec_tiled_matrix_t *)&dcB, 2354);
@@ -179,12 +179,12 @@ int main(int argc, char ** argv)
 
         /* Compute */
         if ( loud > 2 ) printf("Compute ... ... ");
-        info = dplasma_zpotrf(parsec, uplo[u], (parsec_tiled_matrix_t *)&dcA );
+        info = dplasma_zpotrf(parsec, uplos[u], (parsec_tiled_matrix_t *)&dcA );
         if ( info == 0 ) {
-            dplasma_ztrsm(parsec, dplasmaLeft, uplo[u], t1, dplasmaNonUnit, 1.0,
+            dplasma_ztrsm(parsec, dplasmaLeft, uplos[u], t1, dplasmaNonUnit, 1.0,
                           (parsec_tiled_matrix_t *)&dcA,
                           (parsec_tiled_matrix_t *)&dcX);
-            dplasma_ztrsm(parsec, dplasmaLeft, uplo[u], t2, dplasmaNonUnit, 1.0,
+            dplasma_ztrsm(parsec, dplasmaLeft, uplos[u], t2, dplasmaNonUnit, 1.0,
                           (parsec_tiled_matrix_t *)&dcA,
                           (parsec_tiled_matrix_t *)&dcX);
         }
@@ -193,11 +193,11 @@ int main(int argc, char ** argv)
 
         /* Check the solution */
         if ( info == 0 ) {
-            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_facto = check_zpotrf( parsec, (rank == 0) ? loud : 0, uplos[u],
                                        (parsec_tiled_matrix_t *)&dcA,
                                        (parsec_tiled_matrix_t *)&dcA0 );
 
-            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_solve = check_zaxmb( parsec, (rank == 0) ? loud : 0, uplos[u],
                                       (parsec_tiled_matrix_t *)&dcA0,
                                       (parsec_tiled_matrix_t *)&dcB,
                                       (parsec_tiled_matrix_t *)&dcX );
@@ -222,22 +222,22 @@ int main(int argc, char ** argv)
         }
 
         /* Create A and X */
-        dplasma_zlacpy( parsec, uplo[u],
+        dplasma_zlacpy( parsec, uplos[u],
                         (parsec_tiled_matrix_t *)&dcA0, (parsec_tiled_matrix_t *)&dcA );
 
         /* Compute */
         if ( loud > 2 ) printf("Compute ... ... ");
-        info = dplasma_zpotrf(parsec, uplo[u], (parsec_tiled_matrix_t *)&dcA );
+        info = dplasma_zpotrf(parsec, uplos[u], (parsec_tiled_matrix_t *)&dcA );
 
         if ( info == 0 ) {
-            info = dplasma_zpotri(parsec, uplo[u], (parsec_tiled_matrix_t *)&dcA );
+            info = dplasma_zpotri(parsec, uplos[u], (parsec_tiled_matrix_t *)&dcA );
         }
         if ( loud > 2 ) printf("Done\n");
         if ( info != 0 ) printf("%d: Info = %d\n", rank, info);
 
         /* Check the solution */
         if ( info == 0 ) {
-            info_solve = check_zpoinv( parsec, (rank == 0) ? loud : 0, uplo[u],
+            info_solve = check_zpoinv( parsec, (rank == 0) ? loud : 0, uplos[u],
                                        (parsec_tiled_matrix_t *)&dcA0,
                                        (parsec_tiled_matrix_t *)&dcA);
         }

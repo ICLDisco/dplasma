@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -55,7 +55,6 @@ int main(int argc, char ** argv)
     if(!check)
     {
         dplasma_enum_t side  = dplasmaLeft;
-        dplasma_enum_t uplo  = dplasmaLower;
         dplasma_enum_t trans = dplasmaNoTrans;
         dplasma_enum_t diag  = dplasmaUnit;
 
@@ -102,7 +101,7 @@ int main(int argc, char ** argv)
 
         for (s=0; s<2; s++) {
             /* Make A square */
-            if (side[s] == dplasmaLeft) {
+            if (sides[s] == dplasmaLeft) {
                 Am = M;
                 dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, M, M );
             } else {
@@ -132,13 +131,13 @@ int main(int argc, char ** argv)
 
                         /* Compute */
                         printf("Compute ... ... ");
-                        dplasma_ztrmm(parsec, side[s], uplo[u], trans[t], diag[d],
+                        dplasma_ztrmm(parsec, sides[s], uplos[u], trans[t], diags[d],
                                       alpha, dcA, (parsec_tiled_matrix_t *)&dcC);
                         printf("Done\n");
 
                         /* Check the solution */
                         info_solution = check_solution(parsec, rank == 0 ? loud : 0,
-                                                       side[s], uplo[u], trans[t], diag[d],
+                                                       sides[s], uplos[u], trans[t], diags[d],
                                                        alpha, Am, Am, Aseed,
                                                               M,  N,  Cseed,
                                                        &dcC);

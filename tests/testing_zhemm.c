@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -65,7 +65,6 @@ int main(int argc, char ** argv)
     if(!check)
     {
         dplasma_enum_t side  = dplasmaLeft;
-        dplasma_enum_t uplo  = dplasmaLower;
         int Am = ( side == dplasmaLeft ? M : N );
         LDA = max(LDA, Am);
 
@@ -103,7 +102,7 @@ int main(int argc, char ** argv)
 
         for (s=0; s<2; s++) {
             /* initializing matrix structure */
-            int Am = ( side[s] == dplasmaLeft ? M : N );
+            int Am = ( sides[s] == dplasmaLeft ? M : N );
             LDA = max(LDA, Am);
 
             for (u=0; u<2; u++) {
@@ -111,17 +110,17 @@ int main(int argc, char ** argv)
                 PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                     parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                                rank, MB, NB, LDA, Am, 0, 0,
-                                               Am, Am, P, nodes/P, uplo[u]));
+                                               Am, Am, P, nodes/P, uplos[u]));
 
                 if (loud > 2) printf("Generate matrices ... ");
-                dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_t *)&dcA, Aseed);
+                dplasma_zplghe( parsec, 0., uplos[u], (parsec_tiled_matrix_t *)&dcA, Aseed);
                 dplasma_zlacpy( parsec, dplasmaUpperLower,
                                 (parsec_tiled_matrix_t *)&dcC2, (parsec_tiled_matrix_t *)&dcC );
                 if (loud > 2) printf("Done\n");
 
                 /* Compute */
                 if (loud > 2) printf("Compute ... ... ");
-                dplasma_zhemm(parsec, side[s], uplo[u],
+                dplasma_zhemm(parsec, sides[s], uplos[u],
                               alpha, (parsec_tiled_matrix_t *)&dcA,
                                      (parsec_tiled_matrix_t *)&dcB,
                               beta,  (parsec_tiled_matrix_t *)&dcC);
@@ -129,7 +128,7 @@ int main(int argc, char ** argv)
 
                 /* Check the solution */
                 info_solution = check_solution(parsec, rank == 0 ? loud : 0,
-                                               side[s], uplo[u],
+                                               sides[s], uplos[u],
                                                alpha, Am, Am, Aseed,
                                                beta,  M,  N,  Bseed, Cseed,
                                                &dcC);

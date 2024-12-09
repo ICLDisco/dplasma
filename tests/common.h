@@ -59,6 +59,7 @@ enum iparam_t {
   IPARAM_KP,           /* Number of rows repetititions in a k-cyclic distribution */
   IPARAM_HMB,          /* Small MB for recursive hdags */
   IPARAM_HNB,          /* Small NB for recursive hdags */
+  IPARAM_UPLO,         /* Upper/Lower triangular */
   IPARAM_CHECK,        /* Checking activated or not         */
   IPARAM_CHECKINV,     /* Inverse Checking activated or not */
   IPARAM_ASYNC,        /* Bench the asynchronous version    */
@@ -119,6 +120,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     int MT    = (M%MB==0) ? (M/MB) : (M/MB+1);                          \
     int NT    = (N%NB==0) ? (N/NB) : (N/NB+1);                          \
     int KT    = (K%MB==0) ? (K/MB) : (K/MB+1);                          \
+    int uplo  = iparam[IPARAM_UPLO];                                    \
     int check = iparam[IPARAM_CHECK];                                   \
     int check_inv = iparam[IPARAM_CHECKINV];                            \
     int loud  = iparam[IPARAM_VERBOSE];                                 \
@@ -130,7 +132,7 @@ void iparam_default_ibnbmb(int* iparam, int ib, int nb, int mb);
     (void)rank;(void)nodes;(void)cores;(void)gpus;(void)P;(void)Q;(void)M;(void)N;(void)K;(void)NRHS; \
     (void)LDA;(void)LDB;(void)LDC;(void)IB;(void)MB;(void)NB;(void)MT;(void)NT;(void)KT; \
     (void)KP;(void)KQ;(void)IP;(void)JQ;(void)HMB;(void)HNB;(void)check;(void)loud;(void)async; \
-    (void)scheduler;(void)butterfly_level;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
+    (void)scheduler;(void)butterfly_level;(void)uplo;(void)check_inv;(void)random_seed;(void)matrix_init;(void)nruns;
 
 /* Define a double type which not pass through the precision generation process */
 typedef double DagDouble_t;
@@ -153,9 +155,9 @@ typedef double DagDouble_t;
 extern MPI_Datatype SYNCHRO;
 #endif  /* PARSEC_HAVE_MPI */
 
-extern const int side[2];
-extern const int uplo[2];
-extern const int diag[2];
+extern const int sides[2];
+extern const int uplos[2];
+extern const int diags[2];
 extern const int trans[3];
 extern const int norms[4];
 extern const char *sidestr[2];
@@ -219,6 +221,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
     PROFILING_SAVE_iINFO("PARAM_KP", iparam[IPARAM_KQ]);                \
     PROFILING_SAVE_iINFO("PARAM_KQ", iparam[IPARAM_KP]);                \
     PROFILING_SAVE_iINFO("PARAM_HNB", iparam[IPARAM_HNB]);              \
+    PROFILING_SAVE_iINFO("PARAM_UPLO", iparam[IPARAM_UPLO]);            \
     PROFILING_SAVE_iINFO("PARAM_CHECK", iparam[IPARAM_CHECK]);          \
     PROFILING_SAVE_iINFO("PARAM_CHECKINV", iparam[IPARAM_CHECKINV]);    \
     PROFILING_SAVE_iINFO("PARAM_VERBOSE", iparam[IPARAM_VERBOSE]);      \

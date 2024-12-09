@@ -54,9 +54,9 @@ char *PARSEC_SCHED_NAME[] = {
 MPI_Datatype SYNCHRO = MPI_BYTE;
 #endif  /* PARSEC_HAVE_MPI */
 
-const int   side[2]  = { dplasmaLeft,    dplasmaRight };
-const int   uplo[2]  = { dplasmaUpper,   dplasmaLower };
-const int   diag[2]  = { dplasmaNonUnit, dplasmaUnit  };
+const int   sides[2]  = { dplasmaLeft,    dplasmaRight };
+const int   uplos[2]  = { dplasmaUpper,   dplasmaLower };
+const int   diags[2]  = { dplasmaNonUnit, dplasmaUnit  };
 const int   trans[3] = { dplasmaNoTrans, dplasmaTrans, dplasmaConjTrans };
 const int   norms[4] = { dplasmaMaxNorm, dplasmaOneNorm, dplasmaInfNorm, dplasmaFrobeniusNorm };
 
@@ -97,6 +97,7 @@ void print_usage(void)
             " -s --SMB --kp     : repetitions in the process grid row cyclicity (formerly supertiles) (default: 1)\n"
             " -S --SNB --kq     : repetitions in the process grid column cyclicity (formerly supertiles) (default: 1)\n"
             " -z --HNB --HMB    : Inner NB/MB used for recursive algorithms (default: MB)\n"
+            " -u --uplo         : upper/lower triangular matrix (when applicable)\n"
             " -x --check        : verify the results\n"
             " -X --check_inv    : verify the results against the inverse\n"
             " -b --sync         : call the step by step version of the algorithm if exists\n"
@@ -219,6 +220,8 @@ static struct option long_options[] =
     {"kq",          required_argument,  0, 'S'},
     {"SNB",         required_argument,  0, 'S'},
     {"S",           required_argument,  0, 'S'},
+    {"uplo",        required_argument,  0, 'u'},
+    {"u",           required_argument,  0, 'u'},
     {"check",       no_argument,        0, 'x'},
     {"x",           no_argument,        0, 'x'},
     {"check_inv",   no_argument,        0, 'X'},
@@ -342,6 +345,17 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
             case 'T': iparam[IPARAM_NB] = atoi(optarg); break;
             case 's': iparam[IPARAM_KP] = atoi(optarg); break;
             case 'S': iparam[IPARAM_KQ] = atoi(optarg); break;
+            case 'u':
+                if('u' == optarg[0] || 'U' == optarg[0]) {
+                    iparam[IPARAM_UPLO] = dplasmaUpper;
+                    break;
+                }
+                if('l' == optarg[0] || 'L' == optarg[0]) {
+                    iparam[IPARAM_UPLO] = dplasmaLower;
+                    break;
+                }
+                fprintf(stderr, "#!!!!! malformed uplo value %s (accepted: u, U, l, L). Value ignored!\n", optarg);
+                break;
 
             case 'X': iparam[IPARAM_CHECKINV] = 1;
                       /* Fall through */
@@ -598,6 +612,7 @@ void iparam_default_facto(int* iparam)
     iparam[IPARAM_LDA] = -'m';
     iparam[IPARAM_LDB] = 0;
     iparam[IPARAM_LDC] = 0;
+    iparam[IPARAM_UPLO] = dplasmaLower;
 }
 
 void iparam_default_solve(int* iparam)
