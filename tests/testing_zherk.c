@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -41,7 +41,6 @@ int main(int argc, char ** argv)
 
     if(!check)
     {
-        dplasma_enum_t uplo  = dplasmaLower;
         dplasma_enum_t trans = dplasmaNoTrans;
         int Am = ( trans == dplasmaNoTrans ? N : K );
         int An = ( trans == dplasmaNoTrans ? K : N );
@@ -99,7 +98,7 @@ int main(int argc, char ** argv)
             PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
                 parsec_matrix_sym_block_cyclic, (&dcC, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                            rank, MB, NB, LDC, N, 0, 0,
-                                           N, N, P, nodes/P, uplo[u]));
+                                           N, N, P, nodes/P, uplos[u]));
 
             for (t=0; t<2; t++) {
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -117,20 +116,20 @@ int main(int argc, char ** argv)
 
                 if (loud > 2) printf("Generate matrices ... ");
                 dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcA, Aseed);
-                dplasma_zlacpy( parsec, uplo[u],
+                dplasma_zlacpy( parsec, uplos[u],
                                 (parsec_tiled_matrix_t *)&dcC2, (parsec_tiled_matrix_t *)&dcC );
                 if (loud > 2) printf("Done\n");
 
                 /* Compute */
                 if (loud > 2) printf("Compute ... ... ");
-                dplasma_zherk(parsec, uplo[u], trans[t],
+                dplasma_zherk(parsec, uplos[u], trans[t],
                               alpha, (parsec_tiled_matrix_t *)&dcA,
                               beta,  (parsec_tiled_matrix_t *)&dcC);
                 if (loud > 2) printf("Done\n");
 
                 /* Check the solution */
                 info_solution = check_solution(parsec, rank == 0 ? loud : 0,
-                                               uplo[u], trans[t],
+                                               uplos[u], trans[t],
                                                alpha, Am, An, Aseed,
                                                beta,  N,  N,  Cseed,
                                                &dcC);

@@ -333,7 +333,6 @@ int main(int argc, char **argv)
 {
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
-    int uplo = dplasmaUpper;
     int info = 0;
     int ret = 0;
 

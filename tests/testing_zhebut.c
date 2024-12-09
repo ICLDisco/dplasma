@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -29,7 +29,6 @@ int main(int argc, char ** argv)
     parsec_context_t* parsec;
     int iparam[IPARAM_SIZEOF];
     int ret = 0;
-    dplasma_enum_t uplo = dplasmaLower;
     dplasma_complex64_t *U_but_vec;
     DagDouble_t time_butterfly, time_facto, time_total;
 
