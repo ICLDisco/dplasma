@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -148,8 +148,8 @@ int main(int argc, char ** argv)
 
     for (s=0; s<2; s++) {
 
-        int Cm = (side[s] == dplasmaLeft) ? N : M;
-        int Cn = (side[s] == dplasmaLeft) ? M : N;
+        int Cm = (sides[s] == dplasmaLeft) ? N : M;
+        int Cn = (sides[s] == dplasmaLeft) ? M : N;
         LDC = max(LDC, Cm);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcC, 1,
@@ -177,13 +177,13 @@ int main(int argc, char ** argv)
                             (parsec_tiled_matrix_t *)&dcC);
 
             dplasma_zunmlq_param( parsec,
-                                  side[s], trans[t], &qrtree,
+                                  sides[s], trans[t], &qrtree,
                                   (parsec_tiled_matrix_t *)&dcA,
                                   (parsec_tiled_matrix_t *)&dcTS,
                                   (parsec_tiled_matrix_t *)&dcTT,
                                   (parsec_tiled_matrix_t *)&dcC);
 
-            if (side[s] == dplasmaLeft ) {
+            if (sides[s] == dplasmaLeft ) {
                 dplasma_zgemm( parsec, trans[t], dplasmaNoTrans,
                                -1., (parsec_tiled_matrix_t *)&dcQ,
                                     (parsec_tiled_matrix_t *)&dcC0,

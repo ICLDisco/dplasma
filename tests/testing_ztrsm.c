@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -70,7 +70,6 @@ int main(int argc, char ** argv)
     if(!check)
     {
         dplasma_enum_t side  = dplasmaLeft;
-        dplasma_enum_t uplo  = dplasmaLower;
         dplasma_enum_t trans = dplasmaNoTrans;
         dplasma_enum_t diag  = dplasmaUnit;
 
@@ -105,7 +104,7 @@ int main(int argc, char ** argv)
 
         for (s=0; s<2; s++) {
             /* Make A square */
-            if (side[s] == dplasmaLeft) {
+            if (sides[s] == dplasmaLeft) {
                 dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, M, M );
             } else {
                 dcA = parsec_tiled_matrix_submatrix( (parsec_tiled_matrix_t *)&dcA0, 0, 0, N, N );
@@ -130,13 +129,13 @@ int main(int argc, char ** argv)
                         dplasma_zlacpy( parsec, dplasmaUpperLower,
                                         (parsec_tiled_matrix_t *)&dcC0,
                                         (parsec_tiled_matrix_t *)&dcC );
-                        dplasma_ztrmm(parsec, side[s], uplo[u], trans[t], diag[d], 1./alpha,
+                        dplasma_ztrmm(parsec, sides[s], uplos[u], trans[t], diags[d], 1./alpha,
                                       dcA, (parsec_tiled_matrix_t *)&dcC);
                         printf("Done\n");
 
                         /* Compute */
                         printf("Compute ... ... ");
-                        dplasma_ztrsm(parsec, side[s], uplo[u], trans[t], diag[d], alpha,
+                        dplasma_ztrsm(parsec, sides[s], uplos[u], trans[t], diags[d], alpha,
                                       dcA, (parsec_tiled_matrix_t *)&dcC);
                         printf("Done\n");
 

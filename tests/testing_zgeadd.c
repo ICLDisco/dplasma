@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -104,7 +104,7 @@ int main(int argc, char ** argv)
 
             /* Create GEMM PaRSEC */
             if(loud) printf("Compute ... ... ");
-            dplasma_ztradd(parsec, uplo[u], trans[tA],
+            dplasma_ztradd(parsec, uplos[u], trans[tA],
                            (dplasma_complex64_t)alpha,
                            (parsec_tiled_matrix_t *)&dcA,
                            (dplasma_complex64_t)beta,
@@ -113,7 +113,7 @@ int main(int argc, char ** argv)
 
             /* Check the solution */
             info_solution = check_tr_solution( parsec, (rank == 0) ? loud : 0,
-                                               uplo[u], trans[tA],
+                                               uplos[u], trans[tA],
                                                alpha, Am, An,
                                                (parsec_tiled_matrix_t *)&dcA,
                                                beta,  M,  N,

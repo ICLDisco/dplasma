@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 The University of Tennessee and The University
+ * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -145,7 +145,7 @@ int main(int argc, char ** argv)
                         printf("***************************************************\n");
                     }
                     if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
-                    normdag = dplasma_zlantr(parsec, norms[i], uplo[u], diag[d],
+                    normdag = dplasma_zlantr(parsec, norms[i], uplos[u], diags[d],
                                              (parsec_tiled_matrix_t *)&dcA);
 
                     if ( rank == 0 ) {
@@ -220,16 +220,16 @@ int main(int argc, char ** argv)
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                 parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                            rank, MB, NB, LDA, N, 0, 0,
-                                           M, N, P, nodes/P, uplo[u]));
+                                           M, N, P, nodes/P, uplos[u]));
 
-            dplasma_zplgsy( parsec, 0., uplo[u], (parsec_tiled_matrix_t *)&dcA, 3872);
+            dplasma_zplgsy( parsec, 0., uplos[u], (parsec_tiled_matrix_t *)&dcA, 3872);
 
             for(i=0; i<4; i++) {
                 if ( rank == 0 ) {
                     printf("***************************************************\n");
                 }
                 if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
-                normdag = dplasma_zlansy(parsec, norms[i], uplo[u],
+                normdag = dplasma_zlansy(parsec, norms[i], uplos[u],
                                          (parsec_tiled_matrix_t *)&dcA);
 
                 if ( rank == 0 ) {
@@ -300,16 +300,16 @@ int main(int argc, char ** argv)
             PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
                 parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                            rank, MB, NB, LDA, N, 0, 0,
-                                           M, N, P, nodes/P, uplo[u]));
+                                           M, N, P, nodes/P, uplos[u]));
 
-            dplasma_zplghe( parsec, 0., uplo[u], (parsec_tiled_matrix_t *)&dcA, 3872);
+            dplasma_zplghe( parsec, 0., uplos[u], (parsec_tiled_matrix_t *)&dcA, 3872);
 
             for(i=0; i<4; i++) {
                 if ( rank == 0 ) {
                     printf("***************************************************\n");
                 }
                 if(loud > 2) printf("+++ Computing norm %s ... ", normsstr[i]);
-                normdag = dplasma_zlanhe(parsec, norms[i], uplo[u],
+                normdag = dplasma_zlanhe(parsec, norms[i], uplos[u],
                                          (parsec_tiled_matrix_t *)&dcA);
 
                 if ( rank == 0 ) {
