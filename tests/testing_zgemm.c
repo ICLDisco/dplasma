@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2024 The University of Tennessee and The University
+ * Copyright (c) 2009-2025 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  *
@@ -77,13 +77,13 @@ int main(int argc, char ** argv)
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcC, Cseed);
         if(loud > 2) printf("Done\n");
 
-    /* Advice data on device */
+        /* Advice data on device */
 #if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
-    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcA,
+        dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcA,
             (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
-    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcB,
+        dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcB,
             (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
-    dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcC,
+        dplasma_advise_data_on_device(parsec, dplasmaUpperLower, (parsec_tiled_matrix_t*)&dcC,
             (parsec_tiled_matrix_unary_op_t)dplasma_advise_data_on_device_ops_2D, NULL);
 #endif
 

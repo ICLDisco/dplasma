@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024 The University of Tennessee and The University
+ * Copyright (c) 2010-2025 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
@@ -390,6 +390,10 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
 #else
         tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
 #endif
+        dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgemm_NN_gpu_DEFAULT_ADT_IDX],
+                                A->mb*A->nb*sizeof(dplasma_complex64_t),
+                                PARSEC_ARENA_ALIGNMENT_SSE,
+                                parsec_datatype_double_complex_t, A->mb );
 
         zgemm_tp = (parsec_taskpool_t *) tp;
         return zgemm_tp;
@@ -594,6 +598,7 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
 #if defined(DPLASMA_HAVE_CUDA)
     } else if( zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NN_GPU ) {
         parsec_zgemm_NN_gpu_taskpool_t *zgemm_gpu_tp = (parsec_zgemm_NN_gpu_taskpool_t *)tp;
+        dplasma_matrix_del2arena( &zgemm_gpu_tp->arenas_datatypes[PARSEC_zgemm_NN_gpu_DEFAULT_ADT_IDX] );
         free(zgemm_gpu_tp->_g_cuda_device_index);
 #endif /* DPLASMA_HAVE_CUDA */
     }
