@@ -284,6 +284,11 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     nb_block_per_tile = (tile_size + gpu_mem_block_size -1 ) / gpu_mem_block_size;
     gpu_mem_nb_blocks = vd * gpu_mem_nb_blocks;
     nb_tile_per_gpu = gpu_mem_nb_blocks / nb_block_per_tile;
+    if(0 == nb_tile_per_gpu) {
+        dplasma_error("dplasma_zgemm_gpu_new",
+                      "Not enough memory on the GPU to store a single tile!");
+        goto cleanup;
+    }
 
     mt = A->mt;
     nt = B->nt;
