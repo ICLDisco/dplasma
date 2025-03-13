@@ -73,7 +73,7 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
 
     if( dplasmaNoTrans == transA ) {
         if( dplasmaNoTrans == transB ) {
-            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN_summa\n");
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN_summa");
             parsec_zgemm_NN_summa_taskpool_t* tp;
             tp = parsec_zgemm_NN_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
@@ -86,7 +86,7 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
 #endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         } else {
-            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT_summa\n");
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT_summa");
             parsec_zgemm_NT_summa_taskpool_t* tp;
             tp = parsec_zgemm_NT_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
@@ -101,7 +101,7 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
         }
     } else {
         if( dplasmaNoTrans == transB ) {
-            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TN_summa\n");
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TN_summa");
             parsec_zgemm_TN_summa_taskpool_t* tp;
             tp = parsec_zgemm_TN_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C, (parsec_data_collection_t*)Cdist);
@@ -114,7 +114,7 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
 #endif
             zgemm_tp = (parsec_taskpool_t*)tp;
         } else {
-            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT_summa\n");
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT_summa");
             parsec_zgemm_TT_summa_taskpool_t* tp;
             tp = parsec_zgemm_TT_summa_new(transA, transB, alpha, beta,
                                            ddc_A, ddc_B, ddc_C,
@@ -163,11 +163,13 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
 
     if( dplasmaNoTrans == transA ) {
         if( dplasmaNoTrans == transB ) {
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN");
             parsec_zgemm_NN_taskpool_t* tp;
             tp = parsec_zgemm_NN_new(transA, transB, alpha, beta,
                                      ddc_A, ddc_B, ddc_C);
             zgemm_tp = (parsec_taskpool_t*)tp;
         } else {
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NT");
             parsec_zgemm_NT_taskpool_t* tp;
             tp = parsec_zgemm_NT_new(transA, transB, alpha, beta,
                                      ddc_A, ddc_B, ddc_C);
@@ -176,11 +178,13 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
     } else {
         if( dplasmaNoTrans == transB ) {
             parsec_zgemm_TN_taskpool_t* tp;
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TN");
             tp = parsec_zgemm_TN_new(transA, transB, alpha, beta,
                                      ddc_A, ddc_B, ddc_C);
             zgemm_tp = (parsec_taskpool_t*)tp;
         }
         else {
+            PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_TT");
             parsec_zgemm_TT_taskpool_t* tp;
             tp = parsec_zgemm_TT_new(transA, transB, alpha, beta,
                                      ddc_A, ddc_B, ddc_C);
@@ -360,6 +364,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
         dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
         dplasma_data_collection_t * ddc_C = dplasma_wrap_data_collection(C);
 
+        PARSEC_DEBUG_VERBOSE(3, parsec_debug_output, "zgemm_NN_gpu");
         parsec_zgemm_NN_gpu_taskpool_t *tp;
         tp = parsec_zgemm_NN_gpu_new(transA, transB, alpha, beta,
                                      ddc_A, ddc_B, ddc_C, b, c, d, p, q, look_ahead,
