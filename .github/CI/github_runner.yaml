@@ -1,7 +1,7 @@
 spack:
   definitions:
   - pkgs:
-    - gcc@12.1.0
+    - gcc@12
     - git
     - patch
     - flex

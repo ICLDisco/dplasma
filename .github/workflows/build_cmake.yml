@@ -40,7 +40,7 @@ jobs:
         -DPARSEC_HAVE_DEV_RECURSIVE_SUPPORT=OFF
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -99,7 +99,7 @@ jobs:
 
     - name: Save Artifact
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CMake-error-log
         path: ${{ env.BUILD_DIRECTORY }}/CMakeFiles/CMakeError.log
