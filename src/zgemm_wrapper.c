@@ -135,17 +135,14 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     dplasma_setup_adtt_all_loc( ddc_B,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     dplasma_setup_adtt_all_loc( ddc_C,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     assert(shape == MAX_SHAPES);
 
     (void)opt; //No user-defined options for this algorithm
@@ -196,17 +193,14 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     dplasma_setup_adtt_all_loc( ddc_B,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     dplasma_setup_adtt_all_loc( ddc_C,
                                 parsec_datatype_double_complex_t,
                                 PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
                                 &shape);
-
     assert(shape == MAX_SHAPES);
 
     (void)opt; //No user-defined options for this algorithm
@@ -362,9 +356,13 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     assert( c*q <= C->nt );
 
     {
+        dplasma_data_collection_t * ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+        dplasma_data_collection_t * ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
+        dplasma_data_collection_t * ddc_C = dplasma_wrap_data_collection(C);
+
         parsec_zgemm_NN_gpu_taskpool_t *tp;
         tp = parsec_zgemm_NN_gpu_new(transA, transB, alpha, beta,
-                                     A, B, C, b, c, d, p, q, look_ahead,
+                                     ddc_A, ddc_B, ddc_C, b, c, d, p, q, look_ahead,
                                      nbgpu, dev_index);
 
         u = C->super.myrank / q;
@@ -390,10 +388,21 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
 #else
         tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
 #endif
-        dplasma_add2arena_tile( &tp->arenas_datatypes[PARSEC_zgemm_NN_gpu_DEFAULT_ADT_IDX],
-                                A->mb*A->nb*sizeof(dplasma_complex64_t),
-                                PARSEC_ARENA_ALIGNMENT_SSE,
-                                parsec_datatype_double_complex_t, A->mb );
+
+        int shape = 0;
+        dplasma_setup_adtt_all_loc( ddc_A,
+                                    parsec_datatype_double_complex_t,
+                                    PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
+                                    &shape);
+        dplasma_setup_adtt_all_loc( ddc_B,
+                                    parsec_datatype_double_complex_t,
+                                    PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
+                                    &shape);
+        dplasma_setup_adtt_all_loc( ddc_C,
+                                    parsec_datatype_double_complex_t,
+                                    PARSEC_MATRIX_FULL/*uplo*/, 1/*diag:for PARSEC_MATRIX_UPPER or PARSEC_MATRIX_LOWER types*/,
+                                    &shape);
+        assert(shape == MAX_SHAPES);
 
         zgemm_tp = (parsec_taskpool_t *) tp;
         return zgemm_tp;
@@ -491,19 +500,19 @@ dplasma_zgemm_New_ex( dplasma_enum_t transA, dplasma_enum_t transB,
     if ( C->dtype & parsec_matrix_block_cyclic_type ) {
 #if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
         int nb_gpu_devices = 0, devid;
-		int p = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
-	    int q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
-		int64_t gpu_mem_block_size = 0;
-		int64_t gpu_mem_nb_blocks = -1;
+        int p = ((parsec_matrix_block_cyclic_t*)C)->grid.rows;
+        int q = ((parsec_matrix_block_cyclic_t*)C)->grid.cols;
+        int64_t gpu_mem_block_size = 0;
+        int64_t gpu_mem_nb_blocks = -1;
         for(devid = 0; devid < (int)parsec_nb_devices; devid++) {
             parsec_device_module_t *device = parsec_mca_device_get(devid);
             if( PARSEC_DEV_CUDA == device->type || PARSEC_DEV_HIP == device->type ) {
-				parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
+                parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)device;
                 nb_gpu_devices++;
-				if( 0 == gpu_mem_block_size )
-				    gpu_mem_block_size = gpu_device->mem_block_size;
-				if( -1 == gpu_mem_nb_blocks || gpu_device->mem_nb_blocks < gpu_mem_nb_blocks )
-				    gpu_mem_nb_blocks = gpu_device->mem_nb_blocks;
+                if( 0 == gpu_mem_block_size )
+                    gpu_mem_block_size = gpu_device->mem_block_size;
+                if( -1 == gpu_mem_nb_blocks || gpu_device->mem_nb_blocks < gpu_mem_nb_blocks )
+                    gpu_mem_nb_blocks = gpu_device->mem_nb_blocks;
             }
         }
         if(0 < nb_gpu_devices) {
@@ -567,51 +576,52 @@ dplasma_zgemm_Destruct( parsec_taskpool_t *tp )
     parsec_zgemm_NN_taskpool_t *zgemm_tp = (parsec_zgemm_NN_taskpool_t *)tp;
     dplasma_data_collection_t *ddc_A = NULL, *ddc_B = NULL, *ddc_C = NULL;
 
-    if( zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NN_SUMMA ||
-        zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NT_SUMMA ||
-        zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TN_SUMMA ||
-        zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TT_SUMMA) {
+    switch( zgemm_tp->_g_gemm_type ) {
+    case DPLASMA_ZGEMM_NN:
+    case DPLASMA_ZGEMM_NT:
+    case DPLASMA_ZGEMM_TN:
+    case DPLASMA_ZGEMM_TT:
+        ddc_A = zgemm_tp->_g_ddescA;
+        ddc_B = zgemm_tp->_g_ddescB;
+        ddc_C = zgemm_tp->_g_ddescC;
+        break;
+    case DPLASMA_ZGEMM_NN_SUMMA:
+    case DPLASMA_ZGEMM_NT_SUMMA:
+    case DPLASMA_ZGEMM_TN_SUMMA:
+    case DPLASMA_ZGEMM_TT_SUMMA: {
         parsec_zgemm_NN_summa_taskpool_t *zgemm_summa_tp = (parsec_zgemm_NN_summa_taskpool_t *)tp;
+        ddc_A = zgemm_summa_tp->_g_ddescA;
+        ddc_B = zgemm_summa_tp->_g_ddescB;
+        ddc_C = zgemm_summa_tp->_g_ddescC;
         parsec_tiled_matrix_t* Cdist = (parsec_tiled_matrix_t*)zgemm_summa_tp->_g_Cdist;
         if ( NULL != Cdist ) {
             parsec_tiled_matrix_destroy( Cdist );
             free( Cdist );
         }
-        dplasma_clean_adtt_all_loc(zgemm_summa_tp->_g_ddescA, MAX_SHAPES);
-        dplasma_clean_adtt_all_loc(zgemm_summa_tp->_g_ddescB, MAX_SHAPES);
-        dplasma_clean_adtt_all_loc(zgemm_summa_tp->_g_ddescC, MAX_SHAPES);
-
-        ddc_A = zgemm_summa_tp->_g_ddescA;
-        ddc_B = zgemm_summa_tp->_g_ddescB;
-        ddc_C = zgemm_summa_tp->_g_ddescC;
-    } else if( zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NN ||
-               zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NT ||
-               zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TN ||
-               zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_TT) {
-        dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescA, MAX_SHAPES);
-        dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescB, MAX_SHAPES);
-        dplasma_clean_adtt_all_loc(zgemm_tp->_g_ddescC, MAX_SHAPES);
-
-        ddc_A = zgemm_tp->_g_ddescA;
-        ddc_B = zgemm_tp->_g_ddescB;
-        ddc_C = zgemm_tp->_g_ddescC;
-#if defined(DPLASMA_HAVE_CUDA)
-    } else if( zgemm_tp->_g_gemm_type == DPLASMA_ZGEMM_NN_GPU ) {
+        break; }
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    case DPLASMA_ZGEMM_NN_GPU: {
         parsec_zgemm_NN_gpu_taskpool_t *zgemm_gpu_tp = (parsec_zgemm_NN_gpu_taskpool_t *)tp;
-        dplasma_matrix_del2arena( &zgemm_gpu_tp->arenas_datatypes[PARSEC_zgemm_NN_gpu_DEFAULT_ADT_IDX] );
-        free(zgemm_gpu_tp->_g_cuda_device_index);
-#endif /* DPLASMA_HAVE_CUDA */
+        ddc_A = zgemm_gpu_tp->_g_ddescA;
+        ddc_B = zgemm_gpu_tp->_g_ddescB;
+        ddc_C = zgemm_gpu_tp->_g_ddescC;
+        free(zgemm_gpu_tp->_g_gpu_device_index);
+        break; }
+#endif /* DPLASMA_HAVE_CUDA || defined(DPLASMA_HAVE_HIP) */
+    default:
+        parsec_warning("Invalid GEMM taskpool type during destruct!");
     }
+
+    dplasma_clean_adtt_all_loc(ddc_A, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(ddc_B, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(ddc_C, MAX_SHAPES);
 
     parsec_taskpool_free(tp);
 
     /* free the dplasma_data_collection_t, after the tp stops referring to them */
-    if(NULL != ddc_A)
-        dplasma_unwrap_data_collection(ddc_A);
-    if(NULL != ddc_B)
-        dplasma_unwrap_data_collection(ddc_B);
-    if(NULL != ddc_C)
-        dplasma_unwrap_data_collection(ddc_C);
+    dplasma_unwrap_data_collection(ddc_A);
+    dplasma_unwrap_data_collection(ddc_B);
+    dplasma_unwrap_data_collection(ddc_C);
 }
 
 /**
