@@ -285,12 +285,10 @@ BODY [type=HIP
              (k==0)? creal(beta): 1.0, m, n, ldcm );
 
     hipblasStatus_t status;
-    hipblasOperation_t opA = dplasmaNoTrans == transA? HIPBLAS_OP_N: HIPBLAS_OP_T;
-    hipblasOperation_t opB = dplasmaNoTrans == transB? HIPBLAS_OP_N: HIPBLAS_OP_T;
     dplasma_hip_handles_t *handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
     status = hipblasZgemm( handles->hipblas_handle,
-                           opA, opB,
+                           dplasma_hipblas_op(transA), dplasma_hipblas_op(transB),
                            tempmm, tempnn, tempkk,
                            &lalpha, (hipblasDoubleComplex*)A, ldak,
                                     (hipblasDoubleComplex*)B, ldbk,
