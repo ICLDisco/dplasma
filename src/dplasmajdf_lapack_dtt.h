@@ -137,23 +137,23 @@ void ADTT_INFO_internal(parsec_data_copy_t *cp, const dplasma_data_collection_t 
 #if defined(DPLASMA_HAVE_CUDA)
 int
 dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
-                uint32_t flow_mask,
+                parsec_flow_mask_t flow_mask,
                 parsec_gpu_exec_stream_t *gpu_stream);
 
 int
 dplasma_cuda_lapack_stage_out(parsec_gpu_task_t *gtask,
-                 uint32_t flow_mask,
+                 parsec_flow_mask_t flow_mask,
                  parsec_gpu_exec_stream_t *gpu_stream);
 #endif /* defined(DPLASMA_HAVE_CUDA) */
 #if defined(DPLASMA_HAVE_HIP)
 int
 dplasma_hip_lapack_stage_in(parsec_gpu_task_t *gtask,
-                uint32_t flow_mask,
+                parsec_flow_mask_t flow_mask,
                 parsec_gpu_exec_stream_t *gpu_stream);
 
 int
 dplasma_hip_lapack_stage_out(parsec_gpu_task_t *gtask,
-                 uint32_t flow_mask,
+                 parsec_flow_mask_t flow_mask,
                  parsec_gpu_exec_stream_t *gpu_stream);
 #endif /* defined(DPLASMA_HAVE_HIP) */
 
