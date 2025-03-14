@@ -17,7 +17,7 @@
 
 int
 dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
-                uint32_t flow_mask,
+                parsec_flow_mask_t flow_mask,
                 parsec_gpu_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
@@ -30,7 +30,7 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
     int elem_sz;
     int i;
     for(i = 0; i < task->task_class->nb_flows; i++){
-        if(flow_mask & (1U << i)){
+        if(PARSEC_CHECK_FLOW_MASK(flow_mask, i)) {
             copy_in = task->data[i].data_in;
             copy_out = task->data[i].data_out;
             ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
@@ -93,7 +93,7 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
 
 int
 dplasma_cuda_lapack_stage_out(parsec_gpu_task_t *gtask,
-                 uint32_t flow_mask,
+                 parsec_flow_mask_t flow_mask,
                  parsec_gpu_exec_stream_t *gpu_stream)
 {
     cudaError_t ret;
@@ -106,7 +106,7 @@ dplasma_cuda_lapack_stage_out(parsec_gpu_task_t *gtask,
     int elem_sz;
     int i;
     for(i = 0; i < task->task_class->nb_flows; i++){
-        if(flow_mask & (1U << i)){
+        if(PARSEC_CHECK_FLOW_MASK(flow_mask, i)) {
             copy_in = task->data[i].data_out;
             copy_out = copy_in->original->device_copies[0];
             ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
