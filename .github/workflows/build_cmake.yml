@@ -6,38 +6,33 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
-#env:
-
-# Allows to run this workflow manually from the Actions tab
-#workflow_dispatch:
+  # Allows to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  debug:
-    runs-on: [self-hosted, Linux]
+  all:
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         build_type : [ Debug, Release ]
         shared_type : [ OFF, ON ]
+        device: [ cpu, gpu_nvidia, gpu_amd ]
         exclude:
           - build_type: Release
             shared_type: OFF
-
-    name: "Type=${{ matrix.build_type }} shared=${{ matrix.shared_type }}"
+    name: "${{matrix.build_type}} Shared=${{matrix.shared_type}} ${{matrix.device}}"
+    runs-on: [ "${{matrix.device}}", self-hosted ]
     env:
-      BUILD_DIRECTORY : "${{github.workspace}}/build/${{ matrix.build_type }}/shared_${{matrix.shared_type}}"
-      INSTALL_DIRECTORY : "${{github.workspace}}/install/${{ matrix.build_type }}/shared_${{matrix.shared_type}}"
-      RUNNER_ENV : github_runner
-      # Disable RECURSIVE in CI tests until a real solution to https://github.com/ICLDisco/parsec/issues/548 is implemented
-      BUILD_CONFIG : >
-        -G Ninja
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DBUILD_SHARED_LIBS=${{ matrix.shared_type }}
-        -DMPIEXEC_PREFLAGS='--bind-to;none;--oversubscribe'
-        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIRECTORY
-        -DDPLASMA_PRECISIONS=d
-        -DPARSEC_HAVE_DEV_RECURSIVE_SUPPORT=OFF
+      BUILD_TYPE:  ${{matrix.build_type}}
+      SHARED_TYPE: ${{matrix.shared_type}}
+      DEVICE: ${{matrix.device}}
+      BUILD_DIRECTORY: build
+      INSTALL_DIRECTORY: install
+      SETUP: ${{github.workspace}}/.github/workflows/env_setup.sh
+    defaults:
+      run:
+        shell: bash
 
     steps:
     - uses: actions/checkout@v4
@@ -48,53 +43,40 @@ jobs:
       id: setup
       # Create a separate build directory and use it for all subsequent commands
       run: |
-          source ${{github.workspace}}/.github/CI/spack_setup.sh
-          spack compiler list
+          source $SETUP
           cmake -E make_directory ${{ env.BUILD_DIRECTORY }}
 
     - name: Configure CMake
       id: configure
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      timeout-minutes: 10
-      shell: bash
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: |
-        source ${{github.workspace}}/.github/CI/spack_setup.sh
-        echo CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BUILD_CONFIG
+        source $SETUP
+        CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE $BUILD_CONFIG
         CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BUILD_CONFIG
 
     - name: Build
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      timeout-minutes: 10
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: |
-        source ${{github.workspace}}/.github/CI/spack_setup.sh
+        source $SETUP
         cmake --build .
 
     - name: Install
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      timeout-minutes: 2
-      shell: bash
       run: |
-          source ${{github.workspace}}/.github/CI/spack_setup.sh
+          source $SETUP
           cmake --build . --target install
 
     - name: Test
       if: ${{ startsWith(matrix.build_type, 'Release') }}
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      timeout-minutes: 10
-      shell: bash
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       # run: ctest -C $BUILD_TYPE
       run: |
-        source ${{github.workspace}}/.github/CI/spack_setup.sh
-        #ctest --output-on-failure -R 'build_tests|launcher|class|dplasma'
+        source $SETUP
         ctest --output-on-failure -R 'launcher|dplasma' -E lowmem # lowmem tests are busted atm
 
     - name: Save Artifact
