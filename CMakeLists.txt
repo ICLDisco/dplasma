@@ -213,6 +213,9 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     endif()
   endif(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
 
+  option(DPLASMA_GPU_WITH_CUDA "Use CUDA to accelerate DPLASMA routines" OFF)
+  option(DPLASMA_GPU_WITH_HIP "Use HIP to accelerate DPLASMA routines" OFF)
+
   # TODO: submodule stuff from dplasma
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/parsec/CMakeLists.txt")
     message(FATAL_ERROR "The PaRSEC submodule was not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
@@ -224,6 +227,8 @@ if(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
     # we need to make it an option here, so that cmake accept it and does the right thing (use the value
     # we need and not the default value provided to the first OPTION call.
     option(PARSEC_WITH_DEVEL_HEADERS "" ON)
+    option(PARSEC_GPU_WITH_CUDA "" "${DPLASMA_GPU_WITH_CUDA}")
+    option(PARSEC_GPU_WITH_HIP "" "${DPLASMA_GPU_WITH_HIP}")
     add_subdirectory(parsec)
     message(STATUS "#             Configuring internal submodule PaRSEC runtime: DONE!")
     message(STATUS "########################################################################")
@@ -235,7 +240,6 @@ endif(NOT TARGET PaRSEC::parsec AND NOT TARGET PaRSEC::parsec_ptgpp)
 
 ############################################################################
 # Resume configuring dplasma
-option(DPLASMA_GPU_WITH_CUDA "Use CUDA to accelerate DPLASMA routines" ${PARSEC_HAVE_CUDA})
 if(DPLASMA_GPU_WITH_CUDA)
   if(NOT PARSEC_HAVE_CUDA)
     message(FATAL_ERROR "CUDA support for DPLASMA requested, but detected PaRSEC does not support it")
@@ -246,7 +250,6 @@ if(DPLASMA_GPU_WITH_CUDA)
   endif(NOT TARGET CUDA::cusolver)
   set(DPLASMA_HAVE_CUDA ${PARSEC_HAVE_CUDA} CACHE BOOL "True if DPLASMA provide support for CUDA")
 endif()
-option(DPLASMA_GPU_WITH_HIP "Use HIP to accelerate DPLASMA routines" ${PARSEC_HAVE_HIP})
 if(DPLASMA_GPU_WITH_HIP)
   if(NOT PARSEC_HAVE_HIP)
     message(FATAL_ERROR "HIP support for DPLASMA requested, but detected PaRSEC does not support it")
