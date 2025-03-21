@@ -195,6 +195,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
 #define PASTE_CODE_ENQUEUE_KERNEL(PARSEC, KERNEL, PARAMS)               \
     SYNC_TIME_START();                                                   \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS;   \
+    PARSEC_CHECK_ERROR(NULL == PARSEC_##KERNEL? PARSEC_ERROR: PARSEC_SUCCESS, "dplasma_"#KERNEL "_New"); \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");      \
     if( loud > 2 ) SYNC_TIME_PRINT(rank, ( #KERNEL "\tDAG created\n"));
 
@@ -259,6 +260,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
 #define PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(PARSEC, KERNEL, PARAMS, DESTRUCT)\
     SYNC_TIME_START();                                                  \
     parsec_taskpool_t* PARSEC_##KERNEL = dplasma_##KERNEL##_New PARAMS; \
+    PARSEC_CHECK_ERROR(NULL == PARSEC_##KERNEL? PARSEC_ERROR: PARSEC_SUCCESS, "dplasma_"#KERNEL "_New"); \
     PARSEC_CHECK_ERROR(parsec_context_add_taskpool(PARSEC, PARSEC_##KERNEL), "parsec_context_add_taskpool");\
     SYNC_TIME_STOP();                                                   \
     parsec_devices_save_statistics(&dev_stats);                         \
