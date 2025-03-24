@@ -387,8 +387,8 @@ GEMM(m, n, k)
 
 READ A <- A READ_A(m, k, x, y, z)                      [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
 READ B <- B READ_B(k, n, x, y, z)                      [ type_remote = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, TILED); %} ]
-RW   C <- k == 0 ? C READ_C(m, n)                      [ type_remote = %{ return ADTT_DC(ddescC, loc_C, C_SHAPE, TILED); %} ]
-       <- k != 0 ? C GEMM(m, n, k-1 )                  [ type_remote = %{ return ADTT_DC(ddescC, loc_C, C_SHAPE, TILED); %} ]
+RW   C <- k == 0 ? C READ_C(m, n)
+       <- k != 0 ? C GEMM(m, n, k-1 )
        -> k + 1 == descB->mt ? descC(m, n)             [ type        = %{ return ADTT_CP(_f_C, ddescC, loc_C, C_SHAPE); %}
                                                          type_data   = %{ return ADTT_DC(ddescC, loc_C, C_SHAPE, LAPACK); %} ]
        -> k + 1 != descB->mt ? C GEMM(m, n, k+1)       /* dep OUT: rely on datacopy dtt for sending */
