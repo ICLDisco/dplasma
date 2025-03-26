@@ -310,7 +310,7 @@ dplasma_zgebrd_ge2gb_New( int ib,
     dplasma_qrtree_t *qrtre0, *qrtree, *lqtree;
     int P, Q, cores;
 
-    cores = dplasma_imax( vpmap_get_nb_total_threads(), 1 );
+    cores = dplasma_imax( parsec_vpmap_get_vp_threads(0), 1 );
     qrtree = malloc( sizeof(dplasma_qrtree_t) );
     lqtree = malloc( sizeof(dplasma_qrtree_t) );
 
