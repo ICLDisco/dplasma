@@ -370,11 +370,12 @@ int main(int argc, char **argv)
     parsec_taskpool_t *dtd_tp = parsec_dtd_taskpool_new( );
 
     /* Default type */
-    parsec_arena_datatype_t *tile_full = parsec_dtd_create_arena_datatype(parsec, &TILE_FULL);
+    parsec_arena_datatype_t *tile_full = PARSEC_OBJ_NEW(parsec_arena_datatype_t);
     dplasma_add2arena_tile( tile_full,
                             dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
+    parsec_dtd_attach_arena_datatype(parsec, tile_full, &TILE_FULL);
 
     /* Registering the handle with parsec context */
     parsec_context_add_taskpool( parsec, dtd_tp );
@@ -476,7 +477,7 @@ int main(int argc, char **argv)
     }
 
     dplasma_matrix_del2arena( tile_full );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
+    parsec_dtd_free_arena_datatype(parsec, TILE_FULL);
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_data_free(dcA.mat); dcA.mat = NULL;
     parsec_tiled_matrix_destroy( (parsec_tiled_matrix_t*)&dcA);
