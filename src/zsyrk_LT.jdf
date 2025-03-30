@@ -19,6 +19,9 @@ descA     [type = "const parsec_tiled_matrix_t*"]
 beta      [type = "dplasma_complex64_t"]
 descC     [type = "parsec_tiled_matrix_t*"]
 
+/* Look ahead on both dimensions */
+lookX  [type = "int" hidden=on default="dplasma_aux_getGEMMLookahead(descC)"]
+
 
 zsyrk(n, k) [ flops = inline_c %{ return FLOPS_ZSYRK(CLEAN_NB(descC, n), CLEAN_MB(descA, k)); %} ]
   /* Execution Space */
@@ -33,6 +36,8 @@ zsyrk(n, k) [ flops = inline_c %{ return FLOPS_ZSYRK(CLEAN_NB(descC, n), CLEAN_M
              <- ((k>=1)) ? C zsyrk(n, k-1)
              -> ((descA->mt>=(2+k))) ? C zsyrk(n, k+1)
              -> ((descA->mt==(1+k))) ? descC(n,n)
+
+  CTL ctlx -> (k < (descA->nt-lookX)) ? ctlx zsyrk_in_data_A0(n, k+lookX)
 
 BODY
 {
@@ -62,6 +67,7 @@ zsyrk_in_data_A0(n, k) [profile = off]
 
   READ  A    <- descA(k,n)
              -> A zsyrk(n, k)
+  CTL ctlx   <- (k >= lookX) ? ctlx zsyrk(n, k-lookX)
 
 BODY
 {
@@ -84,6 +90,9 @@ zgemm(n, m, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEA
              <- ((0==k)) ? descC(m,n)
              -> ((descA->mt==(k+1))) ? descC(m,n)
              -> ((descA->mt>=(2+k))) ? C zgemm(n, m, k+1)
+
+  CTL ctla -> (k < (descA->nt-lookX)) ? ctla zgemm_in_data_A0(m, k+lookX)
+  CTL ctlb -> (k < (descA->nt-lookX)) ? ctlb zgemm_in_data_A1(n, k+lookX)
 
 BODY
 {
@@ -115,6 +124,7 @@ zgemm_in_data_A1(n, k) [profile = off]
 
   READ  B    <- descA(k,n)
              -> B zgemm(n, (n+1)..(descC->mt-1), k)
+  CTL ctlb   <- (k >= lookX) ? ctlb zgemm(n, (n+1) .. (descC->mt-1), k-lookX)
 
 BODY
 {
@@ -132,6 +142,7 @@ zgemm_in_data_A0(m, k) [profile = off]
 
   READ  A    <- descA(k,m)
              -> A zgemm(0..(descC->mt-2), m, k)
+  CTL ctla   <- (k >= lookX) ? ctla zgemm(0 .. (m-1), m, k-lookX)
 
 BODY
 {
