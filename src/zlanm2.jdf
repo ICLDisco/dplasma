@@ -24,6 +24,7 @@ extern "C" %{
 #include <math.h>
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
+#include "cores/sumsq_update.h"
 
 %}
 
@@ -189,7 +190,6 @@ BODY
 {
     double *dA = (double*)A;
     double *dW = (double*)W;
-    double  sqr;
 
     printlog("zlange STEP4(%d, %d)\n", m, n);
 
@@ -198,16 +198,7 @@ BODY
         dW[1] = 1.;
     }
     if (n > 0) {
-        if( dW[0] < dA[0] ) {
-            sqr = dW[0] / dA[0];
-            sqr = sqr * sqr;
-            dW[1] = dA[1] + sqr * dW[1];
-            dW[0] = dA[0];
-        } else {
-            sqr = dA[0] / dW[0];
-            sqr = sqr * sqr;
-            dW[1] = dW[1] + sqr * dA[1];
-        }
+	sumsq_update_2( dA, dA + 1, dW, dW + 1 );
     }
 }
 END
@@ -585,7 +576,6 @@ BODY
 {
     double *dA = (double*)A;
     double *dW = (double*)W;
-    double  sqr;
 
     printlog("norm_sx_step2(%d, %d)\n", i, m);
 
@@ -594,16 +584,7 @@ BODY
         dW[1] = dA[1];
     }
     else {
-        if( dW[0] < dA[0] ) {
-            sqr = dW[0] / dA[0];
-            sqr = sqr * sqr;
-            dW[1] = dA[1] + sqr * dW[1];
-            dW[0] = dA[0];
-        } else {
-            sqr = dA[0] / dW[0];
-            sqr = sqr * sqr;
-            dW[1] = dW[1] + sqr * dA[1];
-        }
+	sumsq_update_2( dA, dA + 1, dW, dW + 1 );
     }
 }
 END
@@ -672,7 +653,6 @@ BODY
 {
     double *dA = (double*)A;
     double *dW = (double*)W;
-    double  sqr;
 
     printlog("norm_x_step3(%d, %d)\n", i, n);
 
@@ -681,16 +661,7 @@ BODY
         dW[1] = dA[1];
     }
     else {
-        if( dW[0] < dA[0] ) {
-            sqr = dW[0] / dA[0];
-            sqr = sqr * sqr;
-            dW[1] = dA[1] + sqr * dW[1];
-            dW[0] = dA[0];
-        } else {
-            sqr = dA[0] / dW[0];
-            sqr = sqr * sqr;
-            dW[1] = dW[1] + sqr * dA[1];
-        }
+ 	sumsq_update_2( dA, dA + 1, dW, dW + 1 );
     }
 }
 END

@@ -25,6 +25,7 @@ extern "C" %{
 #include <math.h>
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
+#include "cores/sumsq_update.h"
 
 #define my_rank_of(m, n) (((parsec_data_collection_t*)(descA))->rank_of((parsec_data_collection_t*)descA, m, n))
 %}
@@ -259,15 +260,8 @@ BODY
             dW[1] = 1.;
         }
         if(n+Q < PQ) {
-            if ( dA[0] > 0. ){
-                if( dW[0] < dA[0] ) {
-                    dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
-                    dW[0] = dA[0];
-                } else {
-                    dW[1] = dW[1] + (dA[1] * (( dA[0] / dW[0] ) * ( dA[0] / dW[0] )));
-                }
-            }
-        }
+            sumsq_update_2( dA, dA + 1, dW, dW + 1 );
+	}
     }
     else {
         if ((hadtile+1) == 0) {
@@ -317,14 +311,7 @@ BODY
             *dW = ( *dA > *dW ) ? *dA : *dW;
         }
         else if (ntype == dplasmaFrobeniusNorm) {
-            if ( dA[0] > 0. ){
-                if( dW[0] < dA[0] ) {
-                    dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
-                    dW[0] = dA[0];
-                } else {
-                    dW[1] = dW[1] + (dA[1] * (( dA[0] / dW[0] ) * ( dA[0] / dW[0] )));
-                }
-            }
+	    sumsq_update_2( dA, dA + 1, dW, dW + 1 );
         }
         else {
             cblas_daxpy( tempmm, 1., dA, 1, dW, 1);
@@ -376,12 +363,7 @@ BODY
             dW[0] = 0.;
             dW[1] = 1.;
         }
-        if( dW[0] < dA[0] ) {
-            dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
-            dW[0] = dA[0];
-        } else {
-            dW[1] = dW[1] + (dA[1] * (( dA[0] / dW[0] ) * ( dA[0] / dW[0] )));
-        }
+	sumsq_update_2( dA, dA + 1, dW, dW + 1 );
     }
     else {
         double maxval = 0;
@@ -427,23 +409,12 @@ BODY
     double *dA = (double*)A;
     double *dW = (double*)W;
     if (ntype == dplasmaFrobeniusNorm) {
-        double  sqr;
-
         if ( m > (descA->mt-1)) {
             dW[0] = 0.;
             dW[1] = 1.;
         }
         if(m > 0) {
-            if( dW[0] < dA[0] ) {
-                sqr = dW[0] / dA[0];
-                sqr = sqr * sqr;
-                dW[1] = dA[1] + sqr * dW[1];
-                dW[0] = dA[0];
-            } else {
-                sqr = dA[0] / dW[0];
-                sqr = sqr * sqr;
-                dW[1] = dW[1] + sqr * dA[1];
-            }
+	    sumsq_update_2( dA, dA + 1, dW, dW + 1 );
         }
     } else {
         if ( m > (descA->mt-1)) {

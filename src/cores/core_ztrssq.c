@@ -15,18 +15,7 @@
 #include <math.h>
 #include <lapacke.h>
 #include "common.h"
-
-#define COMPLEX
-
-#define UPDATE( __nb, __value )                                         \
-    if (__value != 0. ){                                                \
-        if ( *scale < __value ) {                                       \
-            *sumsq = __nb + (*sumsq) * ( *scale / __value ) * ( *scale / __value ); \
-            *scale = __value;                                           \
-        } else {                                                        \
-            *sumsq = *sumsq + __nb * ( __value / *scale ) *  ( __value / *scale ); \
-        }                                                               \
-    }
+#include "sumsq_update.h"
 
 /*****************************************************************************
  *
@@ -97,7 +86,7 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
 
     if ( diag == PlasmaUnit ){
         tmp = sqrt( min(M, N) );
-        UPDATE( 1., tmp );
+	sumsq_update( 1, scale, sumsq, &tmp );
     }
 
     if  (uplo == PlasmaUpper ) {
@@ -108,13 +97,11 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
             imax = min(j+1-idiag, M);
 
             for(i=0; i<imax; i++, ptr++) {
-                tmp = fabs(*ptr);
-                UPDATE( 1., tmp );
-
-#ifdef COMPLEX
+		sumsq_update( 1, scale, sumsq, ptr );
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
                 ptr++;
-                tmp = fabs(*ptr);
-                UPDATE( 1., tmp );
+		sumsq_update( 1, scale, sumsq, ptr );
 #endif
             }
         }
@@ -126,13 +113,11 @@ int CORE_ztrssq(PLASMA_enum uplo, PLASMA_enum diag, int M, int N,
             ptr = (double*) ( A + j * (LDA+1) + idiag );
 
             for(i=j+idiag; i<M; i++, ptr++) {
-                tmp = fabs(*ptr);
-                UPDATE( 1., tmp );
-
-#ifdef COMPLEX
+		sumsq_update( 1, scale, sumsq, ptr );
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
                 ptr++;
-                tmp = fabs(*ptr);
-                UPDATE( 1., tmp );
+		sumsq_update( 1, scale, sumsq, ptr );
 #endif
             }
         }

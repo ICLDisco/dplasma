@@ -36,6 +36,7 @@ extern "C" %{
 #include <math.h>
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
+#include "cores/sumsq_update.h"
 
 %}
 
@@ -228,12 +229,7 @@ BODY
                 dW[1] = dA[1];
             }
             else {
-                if( dW[0] < dA[0] ) {
-                    dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
-                    dW[0] = dA[0];
-                } else {
-                    dW[1] = dW[1] + (dA[1] * (( dA[0] / dW[0] ) * ( dA[0] / dW[0] )));
-                }
+		sumsq_update_2( dA, dA + 1, dW, dW + 1 );
             }
         }
         else {
@@ -314,12 +310,7 @@ BODY
             dW[0] = 0.;
             dW[1] = 1.;
         }
-        if( dW[0] < dA[0] ) {
-            dW[1] = dA[1] + (dW[1] * (( dW[0] / dA[0] ) * ( dW[0] / dA[0] )));
-            dW[0] = dA[0];
-        } else {
-            dW[1] = dW[1] + (dA[1] * (( dA[0] / dW[0] ) * ( dA[0] / dW[0] )));
-        }
+	sumsq_update_2( dA, dA + 1, dW, dW + 1 );
     }
     break;
 
@@ -370,22 +361,11 @@ BODY
 
         case dplasmaFrobeniusNorm:
         {
-            double  sqr;
-
             if (m  > (MT-1)) {
                 dW[0] = 0.;
                 dW[1] = 1.;
             }
-            if( dW[0] < dA[0] ) {
-                sqr = dW[0] / dA[0];
-                sqr = sqr * sqr;
-                dW[1] = dA[1] + sqr * dW[1];
-                dW[0] = dA[0];
-            } else {
-                sqr = dA[0] / dW[0];
-                sqr = sqr * sqr;
-                dW[1] = dW[1] + sqr * dA[1];
-            }
+	    sumsq_update_2( dA, dA + 1, dW, dW + 1 );
         }
         break;
 
