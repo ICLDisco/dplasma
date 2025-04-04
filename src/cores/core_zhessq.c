@@ -15,18 +15,7 @@
 #include <math.h>
 #include <lapacke.h>
 #include "common.h"
-
-#define COMPLEX
-
-#define UPDATE( __nb, __value )                                         \
-    if (__value != 0. ){                                                \
-        if ( *scale < __value ) {                                       \
-            *sumsq = __nb + (*sumsq) * ( *scale / __value ) * ( *scale / __value ); \
-            *scale = __value;                                           \
-        } else {                                                        \
-            *sumsq = *sumsq + __nb * ( __value / *scale ) *  ( __value / *scale ); \
-        }                                                               \
-    }
+#include "sumsq_update.h"
 
 /*****************************************************************************
  *
@@ -97,7 +86,6 @@ int CORE_zhessq(PLASMA_enum uplo, int N,
                 double *scale, double *sumsq)
 {
     int i, j;
-    double tmp;
     double *ptr;
 
     if ( uplo == PlasmaUpper ) {
@@ -105,23 +93,19 @@ int CORE_zhessq(PLASMA_enum uplo, int N,
             ptr = (double*) ( A + j * LDA );
 
             for(i=0; i<j; i++, ptr++) {
-
-                tmp = fabs(*ptr);
-                UPDATE( 2., tmp );
-
-#ifdef COMPLEX
-                ptr++;
-                tmp = fabs(*ptr);
-                UPDATE( 2., tmp );
+		sumsq_update( 2, scale, sumsq, ptr );
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
+		ptr++;
+		sumsq_update( 2, scale, sumsq, ptr );
 #endif
             }
 
             /* Diagonal */
-            tmp = fabs(*ptr);
-            UPDATE( 1., tmp );
-
-#ifdef COMPLEX
-            ptr++;
+	    sumsq_update( 1, scale, sumsq, ptr );
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
+	    ptr++;
 #endif
         }
     } else {
@@ -130,23 +114,19 @@ int CORE_zhessq(PLASMA_enum uplo, int N,
             ptr = (double*) ( A + j * LDA + j);
 
             /* Diagonal */
-            tmp = fabs(*ptr);
-            UPDATE( 1., tmp );
-            ptr++;
-
-#ifdef COMPLEX
-            ptr++;
+	    sumsq_update( 1, scale, sumsq, ptr );
+	    ptr++;
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
+	    ptr++;
 #endif
 
             for(i=j+1; i<N; i++, ptr++) {
-
-                tmp = fabs(*ptr);
-                UPDATE( 2., tmp );
-
-#ifdef COMPLEX
-                ptr++;
-                tmp = fabs(*ptr);
-                UPDATE( 2., tmp );
+		sumsq_update( 2, scale, sumsq, ptr );
+		
+#if defined(PRECISION_z) || defined(PRECISION_c)
+		ptr++;
+		sumsq_update( 2, scale, sumsq, ptr );
 #endif
             }
         }
