@@ -274,7 +274,7 @@ set(CTEST_SHM_LAUNCHER
       "A command to run shared memory testings")
 string(REPLACE " " ";" SHM_TEST_CMD_LIST "${CTEST_SHM_LAUNCHER}")
 set(CTEST_MPI_LAUNCHER
-      "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAGS} " CACHE STRING
+      "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} " CACHE STRING
       "A command to run distributed memory testings")
 if( "${CTEST_MPI_LAUNCHER}" MATCHES "^[ \t]*$" )
   message(WARNING "MPI tests will most likely not work: 'CTEST_MPI_LAUNCHER' is not set")
