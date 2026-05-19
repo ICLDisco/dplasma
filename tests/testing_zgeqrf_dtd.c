@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -218,13 +219,15 @@ int main(int argc, char **argv)
 
     /* Allocating data arrays to be used by comm engine */
     /* Default type */
-    parsec_arena_datatype_t *tile_full = parsec_dtd_create_arena_datatype(parsec, &TILE_FULL);
+    parsec_arena_datatype_t *tile_full = parsec_arena_datatype_new();
+    parsec_dtd_attach_arena_datatype(parsec, tile_full, &TILE_FULL);
     dplasma_add2arena_tile( tile_full,
                             dcA.super.mb*dcA.super.nb*sizeof(dplasma_complex64_t),
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, dcA.super.mb );
 
-    parsec_arena_datatype_t *tile_rectangle = parsec_dtd_create_arena_datatype(parsec, &TILE_RECTANGLE);
+    parsec_arena_datatype_t *tile_rectangle = parsec_arena_datatype_new();
+    parsec_dtd_attach_arena_datatype(parsec, tile_rectangle, &TILE_RECTANGLE);
     dplasma_add2arena_rectangle( tile_rectangle,
                                  dcT.super.mb*dcT.super.nb*sizeof(dplasma_complex64_t),
                                  PARSEC_ARENA_ALIGNMENT_SSE,
@@ -398,10 +401,8 @@ int main(int argc, char **argv)
     }
 
     /* Cleaning data arrays we allocated for communication */
-    dplasma_matrix_del2arena( tile_full );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_FULL);
-    dplasma_matrix_del2arena( tile_rectangle );
-    parsec_dtd_destroy_arena_datatype(parsec, TILE_RECTANGLE);
+    parsec_dtd_free_arena_datatype(parsec, TILE_FULL);
+    parsec_dtd_free_arena_datatype(parsec, TILE_RECTANGLE);
 
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcA );
     parsec_dtd_data_collection_fini( (parsec_data_collection_t *)&dcT );
