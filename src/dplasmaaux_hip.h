@@ -9,6 +9,8 @@
 #define _DPLASMAAAUX_HIP_H_
 
 #if defined(DPLASMA_HAVE_HIP)
+/* See dplasmaaux_cuda.h: device_hip.h reaches parsec_internal.h. */
+#include "parsec/parsec_config.h"
 #include "parsec/mca/device/hip/device_hip.h"
 
 #include <hipblas/hipblas.h>

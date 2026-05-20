@@ -2,6 +2,7 @@
  * Copyright (c) 2010-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -128,13 +129,6 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                 parsec_trmm = parsec_ztrmm_LLN_new(
                         side, uplo, trans, diag, alpha,
                         ddc_A, ddc_B);
-#if defined(DPLASMA_HAVE_HIP)
-                /* It doesn't cost anything to define these infos if we have HIP but
-                 * don't have GPUs on the current machine, so we do it non-conditionally */
-                parsec_trmm->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
-#else
-                parsec_trmm->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
-#endif
                 parsec_tp = (parsec_taskpool_t*)parsec_trmm;
             } else { /* trans =! dplasmaNoTrans */
                 parsec_ztrmm_LLT_taskpool_t* parsec_trmm;
@@ -189,6 +183,27 @@ dplasma_ztrmm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
             }
         }
     }
+
+    /*
+     * All ztrmm variants declare the same hidden HIP handle key.  The taskpool
+     * structs keep the generated globals in the same prefix, so this mirrors
+     * the existing common ddescA/ddescB handling below instead of duplicating
+     * the assignment in each of the eight constructor branches.
+     */
+#if defined(DPLASMA_HAVE_HIP)
+    ((parsec_ztrmm_LLN_taskpool_t*)parsec_tp)->_g_hip_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+    ((parsec_ztrmm_LLN_taskpool_t*)parsec_tp)->_g_hip_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
+#if defined(DPLASMA_HAVE_CUDA)
+    ((parsec_ztrmm_LLN_taskpool_t*)parsec_tp)->_g_cuda_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+    ((parsec_ztrmm_LLN_taskpool_t*)parsec_tp)->_g_cuda_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
 
     /* When supporting LAPACK we can't assume both matrixes have the same layout, e.g. LDA.
      * Therefore, generate types for both.

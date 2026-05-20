@@ -9,15 +9,19 @@
  * @version 2.7.1
  * @author Mathieu Faverge
  * @date 2010-11-15
+ *
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  **/
 /*
  * @precisions normal z -> c d s
  */
-#include <cublas.h>
-#include "common.h"
-
+#include <assert.h>
 #include <stdio.h>
 
+#include <cuda_runtime_api.h>
+
+#include "common.h"
+#include "dplasmaaux_cuda.h"
 
 int
 dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
@@ -31,6 +35,7 @@ dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
                     const PLASMA_Complex64_t *T, int LDT,
                     PLASMA_Complex64_t *WORK, int LDWORK,
                     PLASMA_Complex64_t *WORKC, int LDWORKC,
+                    cublasHandle_t handle,
                     cudaStream_t stream)
 {
 #if defined(PRECISION_z) || defined(PRECISION_c)
@@ -43,8 +48,14 @@ dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
     double mzone = -1.0;
 #endif /* defined(PRECISION_z) || defined(PRECISION_c) */
 
+    cublasStatus_t cublas_status;
+    cudaError_t cuda_status;
     int j;
     (void)L;
+
+    cublas_status = cublasSetStream(handle, stream);
+    DPLASMA_CUBLAS_CHECK_STATUS("cublasSetStream ", cublas_status,
+                                { return PLASMA_ERR_UNEXPECTED; });
 
     /* Check input arguments */
     if ((side != PlasmaLeft) && (side != PlasmaRight)) {
@@ -99,66 +110,88 @@ dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
              *      W = W + V' * A2
              *
              */
-            cudaMemcpy2DAsync( WORK, LDWORK * sizeof(cuDoubleComplex),
-                               A1,   LDA1   * sizeof(cuDoubleComplex),
-                               K * sizeof(cuDoubleComplex), N1,
-                               cudaMemcpyDeviceToDevice, stream );
+            cuda_status = cudaMemcpy2DAsync(WORK, LDWORK * sizeof(PLASMA_Complex64_t),
+                                            A1,   LDA1   * sizeof(PLASMA_Complex64_t),
+                                            K * sizeof(PLASMA_Complex64_t), N1,
+                                            cudaMemcpyDeviceToDevice, stream);
+            PARSEC_CUDA_CHECK_ERROR("cudaMemcpy2DAsync ", cuda_status,
+                                    { return PLASMA_ERR_UNEXPECTED; });
 
-            cublasZgemm(lapack_const(PlasmaConjTrans), 'N',
-                        K, N1, M2,
-                        zone,
-                        (cuDoubleComplex*)V     /* K*M2  */, LDV,
-                        (cuDoubleComplex*)A2    /* M2*N1 */, LDA2,
-                        zone,
-                        (cuDoubleComplex*)WORK  /* K*N1  */, LDWORK);
+            cublas_status = cublasZgemm_v2(handle,
+                                           dplasma_cublas_op(PlasmaConjTrans), CUBLAS_OP_N,
+                                           K, N1, M2,
+                                           &zone,
+                                           (const cuDoubleComplex*)V     /* K*M2  */, LDV,
+                                           (const cuDoubleComplex*)A2    /* M2*N1 */, LDA2,
+                                           &zone,
+                                           (cuDoubleComplex*)WORK        /* K*N1  */, LDWORK);
+            DPLASMA_CUBLAS_CHECK_STATUS("cublasZgemm_v2 ", cublas_status,
+                                        { return PLASMA_ERR_UNEXPECTED; });
 
             if (WORKC == NULL) {
                 /* W = op(T) * W */
-                cublasZtrmm( 'L', 'U',
-                             lapack_const(trans), 'N',
-                             K, N2,
-                             zone,
-                             (cuDoubleComplex*)T, LDT,
-                             (cuDoubleComplex*)WORK, LDWORK);
-
+                cublas_status = cublasZtrmm_v2(handle,
+                                               CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER,
+                                               dplasma_cublas_op(trans), CUBLAS_DIAG_NON_UNIT,
+                                               K, N2,
+                                               &zone,
+                                               (const cuDoubleComplex*)T, LDT,
+                                               (const cuDoubleComplex*)WORK, LDWORK,
+                                               (cuDoubleComplex*)WORK, LDWORK);
+                DPLASMA_CUBLAS_CHECK_STATUS("cublasZtrmm_v2 ", cublas_status,
+                                            { return PLASMA_ERR_UNEXPECTED; });
 
                 /* A1 = A1 - W = A1 - op(T) * W */
                 for(j = 0; j < N1; j++) {
-                    cublasZaxpy(K, mzone,
-                                (cuDoubleComplex*)(WORK + LDWORK*j), 1,
-                                (cuDoubleComplex*)(A1 + LDA1*j), 1);
+                    cublas_status = cublasZaxpy_v2(handle, K, &mzone,
+                                                   (const cuDoubleComplex*)(WORK + LDWORK*j), 1,
+                                                   (cuDoubleComplex*)(A1 + LDA1*j), 1);
+                    DPLASMA_CUBLAS_CHECK_STATUS("cublasZaxpy_v2 ", cublas_status,
+                                                { return PLASMA_ERR_UNEXPECTED; });
                 }
 
                 /* A2 = A2 - op(V) * W  */
-                cublasZgemm('N', 'N',
-                            M2, N2, K,
-                            mzone,
-                            (cuDoubleComplex*)V     /* M2*K  */, LDV,
-                            (cuDoubleComplex*)WORK  /* K*N2  */, LDWORK,
-                            zone,
-                            (cuDoubleComplex*)A2    /* m2*N2 */, LDA2);
+                cublas_status = cublasZgemm_v2(handle,
+                                               CUBLAS_OP_N, CUBLAS_OP_N,
+                                               M2, N2, K,
+                                               &mzone,
+                                               (const cuDoubleComplex*)V    /* M2*K  */, LDV,
+                                               (const cuDoubleComplex*)WORK /* K*N2  */, LDWORK,
+                                               &zone,
+                                               (cuDoubleComplex*)A2         /* m2*N2 */, LDA2);
+                DPLASMA_CUBLAS_CHECK_STATUS("cublasZgemm_v2 ", cublas_status,
+                                            { return PLASMA_ERR_UNEXPECTED; });
 
             } else {
                 /* Wc = V * op(T) */
-                cublasZgemm( 'N', lapack_const(trans),
-                             M2, K, K,
-                             zone,  (cuDoubleComplex*)V,     LDV,
-                                    (cuDoubleComplex*)T,     LDT,
-                             zzero, (cuDoubleComplex*)WORKC, LDWORKC );
+                cublas_status = cublasZgemm_v2(handle,
+                                               CUBLAS_OP_N, dplasma_cublas_op(trans),
+                                               M2, K, K,
+                                               &zone,  (const cuDoubleComplex*)V,     LDV,
+                                                       (const cuDoubleComplex*)T,     LDT,
+                                               &zzero, (cuDoubleComplex*)WORKC, LDWORKC);
+                DPLASMA_CUBLAS_CHECK_STATUS("cublasZgemm_v2 ", cublas_status,
+                                            { return PLASMA_ERR_UNEXPECTED; });
 
                 /* A1 = A1 - opt(T) * W */
-                cublasZgemm( lapack_const(trans), 'N',
-                             K, N1, K,
-                             mzone, (cuDoubleComplex*)T,    LDT,
-                                    (cuDoubleComplex*)WORK, LDWORK,
-                             zone,  (cuDoubleComplex*)A1,   LDA1 );
+                cublas_status = cublasZgemm_v2(handle,
+                                               dplasma_cublas_op(trans), CUBLAS_OP_N,
+                                               K, N1, K,
+                                               &mzone, (const cuDoubleComplex*)T,    LDT,
+                                                       (const cuDoubleComplex*)WORK, LDWORK,
+                                               &zone,  (cuDoubleComplex*)A1,   LDA1);
+                DPLASMA_CUBLAS_CHECK_STATUS("cublasZgemm_v2 ", cublas_status,
+                                            { return PLASMA_ERR_UNEXPECTED; });
 
                 /* A2 = A2 - Wc * W */
-                cublasZgemm( 'N', 'N',
-                             M2, N2, K,
-                             mzone, (cuDoubleComplex*)WORKC, LDWORKC,
-                                    (cuDoubleComplex*)WORK,  LDWORK,
-                             zone,  (cuDoubleComplex*)A2,    LDA2 );
+                cublas_status = cublasZgemm_v2(handle,
+                                               CUBLAS_OP_N, CUBLAS_OP_N,
+                                               M2, N2, K,
+                                               &mzone, (const cuDoubleComplex*)WORKC, LDWORKC,
+                                                       (const cuDoubleComplex*)WORK,  LDWORK,
+                                               &zone,  (cuDoubleComplex*)A2,    LDA2);
+                DPLASMA_CUBLAS_CHECK_STATUS("cublasZgemm_v2 ", cublas_status,
+                                            { return PLASMA_ERR_UNEXPECTED; });
             }
         }
         else {
@@ -192,6 +225,7 @@ dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
                      const PLASMA_Complex64_t *T, int LDT,
                      PLASMA_Complex64_t *WORK, int LDWORK,
                      PLASMA_Complex64_t *WORKC, int LDWORKC,
+                     cublasHandle_t handle,
                      cudaStream_t stream)
 {
     int i, i1, i3;
@@ -201,6 +235,7 @@ dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
     int jc = 0;
     int mi = M1;
     int ni = N1;
+    int rc;
 
     /* Check input arguments */
     if ((side != PlasmaLeft) && (side != PlasmaRight)) {
@@ -292,13 +327,17 @@ dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
         /*
          * Apply H or H' (NOTE: CORE_zparfb used to be CORE_ztsrfb)
          */
-        dplasma_cuda_zparfb( side, trans, PlasmaForward, PlasmaColumnwise,
-                             mi, ni, M2, N2, kb, 0,
-                             A1 + LDA1*jc+ic, LDA1,
-                             A2, LDA2,
-                             V + LDV*i, LDV,
-                             T + LDT*i, LDT,
-                             WORK, LDWORK, WORKC, LDWORKC, stream );
+        rc = dplasma_cuda_zparfb( side, trans, PlasmaForward, PlasmaColumnwise,
+                                  mi, ni, M2, N2, kb, 0,
+                                  A1 + LDA1*jc+ic, LDA1,
+                                  A2, LDA2,
+                                  V + LDV*i, LDV,
+                                  T + LDT*i, LDT,
+                                  WORK, LDWORK, WORKC, LDWORKC,
+                                  handle, stream );
+        if (PLASMA_SUCCESS != rc) {
+            return rc;
+        }
     }
     return PLASMA_SUCCESS;
 }

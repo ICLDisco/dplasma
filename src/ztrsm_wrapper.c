@@ -2,6 +2,7 @@
  * Copyright (c) 2010-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
  * @precisions normal z -> s d c
@@ -10,6 +11,7 @@
 
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 
 #include "ztrsm_LLN.h"
@@ -20,6 +22,8 @@
 #include "ztrsm_RLT.h"
 #include "ztrsm_RUN.h"
 #include "ztrsm_RUT.h"
+
+#define MAX_SHAPES 2
 
 /**
  *******************************************************************************
@@ -98,31 +102,33 @@ dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                    parsec_tiled_matrix_t *B )
 {
     parsec_taskpool_t *parsec_trsm = NULL;
+    dplasma_data_collection_t *ddc_A = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)A);
+    dplasma_data_collection_t *ddc_B = dplasma_wrap_data_collection((parsec_tiled_matrix_t*)B);
 
     if ( side == dplasmaLeft ) {
         if ( uplo == dplasmaLower ) {
             if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LLN_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LLT_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             }
         } else { /* uplo = dplasmaUpper */
             if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LUN_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_LUT_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             }
         }
     } else { /* side == dplasmaRight */
@@ -130,33 +136,56 @@ dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
             if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RLN_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RLT_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             }
         } else { /* uplo = dplasmaUpper */
             if ( trans == dplasmaNoTrans ) {
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RUN_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             } else { /* trans =! dplasmaNoTrans */
                 parsec_trsm = (parsec_taskpool_t*)parsec_ztrsm_RUT_new(
                     side, uplo, trans, diag, alpha,
-                    A,
-                    B);
+                    ddc_A,
+                    ddc_B);
             }
         }
     }
 
-    dplasma_add2arena_tile( &((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->arenas_datatypes[PARSEC_ztrsm_LLN_DEFAULT_ADT_IDX],
-                            A->mb*A->nb*sizeof(dplasma_complex64_t),
-                            PARSEC_ARENA_ALIGNMENT_SSE,
-                            parsec_datatype_double_complex_t, A->mb );
+#if defined(DPLASMA_HAVE_CUDA)
+    ((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->_g_cuda_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+    ((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->_g_cuda_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    ((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->_g_hip_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+    ((parsec_ztrsm_LLN_taskpool_t*)parsec_trsm)->_g_hip_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
+
+    int shape = 0;
+    dplasma_setup_adtt_all_loc(ddc_A,
+                               parsec_datatype_double_complex_t,
+                               PARSEC_MATRIX_FULL,
+                               1,
+                               &shape);
+    dplasma_setup_adtt_all_loc(ddc_B,
+                               parsec_datatype_double_complex_t,
+                               PARSEC_MATRIX_FULL,
+                               1,
+                               &shape);
+    assert(shape == MAX_SHAPES);
 
     return parsec_trsm;
 }
@@ -185,9 +214,16 @@ void
 dplasma_ztrsm_Destruct( parsec_taskpool_t *tp )
 {
     parsec_ztrsm_LLN_taskpool_t *otrsm = (parsec_ztrsm_LLN_taskpool_t *)tp;
+    dplasma_data_collection_t *ddc_A = otrsm->_g_ddescA;
+    dplasma_data_collection_t *ddc_B = otrsm->_g_ddescB;
 
-    dplasma_matrix_del2arena( &otrsm->arenas_datatypes[PARSEC_ztrsm_LLN_DEFAULT_ADT_IDX] );
+    dplasma_clean_adtt_all_loc(ddc_A, MAX_SHAPES);
+    dplasma_clean_adtt_all_loc(ddc_B, MAX_SHAPES);
+
     parsec_taskpool_free(tp);
+
+    dplasma_unwrap_data_collection(ddc_A);
+    dplasma_unwrap_data_collection(ddc_B);
 }
 
 /**

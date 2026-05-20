@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 
@@ -10,6 +11,9 @@
 
 
 #if defined(DPLASMA_HAVE_CUDA)
+/* device_cuda.h reaches parsec_internal.h, which errors out unless the parsec
+ * config header has already been seen. Do not make that the includer's problem. */
+#include "parsec/parsec_config.h"
 #include "parsec/mca/device/cuda/device_cuda.h"
 
 /**
