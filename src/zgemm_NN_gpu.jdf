@@ -3,15 +3,13 @@ extern "C" %{
  * Copyright (c) 2017-2025 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
  */
 
 #include "dplasma/config.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
@@ -169,6 +167,7 @@ xMax       [ type = int default = "-1" hidden=on ]
 yMax       [ type = int default = "-1" hidden=on ]
 zMax       [ type = int default = "-1" hidden=on ]
 
+cuda_handles_infokey    [type = "int" hidden = on default = -1 ]
 hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 /*********************************************************
@@ -425,14 +424,16 @@ BODY [type=CUDA]
              m, n, k, cAmb, cAnb, cBmb, cBnb, cCmb, cCnb);
 
     cublasStatus_t status;
-    cublasSetKernelStream( parsec_body.stream );
-    cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
+    dplasma_cuda_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    cublasSetStream( handles->cublas_handle, parsec_body.stream );
+    status = cublasZgemm_v2( handles->cublas_handle, dplasma_cublas_op(transA), dplasma_cublas_op(transB),
              tempmm, tempnn, tempkk,
-             lalpha, (cuDoubleComplex*)A, ldam,
-                     (cuDoubleComplex*)B, ldbk,
-             lbeta,  (cuDoubleComplex*)C, ldcm );
-    status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+             &lalpha, A, ldam,
+                     B, ldbk,
+             &lbeta,  C, ldcm );
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 
     /* Quick and dirty emulation of the next GEMM */
     if( k == descC->mt -1 ) {

@@ -2,6 +2,7 @@
  * Copyright (c) 2010-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
  * @precisions normal z -> s d c
@@ -9,10 +10,83 @@
  */
 #include "dplasma.h"
 #include "dplasma/types.h"
+#include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
+#include "potrf_gpu_workspaces.h"
+#include "parsec/utils/zone_malloc.h"
 
 #include "zpoinv_U.h"
 #include "zpoinv_L.h"
+
+#if defined(DPLASMA_HAVE_CUDA)
+#include <cusolverDn.h>
+
+static void *zpoinv_create_cuda_workspace(void *obj, void *user)
+{
+    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
+    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
+    cusolverDnHandle_t cusolverDnHandle;
+    cusolverStatus_t status;
+    parsec_zpoinv_U_taskpool_t *tp = (parsec_zpoinv_U_taskpool_t*)user;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    int workspace_size;
+    int mb = tp->_g_descA->mb;
+    int nb = tp->_g_descA->nb;
+    size_t elt_size = sizeof(cuDoubleComplex);
+    dplasma_enum_t uplo = tp->_g_uplo;
+
+    status = cusolverDnCreate(&cusolverDnHandle);
+    assert(CUSOLVER_STATUS_SUCCESS == status);
+    (void)status;
+
+    status = cusolverDnDpotrf_bufferSize(cusolverDnHandle, dplasma_cublas_fill(uplo), nb, NULL, mb, &workspace_size);
+    assert(CUSOLVER_STATUS_SUCCESS == status);
+
+    cusolverDnDestroy(cusolverDnHandle);
+
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
+    wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
+    assert(NULL != wp->tmpmem);
+    wp->lwork = workspace_size;
+    wp->memory = memory;
+
+    return wp;
+}
+
+static void zpoinv_destroy_cuda_workspace(void *_ws, void *_n)
+{
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
+    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    free(ws);
+    (void)_n;
+}
+#endif
+
+#if defined(DPLASMA_HAVE_HIP)
+static void *zpoinv_create_hip_workspace(void *obj, void *user)
+{
+    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
+    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    (void)user;
+
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
+    wp->tmpmem = zone_malloc(memory, sizeof(int));
+    assert(NULL != wp->tmpmem);
+    wp->lwork = 0;
+    wp->memory = memory;
+
+    return wp;
+}
+
+static void zpoinv_destroy_hip_workspace(void *_ws, void *_n)
+{
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
+    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    free(ws);
+    (void)_n;
+}
+#endif
 
 /**
  *******************************************************************************
@@ -71,6 +145,10 @@ dplasma_zpoinv_New( dplasma_enum_t uplo,
                     int *info )
 {
     parsec_zpoinv_L_taskpool_t *parsec_zpoinv = NULL;
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    char workspace_info_name[64];
+    static int uid = 0;
+#endif
     parsec_taskpool_t *tp = NULL;
 
     /* Check input arguments */
@@ -81,7 +159,7 @@ dplasma_zpoinv_New( dplasma_enum_t uplo,
 
     *info = 0;
     if ( uplo == dplasmaUpper ) {
-        tp = (parsec_taskpool_t*)parsec_zpoinv_U_new( A /*, info */);
+        tp = (parsec_taskpool_t*)parsec_zpoinv_U_new( uplo, A, info );
 
         /* Upper part of A with diagonal part */
         /* dplasma_add2arena_upper( &((parsec_zpoinv_U_taskpool_t*)parsec_poinv)->arenas_datatypes[PARSEC_zpoinv_U_UPPER_TILE_ADT_IDX], */
@@ -89,7 +167,7 @@ dplasma_zpoinv_New( dplasma_enum_t uplo,
         /*                          PARSEC_ARENA_ALIGNMENT_SSE, */
         /*                          parsec_datatype_double_complex_t, A->mb, 1 ); */
     } else {
-        tp = (parsec_taskpool_t*)parsec_zpoinv_L_new( A /*, info */);
+        tp = (parsec_taskpool_t*)parsec_zpoinv_L_new( uplo, A, info );
 
         /* Lower part of A with diagonal part */
         /* dplasma_add2arena_lower( &((parsec_zpoinv_L_taskpool_t*)parsec_poinv)->arenas_datatypes[PARSEC_zpoinv_L_LOWER_TILE_ADT_IDX], */
@@ -99,6 +177,33 @@ dplasma_zpoinv_New( dplasma_enum_t uplo,
     }
 
     parsec_zpoinv = (parsec_zpoinv_L_taskpool_t*)tp;
+
+#if defined(DPLASMA_HAVE_CUDA)
+    /* It doesn't cost anything to define these infos if we have CUDA but
+     * don't have GPUs on the current machine, so we do it non-conditionally. */
+    parsec_zpoinv->_g_cuda_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+    snprintf(workspace_info_name, 64, "DPLASMA::ZPOINV(%d)::CUDA::WS", uid++);
+    parsec_zpoinv->_g_cuda_workspaces_infokey = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
+                                                           zpoinv_destroy_cuda_workspace, NULL,
+                                                           zpoinv_create_cuda_workspace, parsec_zpoinv,
+                                                           NULL);
+#else
+    parsec_zpoinv->_g_cuda_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+    parsec_zpoinv->_g_cuda_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    /* It doesn't cost anything to define these infos if we have HIP but
+     * don't have GPUs on the current machine, so we do it non-conditionally. */
+    parsec_zpoinv->_g_hip_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+    snprintf(workspace_info_name, 64, "DPLASMA::ZPOINV(%d)::HIP::WS", uid++);
+    parsec_zpoinv->_g_hip_workspaces_infokey = parsec_info_register(&parsec_per_device_infos, workspace_info_name,
+                                                          zpoinv_destroy_hip_workspace, NULL,
+                                                          zpoinv_create_hip_workspace, parsec_zpoinv,
+                                                          NULL);
+#else
+    parsec_zpoinv->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+    parsec_zpoinv->_g_hip_workspaces_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
 
     dplasma_add2arena_tile( &parsec_zpoinv->arenas_datatypes[PARSEC_zpoinv_L_DEFAULT_ADT_IDX],
                             A->mb*A->nb*sizeof(dplasma_complex64_t),
@@ -136,6 +241,12 @@ dplasma_zpoinv_Destruct( parsec_taskpool_t *tp )
 
     dplasma_matrix_del2arena( &parsec_zpoinv->arenas_datatypes[PARSEC_zpoinv_L_DEFAULT_ADT_IDX   ] );
     /* dplasma_matrix_del2arena( parsec_zpoinv->arenas_datatypes[PARSEC_zpoinv_L_LOWER_TILE_ADT_IDX] ); */
+#if defined(DPLASMA_HAVE_CUDA)
+    parsec_info_unregister(&parsec_per_device_infos, parsec_zpoinv->_g_cuda_workspaces_infokey, NULL);
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    parsec_info_unregister(&parsec_per_device_infos, parsec_zpoinv->_g_hip_workspaces_infokey, NULL);
+#endif
     parsec_taskpool_free(tp);
 }
 
@@ -269,4 +380,3 @@ dplasma_zpoinv_sync( parsec_context_t *parsec,
 
     return info;
 }
-

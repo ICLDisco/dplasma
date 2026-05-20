@@ -3,12 +3,15 @@ extern "C" %{
  * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
  * @precisions normal z -> s d c
  *
  */
+#include "dplasma/config.h"
 #include "dplasmajdf.h"
+#include "dplasmaaux.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
 #if defined(PARSEC_HAVE_DEV_RECURSIVE_SUPPORT)
@@ -20,9 +23,9 @@ static void ztsqrt_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_ca
 static void ztsmqr_recursive_cb(parsec_taskpool_t* tp, const parsec_recursive_callback_t* data);
 #endif /* PARSEC_HAVE_DEV_RECURSIVE_SUPPORT */
 
-#if defined(DPLASMA_HAVE_CUDA)
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
 #include "cores/dplasma_zcores.h"
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
+#endif  /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 
 /* Define the different shapes this JDF is using */
 #define DEFAULT  0
@@ -70,6 +73,9 @@ p_work [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)*ib*
 p_tau  [type = "parsec_memory_pool_t *" size = "(sizeof(dplasma_complex64_t)   *descT->nb)"]
 
 smallnb [type = "int" hidden = on default = "descA->nb" ]
+
+cuda_handles_infokey    [type = "int" hidden = on default = -1 ]
+hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 zgeqrt_typechange(k)  [profile = off]
   /* Execution space */
@@ -486,21 +492,71 @@ BODY [type=CUDA device=%{ return n; %}
     int ldam_A2 = descA->mb;
     int ldam_V  = descA->mb;
     int ldam_T  = descT->mb;
+    int rc;
+    dplasma_cuda_handles_t *handles;
+
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
 
     WORK  = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
     WORKC = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
 
-    dplasma_cuda_ztsmqr( dplasmaLeft, dplasmaConjTrans,
-                         descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
-                         A1 /* descA(k,n) */, ldak_A1,
-                         A2 /* descA(m,n) */, ldam_A2,
-                         V  /* descA(m,k) */, ldam_V,
-                         T  /* descT(m,k) */, ldam_T,
-                         WORK,  ib,
-                         WORKC, descA->mb,
-                         parsec_body.stream );
+    rc = dplasma_cuda_ztsmqr( dplasmaLeft, dplasmaConjTrans,
+                              descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
+                              A1 /* descA(k,n) */, ldak_A1,
+                              A2 /* descA(m,n) */, ldam_A2,
+                              V  /* descA(m,k) */, ldam_V,
+                              T  /* descT(m,k) */, ldam_T,
+                              WORK,  ib,
+                              WORKC, descA->mb,
+                              handles->cublas_handle, parsec_body.stream );
 
-      parsec_device_push_workspace(gpu_device, gpu_stream);
+    parsec_device_push_workspace(gpu_device, gpu_stream);
+    if( DPLASMA_SUCCESS != rc ) {
+        return PARSEC_HOOK_RETURN_ERROR;
+    }
+}
+END
+
+BODY [type=HIP device=%{ return n; %}
+      A1.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      A2.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      V.size=%{ return descA->mb*descA->nb*parsec_datadist_getsizeoftype(descA->mtype);%}
+      T.size=%{ return descT->mb*descT->nb*parsec_datadist_getsizeoftype(descT->mtype);%}
+      A1.dc=ddescA A2.dc=ddescA V.dc=ddescA T.dc=ddescT
+      stage_in=dplasma_hip_lapack_stage_in
+      stage_out=dplasma_hip_lapack_stage_out]
+{
+    dplasma_complex64_t *WORK, *WORKC;
+    int tempmm = ((m)==(descA->mt-1)) ? (descA->m-(m*descA->mb)) : descA->mb;
+    int tempnn = ((n)==(descA->nt-1)) ? (descA->n-(n*descA->nb)) : descA->nb;
+    int ldak_A1 = descA->mb;
+    int ldam_A2 = descA->mb;
+    int ldam_V  = descA->mb;
+    int ldam_T  = descT->mb;
+    int rc;
+    dplasma_hip_handles_t *handles;
+
+    handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+
+    WORK  = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->nb * ib * sizeof(dplasma_complex64_t));
+    WORKC = parsec_device_pop_workspace(gpu_device, gpu_stream, descA->mb * ib * sizeof(dplasma_complex64_t));
+
+    rc = dplasma_hip_ztsmqr( dplasmaLeft, dplasmaConjTrans,
+                             descA->mb, tempnn, tempmm, tempnn, descA->nb, ib,
+                             A1 /* descA(k,n) */, ldak_A1,
+                             A2 /* descA(m,n) */, ldam_A2,
+                             V  /* descA(m,k) */, ldam_V,
+                             T  /* descT(m,k) */, ldam_T,
+                             WORK,  ib,
+                             WORKC, descA->mb,
+                             handles->hipblas_handle, parsec_body.stream );
+
+    parsec_device_push_workspace(gpu_device, gpu_stream);
+    if( DPLASMA_SUCCESS != rc ) {
+        return PARSEC_HOOK_RETURN_ERROR;
+    }
 }
 END
 

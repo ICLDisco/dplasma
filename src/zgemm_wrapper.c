@@ -2,6 +2,7 @@
  * Copyright (c) 2010-2025 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
  * @precisions normal z -> s d c
@@ -130,6 +131,15 @@ dplasma_zgemm_summa_new(dplasma_enum_t transA, dplasma_enum_t transB,
         }
     }
 
+
+#if defined(DPLASMA_HAVE_CUDA)
+    ((parsec_zgemm_NN_summa_taskpool_t*)zgemm_tp)->_g_cuda_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+    ((parsec_zgemm_NN_summa_taskpool_t*)zgemm_tp)->_g_cuda_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
+
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
                                 parsec_datatype_double_complex_t,
@@ -191,6 +201,22 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
             zgemm_tp = (parsec_taskpool_t*)tp;
         }
     }
+
+#if defined(DPLASMA_HAVE_CUDA)
+    ((parsec_zgemm_NN_taskpool_t*)zgemm_tp)->_g_cuda_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+    ((parsec_zgemm_NN_taskpool_t*)zgemm_tp)->_g_cuda_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
+
+#if defined(DPLASMA_HAVE_HIP)
+    ((parsec_zgemm_NN_taskpool_t*)zgemm_tp)->_g_hip_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+    ((parsec_zgemm_NN_taskpool_t*)zgemm_tp)->_g_hip_handles_infokey =
+        PARSEC_INFO_ID_UNDEFINED;
+#endif
 
     int shape = 0;
     dplasma_setup_adtt_all_loc( ddc_A,
@@ -390,6 +416,12 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
 
         K = B->mt;
         tp->_g_zMax = (K + d - 1) / d - 1;
+
+#if defined(DPLASMA_HAVE_CUDA)
+        tp->_g_cuda_handles_infokey = parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+        tp->_g_cuda_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
 
 #if defined(DPLASMA_HAVE_HIP)
         /* It doesn't cost anything to define these infos if we have HIP but

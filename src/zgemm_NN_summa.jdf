@@ -3,14 +3,12 @@ extern "C" %{
  * Copyright (c) 2010-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
  */
 #include "dplasma/config.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
@@ -83,6 +81,7 @@ Q      [type = "int" hidden=on default="((parsec_matrix_block_cyclic_t*)descC)->
 lookP  [type = "int" hidden=on default="dplasma_aux_getGEMMLookahead(descC)"]
 lookQ  [type = "int" hidden=on default="dplasma_aux_getGEMMLookahead(descC)"]
 
+cuda_handles_infokey    [type = "int" hidden = on default = -1 ]
 hip_handles_infokey     [type = "int" hidden = on default = -1 ]
 
 /**************************************************
@@ -239,14 +238,16 @@ BODY [type=CUDA
              creal(lbeta), m, n, ldcm );
 
     cublasStatus_t status;
-    cublasSetKernelStream( parsec_body.stream );
-    cublasZgemm( dplasma_lapack_const(transA), dplasma_lapack_const(transB),
+    dplasma_cuda_handles_t *handles;
+    handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    cublasSetStream( handles->cublas_handle, parsec_body.stream );
+    status = cublasZgemm_v2( handles->cublas_handle, dplasma_cublas_op(transA), dplasma_cublas_op(transB),
              tempmm, tempnn, tempkk,
-             lalpha, (cuDoubleComplex*)A, ldam,
-                     (cuDoubleComplex*)B, ldbk,
-             lbeta,  (cuDoubleComplex*)C, ldcm );
-    status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+             &lalpha, A, ldam,
+                     B, ldbk,
+             &lbeta,  C, ldcm );
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
