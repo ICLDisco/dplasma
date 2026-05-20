@@ -288,7 +288,7 @@ static parsec_data_t* data_of(parsec_data_collection_t *desc, ...)
                 "data_of CP %p [old type %p] loc %d -> dtt %p target_shape %d layout %d",
                 cp, cp->dtt, loc, adt->opaque_dtt, info.shape, info.layout);
             dt = parsec_data_create_with_type( dt->dc,
-                                               dt->key, cp->device_private, dt->nb_elts,
+                                               dt->key, cp->device_private, dt->span,
                                                adt->opaque_dtt);
         }
     }
