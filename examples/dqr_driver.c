@@ -2,6 +2,7 @@
  * Copyright (c) 2016-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  *  Compile with $CC $(pkg-config --cflags dplasma) -c dqr_driver.c
  *  Link with $CC $(pkg-config --libs dplasma) -o dqr_driver dqr_driver.o
@@ -11,6 +12,7 @@
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
 #include <getopt.h>
 #include <math.h>
+#include <string.h>
 #include <sys/time.h>
 
 int main(int argc, char ** argv)
@@ -23,6 +25,8 @@ int main(int argc, char ** argv)
     int P = 0;
     int ch;
     int cores = -1;
+    int parsec_argc = 0;
+    char **parsec_argv = NULL;
     parsec_matrix_block_cyclic_t dcA;
     parsec_matrix_block_cyclic_t dcWork;
 
@@ -49,6 +53,14 @@ int main(int argc, char ** argv)
     world = 1;
     rank = 0;
 #endif
+
+     for( ch = 1; ch < argc; ch++ ) {
+         if( 0 == strcmp(argv[ch], "--") ) {
+             parsec_argc = argc - ch - 1;
+             parsec_argv = (0 < parsec_argc) ? &argv[ch + 1] : NULL;
+             break;
+         }
+     }
 
      while ((ch = getopt_long(argc, argv, "M:N:m:n:P:c:h", longopts, NULL)) != -1)
              switch (ch) {
@@ -101,8 +113,10 @@ int main(int argc, char ** argv)
 
 
     /** Initialize PaRSEC with the required number of cores,
-     *  and pass all arguments after '--' to PaRSEC, if there are some */
-    parsec = parsec_init(cores, &argc, &argv);
+     *  and pass only PaRSEC arguments after '--', without argv[0]. */
+    parsec = parsec_init(cores,
+                         (0 < parsec_argc) ? &parsec_argc : NULL,
+                         (0 < parsec_argc) ? &parsec_argv : NULL);
 
     /** Declare a Matrix A as a (4, 1)-2D-Tile cyclic matrix of size M x N real
      *  doubles, tiled in tiles of mb x nb, and distributed over PxQ processes,

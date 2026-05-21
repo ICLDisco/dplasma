@@ -2,12 +2,11 @@
  * Copyright (c) 2021-2023 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  */
 
 #include "common.h"
 
-
-#define APP_NAME "SCALAPACK_WRAPPED_CALL"
 
 static void parsec_init_wrapper_internal(){
   if( parsec_ctx == NULL ){
@@ -27,16 +26,6 @@ static void parsec_init_wrapper_internal(){
     if(var_ncores!=NULL){
         ncores = atoi(var_ncores);
     }
-    int parsec_argc = 1;
-
-    char** parsec_argv = (char**)calloc(parsec_argc+1, sizeof(char*));
-    int i;
-    for(i=0; i<parsec_argc; i++){
-        parsec_argv[i] = (char*)malloc(sizeof(char)*80);
-    }
-    parsec_argv[parsec_argc] = NULL;
-    sprintf(parsec_argv[0], APP_NAME);
-
     int rank,size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -45,16 +34,11 @@ static void parsec_init_wrapper_internal(){
     SYNC_TIME_START();
 #endif
 
-    parsec_ctx = parsec_init(ncores, &parsec_argc, &parsec_argv);
+    parsec_ctx = parsec_init(ncores, NULL, NULL);
 
 #ifdef MEASURE_INTERNAL_TIMES
     SYNC_TIME_PRINT(rank, ("PaRSEC initialized\n"));
 #endif
-
-    for(i=0; i<parsec_argc; i++){
-        free(parsec_argv[i]);
-    }
-    free(parsec_argv);
 
   }
 }
@@ -128,4 +112,3 @@ void parsec_wrapper_devices_reset_load_(void){
         parsec_devices_reset_load(parsec_ctx);
 	}
 }
-
