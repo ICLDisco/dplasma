@@ -98,7 +98,7 @@ dplasma_aux_getGEMMLookahead( parsec_tiled_matrix_t *A )
      * look ahead based on the global information to get the same one on all
      * nodes.
      */
-    int nbunits = vpmap_get_nb_total_threads() * A->super.nodes;
+    int nbunits = parsec_vpmap_get_nb_total_threads() * A->super.nodes;
     double alpha =  3. * (double)nbunits / ( A->mt * A->nt );
 
     if ( A->super.nodes == 1 ) {
