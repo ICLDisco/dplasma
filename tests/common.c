@@ -2,6 +2,7 @@
  * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 #include "parsec/runtime.h"
@@ -580,6 +581,23 @@ static void print_arguments(int* iparam)
     }
 }
 
+static void get_parsec_arguments(int argc, char **argv,
+                                 int *parsec_argc, char ***parsec_argv)
+{
+    int idx;
+
+    *parsec_argc = 0;
+    *parsec_argv = NULL;
+
+    for( idx = 1; idx < argc; idx++ ) {
+        if( 0 == strcmp(argv[idx], "--") ) {
+            *parsec_argc = argc - idx - 1;
+            *parsec_argv = (0 < *parsec_argc) ? &argv[idx + 1] : NULL;
+            return;
+        }
+    }
+}
+
 
 
 
@@ -671,19 +689,13 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
 
     TIME_START();
 
-    /* Once we got out arguments, we should pass whatever is left down */
-    int parsec_argc, idx;
-    char** parsec_argv = (char**)calloc(argc, sizeof(char*));
-    parsec_argv[0] = argv[0];  /* the app name */
-    for( idx = parsec_argc = 1;
-         (idx < argc) && (0 != strcmp(argv[idx], "--")); idx++);
-    if( idx != argc ) {
-        for( parsec_argc = 1, idx++; idx < argc;
-             parsec_argv[parsec_argc] = argv[idx], parsec_argc++, idx++);
-    }
+    /* PaRSEC only accepts its own arguments, without argv[0] or "--". */
+    int parsec_argc;
+    char **parsec_argv;
+    get_parsec_arguments(argc, argv, &parsec_argc, &parsec_argv);
     parsec_context_t* ctx = parsec_init(iparam[IPARAM_NCORES],
-                                        &parsec_argc, &parsec_argv);
-    free(parsec_argv);
+                                        (0 < parsec_argc) ? &parsec_argc : NULL,
+                                        (0 < parsec_argc) ? &parsec_argv : NULL);
     if( NULL == ctx ) {
         /* Failed to correctly initialize. In a correct scenario report
          * upstream, but in this particular case bail out.
@@ -778,4 +790,3 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 #endif
     (void)iparam;
 }
-

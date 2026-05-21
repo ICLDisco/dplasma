@@ -48,6 +48,7 @@
 # Copyright (c) 2019-2024 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
+# Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
 #
 # $COPYRIGHT$
 #
@@ -120,6 +121,19 @@ set(LAPACKE_FIND_ALL_COMPONENTS 0)
 # ==============================================================================
 
 macro(_find_library_with_header component incname)
+  if(LAPACKE_${component}_LIB)
+    get_filename_component(_lapacke_lib_ext "${LAPACKE_${component}_LIB}" EXT)
+    if(IS_DIRECTORY "${LAPACKE_${component}_LIB}" AND NOT _lapacke_lib_ext STREQUAL ".framework")
+      list(APPEND LAPACKE_SEARCH_PATHS "${LAPACKE_${component}_LIB}")
+      get_filename_component(_lapacke_lib_parent "${LAPACKE_${component}_LIB}" DIRECTORY)
+      list(APPEND LAPACKE_SEARCH_PATHS "${_lapacke_lib_parent}")
+      unset(LAPACKE_${component}_LIB CACHE)
+      unset(LAPACKE_${component}_LIB)
+      unset(_lapacke_lib_parent)
+    endif()
+    unset(_lapacke_lib_ext)
+  endif()
+
   find_library(LAPACKE_${component}_LIB
     NAMES ${ARGN}
     NAMES_PER_DIR
