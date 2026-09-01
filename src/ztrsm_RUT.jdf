@@ -144,7 +144,7 @@ BODY [type=HIP]
                          &minvalpha, (hipblasDoubleComplex*)C, ldb,
                                      (hipblasDoubleComplex*)D, ldan,
                          &zone, (hipblasDoubleComplex*)E, ldb );
-    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 

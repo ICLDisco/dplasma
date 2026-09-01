@@ -212,7 +212,7 @@ BODY [type=HIP]
                  &lalpha, (hipDoubleComplex*)A, lda,
                          (hipDoubleComplex*)B, ldb,
                  &lbeta,  (hipDoubleComplex*)C, ldc );
-    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 

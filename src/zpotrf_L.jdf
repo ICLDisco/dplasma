@@ -161,7 +161,7 @@ BODY [type=HIP]
     d_iinfo = (int*)wp->tmpmem;
 
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkm, T, ldak, d_iinfo);
-    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return PARSEC_HOOK_RETURN_ERROR;});
+    DPLASMA_ROCBLAS_CHECK_ERROR("rocsolver_zpotrf", status, {return PARSEC_HOOK_RETURN_DISABLE;});
 }
 END
 
@@ -281,7 +281,7 @@ BODY [type=HIP]
                                  HIPBLAS_OP_C, HIPBLAS_DIAG_NON_UNIT,
                                  tempmm, descA->nb,
                                  &zone, T, ldak, C, ldam);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_ERROR;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZtrsm", status, {return PARSEC_HOOK_RETURN_DISABLE;});
 }
 END
 
@@ -408,7 +408,7 @@ BODY [type=HIP]
                                   tempmm, descA->mb,
                                   &mzone, A, ldam_A,
                                   &zone, T, ldam_T);
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_ERROR;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZherk", status, {return PARSEC_HOOK_RETURN_DISABLE;});
 }
 END
 
@@ -564,7 +564,7 @@ BODY [type=HIP
                                   &mzone, A, ldam_A,
                                           B, ldan_B,
                                   &zone,  C, ldam_C );
-    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_ERROR;});
+    DPLASMA_HIPBLAS_CHECK_ERROR("hipblasZgemm", status, {return PARSEC_HOOK_RETURN_DISABLE;});
 }
 END
 
