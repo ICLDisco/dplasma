@@ -33,14 +33,14 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
         if(flow_mask & (1U << i)){
             copy_in = task->data[i].data_in;
             copy_out = task->data[i].data_out;
-            ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
+            ddc = (dplasma_data_collection_t*)gtask->flow_info[i].flow_dc;
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             in_elem_dev = (parsec_device_gpu_module_t*)parsec_mca_device_get( copy_in->device_index);
             if( (in_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
-                                                    gtask->flow_nb_elts[i],
+                                                    gtask->flow_info[i].flow_span,
                                                     (in_elem_dev->super.type != PARSEC_DEV_CUDA)?
                                                             cudaMemcpyHostToDevice : cudaMemcpyDeviceToDevice,
                                                     cuda_stream->cuda_stream);
@@ -109,7 +109,7 @@ dplasma_cuda_lapack_stage_out(parsec_gpu_task_t *gtask,
         if(flow_mask & (1U << i)){
             copy_in = task->data[i].data_out;
             copy_out = copy_in->original->device_copies[0];
-            ddc = (dplasma_data_collection_t*)gtask->flow_dc[i];
+            ddc = (dplasma_data_collection_t*)gtask->flow_info[i].flow_dc;
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             out_elem_dev = (parsec_device_gpu_module_t*)parsec_mca_device_get( copy_out->device_index);
@@ -117,7 +117,7 @@ dplasma_cuda_lapack_stage_out(parsec_gpu_task_t *gtask,
             if( (out_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
-                                                    gtask->flow_nb_elts[i],
+                                                    gtask->flow_info[i].flow_span,
                                                     out_elem_dev->super.type != PARSEC_DEV_CUDA ?
                                                             cudaMemcpyDeviceToHost : cudaMemcpyDeviceToDevice,
                                                     cuda_stream->cuda_stream);

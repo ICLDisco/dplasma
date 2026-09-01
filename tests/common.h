@@ -22,6 +22,7 @@
 #include "parsec/profiling.h"
 #include "parsec/parsec_internal.h"
 #include "parsec/utils/debug.h"
+#include "parsec/interfaces/dtd/insert_function.h"
 #include "dplasma.h"
 #include "dplasma/types.h"
 
@@ -30,6 +31,32 @@
 /* timings */
 #include "common_timing.h"
 #include "flops.h"
+
+/* PaRSEC 4.1 removed parsec_dtd_create/destroy_arena_datatype helpers. */
+static inline parsec_arena_datatype_t *
+dplasma_dtd_create_arena_datatype_compat(parsec_context_t *ctx, int *id)
+{
+    parsec_arena_datatype_t *adt = parsec_arena_datatype_new();
+    if( NULL == adt ) {
+        return NULL;
+    }
+    if( PARSEC_SUCCESS != parsec_dtd_attach_arena_datatype(ctx, adt, id) ) {
+        parsec_arena_datatype_release(&adt);
+        return NULL;
+    }
+    return adt;
+}
+
+static inline int
+dplasma_dtd_destroy_arena_datatype_compat(parsec_context_t *ctx, int id)
+{
+    return parsec_dtd_free_arena_datatype(ctx, id);
+}
+
+#define parsec_dtd_create_arena_datatype(ctx, id) \
+    dplasma_dtd_create_arena_datatype_compat((ctx), (id))
+#define parsec_dtd_destroy_arena_datatype(ctx, id) \
+    dplasma_dtd_destroy_arena_datatype_compat((ctx), (id))
 
 /* these are globals in common.c */
 extern char *PARSEC_SCHED_NAME[];
