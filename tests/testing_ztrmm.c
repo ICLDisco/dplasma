@@ -17,6 +17,21 @@ static int check_solution( parsec_context_t *parsec, int loud,
                            int M,  int N,  int Cseed,
                            parsec_matrix_block_cyclic_t *dcCfinal );
 
+static uint64_t trmm_hash( parsec_matrix_block_cyclic_t *dc )
+{
+    const uint8_t *p = (const uint8_t*)dc->mat;
+    size_t len = (size_t)dc->super.nb_local_tiles * (size_t)dc->super.bsiz *
+                 (size_t)parsec_datadist_getsizeoftype(dc->super.mtype);
+    uint64_t h = 14695981039346656037ULL;
+    size_t i;
+
+    for( i = 0; i < len; i++ ) {
+        h ^= (uint64_t)p[i];
+        h *= 1099511628211ULL;
+    }
+    return h;
+}
+
 int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
@@ -91,6 +106,8 @@ int main(int argc, char ** argv)
     {
         int s, u, t, d;
         int info_solution;
+        const char *repeat_env = getenv("DPLASMA_TRMM_REPEAT");
+        int trmm_repeat = (NULL == repeat_env) ? 1 : atoi(repeat_env);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcC2, 1,
             parsec_matrix_block_cyclic, (&dcC2, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
@@ -134,6 +151,34 @@ int main(int argc, char ** argv)
                         dplasma_ztrmm(parsec, sides[s], uplos[u], trans[t], diags[d],
                                       alpha, dcA, (parsec_tiled_matrix_t *)&dcC);
                         printf("Done\n");
+
+                        /* trmm has been caught returning different results from
+                         * bit-identical inputs. The residual check below only
+                         * sees errors big enough to cross a threshold, so repeat
+                         * the call and compare the output byte for byte. */
+                        if( trmm_repeat > 1 ) {
+                            uint64_t first = trmm_hash(&dcC);
+                            int it;
+
+                            for( it = 1; it < trmm_repeat; it++ ) {
+                                uint64_t again;
+
+                                dplasma_zlacpy( parsec, dplasmaUpperLower,
+                                                (parsec_tiled_matrix_t *)&dcC2,
+                                                (parsec_tiled_matrix_t *)&dcC );
+                                dplasma_ztrmm(parsec, sides[s], uplos[u], trans[t], diags[d],
+                                              alpha, dcA, (parsec_tiled_matrix_t *)&dcC);
+                                again = trmm_hash(&dcC);
+                                if( again != first ) {
+                                    printf("TRMMVARY rank %d (%s, %s, %s, %s) iteration %d: "
+                                           "%016"PRIx64" != %016"PRIx64"\n",
+                                           rank, sidestr[s], uplostr[u], transstr[t], diagstr[d],
+                                           it, again, first);
+                                    fflush(stdout);
+                                    ret = 1;
+                                }
+                            }
+                        }
 
                         /* Check the solution */
                         info_solution = check_solution(parsec, rank == 0 ? loud : 0,
