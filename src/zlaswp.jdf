@@ -4,6 +4,7 @@ extern "C" %{
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> c d s
  *
@@ -47,7 +48,9 @@ LASWP_laswp(k, n)
   /* Locality */
   :dataA(k, n)
 
-  READ  A    <- dataA(k, n)
+  /* The body swaps the rows of A in place, so the write must be declared. */
+  RW    A    <- dataA(k, n)
+             -> dataA(k, n)
   READ  IPIV <- IP LASWP_IPIV_in(k)             [type_remote = PIVOT]
   CTL   ctl  <- ( (inc > 0) && (k > 0 )          ) ? ctl LASWP_laswp(k-1, n)
              <- ( (inc < 0) && (k < dataIP->nt-1 )) ? ctl LASWP_laswp(k+1, n)
