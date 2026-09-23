@@ -69,6 +69,17 @@ jobs:
           source $SETUP
           cmake --build . --target install
 
+    - name: Describe the machine
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      # Results here only mean something alongside the host they ran on: the
+      # runners differ by an order of magnitude in core count, and the failure
+      # we are chasing has only ever appeared on the large ones. Also confirm
+      # the sanitizer really is in the binary before trusting a clean run.
+      run: |
+        echo "runner=${{ runner.name }} host=$(hostname) nproc=$(nproc)"
+        nm tests/testing_dgetrf_1d 2>/dev/null | grep -c asan_init || true
+        ldd tests/testing_dgetrf_1d | grep -i asan || echo "no libasan (static or absent)"
+
     - name: Test
       working-directory: ${{ env.BUILD_DIRECTORY }}
       # Investigation only. dgetrf_1d_mpi reproduces reliably here and fails
@@ -78,7 +89,7 @@ jobs:
       # reports would bury the one we are after.
       run: |
         source $SETUP
-        ctest --output-on-failure -R 'dgetrf_1d_mpi' --repeat until-fail:10
+        ctest --output-on-failure -R 'dgetrf_1d_mpi' --repeat until-fail:40
 
     - name: Save Artifact
       if: failure()
