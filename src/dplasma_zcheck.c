@@ -35,8 +35,21 @@ static void check_fingerprint( const char *what, int rank, void *mat, size_t len
                       (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
 
 /* One hash per matrix says an operation went wrong; one hash per tile says
- * which task produced it. */
-static void check_fingerprint_tiles( const char *what, parsec_matrix_block_cyclic_t *dc )
+ * which task produced it. The race is timing sensitive enough that printing
+ * as we go suppresses it, so collect quietly and report once at the end. */
+static uint64_t check_hash( const void *buf, size_t len )
+{
+    const uint8_t *p = (const uint8_t*)buf;
+    uint64_t h = 14695981039346656037ULL;
+    size_t i;
+    for( i = 0; i < len; i++ ) {
+        h ^= (uint64_t)p[i];
+        h *= 1099511628211ULL;
+    }
+    return h;
+}
+
+static void check_hash_tiles( parsec_matrix_block_cyclic_t *dc, uint64_t *out )
 {
     parsec_data_collection_t *o = (parsec_data_collection_t*)dc;
     size_t len = (size_t)dc->super.bsiz *
@@ -45,15 +58,10 @@ static void check_fingerprint_tiles( const char *what, parsec_matrix_block_cycli
 
     for( m = 0; m < dc->super.mt; m++ ) {
         for( n = 0; n < dc->super.nt; n++ ) {
-            parsec_data_t *data;
-            char label[64];
-
             if( o->myrank != o->rank_of(o, m, n) ) continue;
-            data = o->data_of(o, m, n);
-            snprintf(label, sizeof(label), "%s tile(%d,%d)", what, m, n);
-            check_fingerprint(label, o->myrank,
-                              parsec_data_copy_get_ptr(parsec_data_get_copy(data, 0)),
-                              len);
+            out[m * dc->super.nt + n] =
+                check_hash(parsec_data_copy_get_ptr(parsec_data_get_copy(o->data_of(o, m, n), 0)),
+                           len);
         }
     }
 }
@@ -139,26 +147,53 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
     {
         const char *env = getenv("DPLASMA_CHECK_REPEAT");
         int repeat = (NULL == env) ? 1 : atoi(env);
-        char label[64];
-        int it;
+        int mt = LLt.super.mt, nt = LLt.super.nt;
+        uint64_t *in = NULL, *out = NULL;
+        int it, m, n;
 
         if( repeat < 1 ) repeat = 1;
         side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
 
+        if( repeat > 1 ) {
+            in  = calloc((size_t)repeat * mt * nt, sizeof(uint64_t));
+            out = calloc((size_t)repeat * mt * nt, sizeof(uint64_t));
+        }
+
         for( it = 0; it < repeat; it++ ) {
             dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
-            if( 1 == repeat ) CHECK_FINGERPRINT("LLt-after-laset", LLt);
             dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
-            snprintf(label, sizeof(label), "LLt-after-lacpy-%d", it);
-            CHECK_FINGERPRINT(label, LLt);
+            if( repeat > 1 ) check_hash_tiles(&LLt, in + (size_t)it * mt * nt);
+            else             CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
 
             /* Compute LL' or U'U  */
             dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
                            A, (parsec_tiled_matrix_t*)&LLt);
-            snprintf(label, sizeof(label), "LLt-after-trmm-%d", it);
-            CHECK_FINGERPRINT(label, LLt);
-            if( repeat > 1 ) check_fingerprint_tiles(label, &LLt);
+            if( repeat > 1 ) check_hash_tiles(&LLt, out + (size_t)it * mt * nt);
+            else             CHECK_FINGERPRINT("LLt-after-trmm", LLt);
         }
+
+        /* Report once, after every iteration is done, so the printing cannot
+         * perturb the race it is trying to observe. */
+        for( m = 0; NULL != out && m < mt; m++ ) {
+            for( n = 0; n < nt; n++ ) {
+                size_t o = (size_t)m * nt + n;
+                int differs = 0;
+
+                for( it = 1; it < repeat; it++ )
+                    if( out[(size_t)it * mt * nt + o] != out[o] ) differs = 1;
+                if( !differs ) continue;
+
+                printf("CHECKVARY rank %d tile(%d,%d) trmm output varies:", LLt.grid.rank, m, n);
+                for( it = 0; it < repeat; it++ )
+                    printf(" %016"PRIx64, out[(size_t)it * mt * nt + o]);
+                printf("\n            input was:");
+                for( it = 0; it < repeat; it++ )
+                    printf(" %016"PRIx64, in[(size_t)it * mt * nt + o]);
+                printf("\n");
+            }
+        }
+        if( NULL != out ) fflush(stdout);
+        free(in); free(out);
     }
 
     /* compute LL' - A or U'U - A */
