@@ -71,7 +71,7 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
                           &beta,  (cuDoubleComplex*)Cg, ldc );
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZherk ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;

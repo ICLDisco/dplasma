@@ -184,7 +184,7 @@ BODY [type=CUDA]
                          (cuDoubleComplex*)B, ldb,
                  lbeta,  (cuDoubleComplex*)C, ldc );
     status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -212,7 +212,7 @@ BODY [type=HIP]
                  &lalpha, (hipDoubleComplex*)A, lda,
                          (hipDoubleComplex*)B, ldb,
                  &lbeta,  (hipDoubleComplex*)C, ldc );
-    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 

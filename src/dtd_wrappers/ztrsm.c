@@ -78,7 +78,7 @@ parsec_core_ztrsm_cuda(parsec_device_gpu_module_t* gpu_device,
                           (cuDoubleComplex*)Cg, ldc);
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
