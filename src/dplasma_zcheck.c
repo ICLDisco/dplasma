@@ -34,6 +34,30 @@ static void check_fingerprint( const char *what, int rank, void *mat, size_t len
                       (size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
                       (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
 
+/* One hash per matrix says an operation went wrong; one hash per tile says
+ * which task produced it. */
+static void check_fingerprint_tiles( const char *what, parsec_matrix_block_cyclic_t *dc )
+{
+    parsec_data_collection_t *o = (parsec_data_collection_t*)dc;
+    size_t len = (size_t)dc->super.bsiz *
+                 (size_t)parsec_datadist_getsizeoftype(dc->super.mtype);
+    int m, n;
+
+    for( m = 0; m < dc->super.mt; m++ ) {
+        for( n = 0; n < dc->super.nt; n++ ) {
+            parsec_data_t *data;
+            char label[64];
+
+            if( o->myrank != o->rank_of(o, m, n) ) continue;
+            data = o->data_of(o, m, n);
+            snprintf(label, sizeof(label), "%s tile(%d,%d)", what, m, n);
+            check_fingerprint(label, o->myrank,
+                              parsec_data_copy_get_ptr(parsec_data_get_copy(data, 0)),
+                              len);
+        }
+    }
+}
+
 /**
  *******************************************************************************
  *
@@ -133,6 +157,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                            A, (parsec_tiled_matrix_t*)&LLt);
             snprintf(label, sizeof(label), "LLt-after-trmm-%d", it);
             CHECK_FINGERPRINT(label, LLt);
+            if( repeat > 1 ) check_fingerprint_tiles(label, &LLt);
         }
     }
 
