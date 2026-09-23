@@ -16,11 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         build_type : [ Debug, Release ]
-        shared_type : [ OFF, ON ]
-        device: [ cpu, gpu_nvidia, gpu_amd ]
-        exclude:
-          - build_type: Release
-            shared_type: OFF
+        shared_type : [ ON ]
+        device: [ gpu_nvidia ]
     name: "${{matrix.build_type}} Shared=${{matrix.shared_type}} ${{matrix.device}}"
     runs-on: [ "${{matrix.device}}", self-hosted ]
     env:
@@ -70,14 +67,13 @@ jobs:
           cmake --build . --target install
 
     - name: Test
-      if: ${{ startsWith(matrix.build_type, 'Release') }}
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      # run: ctest -C $BUILD_TYPE
+      # Investigation only: repeat the two intermittently failing tests until one
+      # of them fails. The Debug build keeps the assertions, so a failure there
+      # should report where the data goes bad rather than only that it did.
       run: |
         source $SETUP
-        ctest --output-on-failure -R 'launcher|dplasma' -E lowmem # lowmem tests are busted atm
+        ctest --output-on-failure -R 'dgetrf_1d_mpi|dpotrf_1gpu_cuda_mpi' --repeat until-fail:20
 
     - name: Save Artifact
       if: failure()
