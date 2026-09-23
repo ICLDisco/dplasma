@@ -129,6 +129,10 @@ void print_usage(void)
             "\n"
             " -c --cores        : number of concurent threads (default: number of physical hyper-threads)\n"
             " -g --gpus         : number of GPU (default: 0)\n"
+            " -D --gpu_mask     : bitmask of the GPUs this process may use, decimal or 0x hex\n"
+            "                     (default: all). -1 partitions the GPUs of a node disjointly\n"
+            "                     between its local processes, giving each the -g devices\n"
+            "                     starting at local_rank*-g\n"
             " -m --thread_multi : initialize MPI_THREAD_MULTIPLE (default: no)\n"
             " -o --scheduler    : select the scheduler (default: LFQ)\n"
             "                     Accepted values:\n"
@@ -172,7 +176,7 @@ void print_usage(void)
             parsec_usage();
 }
 
-#define GETOPT_STRING "bc:mo:g::p:P:q:Q:N:M:K:A:B:C:i:t:T:s:S:xXv::hd:ry:V:a:R:G:"
+#define GETOPT_STRING "bc:mo:g::D:p:P:q:Q:N:M:K:A:B:C:i:t:T:s:S:xXv::hd:ry:V:a:R:G:"
 
 #if defined(PARSEC_HAVE_GETOPT_LONG)
 static struct option long_options[] =
@@ -186,6 +190,8 @@ static struct option long_options[] =
     {"scheduler",   required_argument,  0, 'o'},
     {"gpus",        required_argument,  0, 'g'},
     {"g",           required_argument,  0, 'g'},
+    {"gpu_mask",    required_argument,  0, 'D'},
+    {"D",           required_argument,  0, 'D'},
     {"V",           required_argument,  0, 'V'},
     {"vpmap",       required_argument,  0, 'V'},
     {"ht",          required_argument,  0, 'H'},
@@ -332,6 +338,15 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
                 iparam[IPARAM_NGPUS] = atoi(optarg);
                 break;
 
+            case 'D':
+#if !defined(DPLASMA_HAVE_CUDA) && !defined(DPLASMA_HAVE_HIP)
+                fprintf(stderr, "#!!!!! This test does not have GPU support. GPU mask ignored.\n");
+#else
+                /* base 0 so that both 12 and 0xc are accepted */
+                iparam[IPARAM_GPU_MASK] = (int)strtol(optarg, NULL, 0);
+#endif
+                break;
+
             case 'p': case 'P': iparam[IPARAM_P] = atoi(optarg); break;
             case 'q': case 'Q': iparam[IPARAM_Q] = atoi(optarg); break;
             case 'N': iparam[IPARAM_N] = atoi(optarg); break;
@@ -452,6 +467,10 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
     (void)rc;
 }
 
+/* The GPU mask reaches PaRSEC as a signed int MCA parameter, so only bits 0 to 30
+ * can be expressed, capping how many devices a node-wide partition can cover. */
+#define DPLASMA_GPU_MASK_BITS 31
+
 static void parse_arguments(int *iparam) {
     int verbose = iparam[IPARAM_RANK] ? 0 : iparam[IPARAM_VERBOSE];
     char *value;
@@ -467,6 +486,50 @@ static void parse_arguments(int *iparam) {
         parsec_setenv_mca_param( "device_hip_enabled", value, &environ );
         free(value);
     }
+
+#if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+    /* The mask has to reach the device components before parsec_init enumerates
+     * the GPUs, which is why this lives here and not in setup_parsec. */
+    if(DPLASMA_ERR_NOT_INITIALIZED != iparam[IPARAM_GPU_MASK]) {
+        if(-1 == iparam[IPARAM_GPU_MASK]) {
+            /* Hand every process on a node a disjoint slice of that node's GPUs: the
+             * i-th local process takes the NGPUS devices starting at i*NGPUS. */
+            int local_rank = 0, local_size = 1, i;
+#if defined(PARSEC_HAVE_MPI)
+            MPI_Comm local_comm;
+            MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+                                MPI_INFO_NULL, &local_comm);
+            MPI_Comm_rank(local_comm, &local_rank);
+            MPI_Comm_size(local_comm, &local_size);
+            MPI_Comm_free(&local_comm);
+#endif
+            if(iparam[IPARAM_NGPUS] <= 0) {
+                /* Without an explicit -g there is no slice width to hand out. */
+                if(0 == iparam[IPARAM_RANK])
+                    fprintf(stderr, "#!!!!! --gpu_mask -1 needs an explicit -g to size each slice. Using all GPUs.\n");
+                iparam[IPARAM_GPU_MASK] = DPLASMA_ERR_NOT_INITIALIZED;
+            }
+            else if(local_size * iparam[IPARAM_NGPUS] > DPLASMA_GPU_MASK_BITS) {
+                /* Same verdict on every local rank, since it only depends on local_size. */
+                if(0 == iparam[IPARAM_RANK])
+                    fprintf(stderr, "#!!!!! %d local processes requesting %d GPUs each exceed the %d devices a mask can address. Using all GPUs.\n",
+                            local_size, iparam[IPARAM_NGPUS], DPLASMA_GPU_MASK_BITS);
+                iparam[IPARAM_GPU_MASK] = DPLASMA_ERR_NOT_INITIALIZED;
+            }
+            else {
+                iparam[IPARAM_GPU_MASK] = 0;
+                for(i = 0; i < iparam[IPARAM_NGPUS]; i++)
+                    iparam[IPARAM_GPU_MASK] |= 1 << (local_rank * iparam[IPARAM_NGPUS] + i);
+            }
+        }
+        if(DPLASMA_ERR_NOT_INITIALIZED != iparam[IPARAM_GPU_MASK]) {
+            rc = asprintf(&value, "%d", iparam[IPARAM_GPU_MASK]); (void)rc;
+            parsec_setenv_mca_param( "device_cuda_mask", value, &environ );
+            parsec_setenv_mca_param( "device_hip_mask", value, &environ );
+            free(value);
+        }
+    }
+#endif  /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 
     /* Check the process grid */
     if(0 == iparam[IPARAM_P])
@@ -550,6 +613,9 @@ static void print_arguments(int* iparam)
                             iparam[IPARAM_P], iparam[IPARAM_Q],
                             iparam[IPARAM_Q] * iparam[IPARAM_P], iparam[IPARAM_NNODES]);
 
+    if(verbose > 1 && DPLASMA_ERR_NOT_INITIALIZED != iparam[IPARAM_GPU_MASK])
+        fprintf(stderr, "#+++++ gpu mask (rank 0)    : 0x%x\n", iparam[IPARAM_GPU_MASK]);
+
     if(verbose)
     {
         fprintf(stderr, "#+++++ M x N x K|NRHS       : %d x %d x %d\n",
@@ -606,6 +672,7 @@ static void iparam_default(int* iparam)
     /* Just in case someone forget to add the initialization :) */
     memset(iparam, 0, IPARAM_SIZEOF * sizeof(int));
     iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_INITIALIZED; /* let parsec choose */
+    iparam[IPARAM_GPU_MASK] = DPLASMA_ERR_NOT_INITIALIZED; /* all GPUs usable */
     iparam[IPARAM_NNODES] = 1;
     iparam[IPARAM_ASYNC]  = 1;
     iparam[IPARAM_QR_DOMINO]    = -1;

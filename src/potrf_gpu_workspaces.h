@@ -2,6 +2,7 @@
  * Copyright (c) 2020-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 #ifndef DPLASMA_POTRF_GPU_WORKSPACES_H
@@ -9,7 +10,8 @@
 
 typedef struct {
   char         *tmpmem;
-  void         *memory;
+  /* parsec_device_gpu_module_t* owning tmpmem, needed to release it */
+  void         *gpu_device;
   int           lwork;
   void*         params;
   size_t        host_size;

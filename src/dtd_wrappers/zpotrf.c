@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -29,12 +30,12 @@ parsec_core_zpotrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 void*
 zpotrf_dtd_create_workspace(void *obj, void *user)
 {
-    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_cuda_module_t*)mod)->super.memory;
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t *)obj;
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     zpotrf_dtd_workspace_info_t *infos = (zpotrf_dtd_workspace_info_t*) user;
     dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    void *tmpmem;
     size_t workspace_size;
     size_t host_size;
     int mb = infos->mb;
@@ -58,11 +59,20 @@ zpotrf_dtd_create_workspace(void *obj, void *user)
 
     cusolverDnDestroy(cusolverDnHandle);
 
+    /* As in the PTG zpotrf constructor, the scratch bypasses the zone PaRSEC manages
+     * for tiles so that a zone saturated by data copies cannot stall potrf. */
+    if( PARSEC_SUCCESS != gpu_device->memory_allocate(gpu_device,
+                                                      workspace_size * elt_size + sizeof(int),
+                                                      &tmpmem) ) {
+        cusolverDnDestroyParams(*params);
+        free(params);
+        return NULL;
+    }
+
     wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
-    wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
-    assert(NULL != wp->tmpmem);
+    wp->tmpmem = tmpmem;
     wp->lwork = workspace_size;
-    wp->memory = memory;
+    wp->gpu_device = gpu_device;
     wp->params = params;
     wp->host_size = host_size;
     wp->host_buffer = malloc(host_size*sizeof(dplasma_complex64_t));
@@ -74,10 +84,11 @@ void
 zpotrf_dtd_destroy_workspace(void *_ws, void *_n)
 {
     dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)ws->gpu_device;
     cusolverDnParams_t* params = ws->params;
     cusolverStatus_t status = cusolverDnDestroyParams(*params);
     assert(CUSOLVER_STATUS_SUCCESS == status);
-    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    gpu_device->memory_free(gpu_device, ws->tmpmem);
     free(params);
     free(ws->host_buffer);
     free(ws);
@@ -109,7 +120,9 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
     handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_cuda_infoid);
     assert(NULL != handles);
     wp = parsec_info_get(&gpu_device->super.infos, dplasma_dtd_cuda_workspace_infoid);
-    assert(NULL != wp);
+    /* The scratch allocation failed; retry once device memory frees up.
+     * parsec_info_get does not cache a NULL, so the constructor runs again. */
+    if( NULL == wp ) return PARSEC_HOOK_RETURN_AGAIN;
 
     workspace = (cuDoubleComplex*)wp->tmpmem;
     d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));

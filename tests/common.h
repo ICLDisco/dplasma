@@ -2,6 +2,7 @@
  * Copyright (c) 2009-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 #ifndef _TESTSCOMMON_H
@@ -75,6 +76,7 @@ enum iparam_t {
   IPARAM_BUT_LEVEL,    /* Butterfly level */
   IPARAM_SCHEDULER,    /* User-selected scheduler */
   IPARAM_NRUNS,        /* Number of times to run the kernel */
+  IPARAM_GPU_MASK,     /* Bitmask of the GPUs this process is allowed to use */
   IPARAM_SIZEOF
 };
 

@@ -3,6 +3,7 @@
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -13,7 +14,6 @@
 #include "dplasma/types_lapack.h"
 #include "dplasmaaux.h"
 #include "potrf_gpu_workspaces.h"
-#include "parsec/utils/zone_malloc.h"
 
 #include "zpotrf_U.h"
 #include "zpotrf_L.h"
@@ -59,12 +59,12 @@ dplasma_zpotrf_setrecursive( parsec_taskpool_t *tp, int hmb )
 
 static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 {
-    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t *)obj;
     cusolverDnHandle_t cusolverDnHandle;
     cusolverStatus_t status;
     parsec_zpotrf_U_taskpool_t *tp = (parsec_zpotrf_U_taskpool_t*)user;
     dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    void *tmpmem;
     int workspace_size;
     int mb = tp->_g_descA->mb;
     int nb = tp->_g_descA->nb;
@@ -80,11 +80,18 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 
     cusolverDnDestroy(cusolverDnHandle);
 
+    /* The scratch is allocated outside the zone PaRSEC manages for tiles. The zone can
+     * legitimately be saturated by data copies, and it is only drained by tasks
+     * completing, so a task that needs scratch to run must not depend on it. */
+    if( PARSEC_SUCCESS != gpu_device->memory_allocate(gpu_device,
+                                                      workspace_size * elt_size + sizeof(int),
+                                                      &tmpmem) )
+        return NULL;
+
     wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
-    wp->tmpmem = zone_malloc(memory, workspace_size * elt_size + sizeof(int));
-    assert(NULL != wp->tmpmem);
+    wp->tmpmem = tmpmem;
     wp->lwork = workspace_size;
-    wp->memory = memory;
+    wp->gpu_device = gpu_device;
 
     return wp;
 }
@@ -92,7 +99,8 @@ static void *zpotrf_create_cuda_workspace(void *obj, void *user)
 static void zpotrf_destroy_cuda_workspace(void *_ws, void *_n)
 {
     dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
-    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)ws->gpu_device;
+    gpu_device->memory_free(gpu_device, ws->tmpmem);
     free(ws);
     (void)_n;
 }
@@ -101,16 +109,19 @@ static void zpotrf_destroy_cuda_workspace(void *_ws, void *_n)
 #if defined(DPLASMA_HAVE_HIP)
 static void *zpotrf_create_hip_workspace(void *obj, void *user)
 {
-    parsec_device_module_t *mod = (parsec_device_module_t *)obj;
-    zone_malloc_t *memory = ((parsec_device_gpu_module_t*)mod)->memory;
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t *)obj;
     dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    void *tmpmem;
     (void)user;
 
+    /* See zpotrf_create_cuda_workspace for why this bypasses the tile zone. */
+    if( PARSEC_SUCCESS != gpu_device->memory_allocate(gpu_device, sizeof(int), &tmpmem) )
+        return NULL;
+
     wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
-    wp->tmpmem = zone_malloc(memory, sizeof(int));
-    assert(NULL != wp->tmpmem);
+    wp->tmpmem = tmpmem;
     wp->lwork = 0;
-    wp->memory = memory;
+    wp->gpu_device = gpu_device;
 
     return wp;
 }
@@ -118,7 +129,8 @@ static void *zpotrf_create_hip_workspace(void *obj, void *user)
 static void zpotrf_destroy_hip_workspace(void *_ws, void *_n)
 {
     dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
-    zone_free((zone_malloc_t*)ws->memory, ws->tmpmem);
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)ws->gpu_device;
+    gpu_device->memory_free(gpu_device, ws->tmpmem);
     free(ws);
     (void)_n;
 }
