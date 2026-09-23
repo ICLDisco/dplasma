@@ -84,12 +84,21 @@ jobs:
       # attempt against a failing one on the same machine says whether getrf
       # or getrs produces the wrong answer. Keep going past a failure so we
       # collect both, and report at the end whether any attempt failed.
+      #
+      # ctest lets parsec take the whole machine, which makes the result
+      # depend on which runner the job lands on: it fails on a 256-thread
+      # host and passes on a 32-thread one. Drive the thread count directly
+      # so the sweep means the same thing everywhere.
       run: |
         source $SETUP
+        cd tests
         rc=0
-        for i in $(seq 1 10); do
-          echo "===== attempt $i ====="
-          ctest --output-on-failure -R 'dgetrf_1d_mpi' -V || rc=1
+        for c in 8 16 32 64 128; do
+          for i in 1 2 3 4 5; do
+            echo "===== cores=$c attempt=$i ====="
+            mpiexec --bind-to none --oversubscribe -n 4 \
+              ./testing_dgetrf_1d -N 378 -t 19 -P 1 -x -v=5 -c $c || rc=1
+          done
         done
         exit $rc
 
