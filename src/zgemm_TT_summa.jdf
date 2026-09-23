@@ -248,7 +248,7 @@ BODY [type=CUDA
     if(status != CUBLAS_STATUS_SUCCESS){
       printf("ISSUE\n");
     }
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 

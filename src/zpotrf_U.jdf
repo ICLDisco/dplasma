@@ -135,7 +135,7 @@ BODY [type=CUDA]
     d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));
 
     status = cusolverDnZpotrf( handles->cusolverDn_handle, dplasma_cublas_fill(uplo), tempkn, T, ldak, workspace, wp->lwork, d_iinfo);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZpotrf_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUSOLVER_CHECK_STATUS( "cusolverDnZpotrf ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -264,7 +264,7 @@ BODY [type=CUDA]
                             CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
                             descA->mb, tempnn,
                             &zone, T, ldak_T, C, ldak_C);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -395,7 +395,7 @@ BODY [type=CUDA]
                              tempnn, descA->mb,
                              &mzone, A, ldak,
                              &zone, T, ldan);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -539,7 +539,7 @@ BODY [type=CUDA
                              &mzone, (cuDoubleComplex*)A, ldak_A,
                                      (cuDoubleComplex*)B, ldak_B,
                              &zone,  (cuDoubleComplex*)C, ldam_C);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     printloggpu("zgemm( %d, %d, %d )\n\t( %s, %s, %d, %d, %d, %f, A(%d,%d)[%p], %d, A(%d,%d)[%p], %d, %f, A(%d,%d)[%p], %d)\n",
                  m, n, k,
