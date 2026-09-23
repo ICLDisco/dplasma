@@ -154,7 +154,7 @@ insert_task_lower(parsec_execution_stream_t *es, parsec_task_t *this_task)
                          sizeof(int),      &tempkm,            PARSEC_VALUE,
                          PASSED_BY_REF,    PARSEC_DTD_TILE_OF(A, k, k), PARSEC_INOUT | TILE_FULL | PARSEC_AFFINITY,
                          sizeof(int),      &ldak,              PARSEC_VALUE,
-                         sizeof(int *),    &info,              PARSEC_SCRATCH,
+                         sizeof(int *),    info,               PARSEC_SCRATCH,
                          PARSEC_DTD_ARG_END);
         for( m = k+1; m < total; m++, count++ ) {
             tempmm = m == dcA->super.mt - 1 ? dcA->super.m - m * dcA->super.mb : dcA->super.mb;
