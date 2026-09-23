@@ -10,7 +10,29 @@
 #include "dplasma.h"
 #include <math.h>
 #include <lapacke.h>
+#include <inttypes.h>
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
+
+/* The factorization and the solve have been shown to produce bit-identical
+ * matrices on runs the checker disagrees about, so the checker's own five
+ * parallel steps are what diverge. Hash its workspace after each one. */
+static void check_fingerprint( const char *what, int rank, void *mat, size_t len )
+{
+    const uint8_t *p = (const uint8_t*)mat;
+    uint64_t h = 14695981039346656037ULL;
+    size_t i;
+    for( i = 0; i < len; i++ ) {
+        h ^= (uint64_t)p[i];
+        h *= 1099511628211ULL;
+    }
+    printf("CHECKPRINT rank %d %s %zu bytes %016"PRIx64"\n", rank, what, len, h);
+    fflush(stdout);
+}
+
+#define CHECK_FINGERPRINT(WHAT, DC) \
+    check_fingerprint(WHAT, (DC).grid.rank, (DC).mat, \
+                      (size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
+                      (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
 
 /**
  *******************************************************************************
@@ -86,16 +108,20 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                                   (size_t)parsec_datadist_getsizeoftype(LLt.super.mtype));
 
     dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
+    CHECK_FINGERPRINT("LLt-after-laset", LLt);
     dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
+    CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
 
     /* Compute LL' or U'U  */
     side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
     dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
                    A, (parsec_tiled_matrix_t*)&LLt);
+    CHECK_FINGERPRINT("LLt-after-trmm", LLt);
 
     /* compute LL' - A or U'U - A */
     dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
                     -1.0, A0, 1., (parsec_tiled_matrix_t*)&LLt);
+    CHECK_FINGERPRINT("LLt-after-tradd", LLt);
 
     Anorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo, A0);
     Rnorm = dplasma_zlanhe(parsec, dplasmaInfNorm, uplo,
