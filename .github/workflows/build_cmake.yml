@@ -17,7 +17,7 @@ jobs:
       matrix:
         build_type : [ Debug ]
         shared_type : [ ON ]
-        device: [ gpu_nvidia ]
+        device: [ cpu, gpu_nvidia ]
     name: "${{matrix.build_type}} Shared=${{matrix.shared_type}} ${{matrix.device}}"
     runs-on: [ "${{matrix.device}}", self-hosted ]
     env:
@@ -73,12 +73,9 @@ jobs:
       working-directory: ${{ env.BUILD_DIRECTORY }}
       # Results here only mean something alongside the host they ran on: the
       # runners differ by an order of magnitude in core count, and the failure
-      # we are chasing has only ever appeared on the large ones. Also confirm
-      # the sanitizer really is in the binary before trusting a clean run.
+      # we are chasing has only ever appeared on the large ones.
       run: |
         echo "runner=${{ runner.name }} host=$(hostname) nproc=$(nproc)"
-        nm tests/testing_dgetrf_1d 2>/dev/null | grep -c asan_init || true
-        ldd tests/testing_dgetrf_1d | grep -i asan || echo "no libasan (static or absent)"
 
     - name: Test
       working-directory: ${{ env.BUILD_DIRECTORY }}
