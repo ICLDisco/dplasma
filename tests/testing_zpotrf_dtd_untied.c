@@ -32,6 +32,28 @@ static void warmup_zpotrf(int rank, dplasma_enum_t uplo, int random_seed, parsec
 /* Global index for the full tile datatype */
 static int TILE_FULL;
 
+/* The wire checksums say dcX is corrupted while dcA is not, but they only
+ * see tiles that cross a rank boundary. Hashing the local storage between
+ * phases says which phase first produced a value that differs from a
+ * passing run: everything here is deterministic given the seed. */
+static void fingerprint_local( const char *what, int rank, void *mat, size_t len )
+{
+    const uint8_t *p = (const uint8_t*)mat;
+    uint64_t h = 14695981039346656037ULL;
+    size_t i;
+    for( i = 0; i < len; i++ ) {
+        h ^= (uint64_t)p[i];
+        h *= 1099511628211ULL;
+    }
+    printf("FINGERPRINT rank %d %s %zu bytes %016"PRIx64"\n", rank, what, len, h);
+    fflush(stdout);
+}
+
+#define FINGERPRINT_MATRIX(WHAT, DC) \
+    fingerprint_local(WHAT, rank, (DC).mat, \
+                      (size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
+                      (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
+
 int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
 {
@@ -353,7 +375,8 @@ int main(int argc, char **argv)
     KP = 1;
     KQ = 1;
 
-    warmup_zpotrf(rank, uplo, random_seed, parsec);
+    /* warmup_zpotrf(rank, uplo, random_seed, parsec); */
+    (void)warmup_zpotrf;
 
     PASTE_CODE_ALLOCATE_MATRIX(dcA, 1,
         parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
@@ -432,6 +455,7 @@ int main(int argc, char **argv)
         printf("-- Factorization is suspicious (info = %d) ! \n", info);
         ret |= 1;
     }
+    FINGERPRINT_MATRIX("dcA-after-potrf", dcA);
     if( !info && check ) {
         /* Check the factorization */
         PASTE_CODE_ALLOCATE_MATRIX(dcA0, check,
@@ -459,9 +483,15 @@ int main(int argc, char **argv)
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_t *)&dcB, (parsec_tiled_matrix_t *)&dcX );
 
+        FINGERPRINT_MATRIX("dcB-after-plrnt",  dcB);
+        FINGERPRINT_MATRIX("dcX-before-potrs", dcX);
+        FINGERPRINT_MATRIX("dcA-before-potrs", dcA);
+
         dplasma_zpotrs(parsec, uplo,
                        (parsec_tiled_matrix_t *)&dcA,
                        (parsec_tiled_matrix_t *)&dcX );
+
+        FINGERPRINT_MATRIX("dcX-after-potrs", dcX);
 
         ret |= check_zaxmb( parsec, (rank == 0) ? loud : 0, uplo,
                             (parsec_tiled_matrix_t *)&dcA0,
