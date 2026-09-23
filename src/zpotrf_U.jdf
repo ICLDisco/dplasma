@@ -4,6 +4,7 @@ extern "C" %{
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -126,7 +127,9 @@ BODY [type=CUDA]
     handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
     assert(NULL != handles);
     wp = parsec_info_get(&gpu_device->super.infos, cuda_workspaces_infokey);
-    assert(NULL != wp);
+    /* The scratch allocation failed; retry once device memory frees up.
+     * parsec_info_get does not cache a NULL, so the constructor runs again. */
+    if( NULL == wp ) return PARSEC_HOOK_RETURN_AGAIN;
 
     workspace = (cuDoubleComplex*)wp->tmpmem;
     d_iinfo   = (int*)(wp->tmpmem + wp->lwork * sizeof(cuDoubleComplex));
@@ -155,7 +158,9 @@ BODY [type=HIP]
     handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
     assert(NULL != handles);
     wp = parsec_info_get(&gpu_device->super.infos, hip_workspaces_infokey);
-    assert(NULL != wp);
+    /* The scratch allocation failed; retry once device memory frees up.
+     * parsec_info_get does not cache a NULL, so the constructor runs again. */
+    if( NULL == wp ) return PARSEC_HOOK_RETURN_AGAIN;
     d_iinfo = (int*)wp->tmpmem;
 
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, tempkn, T, ldak, d_iinfo);
