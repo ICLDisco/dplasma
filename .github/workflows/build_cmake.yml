@@ -79,14 +79,19 @@ jobs:
 
     - name: Test
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      # Investigation only. dgetrf_1d_mpi reproduces reliably here and fails
-      # silently, with no assertion tripped, so run it under AddressSanitizer
-      # and let it report the access rather than the wrong answer it leads to.
-      # Leak detection is off: parsec does not free everything at exit and the
-      # reports would bury the one we are after.
+      # Investigation only. The tester prints a fingerprint of the
+      # factorization output and of the solve output; comparing a passing
+      # attempt against a failing one on the same machine says whether getrf
+      # or getrs produces the wrong answer. Keep going past a failure so we
+      # collect both, and report at the end whether any attempt failed.
       run: |
         source $SETUP
-        ctest --output-on-failure -R 'dgetrf_1d_mpi' --repeat until-fail:40
+        rc=0
+        for i in $(seq 1 10); do
+          echo "===== attempt $i ====="
+          ctest --output-on-failure -R 'dgetrf_1d_mpi' -V || rc=1
+        done
+        exit $rc
 
     - name: Save Artifact
       if: failure()

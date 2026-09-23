@@ -20,6 +20,30 @@ static int check_inverse( parsec_context_t *parsec, int loud,
                           parsec_tiled_matrix_t *dcInvA,
                           parsec_tiled_matrix_t *dcI );
 
+/* Investigation only: dgetrf_1d_mpi fails intermittently on a 256-thread
+ * machine, and check_solution only tells us that A0*X-B is wrong, not
+ * whether the factorization or the solve produced it. LU with partial
+ * pivoting is deterministic here, so the local storage should hash to the
+ * same value on every run; comparing a passing run against a failing one
+ * says which of the two halves is at fault. */
+static void fingerprint_local( const char *what, int rank, void *mat, size_t len )
+{
+    const uint8_t *p = (const uint8_t*)mat;
+    uint64_t h = 14695981039346656037ULL;
+    size_t i;
+    for( i = 0; i < len; i++ ) {
+        h ^= (uint64_t)p[i];
+        h *= 1099511628211ULL;
+    }
+    printf("FINGERPRINT rank %d %s %zu bytes %016"PRIx64"\n", rank, what, len, h);
+    fflush(stdout);
+}
+
+#define FINGERPRINT_MATRIX(DC) \
+    fingerprint_local(#DC, rank, (DC).mat, \
+                      (size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
+                      (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
+
 int main(int argc, char ** argv)
 {
     parsec_context_t* parsec;
@@ -84,6 +108,9 @@ int main(int argc, char ** argv)
         parsec_devices_reset_load(parsec);
     }
 
+    FINGERPRINT_MATRIX(dcA);
+    FINGERPRINT_MATRIX(dcIPIV);
+
     if ( info != 0 ) {
         if( rank == 0 && loud ) printf("-- Factorization is suspicious (info = %d) ! \n", info );
         ret |= 1;
@@ -110,10 +137,15 @@ int main(int argc, char ** argv)
                         (parsec_tiled_matrix_t *)&dcB,
                         (parsec_tiled_matrix_t *)&dcX );
 
+        FINGERPRINT_MATRIX(dcB);
+
         dplasma_zgetrs(parsec, dplasmaNoTrans,
                        (parsec_tiled_matrix_t *)&dcA,
                        (parsec_tiled_matrix_t *)&dcIPIV,
                        (parsec_tiled_matrix_t *)&dcX );
+
+        FINGERPRINT_MATRIX(dcX);
+
         ret |= check_solution( parsec, (rank == 0) ? loud : 0,
                                (parsec_tiled_matrix_t *)&dcA0,
                                (parsec_tiled_matrix_t *)&dcB,
