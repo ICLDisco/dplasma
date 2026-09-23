@@ -49,10 +49,19 @@ static void fingerprint_local( const char *what, int rank, void *mat, size_t len
     fflush(stdout);
 }
 
+#define MATRIX_BYTES(DC) \
+    ((size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
+     (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
+
 #define FINGERPRINT_MATRIX(WHAT, DC) \
-    fingerprint_local(WHAT, rank, (DC).mat, \
-                      (size_t)(DC).super.nb_local_tiles * (size_t)(DC).super.bsiz * \
-                      (size_t)parsec_datadist_getsizeoftype((DC).super.mtype))
+    fingerprint_local(WHAT, rank, (DC).mat, MATRIX_BYTES(DC))
+
+/* A tile is stored MB x NB whatever the matrix actually spans, so with
+ * NRHS=1 only 19 of the 361 doubles in a dcB/dcX tile are ever written,
+ * and a whole tile travels the wire padding included. Left as malloc
+ * returned it that padding differs between runs and swamps every
+ * fingerprint; zeroing it makes the dead space deterministic. */
+#define ZERO_MATRIX(DC) memset((DC).mat, 0, MATRIX_BYTES(DC))
 
 int
 parsec_core_potrf(parsec_execution_stream_t *es, parsec_task_t *this_task)
@@ -382,6 +391,7 @@ int main(int argc, char **argv)
         parsec_matrix_sym_block_cyclic, (&dcA, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                    rank, MB, NB, LDA, N, 0, 0,
                                    N, N, P, nodes/P, uplo));
+    ZERO_MATRIX(dcA);
 
     parsec_dtd_data_collection_init((parsec_data_collection_t *)&dcA);
 
@@ -462,6 +472,7 @@ int main(int argc, char **argv)
             parsec_matrix_sym_block_cyclic, (&dcA0, PARSEC_MATRIX_COMPLEX_DOUBLE,
                                        rank, MB, NB, LDA, N, 0, 0,
                                        N, N, P, nodes/P, uplo));
+        ZERO_MATRIX(dcA0);
         dplasma_zplghe( parsec, (double)(N), uplo,
                         (parsec_tiled_matrix_t *)&dcA0, random_seed);
 
@@ -474,12 +485,14 @@ int main(int argc, char **argv)
             parsec_matrix_block_cyclic, (&dcB, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                    rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
+        ZERO_MATRIX(dcB);
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_t *)&dcB, random_seed+1);
 
         PASTE_CODE_ALLOCATE_MATRIX(dcX, check,
             parsec_matrix_block_cyclic, (&dcX, PARSEC_MATRIX_COMPLEX_DOUBLE, PARSEC_MATRIX_TILE,
                                    rank, MB, NB, LDB, NRHS, 0, 0,
                                    N, NRHS, P, nodes/P, KP, KQ, IP, JQ));
+        ZERO_MATRIX(dcX);
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_t *)&dcB, (parsec_tiled_matrix_t *)&dcX );
 
