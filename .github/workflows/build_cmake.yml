@@ -26,6 +26,9 @@ jobs:
       DEVICE: ${{matrix.device}}
       BUILD_DIRECTORY: build
       INSTALL_DIRECTORY: install
+      # Job-wide: CMake's try_run probes are sanitized too, and would fail on
+      # leaks alone before we ever reach the test.
+      ASAN_OPTIONS: detect_leaks=0:print_stacktrace=1
       SETUP: ${{github.workspace}}/.github/workflows/env_setup.sh
     defaults:
       run:
@@ -73,8 +76,6 @@ jobs:
       # and let it report the access rather than the wrong answer it leads to.
       # Leak detection is off: parsec does not free everything at exit and the
       # reports would bury the one we are after.
-      env:
-        ASAN_OPTIONS: detect_leaks=0:print_stacktrace=1
       run: |
         source $SETUP
         ctest --output-on-failure -R 'dgetrf_1d_mpi' --repeat until-fail:10
