@@ -33,5 +33,8 @@ fi
         -DPARSEC_HAVE_DEV_RECURSIVE_SUPPORT=OFF
         -DDPLASMA_GPU_WITH_CUDA=$CUDA
         -DDPLASMA_GPU_WITH_HIP=$HIP
+        -DCMAKE_C_FLAGS=-fsanitize=address
+        -DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address
+        -DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address
 EOF
 export BUILD_CONFIG

@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type : [ Debug, Release ]
+        build_type : [ Debug ]
         shared_type : [ ON ]
         device: [ gpu_nvidia ]
     name: "${{matrix.build_type}} Shared=${{matrix.shared_type}} ${{matrix.device}}"
@@ -68,12 +68,16 @@ jobs:
 
     - name: Test
       working-directory: ${{ env.BUILD_DIRECTORY }}
-      # Investigation only: repeat the two intermittently failing tests until one
-      # of them fails. The Debug build keeps the assertions, so a failure there
-      # should report where the data goes bad rather than only that it did.
+      # Investigation only. dgetrf_1d_mpi reproduces reliably here and fails
+      # silently, with no assertion tripped, so run it under AddressSanitizer
+      # and let it report the access rather than the wrong answer it leads to.
+      # Leak detection is off: parsec does not free everything at exit and the
+      # reports would bury the one we are after.
+      env:
+        ASAN_OPTIONS: detect_leaks=0:print_stacktrace=1
       run: |
         source $SETUP
-        ctest --output-on-failure -R 'dgetrf_1d_mpi|dpotrf_1gpu_cuda_mpi' --repeat until-fail:20
+        ctest --output-on-failure -R 'dgetrf_1d_mpi' --repeat until-fail:10
 
     - name: Save Artifact
       if: failure()
