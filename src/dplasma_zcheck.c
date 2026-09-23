@@ -107,16 +107,34 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                                   (size_t)LLt.super.bsiz *
                                   (size_t)parsec_datadist_getsizeoftype(LLt.super.mtype));
 
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
-    CHECK_FINGERPRINT("LLt-after-laset", LLt);
-    dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
-    CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
+    /* The trmm below has been caught producing a different answer than a
+     * passing run from bit-identical A and LLt, on one rank, while the
+     * standalone trmm tester never fails. Repeating it in-process says
+     * whether it is racy every time or only on its first invocation after
+     * the factorization taskpool tore down. */
+    {
+        const char *env = getenv("DPLASMA_CHECK_REPEAT");
+        int repeat = (NULL == env) ? 1 : atoi(env);
+        char label[64];
+        int it;
 
-    /* Compute LL' or U'U  */
-    side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
-    dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
-                   A, (parsec_tiled_matrix_t*)&LLt);
-    CHECK_FINGERPRINT("LLt-after-trmm", LLt);
+        if( repeat < 1 ) repeat = 1;
+        side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
+
+        for( it = 0; it < repeat; it++ ) {
+            dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
+            if( 1 == repeat ) CHECK_FINGERPRINT("LLt-after-laset", LLt);
+            dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
+            snprintf(label, sizeof(label), "LLt-after-lacpy-%d", it);
+            CHECK_FINGERPRINT(label, LLt);
+
+            /* Compute LL' or U'U  */
+            dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
+                           A, (parsec_tiled_matrix_t*)&LLt);
+            snprintf(label, sizeof(label), "LLt-after-trmm-%d", it);
+            CHECK_FINGERPRINT(label, LLt);
+        }
+    }
 
     /* compute LL' - A or U'U - A */
     dplasma_ztradd( parsec, uplo, dplasmaNoTrans,
