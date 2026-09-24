@@ -180,6 +180,9 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(gemm               gemm    1gpu_cuda_shm -N 1280 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    1gpu_cuda_~knb_shm -N 1000 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    2gpu_cuda_shm -N 1940 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # The insert_task interface on a device. Until now the dtd tests only ran on
+    # the CPU chores, so the cuda and hip ones went unexercised.
+    dplasma_add_test(potrf_dtd          potrf_dtd 1gpu_cuda_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
   endif (DPLASMA_HAVE_CUDA)
   if (DPLASMA_HAVE_HIP)
     dplasma_add_gpu_probe(hip)
@@ -190,6 +193,8 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(gemm               gemm    1gpu_hip_shm -N 1280 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    1gpu_hip_~knb_shm -N 1000 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    2gpu_hip_shm -N 1940 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
+    # See the cuda block above.
+    dplasma_add_test(potrf_dtd          potrf_dtd 1gpu_hip_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
   endif (DPLASMA_HAVE_HIP)
 
 
