@@ -104,5 +104,23 @@ add_executable(testing_blas_threadsafety testing_blas_threadsafety.c)
 add_dependencies(testing_blas_threadsafety dplasma dplasma_includes)
 target_link_libraries(testing_blas_threadsafety PUBLIC dplasma Threads::Threads)
 
+# Every kernel below calls the BLAS from a parsec worker thread, so a BLAS
+# that cannot take concurrent calls makes every result in this suite
+# meaningless -- silently, intermittently, and in a different kernel each
+# run. Run that check as a fixture: ctest orders it first and holds the whole
+# suite back if it fails, rather than reporting a hundred residual failures
+# that all have the same cause somewhere underneath dplasma.
+add_test(NAME dplasma_blas_threadsafety COMMAND testing_blas_threadsafety)
+set_tests_properties(dplasma_blas_threadsafety PROPERTIES
+                     FIXTURES_SETUP DPLASMA_BLAS_THREADSAFE
+                     LABELS "dplasma")
+
 # Define Testings
 include(Testings.cmake)
+
+get_property(dplasma_tests DIRECTORY PROPERTY TESTS)
+list(REMOVE_ITEM dplasma_tests dplasma_blas_threadsafety)
+if(dplasma_tests)
+  set_tests_properties(${dplasma_tests} PROPERTIES
+                       FIXTURES_REQUIRED DPLASMA_BLAS_THREADSAFE)
+endif()
