@@ -31,7 +31,7 @@ import sys
 from collections import defaultdict
 
 RECORD = re.compile(
-    r"^ 0x[0-9a-f]+/\d+ \(\s*([0-9.e+-]+) s\) -- TILEHASH r(\d+) "
+    r"^ (0x[0-9a-f]+)/\d+ \(\s*([0-9.e+-]+) s\) -- TILEHASH r(\d+) "
     r"(descA|descB)\((\d+),(\d+)\) (\S+) ([0-9a-f]{16})(?: @(0x[0-9a-f]+))?"
 )
 # The checker is precision-generated, so the marker names ztrmm/dtrmm/...
@@ -58,7 +58,7 @@ def load(paths):
             m = RECORD.match(line)
             if not m:
                 continue
-            ts, rank, mat, i, j, task, digest, ptr = m.groups()
+            thread, ts, rank, mat, i, j, task, digest, ptr = m.groups()
             rank = int(rank)
             if task in STAGE:
                 key = {"task": task, "locals": [], "role": task}
@@ -72,7 +72,7 @@ def load(paths):
                     "role": t.group(3) or "out",
                 }
             key.update(time=float(ts), tile=(mat, int(i), int(j)), hash=digest,
-                       ptr=ptr, seq=lineno)
+                       ptr=ptr, seq=lineno, thread=thread)
             runs[rank][current.get(rank, -1)].append(key)
     return {r: dict(sorted(v.items())) for r, v in sorted(runs.items())}
 
@@ -234,6 +234,44 @@ def audit_iterations(iterations, report):
                    "this task produced the divergence" % len(inputs))
             for line in intruders(iterations[it], siblings, first):
                 report("    " + line)
+            for line in provenance(readings, iterations, it, siblings, first):
+                report("    " + line)
+
+
+def provenance(readings, iterations, it, siblings, out):
+    """Where else in the run does the wrong value appear?
+
+    Bytes that land in a buffer came from somewhere. If the wrong output is
+    a value this run computed elsewhere, that names what overwrote it far
+    more directly than any timing argument: the same tile at an earlier point
+    in its own chain means a stale copy arrived, another tile's value means
+    that tile's buffer was written here, and its own C input means the
+    kernel's write never took.
+    """
+    lines = []
+    for r in siblings:
+        if r["role"] != "out" and r["hash"] == out["hash"]:
+            lines.append("the wrong value is its own %s input, so the kernel's "
+                         "write did not take" % r["role"])
+    matches = []
+    for key, per_it in readings.items():
+        if key == key_of(out):
+            continue
+        for other_it, r in per_it.items():
+            if r["hash"] == out["hash"]:
+                matches.append((other_it, r))
+    if matches:
+        same_tile = [m for m in matches if m[1]["tile"] == out["tile"]]
+        pick = same_tile or matches
+        lines.append("the wrong value also appears as %d other reading(s), e.g. %s"
+                     % (len(matches), ", ".join(
+                         "%s %s(%d,%d) in iteration %d"
+                         % (describe(r), r["tile"][0], r["tile"][1], r["tile"][2], i)
+                         for i, r in sorted(pick, key=lambda m: m[1]["seq"])[:3])))
+    elif not lines:
+        lines.append("the wrong value appears nowhere else in the run, so it "
+                     "was computed, not copied in")
+    return lines
 
 
 def intruders(records, siblings, out):
@@ -253,9 +291,16 @@ def intruders(records, siblings, out):
               if r["ptr"] == out["ptr"]
               and (r["task"], tuple(r["locals"])) != mine
               and start < r["seq"] < end]
+    # How much of the task's run the window actually covers: the dump groups
+    # records by thread when timestamps tie, so a window holding nothing from
+    # any other thread has not observed the concurrency it claims to rule out.
+    window = [r for r in records if start < r["seq"] < end]
+    elsewhere = {r["thread"] for r in window} - {out["thread"]}
     if not others:
-        return ["nothing else touched %s over records %d-%d"
-                % (out["ptr"], start, end)]
+        return ["nothing else touched %s over records %d-%d (%d records there, "
+                "%d from other threads)"
+                % (out["ptr"], start, end, len(window), 
+                   sum(r["thread"] in elsewhere for r in window))]
     lines = ["%s was also held by %d other records while this task ran:"
              % (out["ptr"], len(others))]
     for r in sorted(others, key=lambda r: r["seq"])[:8]:
