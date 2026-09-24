@@ -2,6 +2,7 @@
 # Copyright (c) 2010-2024 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
+# Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
 #
 #
 # A more compact representation of the DPLASMA tests. We can compose any number
@@ -18,14 +19,20 @@ set(PTG2DTD_OPTIONS "--;--mca;mca_pins;ptg_to_dtd")
 set(OPTIONS "-x;-v=5")
 #set(OPTIONS "")
 
+# enable devices only in tests that explicitely require them
+# restrict memory use for oversubscribed runners
+set(DEVICE_ENV "PARSEC_MCA_device_cuda_enabled=0;PARSEC_MCA_device_hip_enabled=0;PARSEC_MCA_device_level_zero_enabled=0;PARSEC_MCA_device_cuda_memory_use=10;PARSEC_MCA_device_hip_memory_use=10;PARSEC_MCA_device_level_zero_memory_use=10")
+
 macro(dplasma_add_test m_nameradix m_dependsradix m_types)
   foreach (m_type "${m_types}")
     set(labels "dplasma")
     if (m_type MATCHES "gpu")
       set(m_gpus "${CTEST_GPU_LAUNCHER_OPTIONS}")
       list(APPEND labels "gpu")
+      set(m_fixture "dplasma_gpu_usable")
     else()
       unset(m_gpus)
+      unset(m_fixture)
     endif()
     if (m_type MATCHES "shm")
       list(APPEND labels "shm")
@@ -53,11 +60,24 @@ macro(dplasma_add_test m_nameradix m_dependsradix m_types)
         set_tests_properties(dplasma_${prec}${m_nameradix}_mpi PROPERTIES DEPENDS launcher_mpi)
       endif()
     endif()
-    # enable devices only in tests that explicitely require them
-    # restrict memory use for oversubscribed runners
-    set_tests_properties(dplasma_${prec}${m_nameradix}_${m_suffix} PROPERTIES ENVIRONMENT
-      "PARSEC_MCA_device_cuda_enabled=0;PARSEC_MCA_device_hip_enabled=0;PARSEC_MCA_device_level_zero_enabled=0;PARSEC_MCA_device_cuda_memory_use=10;PARSEC_MCA_device_hip_memory_use=10;PARSEC_MCA_device_level_zero_memory_use=10")
+    set_tests_properties(dplasma_${prec}${m_nameradix}_${m_suffix} PROPERTIES
+      ENVIRONMENT "${DEVICE_ENV}" FIXTURES_REQUIRED "${m_fixture}")
   endforeach()
+endmacro()
+
+# A minimal gemm on one device, used as a canary for the whole gpu label. When
+# the runner has no usable GPU kernels at all (no rocBLAS library matching the
+# installed arch, driver too old, ...) this is the only device test that fails;
+# the rest are reported as not run rather than each failing on its own.
+macro(dplasma_add_gpu_probe m_backend)
+  add_test(dplasma_${prec}gemm_gpuprobe_${m_backend}_shm
+    ${SHM_TEST_CMD_LIST} ${CTEST_GPU_LAUNCHER_OPTIONS}
+    ./testing_${prec}gemm -N 960 -t 320 ${OPTIONS} -g 1
+    -- --mca device_${m_backend}_memory_number_of_blocks 64)
+  set_tests_properties(dplasma_${prec}gemm_gpuprobe_${m_backend}_shm PROPERTIES
+    LABELS "dplasma;gpu;gpuprobe"
+    FIXTURES_SETUP dplasma_gpu_usable
+    ENVIRONMENT "${DEVICE_ENV}")
 endmacro()
 
 
@@ -152,6 +172,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
 
   # GPU tests
   if (DPLASMA_HAVE_CUDA)
+    dplasma_add_gpu_probe(cuda)
     dplasma_add_test(potrf              potrf   1gpu_cuda_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
     dplasma_add_test(potrf              potrf   1gpu_cuda_lowmem_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 21)
     dplasma_add_test(potrf              potrf   1gpu_cuda_~knb_shm -N 1700 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
@@ -161,6 +182,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(gemm               gemm    2gpu_cuda_shm -N 1940 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
   endif (DPLASMA_HAVE_CUDA)
   if (DPLASMA_HAVE_HIP)
+    dplasma_add_gpu_probe(hip)
     dplasma_add_test(potrf              potrf   1gpu_hip_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(potrf              potrf   1gpu_hip_lowmem_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 21)
     dplasma_add_test(potrf              potrf   1gpu_hip_~knb_shm -N 1700 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)

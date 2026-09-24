@@ -69,15 +69,49 @@ jobs:
           source $SETUP
           cmake --build . --target install
 
+    - name: GPU Preflight
+      id: gpu_preflight
+      if: ${{ startsWith(matrix.build_type, 'Release') && startsWith(matrix.device, 'gpu') }}
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      # A single tiny gemm on one device tells us whether this runner can execute
+      # GPU kernels at all. An empty GPU_UNUSABLE_RE would match every line and
+      # turn any failure into a skip, so demand a non-empty pattern.
+      run: |
+        source $SETUP
+        if ctest --output-on-failure -L '^gpuprobe$' >probe.log 2>&1; then
+          echo "gpu=usable" >> $GITHUB_OUTPUT
+        elif [ -n "$GPU_UNUSABLE_RE" ] && grep -Eq "$GPU_UNUSABLE_RE" probe.log; then
+          echo "gpu=unusable" >> $GITHUB_OUTPUT
+        else
+          echo "gpu=broken" >> $GITHUB_OUTPUT
+        fi
+        cat probe.log
+
     - name: Test
       if: ${{ startsWith(matrix.build_type, 'Release') }}
       working-directory: ${{ env.BUILD_DIRECTORY }}
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       # run: ctest -C $BUILD_TYPE
+      # The cpu jobs never run the preflight, so their empty output falls through
+      # to the default branch and the full suite. lowmem tests are busted atm.
       run: |
         source $SETUP
-        ctest --output-on-failure -R 'launcher|dplasma' -E lowmem # lowmem tests are busted atm
+        case "${{ steps.gpu_preflight.outputs.gpu }}" in
+          unusable)
+            echo "::warning title=GPU tests skipped::The ${{ matrix.device }} runner cannot execute GPU kernels; the gpu tests were not run."
+            echo "### GPU tests skipped on ${{ matrix.device }}" >> $GITHUB_STEP_SUMMARY
+            echo 'The GPU preflight failed with a known environment error, so the `gpu`-labelled tests were skipped. Everything else ran normally.' >> $GITHUB_STEP_SUMMARY
+            ctest --output-on-failure -R 'launcher|dplasma' -E lowmem -LE '^gpu$'
+            ;;
+          broken)
+            echo "::error title=GPU preflight failed::The GPU probe failed for an unrecognized reason, so it is treated as a real failure rather than an unusable runner."
+            exit 1
+            ;;
+          *)
+            ctest --output-on-failure -R 'launcher|dplasma' -E lowmem
+            ;;
+        esac
 
     - name: Save Artifact
       if: failure()
