@@ -61,10 +61,18 @@ def arguments(text, open_paren):
     return text[open_paren + 1:]
 
 
-# A small matrix, and wide enough that a range like k+1 .. nt-1 is not empty.
-SHAPE = {"mt": 5, "nt": 5, "lmt": 5, "lnt": 5, "lm": 20, "ln": 20,
-         "mb": 4, "nb": 4, "m": 20, "n": 20, "i": 0, "j": 0, "bsiz": 16,
-         "dtype": 0, "storage": 0, "rtile": 0, "llm": 20, "lln": 20}
+# Two index expressions can be disjoint at one matrix shape and overlap at
+# another, so every shape below is tried and a collision at any one of them
+# counts. Square, wide, tall, and small enough to enumerate; nothing smaller
+# than 2 or a range like k+1 .. nt-1 is empty everywhere and proves nothing.
+SHAPES = [(5, 5), (2, 2), (3, 7), (7, 3), (4, 6), (6, 4)]
+
+
+def dimensions(mt, nt):
+    return {"mt": mt, "nt": nt, "lmt": mt, "lnt": nt, "llm": mt, "lln": nt,
+            "mb": 4, "nb": 4, "m": 4 * mt, "n": 4 * nt, "lm": 4 * mt,
+            "ln": 4 * nt, "i": 0, "j": 0, "bsiz": 16, "dtype": 0,
+            "storage": 0, "rtile": 0}
 ASSIGN = re.compile(r"^\s*(\w+)\s*=\s*(.+?)\s*$")
 DEFAULT = re.compile(r'\bdefault\s*=\s*"([^"]*)"')
 RANGE = re.compile(r"^(.*?)\s*\.\.\s*(.*)$")
@@ -141,7 +149,7 @@ def tiles(task, index, when, shape):
     return found
 
 
-def collections(lines):
+def collections(lines, dims):
     """The data collections, and the scalar globals with an evaluable default.
 
     Execution spaces lean on globals such as KT or minMN, declared hidden
@@ -159,7 +167,7 @@ def collections(lines):
         if default and "int" in m.group(2):
             scalars[m.group(1)] = default.group(1)
 
-    env = dict(SHAPE)
+    env = dict(dims)
     for _ in range(len(scalars)):          # they may refer to one another
         pending = False
         for name, expr in scalars.items():
@@ -174,10 +182,10 @@ def collections(lines):
     return names, env
 
 
-def parse(path):
+def parse(path, dims):
     """Every direct reference to a data collection, by task and flow."""
     lines = open(path, errors="replace").read().splitlines()
-    dcs, shape = collections(lines)
+    dcs, shape = collections(lines, dims)
     refs = []
 
     tasks = {}
@@ -258,13 +266,13 @@ def describe(r):
                r["task"], "when " + r["when"] if r["when"] else "always"))
 
 
-def report(path, refs, verbose):
-    clashes, unknown = [], []
+def pairs(refs):
+    """Every two access points into one collection, with their tile sets."""
     for direction, word in (("<-", "enter"), ("->", "leave")):
         points = {}
         for r in refs:
             if r["dir"] == direction:
-                # Several conditional deps on one flow are one entry point,
+                # Several conditional deps on one flow are one access point,
                 # and between them they cover every tile it can name.
                 key = (r["dc"], r["task"], r["flow"])
                 if key in points and None not in (points[key]["tiles"],
@@ -278,32 +286,46 @@ def report(path, refs, verbose):
             for b in ordered[i+1:]:
                 if a["dc"] != b["dc"]:
                     continue
-                if a["tiles"] is None or b["tiles"] is None:
-                    unknown.append((word, a, b))
-                    continue
-                shared = a["tiles"] & b["tiles"]
-                if not shared:
-                    continue
-                # Two readers of a tile nobody writes is not a hazard.
+                # Several task classes may reach a collection directly, so
+                # long as they never reach the same tile; and two of them
+                # only reading one tile is harmless either way.
                 if word == "enter" and not any(
                         r["mode"] in ("RW", "WRITE") for r in (a, b)):
                     continue
-                clashes.append((word, a, b, shared))
+                yield word, a, b
+
+
+def report(path, verbose):
+    clashes, unknown, refs, blind = {}, {}, 0, 0
+    for mt, nt in SHAPES:
+        parsed = parse(path, dimensions(mt, nt))
+        refs = len(parsed)
+        blind = max(blind, sum(1 for r in parsed if r["tiles"] is None))
+        for word, a, b in pairs(parsed):
+            key = (word, a["dc"], a["task"], a["flow"], b["task"], b["flow"])
+            if a["tiles"] is None or b["tiles"] is None:
+                unknown.setdefault(key, (word, a, b))
+                continue
+            shared = a["tiles"] & b["tiles"]
+            if shared and key not in clashes:
+                clashes[key] = (word, a, b, sorted(shared)[0], (mt, nt))
 
     if clashes or (verbose and unknown):
         print("\n%s" % os.path.basename(path))
-    for word, a, b, shared in clashes:
-        print("  !! %s: the same tile can %s the dataflow twice, e.g. (%s)"
-              % (a["dc"], word, ",".join(str(x) for x in sorted(shared)[0])))
+    for word, a, b, tile, shape in sorted(clashes.values(), key=str):
+        print("  !! %s: the same tile can %s the dataflow twice, e.g. (%s) "
+              "of a %dx%d tile matrix"
+              % (a["dc"], word, ",".join(str(x) for x in tile),
+                 shape[0], shape[1]))
         print("       %s" % describe(a))
         print("       %s" % describe(b))
     if verbose:
-        for word, a, b in unknown:
+        for word, a, b in sorted(unknown.values(), key=str):
             print("  ?? %s: could not decide whether these %s together"
                   % (a["dc"], word))
             print("       %s" % describe(a))
             print("       %s" % describe(b))
-    return len(clashes), len(unknown)
+    return len(clashes), len(unknown), refs, blind
 
 
 def main():
@@ -316,14 +338,12 @@ def main():
 
     bad, undecided, files, refs, blind = 0, 0, 0, 0, 0
     for path in paths:
-        parsed = parse(path)
-        refs += len(parsed)
-        blind += sum(1 for r in parsed if r["tiles"] is None)
-        n, u = report(path, parsed, verbose)
+        n, u, seen, missed = report(path, verbose)
+        refs, blind = refs + seen, blind + missed
         bad, undecided, files = bad + n, undecided + u, files + (1 if n else 0)
 
-    print("\n%d of %d files have a tile reachable from two places (%d in all)."
-          % (files, len(paths), bad))
+    print("\n%d of %d files have a tile reachable from two places (%d in all,"
+          " over %d matrix shapes)." % (files, len(paths), bad, len(SHAPES)))
     print("%d of %d collection references were resolved; %d pair(s) rest on "
           "one that was not%s." % (refs - blind, refs, undecided,
                                    "" if verbose else ", and -v lists them"))
