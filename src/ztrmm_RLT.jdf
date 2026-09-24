@@ -44,120 +44,6 @@ extern "C" %{
  *
  */
 
-/* A single-threaded OpenBLAS packs its panels into a central buffer pool in
- * memory.c, and the allocation out of that pool is only guarded when the
- * library was built with USE_LOCKING. That is off by default and is only
- * turned on automatically for the threaded builds, so a sequential build
- * called from several worker threads at once can hand the same scratch to
- * two kernels: each computes from operands that are themselves perfectly
- * correct and returns an answer mixed with someone else's panel.
- *
- * Serialising the kernel calls tells that apart from anything in the
- * dataflow. If the divergences stop under TRMM_LOCK while every other check
- * still passes, the bug is under the BLAS and not in parsec. */
-#include <pthread.h>
-#include <stdlib.h>
-
-static pthread_mutex_t trmm_kernel_lock = PTHREAD_MUTEX_INITIALIZER;
-
-static inline int trmm_lock_on( void )
-{
-    static int on = -1;
-    if( on < 0 ) on = (NULL != getenv("TRMM_LOCK"));
-    return on;
-}
-#define TRMM_LOCK()                                     \
-    do { if( trmm_lock_on() )                           \
-             pthread_mutex_lock(&trmm_kernel_lock); } while(0)
-#define TRMM_UNLOCK()                                   \
-    do { if( trmm_lock_on() )                           \
-             pthread_mutex_unlock(&trmm_kernel_lock); } while(0)
-
-/* Checksums of what every task actually sees at its entry, recorded into
- * parsec's in-memory debug history: printing them would serialize the run and
- * hide the corruption we are chasing. Each record names the tile of the
- * original matrix the copy came from, so a value that a producer wrote and a
- * consumer disagrees about is a straight string comparison in the dump.
- * Only the tile's live elements are hashed, at its real leading dimension,
- * so the padding a tile carries around never enters the result. */
-#if defined(PARSEC_DEBUG_HISTORY)
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-
-static inline uint64_t trmm_tile_hash( const void *ptr, int m, int n, int ld )
-{
-    const char *base = (const char*)ptr;
-    size_t es = sizeof(dplasma_complex64_t), col = (size_t)m * es;
-    uint64_t h = 14695981039346656037ULL;
-    int j;
-
-    for( j = 0; j < n; j++ ) {
-        const char *p = base + (size_t)j * ld * es;
-        size_t i = 0;
-        for( ; i + sizeof(uint64_t) <= col; i += sizeof(uint64_t) ) {
-            uint64_t w;
-            memcpy(&w, p + i, sizeof(uint64_t));
-            h = (h ^ w) * 1099511628211ULL;
-        }
-        for( ; i < col; i++ )
-            h = (h ^ (uint64_t)(unsigned char)p[i]) * 1099511628211ULL;
-    }
-    return h;
-}
-#define TRMM_HASH(ptr, m, n, ld) trmm_tile_hash(ptr, m, n, ld)
-#define TRMM_COL(ptr, c, ld) \
-    ((const void*)((const char*)(ptr) + \
-                   (size_t)(c) * (ld) * sizeof(dplasma_complex64_t)))
-#define TRMM_BANDS 4
-
-/* A copy of the output tile taken before the kernel runs, so the same kernel
- * can be run over it a second time once the first call has returned. Two
- * calls with the same operands owe the same answer, so a redo that agrees
- * with the other iterations while the tile in place does not says the bytes
- * changed after the kernel wrote them rather than the kernel computing them
- * differently. Off unless TRMM_REDO is set: the second call doubles the
- * kernel time and moves the race it is meant to observe. */
-static inline int trmm_redo_on( void )
-{
-    static int on = -1;
-    if( on < 0 ) on = (NULL != getenv("TRMM_REDO"));
-    return on;
-}
-
-static inline void *trmm_tile_save( const void *ptr, int m, int n, int ld )
-{
-    size_t es = sizeof(dplasma_complex64_t);
-    char *copy;
-    int j;
-
-    if( !trmm_redo_on() ) return NULL;
-    if( NULL == (copy = malloc((size_t)m * n * es)) ) return NULL;
-    for( j = 0; j < n; j++ )
-        memcpy(copy + (size_t)j * m * es,
-               (const char*)ptr + (size_t)j * ld * es, (size_t)m * es);
-    return copy;
-}
-#define TRMM_SAVE(ptr, m, n, ld) trmm_tile_save(ptr, m, n, ld)
-
-/* What the runtime itself believes about the copy the task was handed.
- * 'nothing else touched this buffer' can only ever mean nothing else that
- * carries a hash did; the reader count, the version and the reference count
- * are the runtime's own record of who is holding the copy, and they see the
- * communication engine and the release path that the hashes cannot. */
-#define TRMM_CP_FMT " cp=%p/v%u/r%d/n%d/f%x/c%d"
-#define TRMM_CP(cp) (void*)(cp), (cp)->version, (cp)->readers,               \
-                    (int)(cp)->super.super.obj_reference_count,              \
-                    (unsigned)(cp)->flags, (int)(cp)->coherency_state
-#else
-#define TRMM_HASH(ptr, m, n, ld) ((uint64_t)0)
-#define TRMM_COL(ptr, c, ld) (ptr)
-#define TRMM_BANDS 0
-#define TRMM_SAVE(ptr, m, n, ld) NULL
-#define TRMM_CP_FMT "%.0s"
-#define TRMM_CP(cp) ""
-#endif  /* defined(PARSEC_DEBUG_HISTORY) */
-
 %}
 
 side      [type = "dplasma_enum_t"]
@@ -191,10 +77,7 @@ loc_A = %{ return LOC(descA, (descB->nt-1)-n, k); %}
 
 BODY
 {
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) read_A(%d,%d) %016"PRIx64" @%p\n",
-                             descB->super.myrank, (descB->nt-1)-n, k, n, k,
-                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), LDA(ddescA, A)), (void*)A);
+    /* nothing */
 }
 END
 
@@ -220,10 +103,7 @@ loc_B = %{ return LOC(descB, m, k); %}
 
 BODY
 {
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) read_B(%d,%d) %016"PRIx64" @%p\n",
-                             descB->super.myrank, m, k, m, k,
-                             TRMM_HASH(B, CLEAN_MB(descB, m), CLEAN_NB(descB, k),
-                                          LDA(ddescB, B)), (void*)B);
+    /* nothing */
 }
 END
 
@@ -253,79 +133,14 @@ BODY
     int tempnn = (((descB->nt-1)-n)==(descB->nt-1)) ? (descB->n-(((descB->nt-1)-n)*descB->nb)) : descB->nb;
     int lda = LDA(ddescA, A);
     int ldb = LDA(ddescB, B);
-    void *redo;
 
     printlog("CORE_ztrmm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              n, m, (descB->nt-1)-n, (descB->nt-1)-n, A, m, (descB->nt-1)-n, B);
-
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A %016"PRIx64" @%p\n",
-                             descB->super.myrank, (descB->nt-1)-n, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, (descB->nt-1)-n), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B %016"PRIx64" @%p\n",
-                             descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
-
-    redo = TRMM_SAVE(B, tempmm, tempnn, ldb);
-    if( NULL != redo )
-        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B-saved "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)B);
-
-    TRMM_LOCK();
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
-    TRMM_UNLOCK();
-
-    /* The operand hashed again now that the kernel is done with it. An input
-     * that moved between the two readings was being written while the kernel
-     * was reading it, which is a different failure from the output being
-     * clobbered afterwards and wants a different fix. */
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A-after %016"PRIx64" @%p\n",
-                             descB->super.myrank, (descB->nt-1)-n, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, (descB->nt-1)-n), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64
-                             " @%p mn=%d,%d ld=%d,%d\n",
-                             descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B,
-                             tempmm, tempnn, lda, ldb);
-
-    if( NULL != redo ) {
-        TRMM_LOCK();
-        CORE_ztrmm(side, uplo, trans, diag, tempmm, tempnn,
-                   alpha, A, lda, redo, tempmm );
-        TRMM_UNLOCK();
-        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).redo "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)B);
-        free(redo);
-
-        parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A-redone "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, (descB->nt-1)-n,
-                                 (descB->nt-1)-n, n, m,
-                                 TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                              CLEAN_NB(descA, (descB->nt-1)-n),
-                                              lda), (void*)A);
-    }
-    {
-        int q;
-        for( q = 0; q < TRMM_BANDS; q++ ) {
-            int c0 = (q * tempnn) / TRMM_BANDS, c1 = ((q+1) * tempnn) / TRMM_BANDS;
-            if( c1 <= c0 ) continue;
-            parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out%d "
-                                     "%016"PRIx64" @%p\n",
-                                     descB->super.myrank, m, (descB->nt-1)-n, n, m, q,
-                                     TRMM_HASH(TRMM_COL(B, c0, ldb), tempmm, c1-c0, ldb),
-                                     (void*)B);
-        }
-    }
 }
 END
 
@@ -412,106 +227,13 @@ BODY
     int lda = LDA(ddescB, A);
     int ldb = LDA(ddescA, B);
     int ldc = LDA(ddescB, C);
-    void *redo;
 
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], lda, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, (descB->nt-1)-n, k, B, m, (descB->nt-1)-n, C);
-
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A %016"PRIx64" @%p\n",
-                             descB->super.myrank, m, k, n, m, k,
-                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64
-                             " @%p" TRMM_CP_FMT "\n",
-                             descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
-                             TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), ldb), (void*)B,
-                             TRMM_CP(_f_B));
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64
-                             " @%p" TRMM_CP_FMT "\n",
-                             descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C,
-                             TRMM_CP(_f_C));
-
-    redo = TRMM_SAVE(C, tempmm, tempnn, ldc);
-    if( NULL != redo )
-        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C-saved "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)C);
-
-    TRMM_LOCK();
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, lda,
                       B /* descA((descB->nt-1)-n,k) */, ldb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
-    TRMM_UNLOCK();
-
-    /* Both operands hashed again now that the kernel is done with them, so a
-     * tile written while it was being read can be told from an output
-     * clobbered after the fact. */
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A-after %016"PRIx64" @%p\n",
-                             descB->super.myrank, m, k, n, m, k,
-                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-after %016"PRIx64
-                             " @%p" TRMM_CP_FMT "\n",
-                             descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
-                             TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), ldb), (void*)B,
-                             TRMM_CP(_f_B));
-    /* The kernel's own arguments ride along with the result: a tile hashed at
-     * one leading dimension and written at another, or a dimension that came
-     * out short, corrupts exactly as quietly as a stray write does. */
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64
-                             " @%p mnk=%d,%d,%d ld=%d,%d,%d" TRMM_CP_FMT "\n",
-                             descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C,
-                             tempmm, tempnn, descB->mb, lda, ldb, ldc,
-                             TRMM_CP(_f_C));
-
-    if( NULL != redo ) {
-        TRMM_LOCK();
-        CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
-                   alpha, A, lda,
-                          B, ldb,
-                   1.0,   redo, tempmm );
-        TRMM_UNLOCK();
-        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).redo "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)C);
-        free(redo);
-
-        /* The operands once more, now that the second call has read them too.
-         * The '-after' pair brackets the first call only, so an operand that
-         * starts moving after the kernel returns falls in the gap between
-         * that reading and whatever consumes the tile next. */
-        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A-redone "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, m, k, n, m, k,
-                                 TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k),
-                                              lda), (void*)A);
-        parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-redone "
-                                 "%016"PRIx64" @%p\n",
-                                 descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
-                                 TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                              CLEAN_NB(descA, k), ldb), (void*)B);
-    }
-
-    /* The same output again, a band of columns at a time. How much of the
-     * tile moved says what moved it: one band means something wrote over
-     * part of the buffer, every band means the arithmetic itself differed. */
-    {
-        int q;
-        for( q = 0; q < TRMM_BANDS; q++ ) {
-            int c0 = (q * tempnn) / TRMM_BANDS, c1 = ((q+1) * tempnn) / TRMM_BANDS;
-            if( c1 <= c0 ) continue;
-            parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out%d "
-                                     "%016"PRIx64" @%p\n",
-                                     descB->super.myrank, m, (descB->nt-1)-n, n, m, k, q,
-                                     TRMM_HASH(TRMM_COL(C, c0, ldc), tempmm, c1-c0, ldc),
-                                     (void*)C);
-        }
-    }
 }
 END
