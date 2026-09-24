@@ -12,6 +12,7 @@
 #include <lapacke.h>
 #include <inttypes.h>
 #include "parsec/data_dist/matrix/two_dim_rectangle_cyclic.h"
+#include "parsec/utils/debug.h"
 
 /* The factorization and the solve have been shown to produce bit-identical
  * matrices on runs the checker disagrees about, so the checker's own five
@@ -149,7 +150,7 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
         int repeat = (NULL == env) ? 1 : atoi(env);
         int mt = LLt.super.mt, nt = LLt.super.nt;
         uint64_t *in = NULL, *out = NULL;
-        int it, m, n;
+        int it, m, n, caught = 0;
 
         if( repeat < 1 ) repeat = 1;
         side = (uplo == dplasmaUpper ) ? dplasmaLeft : dplasmaRight;
@@ -165,11 +166,35 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
             if( repeat > 1 ) check_hash_tiles(&LLt, in + (size_t)it * mt * nt);
             else             CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
 
+            /* Keep only this trmm's events, so that a dump below describes
+             * the iteration that went wrong and nothing else. Recording is
+             * in-memory, so unlike printing it does not smother the race. */
+            if( repeat > 1 ) {
+                parsec_debug_history_purge();
+                parsec_debug_history_add("=== ztrmm iteration %d begins\n", it);
+            }
+
             /* Compute LL' or U'U  */
             dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
                            A, (parsec_tiled_matrix_t*)&LLt);
             if( repeat > 1 ) check_hash_tiles(&LLt, out + (size_t)it * mt * nt);
             else             CHECK_FINGERPRINT("LLt-after-trmm", LLt);
+
+            /* Dump while the evidence is still in the ring buffer. */
+            if( repeat > 1 && it > 0 && !caught ) {
+                int o;
+                for( o = 0; o < mt * nt; o++ ) {
+                    if( out[(size_t)it * mt * nt + o] == out[o] ) continue;
+                    printf("CHECKCAUGHT rank %d iteration %d tile(%d,%d) "
+                           "%016"PRIx64" != %016"PRIx64", dumping history\n",
+                           LLt.grid.rank, it, o / nt, o % nt,
+                           out[(size_t)it * mt * nt + o], out[o]);
+                    fflush(stdout);
+                    caught = 1;
+                    break;
+                }
+                if( caught ) parsec_debug_history_dump();
+            }
         }
 
         /* Report once, after every iteration is done, so the printing cannot
