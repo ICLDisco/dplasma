@@ -228,6 +228,37 @@ def audit_iterations(iterations, report):
         elif inputs:
             report("    its %d inputs all agree with the other iterations, so "
                    "this task produced the divergence" % len(inputs))
+            for line in intruders(iterations[it], siblings, first):
+                report("    " + line)
+
+
+def intruders(records, siblings, out):
+    """Who else held this task's output buffer while the task was running.
+
+    A deterministic kernel handed correct inputs cannot produce a wrong
+    answer on its own. If the buffer it wrote was clobbered between the hash
+    taken on the way in and the one taken on the way out, everything
+    downstream still agrees -- so the only way to name the culprit is to ask
+    which other task was holding the same address at the time.
+    """
+    if out["ptr"] is None or not siblings:
+        return []
+    start, end = min(r["time"] for r in siblings), out["time"]
+    mine = (out["task"], tuple(out["locals"]))
+    others = [r for r in records
+              if r["ptr"] == out["ptr"]
+              and (r["task"], tuple(r["locals"])) != mine
+              and start <= r["time"] <= end]
+    if not others:
+        return ["nothing else touched %s between %.4fs and %.4fs"
+                % (out["ptr"], start, end)]
+    lines = ["%s was also held by %d other records while this task ran:"
+             % (out["ptr"], len(others))]
+    for r in sorted(others, key=lambda r: r["time"])[:8]:
+        lines.append("      %8.4fs  %-22s %s(%d,%d) %s"
+                     % (r["time"], describe(r), r["tile"][0], r["tile"][1],
+                        r["tile"][2], r["hash"]))
+    return lines
 
 
 def main():
