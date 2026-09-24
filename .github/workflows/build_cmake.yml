@@ -23,6 +23,12 @@ jobs:
             shared_type: OFF
     name: "${{matrix.build_type}} Shared=${{matrix.shared_type}} ${{matrix.device}}"
     runs-on: [ "${{matrix.device}}", self-hosted ]
+    # Keyed by device so each GPU test job below can be skipped on its own. A
+    # matrix leg that does not set a key leaves it empty instead of clobbering
+    # the value another leg wrote.
+    outputs:
+      gpu_nvidia: ${{ steps.gpu_preflight.outputs.gpu_nvidia }}
+      gpu_amd: ${{ steps.gpu_preflight.outputs.gpu_amd }}
     env:
       BUILD_TYPE:  ${{matrix.build_type}}
       SHARED_TYPE: ${{matrix.shared_type}}
@@ -79,12 +85,14 @@ jobs:
       run: |
         source $SETUP
         if ctest --output-on-failure -L '^gpuprobe$' >probe.log 2>&1; then
-          echo "gpu=usable" >> $GITHUB_OUTPUT
+          verdict=usable
         elif [ -n "$GPU_UNUSABLE_RE" ] && grep -Eq "$GPU_UNUSABLE_RE" probe.log; then
-          echo "gpu=unusable" >> $GITHUB_OUTPUT
+          verdict=unusable
         else
-          echo "gpu=broken" >> $GITHUB_OUTPUT
+          verdict=broken
         fi
+        echo "verdict=$verdict" >> $GITHUB_OUTPUT
+        echo "${{ matrix.device }}=$verdict" >> $GITHUB_OUTPUT
         cat probe.log
 
     - name: Test
@@ -93,23 +101,27 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       # run: ctest -C $BUILD_TYPE
-      # The cpu jobs never run the preflight, so their empty output falls through
-      # to the default branch and the full suite. lowmem tests are busted atm.
+      # The gpu tests run in their own job so that an unusable runner reports
+      # them as skipped rather than as part of a green run. lowmem tests are
+      # busted atm.
       run: |
         source $SETUP
-        case "${{ steps.gpu_preflight.outputs.gpu }}" in
+        ctest --output-on-failure -R 'launcher|dplasma' -E lowmem -LE '^gpu$'
+
+    - name: GPU Preflight Verdict
+      if: ${{ startsWith(matrix.build_type, 'Release') && startsWith(matrix.device, 'gpu') }}
+      # Runs after the rest of the suite so that a broken probe still leaves us
+      # the non-GPU results.
+      run: |
+        case "${{ steps.gpu_preflight.outputs.verdict }}" in
           unusable)
             echo "::warning title=GPU tests skipped::The ${{ matrix.device }} runner cannot execute GPU kernels; the gpu tests were not run."
             echo "### GPU tests skipped on ${{ matrix.device }}" >> $GITHUB_STEP_SUMMARY
             echo 'The GPU preflight failed with a known environment error, so the `gpu`-labelled tests were skipped. Everything else ran normally.' >> $GITHUB_STEP_SUMMARY
-            ctest --output-on-failure -R 'launcher|dplasma' -E lowmem -LE '^gpu$'
             ;;
           broken)
             echo "::error title=GPU preflight failed::The GPU probe failed for an unrecognized reason, so it is treated as a real failure rather than an unusable runner."
             exit 1
-            ;;
-          *)
-            ctest --output-on-failure -R 'launcher|dplasma' -E lowmem
             ;;
         esac
 
@@ -119,3 +131,105 @@ jobs:
       with:
         name: CMake-error-log
         path: ${{ env.BUILD_DIRECTORY }}/CMakeFiles/CMakeError.log
+
+  # The gpu tests live in their own job purely so that GitHub can report them
+  # as skipped when the runner cannot execute GPU kernels, instead of folding
+  # their absence into a green build job. A job-level `if` cannot see `matrix`,
+  # so these are spelled out per device rather than generated from one.
+  gpu_tests_nvidia:
+    needs: all
+    # Not plain `needs` success: an unrelated matrix leg failing must not make
+    # these show up as skipped, which would read as "the GPU is unusable".
+    if: ${{ !cancelled() && needs.all.outputs.gpu_nvidia == 'usable' }}
+    name: "GPU tests gpu_nvidia"
+    timeout-minutes: 60
+    runs-on: [ gpu_nvidia, self-hosted ]
+    env:
+      BUILD_TYPE: Release
+      SHARED_TYPE: ON
+      DEVICE: gpu_nvidia
+      BUILD_DIRECTORY: build
+      INSTALL_DIRECTORY: install
+      SETUP: ${{github.workspace}}/.github/workflows/env_setup.sh
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Build Environment ${{ runner.os }}
+      run: |
+          source $SETUP
+          cmake -E make_directory ${{ env.BUILD_DIRECTORY }}
+
+    - name: Configure CMake
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      run: |
+        source $SETUP
+        CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE $BUILD_CONFIG
+        CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BUILD_CONFIG
+
+    - name: Build
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      run: |
+        source $SETUP
+        cmake --build .
+
+    - name: Test
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      # ctest pulls the blas thread-safety and gpu probe fixtures in on its own,
+      # even though neither matches this filter.
+      run: |
+        source $SETUP
+        ctest --output-on-failure -L '^gpu$' -E lowmem
+
+  gpu_tests_amd:
+    needs: all
+    if: ${{ !cancelled() && needs.all.outputs.gpu_amd == 'usable' }}
+    name: "GPU tests gpu_amd"
+    timeout-minutes: 60
+    runs-on: [ gpu_amd, self-hosted ]
+    env:
+      BUILD_TYPE: Release
+      SHARED_TYPE: ON
+      DEVICE: gpu_amd
+      BUILD_DIRECTORY: build
+      INSTALL_DIRECTORY: install
+      SETUP: ${{github.workspace}}/.github/workflows/env_setup.sh
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Build Environment ${{ runner.os }}
+      run: |
+          source $SETUP
+          cmake -E make_directory ${{ env.BUILD_DIRECTORY }}
+
+    - name: Configure CMake
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      run: |
+        source $SETUP
+        CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE $BUILD_CONFIG
+        CC=gcc CXX=g++ FC=gfortran cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE $BUILD_CONFIG
+
+    - name: Build
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      run: |
+        source $SETUP
+        cmake --build .
+
+    - name: Test
+      working-directory: ${{ env.BUILD_DIRECTORY }}
+      # ctest pulls the blas thread-safety and gpu probe fixtures in on its own,
+      # even though neither matches this filter.
+      run: |
+        source $SETUP
+        ctest --output-on-failure -L '^gpu$' -E lowmem
