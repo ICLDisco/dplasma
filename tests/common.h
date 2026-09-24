@@ -77,6 +77,7 @@ enum iparam_t {
   IPARAM_SCHEDULER,    /* User-selected scheduler */
   IPARAM_NRUNS,        /* Number of times to run the kernel */
   IPARAM_GPU_MASK,     /* Bitmask of the GPUs this process is allowed to use */
+  IPARAM_TRSM_GPU_SOLVE, /* Whether TRSM may run its triangular solve on a device */
   IPARAM_SIZEOF
 };
 

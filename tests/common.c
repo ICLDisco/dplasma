@@ -133,6 +133,11 @@ void print_usage(void)
             "                     (default: all). -1 partitions the GPUs of a node disjointly\n"
             "                     between its local processes, giving each the -g devices\n"
             "                     starting at local_rank*-g\n"
+            "    --trsm_gpu_solve : let TRSM run its triangular solve on a device (default: 1)\n"
+            "                     With 0 the solve stays on the CPU while the trailing updates\n"
+            "                     still run on the device, which is how TRSM behaved before it\n"
+            "                     had a GPU solve, and which makes every panel travel to the\n"
+            "                     device and back\n"
             " -m --thread_multi : initialize MPI_THREAD_MULTIPLE (default: no)\n"
             " -o --scheduler    : select the scheduler (default: LFQ)\n"
             "                     Accepted values:\n"
@@ -192,6 +197,7 @@ static struct option long_options[] =
     {"g",           required_argument,  0, 'g'},
     {"gpu_mask",    required_argument,  0, 'D'},
     {"D",           required_argument,  0, 'D'},
+    {"trsm_gpu_solve", required_argument, 0, '2'},
     {"V",           required_argument,  0, 'V'},
     {"vpmap",       required_argument,  0, 'V'},
     {"ht",          required_argument,  0, 'H'},
@@ -300,6 +306,7 @@ static void read_arguments(int *_argc, char*** _argv, int* iparam)
         switch(c)
         {
             case 'c': iparam[IPARAM_NCORES] = atoi(optarg); break;
+            case '2': iparam[IPARAM_TRSM_GPU_SOLVE] = atoi(optarg); break;
             case '3': iparam[IPARAM_NRUNS] = atoi(optarg); break;
             case 'm': iparam[IPARAM_THREAD_MT] = 1; break;
             case 'o':
@@ -531,6 +538,10 @@ static void parse_arguments(int *iparam) {
     }
 #endif  /* defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP) */
 
+    /* Set here rather than in the TRSM testing so that it also covers the
+     * solves the other testings run to check their result. */
+    dplasma_trsm_gpu_solve = iparam[IPARAM_TRSM_GPU_SOLVE];
+
     /* Check the process grid */
     if(0 == iparam[IPARAM_P])
         iparam[IPARAM_P] = iparam[IPARAM_NNODES];
@@ -615,6 +626,8 @@ static void print_arguments(int* iparam)
 
     if(verbose > 1 && DPLASMA_ERR_NOT_INITIALIZED != iparam[IPARAM_GPU_MASK])
         fprintf(stderr, "#+++++ gpu mask (rank 0)    : 0x%x\n", iparam[IPARAM_GPU_MASK]);
+    if(verbose > 1 && !iparam[IPARAM_TRSM_GPU_SOLVE])
+        fprintf(stderr, "#+++++ trsm solve           : on the CPU, device chores dropped\n");
 
     if(verbose)
     {
@@ -673,6 +686,7 @@ static void iparam_default(int* iparam)
     memset(iparam, 0, IPARAM_SIZEOF * sizeof(int));
     iparam[IPARAM_NGPUS] = DPLASMA_ERR_NOT_INITIALIZED; /* let parsec choose */
     iparam[IPARAM_GPU_MASK] = DPLASMA_ERR_NOT_INITIALIZED; /* all GPUs usable */
+    iparam[IPARAM_TRSM_GPU_SOLVE] = 1;
     iparam[IPARAM_NNODES] = 1;
     iparam[IPARAM_ASYNC]  = 1;
     iparam[IPARAM_QR_DOMINO]    = -1;
