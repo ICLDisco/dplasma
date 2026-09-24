@@ -155,14 +155,34 @@ int main( int argc, char *argv[] )
         printf("PASSED: every call returned the same bits\n");
         return 0;
     }
-    printf("FAILED: %d of %d calls across %d threads returned something other\n"
-           "than the single-threaded answer, from operands none of them wrote.\n"
-           "This BLAS is not safe to call concurrently, and dplasma calls it\n"
-           "that way from every parsec worker thread. Results will be wrong\n"
-           "occasionally and silently.\n"
-           "If this is a sequential OpenBLAS, it needs USE_LOCKING=1 at build\n"
-           "time; the packaged pthread or OpenMP builds already have it, and\n"
-           "can be held to one thread with OPENBLAS_NUM_THREADS=1.\n",
-           total, nthreads * rounds, nthreads);
+
+    /* On stderr, because this is the one message that must not be lost if
+     * the rest of the suite is being skimmed or the output filtered. */
+    fprintf(stderr,
+      "\n"
+      "================================================================\n"
+      "FAILED: THIS BLAS CANNOT BE CALLED FROM MORE THAN ONE THREAD\n"
+      "================================================================\n"
+      "%d of %d calls across %d threads returned something other than the\n"
+      "single-threaded answer, computing the same product from operands no\n"
+      "thread wrote. Identical inputs and identical arguments cannot round\n"
+      "differently, so the library is failing under concurrency.\n"
+      "\n"
+      "dplasma calls the BLAS exactly this way, one kernel per parsec worker\n"
+      "thread, so every result the rest of the suite produces is suspect.\n"
+      "The damage is silent: no error is raised anywhere, and it surfaces as\n"
+      "a residual that is occasionally too large, in a different kernel each\n"
+      "time. Do not spend time on those failures until this one is fixed.\n"
+      "\n"
+      "If this is a sequential OpenBLAS, it needs USE_LOCKING=1 at build\n"
+      "time -- its own Makefile.rule leaves that off by default and enables\n"
+      "it automatically only for the threaded builds. The packaged pthread\n"
+      "and OpenMP builds already have it and can be held to a single thread\n"
+      "with OPENBLAS_NUM_THREADS=1, which is the quickest way out:\n"
+      "\n"
+      "    update-alternatives --config libopenblas.so.0-<arch>\n"
+      "    export OPENBLAS_NUM_THREADS=1\n"
+      "================================================================\n",
+      total, nthreads * rounds, nthreads);
     return 1;
 }
