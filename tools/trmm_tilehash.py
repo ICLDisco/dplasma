@@ -33,7 +33,7 @@ from collections import defaultdict
 RECORD = re.compile(
     r"^ (0x[0-9a-f]+)/\d+ \(\s*([0-9.e+-]+) s\) -- TILEHASH r(\d+) "
     r"(descA|descB)\((\d+),(\d+)\) (\S+) ([0-9a-f]{16})(?: @(0x[0-9a-f]+))?"
-    r"((?: \w+=[\d,]+)*)"
+    r"((?: \w+=[\w,/]+)*)"
 )
 # The checker is precision-generated, so the marker names ztrmm/dtrmm/...
 MARKER = re.compile(r"-- === \wtrmm iteration (\d+) on rank (\d+) begins")
@@ -79,7 +79,8 @@ def load(paths):
                     "role": t.group(3) or "out",
                 }
             key.update(time=float(ts), tile=(mat, int(i), int(j)), hash=digest,
-                       ptr=ptr, seq=lineno, thread=thread, args=args.strip())
+                       ptr=ptr, seq=lineno, thread=thread,
+                       args=dict(t.split("=", 1) for t in args.split()))
             runs[rank][current.get(rank, -1)].append(key)
     return {r: dict(sorted(v.items())) for r, v in sorted(runs.items())}
 
@@ -296,6 +297,8 @@ def audit_iterations(iterations, report):
                 report("    " + line)
             for line in redo(readings, siblings, first, want):
                 report("    " + line)
+            for line in copies(siblings, first):
+                report("    " + line)
             for line in intruders(iterations[it], siblings, first):
                 report("    " + line)
             for line in provenance(readings, iterations, it, siblings, first):
@@ -321,12 +324,43 @@ def arguments(readings, it, out):
     dimension that came out short, produces a wrong result from operands
     that are themselves perfectly correct.
     """
-    seen = {i: r["args"] for i, r in readings[key_of(out)].items() if r["args"]}
+    # The copy the runtime hands over is a different one every iteration, so
+    # its identity says nothing about whether the call itself was the same.
+    def shape(r):
+        return " ".join("%s=%s" % kv for kv in sorted(r["args"].items())
+                        if kv[0] != "cp")
+
+    seen = {i: shape(r) for i, r in readings[key_of(out)].items() if shape(r)}
     if len(set(seen.values())) < 2:
         return []
     mine = seen.get(it, "none recorded")
     return ["the kernel was called as %s, where the other iterations used %s"
             % (mine, ", ".join(sorted(set(seen.values()) - {mine})))]
+
+
+def copies(siblings, out):
+    """What the runtime believed about the copies while the task ran.
+
+    'cp=<copy>/v<version>/r<readers>/n<refcount>/f<flags>/c<coherency>'. A
+    reader still counted on the tile a task is writing, or a reference count
+    that leaves the copy free to be recycled, is the runtime admitting the
+    sharing that the hashes can only infer.
+    """
+    lines, held = [], []
+    for r in sorted(siblings, key=lambda r: r["seq"]):
+        cp = r["args"].get("cp")
+        if cp is None:
+            continue
+        held.append("%s %s" % (r["role"], cp))
+        readers = re.search(r"/r(-?\d+)/", cp)
+        if r["role"] in ("C", "out") and readers and int(readers.group(1)):
+            lines.append("the copy this task writes had %s reader(s) counted "
+                         "on it at its %s reading, so the runtime had it "
+                         "shared while the task owned it"
+                         % (readers.group(1), r["role"]))
+    if held:
+        lines.append("the runtime's view: " + ", ".join(held))
+    return lines
 
 
 def redo(readings, siblings, out, want):

@@ -110,11 +110,23 @@ static inline void *trmm_tile_save( const void *ptr, int m, int n, int ld )
     return copy;
 }
 #define TRMM_SAVE(ptr, m, n, ld) trmm_tile_save(ptr, m, n, ld)
+
+/* What the runtime itself believes about the copy the task was handed.
+ * 'nothing else touched this buffer' can only ever mean nothing else that
+ * carries a hash did; the reader count, the version and the reference count
+ * are the runtime's own record of who is holding the copy, and they see the
+ * communication engine and the release path that the hashes cannot. */
+#define TRMM_CP_FMT " cp=%p/v%u/r%d/n%d/f%x/c%d"
+#define TRMM_CP(cp) (void*)(cp), (cp)->version, (cp)->readers,               \
+                    (int)(cp)->super.super.obj_reference_count,              \
+                    (unsigned)(cp)->flags, (int)(cp)->coherency_state
 #else
 #define TRMM_HASH(ptr, m, n, ld) ((uint64_t)0)
 #define TRMM_COL(ptr, c, ld) (ptr)
 #define TRMM_BANDS 0
 #define TRMM_SAVE(ptr, m, n, ld) NULL
+#define TRMM_CP_FMT "%.0s"
+#define TRMM_CP(cp) ""
 #endif  /* defined(PARSEC_DEBUG_HISTORY) */
 
 %}
@@ -376,13 +388,17 @@ BODY
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A %016"PRIx64" @%p\n",
                              descB->super.myrank, m, k, n, m, k,
                              TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64" @%p\n",
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64
+                             " @%p" TRMM_CP_FMT "\n",
                              descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
                              TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), ldb), (void*)B);
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64" @%p\n",
+                                          CLEAN_NB(descA, k), ldb), (void*)B,
+                             TRMM_CP(_f_B));
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64
+                             " @%p" TRMM_CP_FMT "\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
+                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C,
+                             TRMM_CP(_f_C));
 
     redo = TRMM_SAVE(C, tempmm, tempnn, ldc);
     if( NULL != redo )
@@ -402,18 +418,21 @@ BODY
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A-after %016"PRIx64" @%p\n",
                              descB->super.myrank, m, k, n, m, k,
                              TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-after %016"PRIx64" @%p\n",
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-after %016"PRIx64
+                             " @%p" TRMM_CP_FMT "\n",
                              descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
                              TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), ldb), (void*)B);
+                                          CLEAN_NB(descA, k), ldb), (void*)B,
+                             TRMM_CP(_f_B));
     /* The kernel's own arguments ride along with the result: a tile hashed at
      * one leading dimension and written at another, or a dimension that came
      * out short, corrupts exactly as quietly as a stray write does. */
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64
-                             " @%p mnk=%d,%d,%d ld=%d,%d,%d\n",
+                             " @%p mnk=%d,%d,%d ld=%d,%d,%d" TRMM_CP_FMT "\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
                              TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C,
-                             tempmm, tempnn, descB->mb, lda, ldb, ldc);
+                             tempmm, tempnn, descB->mb, lda, ldb, ldc,
+                             TRMM_CP(_f_C));
 
     if( NULL != redo ) {
         CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
