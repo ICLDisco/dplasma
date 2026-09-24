@@ -4,6 +4,7 @@ extern "C" %{
  *                         of Tennessee Research Foundation. All rights
  *                         reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -155,9 +156,14 @@ ztrsm_in_A(k) [profile = off]
   /* Locality */
   : descA(k,k)
 
+  /* The sole entry point into the DAG for the diagonal tile. ztrtri(k)
+   * overwrites this very tile, so it takes it from here rather than reading
+   * descA a second time: a tile with two entry points is not something the
+   * runtime can relate, and the two views then race. */
   READ  A    <- descA(k,k)                                          /*[type = UPPER_TILE type_data = UPPER_TILE]*/
              -> (k < descA->mt-1) ? A ztrsmL(k, (k+1)..(descA->mt-1)) [type_remote = UPPER_TILE]
              -> (k > 0)          ? A ztrsmR(k, 0..(k-1))              [type_remote = UPPER_TILE]
+             -> A ztrtri(k)                                           [type_remote = UPPER_TILE]
 
 BODY
 {
@@ -175,8 +181,9 @@ ztrtri(k) [ flops = inline_c %{ return FLOPS_ZTRTRI(CLEAN_NB(descA, k)); %} ]
   CTL   ctll  <- ((k == 0) && (descA->nt > 1)) ? ctl ztrsmL(0, 1 .. descA->nt-1)
   CTL   ctlr  <-  (k >  0)                    ? ctl ztrsmR(k, 0 .. k-1)
 
-  RW    A    <- descA(k,k)   /*[type = UPPER_TILE type_data = UPPER_TILE]*/
-             -> descA(k,k)     [type = UPPER_TILE type_data = UPPER_TILE]
+  /* A enters the DAG only through ztrsm_in_A. */
+  RW    A    <- A ztrsm_in_A(k) [type_remote = UPPER_TILE]
+             -> descA(k,k)      [type = UPPER_TILE type_data = UPPER_TILE]
 
 BODY
 {
