@@ -50,7 +50,7 @@ def load(paths):
     runs = defaultdict(lambda: defaultdict(list))
     current = {}
     for path in paths:
-        for line in open(path):
+        for lineno, line in enumerate(open(path)):
             mark = MARKER.search(line)
             if mark:
                 current[int(mark.group(2))] = int(mark.group(1))
@@ -72,7 +72,7 @@ def load(paths):
                     "role": t.group(3) or "out",
                 }
             key.update(time=float(ts), tile=(mat, int(i), int(j)), hash=digest,
-                       ptr=ptr)
+                       ptr=ptr, seq=lineno)
             runs[rank][current.get(rank, -1)].append(key)
     return {r: dict(sorted(v.items())) for r, v in sorted(runs.items())}
 
@@ -147,19 +147,23 @@ def audit_aliasing(records, report):
     span = defaultdict(lambda: defaultdict(list))
     for r in records:
         if r["ptr"] is not None:
-            span[r["ptr"]][r["tile"]].append(r["time"])
+            span[r["ptr"]][r["tile"]].append(r["seq"])
     for ptr, tiles in sorted(span.items()):
         if len(tiles) < 2:
             continue
-        ranges = sorted((min(ts), max(ts), tile) for tile, ts in tiles.items())
-        for (_, prev_end, prev), (nxt_start, _, nxt) in zip(ranges, ranges[1:]):
-            # Timestamps land on a millisecond grid, so two uses that merely
-            # touch cannot be told from an arena buffer legitimately recycled
-            # after its last reader. Only a strict overlap means anything.
+        # The printed timestamp carries three significant digits, so hundreds
+        # of records share one value and two spans that merely touch say
+        # nothing. Position in the dump is a total order over the rank -- it
+        # is merge-sorted across that rank's threads -- so use that instead,
+        # and require the two spans to genuinely interleave rather than abut.
+        ranges = sorted((min(s), max(s), tile) for tile, s in tiles.items())
+        for (_, prev_end, prev), (nxt_start, nxt_end, nxt) in zip(ranges, ranges[1:]):
             if nxt_start < prev_end:
-                report("%s is %s(%d,%d) until %.4fs and %s(%d,%d) from %.4fs"
-                       % (ptr, prev[0], prev[1], prev[2], prev_end,
-                          nxt[0], nxt[1], nxt[2], nxt_start))
+                report("%s carries %s(%d,%d) over records %d-%d and %s(%d,%d) "
+                       "over %d-%d; the two interleave"
+                       % (ptr, prev[0], prev[1], prev[2],
+                          min(tiles[prev]), prev_end,
+                          nxt[0], nxt[1], nxt[2], nxt_start, nxt_end))
                 break
 
 
@@ -243,20 +247,20 @@ def intruders(records, siblings, out):
     """
     if out["ptr"] is None or not siblings:
         return []
-    start, end = min(r["time"] for r in siblings), out["time"]
+    start, end = min(r["seq"] for r in siblings), out["seq"]
     mine = (out["task"], tuple(out["locals"]))
     others = [r for r in records
               if r["ptr"] == out["ptr"]
               and (r["task"], tuple(r["locals"])) != mine
-              and start <= r["time"] <= end]
+              and start < r["seq"] < end]
     if not others:
-        return ["nothing else touched %s between %.4fs and %.4fs"
+        return ["nothing else touched %s over records %d-%d"
                 % (out["ptr"], start, end)]
     lines = ["%s was also held by %d other records while this task ran:"
              % (out["ptr"], len(others))]
-    for r in sorted(others, key=lambda r: r["time"])[:8]:
-        lines.append("      %8.4fs  %-22s %s(%d,%d) %s"
-                     % (r["time"], describe(r), r["tile"][0], r["tile"][1],
+    for r in sorted(others, key=lambda r: r["seq"])[:8]:
+        lines.append("      record %-7d %-22s %s(%d,%d) %s"
+                     % (r["seq"], describe(r), r["tile"][0], r["tile"][1],
                         r["tile"][2], r["hash"]))
     return lines
 
