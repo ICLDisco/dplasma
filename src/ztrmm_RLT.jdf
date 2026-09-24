@@ -113,12 +113,6 @@ loc_B = %{ return LOC(descB, m,             (descB->nt-1)-n); %}
   : descB(m,(descB->nt-1)-n)
 
   CTL   ctl0 <- ctl0 zgemm(0..n-1, m, descB->nt-n-1)
-  /* EXPERIMENT, not a proposed fix: ctl0 above already names exactly the
-   * readers of the tile this task overwrites in place, yet the overwrite
-   * has been observed racing them. ctl1 serialises whole chains instead,
-   * which is strictly stronger and costs parallelism. If the corruption
-   * survives this, the control edge is not being enforced at all. */
-  CTL   ctl1 <- (n >  0) ? ctl1 zgemm(n-1, m, descB->nt-n-1)
   READ  A    <- A read_A(n, descB->nt-1-n)                          [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
   RW    B    <- ddescB(m,(descB->nt-1)-n)                           [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
                                                                       type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
@@ -157,7 +151,6 @@ loc_C = %{ return LOC(descB, m,(descB->nt-1)-n); %}
   : descB(m,(descB->nt-1)-n)
 
   CTL   ctl0 -> ctl0 ztrmm(descB->nt-k-1, m)
-  CTL   ctl1 -> (k == (descB->nt-n-2)) ? ctl1 ztrmm(n+1, m)
   READ  A    <- B read_B(m, k)                                       [ type_remote = %{ return ADTT_DC(ddescB, loc_A, B_SHAPE, TILED); %} ]
   READ  B    <- A read_A(n, k)                                       [ type_remote = %{ return ADTT_DC(ddescA, loc_B, A_SHAPE, TILED); %} ]
   RW    C    <- (k >  0) ? C zgemm(n, m, k-1)                        [ type_remote = %{ return ADTT_DC(ddescB, loc_C, B_SHAPE, TILED); %} ]
