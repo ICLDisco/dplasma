@@ -50,19 +50,53 @@ static uint64_t check_hash( const void *buf, size_t len )
     return h;
 }
 
-static void check_hash_tiles( parsec_matrix_block_cyclic_t *dc, uint64_t *out )
+/* Hash a tile the way ztrmm_RLT.jdf's TILEHASH records do: the live elements
+ * only, at the tile's leading dimension. Matching conventions is the point --
+ * it makes the value the data collection holds directly comparable to the
+ * value the last task claims to have written into it, which is the one place
+ * the in-task checksums cannot see. */
+static uint64_t check_hash_tile( const void *ptr, int m, int n, int ld, size_t es )
+{
+    const char *base = (const char*)ptr;
+    uint64_t h = 14695981039346656037ULL;
+    size_t col = (size_t)m * es;
+    int j;
+
+    for( j = 0; j < n; j++ ) {
+        const char *p = base + (size_t)j * ld * es;
+        size_t i = 0;
+        for( ; i + sizeof(uint64_t) <= col; i += sizeof(uint64_t) ) {
+            uint64_t w;
+            memcpy(&w, p + i, sizeof(uint64_t));
+            h = (h ^ w) * 1099511628211ULL;
+        }
+        for( ; i < col; i++ )
+            h = (h ^ (uint64_t)(unsigned char)p[i]) * 1099511628211ULL;
+    }
+    return h;
+}
+
+static void check_hash_tiles( parsec_matrix_block_cyclic_t *dc, const char *what,
+                              uint64_t *out )
 {
     parsec_data_collection_t *o = (parsec_data_collection_t*)dc;
-    size_t len = (size_t)dc->super.bsiz *
-                 (size_t)parsec_datadist_getsizeoftype(dc->super.mtype);
+    parsec_tiled_matrix_t *t = &dc->super;
+    size_t es = (size_t)parsec_datadist_getsizeoftype(t->mtype);
     int m, n;
 
-    for( m = 0; m < dc->super.mt; m++ ) {
-        for( n = 0; n < dc->super.nt; n++ ) {
+    for( m = 0; m < t->mt; m++ ) {
+        int mm = (m == t->mt-1) ? t->m - m*t->mb : t->mb;
+        for( n = 0; n < t->nt; n++ ) {
+            int nn = (n == t->nt-1) ? t->n - n*t->nb : t->nb;
+            uint64_t h;
+            void *p;
+
             if( o->myrank != o->rank_of(o, m, n) ) continue;
-            out[m * dc->super.nt + n] =
-                check_hash(parsec_data_copy_get_ptr(parsec_data_get_copy(o->data_of(o, m, n), 0)),
-                           len);
+            p = parsec_data_copy_get_ptr(parsec_data_get_copy(o->data_of(o, m, n), 0));
+            h = check_hash_tile(p, mm, nn, t->mb, es);
+            out[m * t->nt + n] = h;
+            parsec_debug_history_add("TILEHASH r%d descB(%d,%d) %s %016"PRIx64" @%p\n",
+                                     o->myrank, m, n, what, h, p);
         }
     }
 }
@@ -160,47 +194,51 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
             out = calloc((size_t)repeat * mt * nt, sizeof(uint64_t));
         }
 
+        /* Every iteration is kept, not just the one that goes wrong. A run is
+         * only interesting when some iteration disagrees with the others, and
+         * the useful comparison is then task by task against an iteration that
+         * agreed -- which means both have to be in the same dump. Recording is
+         * in-memory, so unlike printing it does not smother the race. */
+        if( repeat > 1 ) parsec_debug_history_purge();
+
         for( it = 0; it < repeat; it++ ) {
             dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0.,(parsec_tiled_matrix_t *)&LLt );
             dplasma_zlacpy( parsec, uplo, A, (parsec_tiled_matrix_t *)&LLt );
-            if( repeat > 1 ) check_hash_tiles(&LLt, in + (size_t)it * mt * nt);
-            else             CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
 
-            /* Keep only this trmm's events, so that a dump below describes
-             * the iteration that went wrong and nothing else. Recording is
-             * in-memory, so unlike printing it does not smother the race. */
             if( repeat > 1 ) {
-                parsec_debug_history_purge();
-                parsec_debug_history_add("=== ztrmm iteration %d begins\n", it);
+                parsec_debug_history_add("=== ztrmm iteration %d on rank %d begins\n",
+                                         it, LLt.grid.rank);
+                check_hash_tiles(&LLt, "lacpy", in + (size_t)it * mt * nt);
+            } else {
+                CHECK_FINGERPRINT("LLt-after-lacpy", LLt);
             }
 
             /* Compute LL' or U'U  */
             dplasma_ztrmm( parsec, side, uplo, dplasmaConjTrans, dplasmaNonUnit, 1.0,
                            A, (parsec_tiled_matrix_t*)&LLt);
-            if( repeat > 1 ) check_hash_tiles(&LLt, out + (size_t)it * mt * nt);
+
+            if( repeat > 1 ) check_hash_tiles(&LLt, "final", out + (size_t)it * mt * nt);
             else             CHECK_FINGERPRINT("LLt-after-trmm", LLt);
 
-            /* Dump while the evidence is still in the ring buffer. */
             if( repeat > 1 && it > 0 && !caught ) {
                 int o;
                 for( o = 0; o < mt * nt; o++ ) {
                     if( out[(size_t)it * mt * nt + o] == out[o] ) continue;
                     printf("CHECKCAUGHT rank %d iteration %d tile(%d,%d) "
-                           "%016"PRIx64" != %016"PRIx64", dumping history\n",
+                           "%016"PRIx64" != %016"PRIx64"\n",
                            LLt.grid.rank, it, o / nt, o % nt,
                            out[(size_t)it * mt * nt + o], out[o]);
                     fflush(stdout);
                     caught = 1;
                     break;
                 }
-                if( caught ) parsec_debug_history_dump();
             }
-
-            /* A clean iteration to diff the caught one against, and the only
-             * way to see the trace at all on a run that never diverges. */
-            if( NULL != getenv("DPLASMA_CHECK_DUMP") && it == 0 )
-                parsec_debug_history_dump();
         }
+
+        /* Dumped by every rank, not just the ones holding a wrong tile: a bad
+         * value can be produced anywhere and only surface where it lands. */
+        if( repeat > 1 && NULL != getenv("DPLASMA_CHECK_TRACE") )
+            parsec_debug_history_dump();
 
         /* Report once, after every iteration is done, so the printing cannot
          * perturb the race it is trying to observe. */

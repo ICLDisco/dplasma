@@ -112,10 +112,10 @@ loc_A = %{ return LOC(descA, (descB->nt-1)-n, k); %}
 
 BODY
 {
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) read_A(%d,%d) %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) read_A(%d,%d) %016"PRIx64" @%p\n",
                              descB->super.myrank, (descB->nt-1)-n, k, n, k,
                              TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), LDA(ddescA, A)));
+                                          CLEAN_NB(descA, k), LDA(ddescA, A)), (void*)A);
 }
 END
 
@@ -141,10 +141,10 @@ loc_B = %{ return LOC(descB, m, k); %}
 
 BODY
 {
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) read_B(%d,%d) %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) read_B(%d,%d) %016"PRIx64" @%p\n",
                              descB->super.myrank, m, k, m, k,
                              TRMM_HASH(B, CLEAN_MB(descB, m), CLEAN_NB(descB, k),
-                                          LDA(ddescB, B)));
+                                          LDA(ddescB, B)), (void*)B);
 }
 END
 
@@ -179,22 +179,22 @@ BODY
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              n, m, (descB->nt-1)-n, (descB->nt-1)-n, A, m, (descB->nt-1)-n, B);
 
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A %016"PRIx64" @%p\n",
                              descB->super.myrank, (descB->nt-1)-n, (descB->nt-1)-n, n, m,
                              TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, (descB->nt-1)-n), lda));
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B %016"PRIx64"\n",
+                                          CLEAN_NB(descA, (descB->nt-1)-n), lda), (void*)A);
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(B, tempmm, tempnn, ldb));
+                             TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
 
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
 
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m,
-                             TRMM_HASH(B, tempmm, tempnn, ldb));
+                             TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
 }
 END
 
@@ -286,24 +286,24 @@ BODY
              "\t(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], lda, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, (descB->nt-1)-n, k, B, m, (descB->nt-1)-n, C);
 
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A %016"PRIx64" @%p\n",
                              descB->super.myrank, m, k, n, m, k,
-                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda));
-    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64"\n",
+                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64" @%p\n",
                              descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
                              TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
-                                          CLEAN_NB(descA, k), ldb));
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64"\n",
+                                          CLEAN_NB(descA, k), ldb), (void*)B);
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                             TRMM_HASH(C, tempmm, tempnn, ldc));
+                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
 
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, lda,
                       B /* descA((descB->nt-1)-n,k) */, ldb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
 
-    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64"\n",
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
-                             TRMM_HASH(C, tempmm, tempnn, ldc));
+                             TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
 }
 END
