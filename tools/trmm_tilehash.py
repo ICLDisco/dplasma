@@ -40,6 +40,12 @@ MARKER = re.compile(r"-- === \wtrmm iteration (\d+) on rank (\d+) begins")
 TASK = re.compile(r"(read_A|read_B|trmm|gemm)\(([\d, ]+)\)(?:\.([\w-]+))?")
 # The checker's own records name no task, just the stage they were taken at.
 STAGE = ("lacpy", "final")
+# A role of the form '<flow>-<when>' is that operand read again later on.
+WHEN = {
+    "after": "when the kernel returned",
+    "saved": "when it was copied aside for the second run",
+    "redone": "once the kernel had been run a second time",
+}
 
 
 def load(paths):
@@ -97,6 +103,14 @@ def is_input(role):
 
 def key_of(r):
     return (r["task"], tuple(r["locals"]), r["role"], r["tile"])
+
+
+def majority(per_it):
+    """The hash most iterations agreed on for one reading."""
+    tally = defaultdict(int)
+    for r in per_it.values():
+        tally[r["hash"]] += 1
+    return max(tally, key=lambda h: tally[h])
 
 
 def audit_A(records, report):
@@ -191,14 +205,15 @@ def audit_kernel_window(records, report):
     for r in records:
         if r["task"] in STAGE:
             continue
-        ident = (r["task"], tuple(r["locals"]), r["role"].split("-")[0])
-        if r["role"].endswith("-after"):
+        base, _, again = r["role"].partition("-")
+        ident = (r["task"], tuple(r["locals"]), base)
+        if again:
             was = before.get(ident)
             if was is not None and was["hash"] != r["hash"]:
-                report("%s %s(%d,%d) was %s when %s started and %s when the "
-                       "kernel returned"
-                       % (ident[2], r["tile"][0], r["tile"][1], r["tile"][2],
-                          was["hash"], describe(was).rsplit(".", 1)[0], r["hash"]))
+                report("%s %s(%d,%d) was %s when %s started and %s %s"
+                       % (base, r["tile"][0], r["tile"][1], r["tile"][2],
+                          was["hash"], describe(was).rsplit(".", 1)[0], r["hash"],
+                          WHEN.get(again, "at reading '%s'" % again)))
         else:
             before[ident] = r
 
@@ -253,8 +268,9 @@ def audit_iterations(iterations, report):
         escaped = sorted({r["tile"] for r, _, _, _ in items
                           if r["task"] == "final"})
         if escaped:
-            report("    it reached the matrix, in %d tile(s): %s"
-                   % (len(escaped), ", ".join("%s(%d,%d)" % t for t in escaped[:6])))
+            report("    it reached the matrix, in %d tile(s)%s: %s"
+                   % (len(escaped), " (first 6)" if len(escaped) > 6 else "",
+                      ", ".join("%s(%d,%d)" % t for t in escaped[:6])))
         else:
             report("    it did not reach the matrix: no tile of the result "
                    "the checker reads back is affected")
@@ -278,7 +294,7 @@ def audit_iterations(iterations, report):
                    "this task produced the divergence" % len(inputs))
             for line in arguments(readings, it, first):
                 report("    " + line)
-            for line in redo(siblings, first, want):
+            for line in redo(readings, siblings, first, want):
                 report("    " + line)
             for line in intruders(iterations[it], siblings, first):
                 report("    " + line)
@@ -313,7 +329,7 @@ def arguments(readings, it, out):
             % (mine, ", ".join(sorted(set(seen.values()) - {mine})))]
 
 
-def redo(siblings, out, want):
+def redo(readings, siblings, out, want):
     """The same kernel run a second time over the same operands.
 
     This separates the two things a wrong output can mean. If the second run
@@ -321,10 +337,29 @@ def redo(siblings, out, want):
     problem and the bytes it wrote were changed afterwards. If it reproduces
     the wrong value, the kernel is deterministic on what it actually read,
     so what it read was not what we hashed.
+
+    When it is the second run itself that diverged, the question turns
+    around: the task wrote the agreed answer in place and then, over what
+    should have been the same operands, computed something else. Nothing
+    downstream consumes the second run, so this costs the result nothing --
+    it is a witness that the operands were still moving after the kernel had
+    returned and been checked.
     """
     second = next((r for r in siblings if r["role"] == "redo"), None)
     if second is None:
         return []
+    if out is second:
+        first = next((r for r in siblings if r["role"] == "out"), None)
+        if first is None:
+            return []
+        agreed = majority(readings[key_of(first)])
+        if first["hash"] == agreed:
+            return ["the task wrote the agreed value %s in place, so the "
+                    "result is fine; it is the second run over the same "
+                    "operands that came out different, which means they were "
+                    "still moving after the kernel returned" % agreed]
+        return ["the in-place result %s disagrees too, so both runs of the "
+                "kernel were affected" % first["hash"]]
     if second["hash"] == want["hash"]:
         return ["a second run of the kernel over the same operands gave %s, "
                 "the value the other iterations agree on, so the kernel was "
@@ -383,7 +418,7 @@ def provenance(readings, iterations, it, siblings, out):
     """
     lines = []
     for r in siblings:
-        if r["role"] != "out" and r["hash"] == out["hash"]:
+        if is_input(r["role"]) and r["hash"] == out["hash"]:
             lines.append("the wrong value is its own %s input, so the kernel's "
                          "write did not take" % r["role"])
     matches = []

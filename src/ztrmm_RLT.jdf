@@ -227,6 +227,11 @@ BODY
                              TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
 
     redo = TRMM_SAVE(B, tempmm, tempnn, ldb);
+    if( NULL != redo )
+        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B-saved "
+                                 "%016"PRIx64" @%p\n",
+                                 descB->super.myrank, m, (descB->nt-1)-n, n, m,
+                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)B);
 
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
@@ -255,6 +260,14 @@ BODY
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m,
                                  TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)B);
         free(redo);
+
+        parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A-redone "
+                                 "%016"PRIx64" @%p\n",
+                                 descB->super.myrank, (descB->nt-1)-n,
+                                 (descB->nt-1)-n, n, m,
+                                 TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
+                                              CLEAN_NB(descA, (descB->nt-1)-n),
+                                              lda), (void*)A);
     }
     {
         int q;
@@ -372,6 +385,11 @@ BODY
                              TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
 
     redo = TRMM_SAVE(C, tempmm, tempnn, ldc);
+    if( NULL != redo )
+        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C-saved "
+                                 "%016"PRIx64" @%p\n",
+                                 descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
+                                 TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)C);
 
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, lda,
@@ -407,6 +425,21 @@ BODY
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
                                  TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)C);
         free(redo);
+
+        /* The operands once more, now that the second call has read them too.
+         * The '-after' pair brackets the first call only, so an operand that
+         * starts moving after the kernel returns falls in the gap between
+         * that reading and whatever consumes the tile next. */
+        parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A-redone "
+                                 "%016"PRIx64" @%p\n",
+                                 descB->super.myrank, m, k, n, m, k,
+                                 TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k),
+                                              lda), (void*)A);
+        parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-redone "
+                                 "%016"PRIx64" @%p\n",
+                                 descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
+                                 TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
+                                              CLEAN_NB(descA, k), ldb), (void*)B);
     }
 
     /* The same output again, a band of columns at a time. How much of the
