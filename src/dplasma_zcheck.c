@@ -195,6 +195,11 @@ int check_zpotrf( parsec_context_t *parsec, int loud,
                 }
                 if( caught ) parsec_debug_history_dump();
             }
+
+            /* A clean iteration to diff the caught one against, and the only
+             * way to see the trace at all on a run that never diverges. */
+            if( NULL != getenv("DPLASMA_CHECK_DUMP") && it == 0 )
+                parsec_debug_history_dump();
         }
 
         /* Report once, after every iteration is done, so the printing cannot

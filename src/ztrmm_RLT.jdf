@@ -44,6 +44,41 @@ extern "C" %{
  *
  */
 
+/* Checksums of what every task actually sees at its entry, recorded into
+ * parsec's in-memory debug history: printing them would serialize the run and
+ * hide the corruption we are chasing. Each record names the tile of the
+ * original matrix the copy came from, so a value that a producer wrote and a
+ * consumer disagrees about is a straight string comparison in the dump.
+ * Only the tile's live elements are hashed, at its real leading dimension,
+ * so the padding a tile carries around never enters the result. */
+#if defined(PARSEC_DEBUG_HISTORY)
+#include <inttypes.h>
+
+static inline uint64_t trmm_tile_hash( const void *ptr, int m, int n, int ld )
+{
+    const char *base = (const char*)ptr;
+    size_t es = sizeof(dplasma_complex64_t), col = (size_t)m * es;
+    uint64_t h = 14695981039346656037ULL;
+    int j;
+
+    for( j = 0; j < n; j++ ) {
+        const char *p = base + (size_t)j * ld * es;
+        size_t i = 0;
+        for( ; i + sizeof(uint64_t) <= col; i += sizeof(uint64_t) ) {
+            uint64_t w;
+            memcpy(&w, p + i, sizeof(uint64_t));
+            h = (h ^ w) * 1099511628211ULL;
+        }
+        for( ; i < col; i++ )
+            h = (h ^ (uint64_t)(unsigned char)p[i]) * 1099511628211ULL;
+    }
+    return h;
+}
+#define TRMM_HASH(ptr, m, n, ld) trmm_tile_hash(ptr, m, n, ld)
+#else
+#define TRMM_HASH(ptr, m, n, ld) ((uint64_t)0)
+#endif  /* defined(PARSEC_DEBUG_HISTORY) */
+
 %}
 
 side      [type = "dplasma_enum_t"]
@@ -77,7 +112,10 @@ loc_A = %{ return LOC(descA, (descB->nt-1)-n, k); %}
 
 BODY
 {
-    /* nothing */
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) read_A(%d,%d) %016"PRIx64"\n",
+                             descB->super.myrank, (descB->nt-1)-n, k, n, k,
+                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
+                                          CLEAN_NB(descA, k), LDA(ddescA, A)));
 }
 END
 
@@ -103,7 +141,10 @@ loc_B = %{ return LOC(descB, m, k); %}
 
 BODY
 {
-    /* nothing */
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) read_B(%d,%d) %016"PRIx64"\n",
+                             descB->super.myrank, m, k, m, k,
+                             TRMM_HASH(B, CLEAN_MB(descB, m), CLEAN_NB(descB, k),
+                                          LDA(ddescB, B)));
 }
 END
 
@@ -137,10 +178,23 @@ BODY
     printlog("CORE_ztrmm(%d, %d)\n"
              "\t(side, uplo, trans, diag, tempmm, tempnn, alpha, A(%d,%d)[%p], lda, B(%d,%d)[%p], ldb)\n",
              n, m, (descB->nt-1)-n, (descB->nt-1)-n, A, m, (descB->nt-1)-n, B);
+
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A %016"PRIx64"\n",
+                             descB->super.myrank, (descB->nt-1)-n, (descB->nt-1)-n, n, m,
+                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
+                                          CLEAN_NB(descA, (descB->nt-1)-n), lda));
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).B %016"PRIx64"\n",
+                             descB->super.myrank, m, (descB->nt-1)-n, n, m,
+                             TRMM_HASH(B, tempmm, tempnn, ldb));
+
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
+
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64"\n",
+                             descB->super.myrank, m, (descB->nt-1)-n, n, m,
+                             TRMM_HASH(B, tempmm, tempnn, ldb));
 }
 END
 
@@ -231,9 +285,25 @@ BODY
     printlog("CORE_zgemm(%d, %d, %d)\n"
              "\t(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb, alpha, B(%d,%d)[%p], ldb, A(%d,%d)[%p], lda, 1.000000, B(%d,%d)[%p], ldb)\n",
              n, m, k, m, k, A, (descB->nt-1)-n, k, B, m, (descB->nt-1)-n, C);
+
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A %016"PRIx64"\n",
+                             descB->super.myrank, m, k, n, m, k,
+                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda));
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B %016"PRIx64"\n",
+                             descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
+                             TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
+                                          CLEAN_NB(descA, k), ldb));
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).C %016"PRIx64"\n",
+                             descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
+                             TRMM_HASH(C, tempmm, tempnn, ldc));
+
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, lda,
                       B /* descA((descB->nt-1)-n,k) */, ldb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
+
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64"\n",
+                             descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
+                             TRMM_HASH(C, tempmm, tempnn, ldc));
 }
 END
