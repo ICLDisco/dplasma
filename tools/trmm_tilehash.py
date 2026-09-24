@@ -33,6 +33,7 @@ from collections import defaultdict
 RECORD = re.compile(
     r"^ (0x[0-9a-f]+)/\d+ \(\s*([0-9.e+-]+) s\) -- TILEHASH r(\d+) "
     r"(descA|descB)\((\d+),(\d+)\) (\S+) ([0-9a-f]{16})(?: @(0x[0-9a-f]+))?"
+    r"((?: \w+=[\d,]+)*)"
 )
 # The checker is precision-generated, so the marker names ztrmm/dtrmm/...
 MARKER = re.compile(r"-- === \wtrmm iteration (\d+) on rank (\d+) begins")
@@ -58,7 +59,7 @@ def load(paths):
             m = RECORD.match(line)
             if not m:
                 continue
-            thread, ts, rank, mat, i, j, task, digest, ptr = m.groups()
+            thread, ts, rank, mat, i, j, task, digest, ptr, args = m.groups()
             rank = int(rank)
             if task in STAGE:
                 key = {"task": task, "locals": [], "role": task}
@@ -72,7 +73,7 @@ def load(paths):
                     "role": t.group(3) or "out",
                 }
             key.update(time=float(ts), tile=(mat, int(i), int(j)), hash=digest,
-                       ptr=ptr, seq=lineno, thread=thread)
+                       ptr=ptr, seq=lineno, thread=thread, args=args.strip())
             runs[rank][current.get(rank, -1)].append(key)
     return {r: dict(sorted(v.items())) for r, v in sorted(runs.items())}
 
@@ -86,10 +87,11 @@ def describe(r):
 def is_input(role):
     """What the task was handed, as opposed to what it wrote.
 
-    'out' and 'out<n>' are the output whole and by column band, and
-    '<flow>-after' is an operand re-read once the kernel returned.
+    'out' and 'out<n>' are the output whole and by column band, 'redo' is the
+    kernel run a second time, and '<flow>-after' is an operand re-read once
+    the kernel returned.
     """
-    return not (role == "out" or re.fullmatch(r"out\d+", role)
+    return not (role == "out" or role == "redo" or re.fullmatch(r"out\d+", role)
                 or role.endswith("-after"))
 
 
@@ -274,6 +276,10 @@ def audit_iterations(iterations, report):
         elif inputs:
             report("    its %d inputs all agree with the other iterations, so "
                    "this task produced the divergence" % len(inputs))
+            for line in arguments(readings, it, first):
+                report("    " + line)
+            for line in redo(siblings, first, want):
+                report("    " + line)
             for line in intruders(iterations[it], siblings, first):
                 report("    " + line)
             for line in provenance(readings, iterations, it, siblings, first):
@@ -290,6 +296,45 @@ def audit_iterations(iterations, report):
         report("    note: iteration %d, the only one the checker validates, is "
                "clean, so this run passes its own residual test and every "
                "divergence above went unlooked at" % last)
+
+
+def arguments(readings, it, out):
+    """The dimensions and leading dimensions the kernel was handed.
+
+    A tile hashed at one leading dimension and written at another, or a
+    dimension that came out short, produces a wrong result from operands
+    that are themselves perfectly correct.
+    """
+    seen = {i: r["args"] for i, r in readings[key_of(out)].items() if r["args"]}
+    if len(set(seen.values())) < 2:
+        return []
+    mine = seen.get(it, "none recorded")
+    return ["the kernel was called as %s, where the other iterations used %s"
+            % (mine, ", ".join(sorted(set(seen.values()) - {mine})))]
+
+
+def redo(siblings, out, want):
+    """The same kernel run a second time over the same operands.
+
+    This separates the two things a wrong output can mean. If the second run
+    produces what every other iteration produced, the kernel was never the
+    problem and the bytes it wrote were changed afterwards. If it reproduces
+    the wrong value, the kernel is deterministic on what it actually read,
+    so what it read was not what we hashed.
+    """
+    second = next((r for r in siblings if r["role"] == "redo"), None)
+    if second is None:
+        return []
+    if second["hash"] == want["hash"]:
+        return ["a second run of the kernel over the same operands gave %s, "
+                "the value the other iterations agree on, so the kernel was "
+                "right and the tile changed after it wrote" % want["hash"]]
+    if second["hash"] == out["hash"]:
+        return ["a second run of the kernel over the same operands reproduced "
+                "the wrong value, so the operands it read were not the ones "
+                "hashed here"]
+    return ["a second run of the kernel over the same operands gave a third "
+            "value %s, so the kernel does not agree with itself" % second["hash"]]
 
 
 def bands(readings, it, siblings, out):
