@@ -119,9 +119,16 @@ int main(int argc, char **argv)
         infos->mb   = dcA.super.mb;
         infos->nb   = dcA.super.nb;
         infos->uplo = uplo;
-        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_stream_infos, "DPLASMA::ZPOTRF::WS",
+        /* Per device, not per stream: the chore looks this up in gpu_device->super.infos. */
+        dplasma_dtd_cuda_workspace_infoid = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::WS",
                                      zpotrf_dtd_destroy_workspace, NULL,
                                      zpotrf_dtd_create_workspace, infos,
+                                     NULL);
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+        dplasma_dtd_hip_workspace_infoid = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::HIP::WS",
+                                     zpotrf_dtd_destroy_hip_workspace, NULL,
+                                     zpotrf_dtd_create_hip_workspace, NULL,
                                      NULL);
 #endif
         /* Testing Insert Function */
@@ -225,6 +232,12 @@ int main(int argc, char **argv)
                                      zpotrf_dtd_create_workspace, infos,
                                      NULL);
 #endif
+#if defined(DPLASMA_HAVE_HIP)
+        dplasma_dtd_hip_workspace_infoid = parsec_info_register( &parsec_per_device_infos, "DPLASMA::ZPOTRF::HIP::WS",
+                                     zpotrf_dtd_destroy_hip_workspace, NULL,
+                                     zpotrf_dtd_create_hip_workspace, NULL,
+                                     NULL);
+#endif
         for( k = 0; k < total; k++ ) {
             tempkm = k == dcA.super.nt-1 ? dcA.super.n-k*dcA.super.nb : dcA.super.nb;
             ldak = BLKLDD(&dcA.super, k);
@@ -325,6 +338,9 @@ int main(int argc, char **argv)
 #if defined(DPLASMA_HAVE_CUDA)
     parsec_info_unregister(&parsec_per_device_infos, dplasma_dtd_cuda_workspace_infoid, NULL);
     free(infos);
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    parsec_info_unregister(&parsec_per_device_infos, dplasma_dtd_hip_workspace_infoid, NULL);
 #endif
 
     if( 0 == rank && info != 0 ) {
