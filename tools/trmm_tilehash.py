@@ -36,7 +36,7 @@ RECORD = re.compile(
 )
 # The checker is precision-generated, so the marker names ztrmm/dtrmm/...
 MARKER = re.compile(r"-- === \wtrmm iteration (\d+) on rank (\d+) begins")
-TASK = re.compile(r"(read_A|read_B|trmm|gemm)\(([\d, ]+)\)(?:\.(\w+))?")
+TASK = re.compile(r"(read_A|read_B|trmm|gemm)\(([\d, ]+)\)(?:\.([\w-]+))?")
 # The checker's own records name no task, just the stage they were taken at.
 STAGE = ("lacpy", "final")
 
@@ -111,7 +111,7 @@ def audit_B_reads(records, report):
         if r["tile"][0] != "descB":
             continue
         if not ((r["task"] == "trmm" and r["role"] == "B")
-                or (r["task"] == "gemm" and r["role"] == "A")):
+                or (r["task"] == "gemm" and r["role"].startswith("A"))):
             continue
         want = published.get(r["tile"])
         if want is not None and want != r["hash"]:
@@ -167,6 +167,30 @@ def audit_aliasing(records, report):
                 break
 
 
+def audit_kernel_window(records, report):
+    """An operand must not move while the kernel is reading it.
+
+    Each input is hashed on the way into the body and again once the kernel
+    returns. The two readings bracket the only interval the other checks
+    cannot see, so a difference here says the tile was written during the
+    call rather than before or after it.
+    """
+    before = {}
+    for r in records:
+        if r["task"] in STAGE:
+            continue
+        ident = (r["task"], tuple(r["locals"]), r["role"].split("-")[0])
+        if r["role"].endswith("-after"):
+            was = before.get(ident)
+            if was is not None and was["hash"] != r["hash"]:
+                report("%s %s(%d,%d) was %s when %s started and %s when the "
+                       "kernel returned"
+                       % (ident[2], r["tile"][0], r["tile"][1], r["tile"][2],
+                          was["hash"], describe(was).rsplit(".", 1)[0], r["hash"]))
+        else:
+            before[ident] = r
+
+
 def audit_iterations(iterations, report):
     """Every task must see and produce the same bytes in every iteration.
 
@@ -218,7 +242,8 @@ def audit_iterations(iterations, report):
             continue
         siblings = [r for r in iterations[it]
                     if r["task"] == first["task"] and r["locals"] == first["locals"]]
-        inputs = [r for r in siblings if r["role"] != "out"]
+        inputs = [r for r in siblings
+                  if r["role"] != "out" and not r["role"].endswith("-after")]
         bad_in = [r for r in inputs
                   if r["hash"] != readings[key_of(r)][
                       max(set(readings[key_of(r)]),
@@ -347,7 +372,8 @@ def main():
         for name, audit in (("A is read-only", audit_A),
                             ("no write-after-read on B", audit_B_reads),
                             ("C chain and write-back", audit_C_chain),
-                            ("no two tiles share a buffer", audit_aliasing)):
+                            ("no two tiles share a buffer", audit_aliasing),
+                            ("operands hold still", audit_kernel_window)):
             before = len(found)
             for records in iterations.values():
                 audit(records, found.append)

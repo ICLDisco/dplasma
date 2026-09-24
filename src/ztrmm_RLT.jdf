@@ -192,6 +192,14 @@ BODY
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
 
+    /* The operand hashed again now that the kernel is done with it. An input
+     * that moved between the two readings was being written while the kernel
+     * was reading it, which is a different failure from the output being
+     * clobbered afterwards and wants a different fix. */
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) trmm(%d,%d).A-after %016"PRIx64" @%p\n",
+                             descB->super.myrank, (descB->nt-1)-n, (descB->nt-1)-n, n, m,
+                             TRMM_HASH(A, CLEAN_MB(descA, (descB->nt-1)-n),
+                                          CLEAN_NB(descA, (descB->nt-1)-n), lda), (void*)A);
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m,
                              TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
@@ -302,6 +310,16 @@ BODY
                       B /* descA((descB->nt-1)-n,k) */, ldb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
 
+    /* Both operands hashed again now that the kernel is done with them, so a
+     * tile written while it was being read can be told from an output
+     * clobbered after the fact. */
+    parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).A-after %016"PRIx64" @%p\n",
+                             descB->super.myrank, m, k, n, m, k,
+                             TRMM_HASH(A, CLEAN_MB(descB, m), CLEAN_NB(descB, k), lda), (void*)A);
+    parsec_debug_history_add("TILEHASH r%d descA(%d,%d) gemm(%d,%d,%d).B-after %016"PRIx64" @%p\n",
+                             descB->super.myrank, (descB->nt-1)-n, k, n, m, k,
+                             TRMM_HASH(B, CLEAN_MB(descA, (descB->nt-1)-n),
+                                          CLEAN_NB(descA, k), ldb), (void*)B);
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
                              TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
