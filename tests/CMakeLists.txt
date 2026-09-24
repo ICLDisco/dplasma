@@ -95,5 +95,13 @@ add_executable(testing_info testing_info.c)
 add_dependencies(testing_info dplasma dplasma_includes)
 target_link_libraries(testing_info PUBLIC dplasma $<$<BOOL:${MPI_C_FOUND}>:MPI::MPI_C>)
 
+# Needs no MPI and no parsec context: it asks only whether the BLAS can be
+# called from several threads at once, which is how every dplasma kernel
+# calls it.
+find_package(Threads REQUIRED)
+add_executable(testing_blas_threadsafety testing_blas_threadsafety.c)
+add_dependencies(testing_blas_threadsafety dplasma dplasma_includes)
+target_link_libraries(testing_blas_threadsafety PUBLIC dplasma Threads::Threads)
+
 # Define Testings
 include(Testings.cmake)
