@@ -99,7 +99,7 @@ def is_input(role):
     the kernel returned.
     """
     return not (role == "out" or role == "redo" or re.fullmatch(r"out\d+", role)
-                or role.endswith("-after"))
+                or "-" in role)
 
 
 def key_of(r):
@@ -217,6 +217,29 @@ def audit_kernel_window(records, report):
                           WHEN.get(again, "at reading '%s'" % again)))
         else:
             before[ident] = r
+
+
+def audit_once(records, report):
+    """A task body must run exactly once per iteration.
+
+    Every other check reads one hash per task per reading and would not
+    notice a second one: a task that ran twice accumulates into C twice, and
+    the readings of the second run quietly replace those of the first. That
+    looks from the outside exactly like a deterministic kernel returning two
+    different answers from the same operands.
+    """
+    seen = defaultdict(list)
+    for r in records:
+        if r["task"] not in STAGE:
+            seen[key_of(r)].append(r)
+    for key, rs in sorted(seen.items(), key=lambda kv: kv[1][0]["seq"]):
+        if len(rs) > 1:
+            report("%s %s(%d,%d) was recorded %d times in one iteration, at "
+                   "records %s, reading %s"
+                   % (describe(rs[0]), rs[0]["tile"][0], rs[0]["tile"][1],
+                      rs[0]["tile"][2], len(rs),
+                      "/".join(str(r["seq"]) for r in rs),
+                      " then ".join(r["hash"] for r in rs)))
 
 
 def audit_iterations(iterations, report):
@@ -382,28 +405,35 @@ def redo(readings, siblings, out, want):
     second = next((r for r in siblings if r["role"] == "redo"), None)
     if second is None:
         return []
-    if out is second:
-        first = next((r for r in siblings if r["role"] == "out"), None)
-        if first is None:
-            return []
-        agreed = majority(readings[key_of(first)])
-        if first["hash"] == agreed:
-            return ["the task wrote the agreed value %s in place, so the "
-                    "result is fine; it is the second run over the same "
-                    "operands that came out different, which means they were "
-                    "still moving after the kernel returned" % agreed]
+    first = next((r for r in siblings if r["role"] == "out"), None)
+
+    # Whether every operand read again later came back with the bytes it had
+    # going in. When it did, the two calls provably saw the same input.
+    was = {r["role"]: r["hash"] for r in siblings if "-" not in r["role"]}
+    steady = all(was.get(r["role"].split("-")[0]) == r["hash"]
+                 for r in siblings if "-" in r["role"])
+    same = (" both calls read byte-identical operands, each hashed again "
+            "afterwards, so the kernel did not agree with itself"
+            if steady else
+            " but an operand moved during the task, so the two calls need "
+            "not have read the same bytes")
+
+    if out is second and first is not None:
+        if first["hash"] == majority(readings[key_of(first)]):
+            return ["the task wrote the agreed value in place and the second "
+                    "run over the same operands gave %s instead;%s"
+                    % (second["hash"], same)]
         return ["the in-place result %s disagrees too, so both runs of the "
                 "kernel were affected" % first["hash"]]
     if second["hash"] == want["hash"]:
-        return ["a second run of the kernel over the same operands gave %s, "
-                "the value the other iterations agree on, so the kernel was "
-                "right and the tile changed after it wrote" % want["hash"]]
+        return ["a second run of the kernel gave %s, the value the other "
+                "iterations agree on, so the call that wrote the tile is the "
+                "odd one out;%s" % (want["hash"], same)]
     if second["hash"] == out["hash"]:
-        return ["a second run of the kernel over the same operands reproduced "
-                "the wrong value, so the operands it read were not the ones "
-                "hashed here"]
-    return ["a second run of the kernel over the same operands gave a third "
-            "value %s, so the kernel does not agree with itself" % second["hash"]]
+        return ["a second run of the kernel reproduced the wrong value, so "
+                "the operands it read were not the ones hashed here"]
+    return ["a second run of the kernel gave a third value %s, so the kernel "
+            "does not agree with itself" % second["hash"]]
 
 
 def bands(readings, it, siblings, out):
@@ -553,7 +583,8 @@ def main():
                             ("no write-after-read on B", audit_B_reads),
                             ("C chain and write-back", audit_C_chain),
                             ("no two tiles share a buffer", audit_aliasing),
-                            ("operands hold still", audit_kernel_window)):
+                            ("operands hold still", audit_kernel_window),
+                            ("each task ran once", audit_once)):
             before = tally()
             for records in iterations.values():
                 audit(records, found.append)

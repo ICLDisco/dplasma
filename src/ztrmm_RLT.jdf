@@ -44,6 +44,35 @@ extern "C" %{
  *
  */
 
+/* A single-threaded OpenBLAS packs its panels into a central buffer pool in
+ * memory.c, and the allocation out of that pool is only guarded when the
+ * library was built with USE_LOCKING. That is off by default and is only
+ * turned on automatically for the threaded builds, so a sequential build
+ * called from several worker threads at once can hand the same scratch to
+ * two kernels: each computes from operands that are themselves perfectly
+ * correct and returns an answer mixed with someone else's panel.
+ *
+ * Serialising the kernel calls tells that apart from anything in the
+ * dataflow. If the divergences stop under TRMM_LOCK while every other check
+ * still passes, the bug is under the BLAS and not in parsec. */
+#include <pthread.h>
+#include <stdlib.h>
+
+static pthread_mutex_t trmm_kernel_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static inline int trmm_lock_on( void )
+{
+    static int on = -1;
+    if( on < 0 ) on = (NULL != getenv("TRMM_LOCK"));
+    return on;
+}
+#define TRMM_LOCK()                                     \
+    do { if( trmm_lock_on() )                           \
+             pthread_mutex_lock(&trmm_kernel_lock); } while(0)
+#define TRMM_UNLOCK()                                   \
+    do { if( trmm_lock_on() )                           \
+             pthread_mutex_unlock(&trmm_kernel_lock); } while(0)
+
 /* Checksums of what every task actually sees at its entry, recorded into
  * parsec's in-memory debug history: printing them would serialize the run and
  * hide the corruption we are chasing. Each record names the tile of the
@@ -245,10 +274,12 @@ BODY
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m,
                                  TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)B);
 
+    TRMM_LOCK();
     CORE_ztrmm(side, uplo, trans,
                diag, tempmm, tempnn,
                alpha, A /* descA((descB->nt-1)-n,(descB->nt-1)-n) */, lda,
                       B /* descB(m,             (descB->nt-1)-n) */, ldb );
+    TRMM_UNLOCK();
 
     /* The operand hashed again now that the kernel is done with it. An input
      * that moved between the two readings was being written while the kernel
@@ -265,8 +296,10 @@ BODY
                              tempmm, tempnn, lda, ldb);
 
     if( NULL != redo ) {
+        TRMM_LOCK();
         CORE_ztrmm(side, uplo, trans, diag, tempmm, tempnn,
                    alpha, A, lda, redo, tempmm );
+        TRMM_UNLOCK();
         parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).redo "
                                  "%016"PRIx64" @%p\n",
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m,
@@ -407,10 +440,12 @@ BODY
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
                                  TRMM_HASH(redo, tempmm, tempnn, tempmm), (void*)C);
 
+    TRMM_LOCK();
     CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                alpha, A /* descB(m,k) */, lda,
                       B /* descA((descB->nt-1)-n,k) */, ldb,
                1.0,   C /* descB(m,(descB->nt-1)-n) */, ldc );
+    TRMM_UNLOCK();
 
     /* Both operands hashed again now that the kernel is done with them, so a
      * tile written while it was being read can be told from an output
@@ -435,10 +470,12 @@ BODY
                              TRMM_CP(_f_C));
 
     if( NULL != redo ) {
+        TRMM_LOCK();
         CORE_zgemm(dplasmaNoTrans, trans, tempmm, tempnn, descB->mb,
                    alpha, A, lda,
                           B, ldb,
                    1.0,   redo, tempmm );
+        TRMM_UNLOCK();
         parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).redo "
                                  "%016"PRIx64" @%p\n",
                                  descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
