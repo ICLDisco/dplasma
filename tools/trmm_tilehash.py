@@ -248,6 +248,14 @@ def audit_iterations(iterations, report):
                % (describe(first), first["tile"][0], first["tile"][1],
                   first["tile"][2], first["hash"], total - odd, total,
                   want["hash"]))
+        escaped = sorted({r["tile"] for r, _, _, _ in items
+                          if r["task"] == "final"})
+        if escaped:
+            report("    it reached the matrix, in %d tile(s): %s"
+                   % (len(escaped), ", ".join("%s(%d,%d)" % t for t in escaped[:6])))
+        else:
+            report("    it did not reach the matrix: no tile of the result "
+                   "the checker reads back is affected")
         if first["task"] in STAGE:
             continue
         siblings = [r for r in iterations[it]
@@ -272,6 +280,16 @@ def audit_iterations(iterations, report):
                 report("    " + line)
             for line in bands(readings, it, siblings, first):
                 report("    " + line)
+
+    # check_zpotrf norms the matrix the *last* iteration leaves behind, so a
+    # divergence anywhere else is overwritten before the residual is taken and
+    # the run is pronounced correct. Saying so keeps a clean validator from
+    # being read as the tool crying wolf.
+    last = max(iterations)
+    if last not in by_iteration:
+        report("    note: iteration %d, the only one the checker validates, is "
+               "clean, so this run passes its own residual test and every "
+               "divergence above went unlooked at" % last)
 
 
 def bands(readings, it, siblings, out):
@@ -414,18 +432,21 @@ def main():
                  sum(len(v) for v in iterations.values())))
 
         found = []
+        # A finding is one line at the left margin; everything indented under
+        # it explains that same finding and must not be counted again.
+        tally = lambda: sum(1 for l in found if not l.startswith(" "))
         for name, audit in (("A is read-only", audit_A),
                             ("no write-after-read on B", audit_B_reads),
                             ("C chain and write-back", audit_C_chain),
                             ("no two tiles share a buffer", audit_aliasing),
                             ("operands hold still", audit_kernel_window)):
-            before = len(found)
+            before = tally()
             for records in iterations.values():
                 audit(records, found.append)
-            print("  %-26s %s" % (name, "ok" if len(found) == before
-                                  else "%d violations" % (len(found) - before)))
+            print("  %-26s %s" % (name, "ok" if tally() == before
+                                  else "%d violations" % (tally() - before)))
 
-        before = len(found)
+        before = tally()
         audit_iterations(iterations, found.append)
         if len(iterations) < 2:
             print("  %-26s NOT CHECKED - only one iteration in this dump"
@@ -433,11 +454,11 @@ def main():
         else:
             comparable += 1
             print("  %-26s %s" % ("same bytes every iteration",
-                                  "ok" if len(found) == before
-                                  else "%d divergences" % (len(found) - before)))
+                                  "ok" if tally() == before
+                                  else "%d divergences" % (tally() - before)))
         for line in found:
             print("    " + line)
-        total += len(found)
+        total += tally()
 
     if not comparable:
         print("\nNo rank's dump held more than one iteration, so the strongest "
