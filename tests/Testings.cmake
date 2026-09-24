@@ -169,6 +169,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
   dplasma_add_test(potrf_dtd            trsm    shm -N 874 -K 367 -t 76 -i 23 ${OPTIONS})
   dplasma_add_test(geqrf_dtd            gemm    shm -N 874 -K 367 -t 76 -i 23 ${OPTIONS})
   dplasma_add_test(getrf_incpiv_dtd     gemm    shm -N 874 -K 367 -t 76 -i 23 ${OPTIONS})
+  dplasma_add_test(gemm_dtd             gemm    shm -M 106 -N 283 -K 97 -t 56 ${OPTIONS})
 
   # GPU tests
   if (DPLASMA_HAVE_CUDA)
@@ -180,9 +181,36 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(gemm               gemm    1gpu_cuda_shm -N 1280 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    1gpu_cuda_~knb_shm -N 1000 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    2gpu_cuda_shm -N 1940 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # Nothing drives the trsm device bodies directly; potrf's solve check is the
+    # only thing that reaches them, and it fails on two devices while passing on
+    # one. The device count is the only difference between these two, so they
+    # separate the trsm bodies from potrf's use of them. M is not a tile multiple
+    # and N is narrower than a tile, which is the shape potrs solves.
+    dplasma_add_test(trsm               trsm    1gpu_cuda_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    2gpu_cuda_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # The 2gpu potrf above is the only potrf whose N is not a tile multiple, and
+    # the only one that fails. Same device count, N a tile multiple, to tell the
+    # trailing partial tile apart from the second device.
+    dplasma_add_test(potrf              potrf   2gpu_cuda_evennb_shm -N 3200 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # What fails on two devices is potrf's solve check, not its factorization,
+    # and trsm on its own is fine there. Two things separate the two cases: the
+    # solve reads a matrix potrf just produced on the devices, and it solves for
+    # a single column while the trsm tests above use a full tile of them. These
+    # four vary one of the two at a time: posv is the factorization followed by a
+    # wide solve, and the nrhs1 trsm is a narrow solve on a freshly built matrix.
+    dplasma_add_test(posv               posv    1gpu_cuda_shm -N 3200 -t 320 -K 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
+    dplasma_add_test(posv               posv    2gpu_cuda_shm -N 3200 -t 320 -K 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    1gpu_cuda_nrhs1_shm -M 3200 -N 1 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    2gpu_cuda_nrhs1_shm -M 3200 -N 1 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
     # The insert_task interface on a device. Until now the dtd tests only ran on
-    # the CPU chores, so the cuda and hip ones went unexercised.
+    # the CPU chores, so the cuda and hip ones went unexercised. M, N and K are
+    # deliberately not multiples of the tile size: the gemm chore takes m and n
+    # separately, and with square tiles everywhere a transposed one would pass.
     dplasma_add_test(potrf_dtd          potrf_dtd 1gpu_cuda_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
+    dplasma_add_test(gemm_dtd           gemm_dtd 1gpu_cuda_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # gemm_dtd passes on one device and fails on two under mpi. Two devices
+    # without mpi separates the second device from the distribution.
+    dplasma_add_test(gemm_dtd           gemm_dtd 2gpu_cuda_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 2 -- --mca device_cuda_memory_number_of_blocks 4096)
   endif (DPLASMA_HAVE_CUDA)
   if (DPLASMA_HAVE_HIP)
     dplasma_add_gpu_probe(hip)
@@ -194,7 +222,16 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(gemm               gemm    1gpu_hip_~knb_shm -N 1000 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(gemm               gemm    2gpu_hip_shm -N 1940 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
     # See the cuda block above.
+    dplasma_add_test(trsm               trsm    1gpu_hip_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    2gpu_hip_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(potrf              potrf   2gpu_hip_evennb_shm -N 3200 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(posv               posv    1gpu_hip_shm -N 3200 -t 320 -K 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(posv               posv    2gpu_hip_shm -N 3200 -t 320 -K 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    1gpu_hip_nrhs1_shm -M 3200 -N 1 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    2gpu_hip_nrhs1_shm -M 3200 -N 1 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(potrf_dtd          potrf_dtd 1gpu_hip_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(gemm_dtd           gemm_dtd 1gpu_hip_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(gemm_dtd           gemm_dtd 2gpu_hip_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
   endif (DPLASMA_HAVE_HIP)
 
 
@@ -234,6 +271,11 @@ if( MPI_C_FOUND )
     dplasma_add_test(trsm               trmm  mpi:${PROCS} -M 106 -N 150 -K 97 -t 19 ${OPTIONS})
     dplasma_add_test(gemm               lange mpi:${PROCS} -M 106 -N 283 -K 97 -t 19 ${OPTIONS})
     dplasma_add_test(gemm_dtd           lange mpi:${PROCS} -M 106 -N 283 -K 97 -t 19 ${OPTIONS})
+    # The dtd tests above leave P at its default of one process per row, so a 2d
+    # grid has never been exercised through the insert_task interface. Same sizes
+    # and grid as the 2gpu gemm_dtd test further down, but on the cpu chores, to
+    # tell whether a failure there belongs to the device bodies or to the wrapper.
+    dplasma_add_test(gemm_dtd           lange 2x2_mpi:${PROCS} -M 1940 -N 1300 -K 970 -t 320 -P 2 ${OPTIONS})
     dplasma_add_test(symm               lange mpi:${PROCS} -M 106 -N 283 -K 97 -t 19 ${OPTIONS})
     dplasma_add_test(syrk               lange mpi:${PROCS} -M 287 -N 283 -K 97 -t 19 ${OPTIONS})
     dplasma_add_test(syr2k              lange mpi:${PROCS} -M 287 -N 283 -K 97 -t 19 ${OPTIONS})
@@ -301,6 +343,8 @@ if( MPI_C_FOUND )
         dplasma_add_test(potrf potrf_1gpu 2gpu_cuda_mpi:${PROCS} -N 4600 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_cuda_memory_number_of_blocks 4096)
         dplasma_add_test(gemm  gemm       2gpu_cuda_mpi:${PROCS} -N 1940 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_cuda_memory_number_of_blocks 4096)
         dplasma_add_test(gemm  gemm       2gpu_cuda_lowmem_mpi:${PROCS} -N 1940 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_cuda_memory_number_of_blocks 21)
+        # See the shm block for why M, N and K differ and are not tile multiples.
+        dplasma_add_test(gemm_dtd gemm_dtd 2gpu_cuda_mpi:${PROCS} -M 1940 -N 1300 -K 970 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_cuda_memory_number_of_blocks 4096)
     endif (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
     if (DPLASMA_HAVE_HIP AND MPI_C_FOUND)
         dplasma_add_test(potrf potrf      1gpu_hip_mpi:${PROCS} -N 3200 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
@@ -308,6 +352,8 @@ if( MPI_C_FOUND )
         dplasma_add_test(potrf potrf_1gpu 2gpu_hip_mpi:${PROCS} -N 4600 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
         dplasma_add_test(gemm  gemm       2gpu_hip_mpi:${PROCS} -N 1940 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
         dplasma_add_test(gemm  gemm       2gpu_hip_lowmem_mpi:${PROCS} -N 1940 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_hip_memory_number_of_blocks 21)
+        # See the shm block for why M, N and K differ and are not tile multiples.
+        dplasma_add_test(gemm_dtd gemm_dtd 2gpu_hip_mpi:${PROCS} -M 1940 -N 1300 -K 970 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
     endif (DPLASMA_HAVE_HIP AND MPI_C_FOUND)
 
     # dplasma_add_test(potrf_pbq "" mpi:${PROCS} -N 4000 ${OPTIONS} -o PBQ)
