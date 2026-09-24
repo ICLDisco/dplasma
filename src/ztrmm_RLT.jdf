@@ -84,16 +84,22 @@ END
 read_B(m, k) [profile = off]
   /* Execution Space */
   m = 0 .. (descB->mt-1)
-  k = 0 .. (descB->nt-2)
+  k = 0 .. (descB->nt-1)
 
 loc_B = %{ return LOC(descB, m, k); %}
 
   /* Locality */
   : descB(m,k)
 
+  /* The sole entry point into the DAG for every tile of B. ztrmm((nt-1)-k, m)
+   * overwrites this very tile, so it takes it from here rather than reading
+   * ddescB a second time: a tile with two entry points is not something the
+   * runtime can relate, and the two views then race.
+   * Column nt-1 feeds no zgemm, so that output is conditional. */
   READ  B    <- ddescB(m,k)                         [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
                                                       type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
-             -> A zgemm(0 .. (descB->nt-k-2), m, k) /* dep OUT: rely on datacopy dtt for sending */
+             -> (k <= (descB->nt-2)) ? A zgemm(0 .. (descB->nt-k-2), m, k) /* dep OUT: rely on datacopy dtt for sending */
+             -> B ztrmm((descB->nt-1)-k, m)         /* dep OUT: rely on datacopy dtt for sending */
 
 BODY
 {
@@ -114,8 +120,9 @@ loc_B = %{ return LOC(descB, m,             (descB->nt-1)-n); %}
 
   CTL   ctl0 <- ctl0 zgemm(0..n-1, m, descB->nt-n-1)
   READ  A    <- A read_A(n, descB->nt-1-n)                          [ type_remote = %{ return ADTT_DC(ddescA, loc_A, A_SHAPE, TILED); %} ]
-  RW    B    <- ddescB(m,(descB->nt-1)-n)                           [ type        = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, TILED); %}
-                                                                      type_data   = %{ return ADTT_READ(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
+  /* B enters the DAG only through read_B, exactly as A enters only
+   * through read_A. */
+  RW    B    <- B read_B(m,(descB->nt-1)-n)                         [ type_remote = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, TILED); %} ]
              -> (n <  (descB->nt-1)) ? C zgemm(n, m, 0)             /* dep OUT: rely on datacopy dtt for sending */
              -> (n == (descB->nt-1)) ? ddescB( m, (descB->nt-1)-n ) [ type        = %{ return ADTT_CP(_f_B, ddescB, loc_B, B_SHAPE); %}
                                                                       type_data   = %{ return ADTT_DC(ddescB, loc_B, B_SHAPE, LAPACK); %} ]
