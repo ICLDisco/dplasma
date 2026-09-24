@@ -12,6 +12,8 @@
  * @author Piotr Luszczek
  * @date 2009-11-15
  *
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
+ *
  * @precisions normal z -> c d s
  *
  **/
@@ -25,6 +27,18 @@ struct CORE_zgetrf_data_s {
     volatile PLASMA_Complex64_t *CORE_zamax;
     volatile int                *CORE_zstep;
 };
+
+/**
+ * The threads of a panel hand each other data through CORE_zamax and
+ * announce it through CORE_zstep. volatile keeps the compiler from moving
+ * or eliding those accesses, but says nothing to the hardware: on any weakly
+ * ordered machine a thread can see the announcement while the value it
+ * refers to is still in the writer's store buffer, and the panel then
+ * pivots on whatever was in memory before. Pair every announcement with a
+ * release and every observation of one with an acquire.
+ */
+#define CORE_zsync_release() __atomic_thread_fence(__ATOMIC_RELEASE)
+#define CORE_zsync_acquire() __atomic_thread_fence(__ATOMIC_ACQUIRE)
 
 static inline void
 CORE_zgetrf_reclap_update(CORE_zgetrf_data_t *data,
@@ -229,6 +243,7 @@ CORE_zamax1_thread(CORE_zgetrf_data_t *data,
         }
 
         /* better not fuse the loop above and below to make sure data is sync'd */
+        CORE_zsync_acquire();
 
         for (i = 1; i < thcnt; ++i) {
             tmp = CORE_zamax[i];
@@ -251,6 +266,10 @@ CORE_zamax1_thread(CORE_zgetrf_data_t *data,
         *thwinner = j;
         *globalamx = curval;
 
+        /* -3 is what releases the others to read CORE_zamax, so everything
+         * written above has to be visible before any of them sees it. */
+        CORE_zsync_release();
+
         for (i = 1; i < thcnt; ++i)
             CORE_zstep[i] = -3;
 
@@ -263,11 +282,14 @@ CORE_zamax1_thread(CORE_zgetrf_data_t *data,
         CORE_zstep[0] = -1;
     } else {
         CORE_zamax[thidx] = localamx;
+        /* -2 is what tells thread 0 the value above is there to be read. */
+        CORE_zsync_release();
         CORE_zstep[thidx] = -2;  /* announce to thread 0 that local amax was stored */
         while (CORE_zstep[0] == -1) { /* wait for thread 0 to finish calculating the global amax */
         }
         while (CORE_zstep[thidx] != -3) { /* wait for thread 0 to store amax */
         }
+        CORE_zsync_acquire();
         *thwinner  = -CORE_zstep[0] - 2;
         *globalamx = CORE_zamax[thidx];     /* read the amax from the location adjacent to the one in the above loop */
         CORE_zstep[thidx] = -1;  /* signal thread 0 that this thread is done reading */
