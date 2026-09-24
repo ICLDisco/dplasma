@@ -153,61 +153,81 @@ def audit_aliasing(records, report):
             continue
         ranges = sorted((min(ts), max(ts), tile) for tile, ts in tiles.items())
         for (_, prev_end, prev), (nxt_start, _, nxt) in zip(ranges, ranges[1:]):
-            if nxt_start <= prev_end:
-                report("%s is %s(%d,%d) and %s(%d,%d) at the same time "
-                       "(%.4fs..%.4fs overlaps from %.4fs)"
-                       % (ptr, prev[0], prev[1], prev[2], nxt[0], nxt[1], nxt[2],
-                          ranges[0][0], prev_end, nxt_start))
+            # Timestamps land on a millisecond grid, so two uses that merely
+            # touch cannot be told from an arena buffer legitimately recycled
+            # after its last reader. Only a strict overlap means anything.
+            if nxt_start < prev_end:
+                report("%s is %s(%d,%d) until %.4fs and %s(%d,%d) from %.4fs"
+                       % (ptr, prev[0], prev[1], prev[2], prev_end,
+                          nxt[0], nxt[1], nxt[2], nxt_start))
                 break
 
 
 def audit_iterations(iterations, report):
-    """Every task must see and produce the same bytes in every iteration."""
+    """Every task must see and produce the same bytes in every iteration.
+
+    The baseline is what most iterations agreed on, not iteration 0. Taking
+    the first iteration as truth makes anything it does differently -- BLAS
+    dispatching on its first call, say -- look like nine failures instead of
+    one oddity, and buries the real thing underneath.
+    """
     if len(iterations) < 2:
         return
-    base_it = min(iterations)
-    base = {key_of(r): r for r in iterations[base_it]}
-    diverged = []
+
+    readings = defaultdict(dict)
     for it, records in iterations.items():
-        if it == base_it:
-            continue
         for r in records:
-            want = base.get(key_of(r))
-            if want is not None and want["hash"] != r["hash"]:
-                diverged.append((it, r, want))
+            readings[key_of(r)][it] = r
+
+    diverged = []
+    for key, per_it in readings.items():
+        tally = defaultdict(int)
+        for r in per_it.values():
+            tally[r["hash"]] += 1
+        if len(tally) == 1:
+            continue
+        agreed = max(tally, key=lambda h: tally[h])
+        want = next(r for r in per_it.values() if r["hash"] == agreed)
+        for it, r in per_it.items():
+            if r["hash"] != agreed:
+                diverged.append((it, r, want, tally[r["hash"]], len(per_it)))
 
     if not diverged:
         return
-    diverged.sort(key=lambda d: (d[0], d[1]["time"]))
 
     by_iteration = defaultdict(list)
-    for it, r, want in diverged:
-        by_iteration[it].append((r, want))
+    for it, r, want, odd, total in diverged:
+        by_iteration[it].append((r, want, odd, total))
+    for items in by_iteration.values():
+        items.sort(key=lambda d: d[0]["time"])
 
     for it, items in sorted(by_iteration.items()):
-        first, want = items[0]
-        report("iteration %d: %d task inputs/outputs differ from iteration %d, "
-               "earliest at %.4fs" % (it, len(items), base_it, first["time"]))
-        report("    first divergence  %-22s %s(%d,%d) %s, was %s"
+        first, want, odd, total = items[0]
+        report("iteration %d: %d readings disagree with what the other "
+               "iterations agreed on, earliest at %.4fs"
+               % (it, len(items), first["time"]))
+        report("    %-22s %s(%d,%d) %s, %d of %d iterations say %s"
                % (describe(first), first["tile"][0], first["tile"][1],
-                  first["tile"][2], first["hash"], want["hash"]))
-        # Did this task get bad data, or make it? Its other records at the same
-        # moment answer that without any further digging.
-        if first["task"] not in STAGE:
-            siblings = [r for r in iterations[it]
-                        if r["task"] == first["task"]
-                        and r["locals"] == first["locals"]]
-            inputs = [r for r in siblings if r["role"] not in ("out",)]
-            bad_in = [r for r in inputs
-                      if base.get(key_of(r)) is not None
-                      and base[key_of(r)]["hash"] != r["hash"]]
-            if bad_in:
-                report("    it was fed bad data: " + ", ".join(
-                    "%s %s(%d,%d)" % (r["role"], r["tile"][0], r["tile"][1],
-                                      r["tile"][2]) for r in bad_in))
-            elif inputs:
-                report("    its %d inputs all match iteration %d, so this task "
-                       "produced the divergence" % (len(inputs), base_it))
+                  first["tile"][2], first["hash"], total - odd, total,
+                  want["hash"]))
+        if first["task"] in STAGE:
+            continue
+        siblings = [r for r in iterations[it]
+                    if r["task"] == first["task"] and r["locals"] == first["locals"]]
+        inputs = [r for r in siblings if r["role"] != "out"]
+        bad_in = [r for r in inputs
+                  if r["hash"] != readings[key_of(r)][
+                      max(set(readings[key_of(r)]),
+                          key=lambda i: sum(
+                              readings[key_of(r)][i]["hash"] == readings[key_of(r)][j]["hash"]
+                              for j in readings[key_of(r)]))]["hash"]]
+        if bad_in:
+            report("    it was fed bad data: " + ", ".join(
+                "%s %s(%d,%d)" % (r["role"], r["tile"][0], r["tile"][1], r["tile"][2])
+                for r in bad_in))
+        elif inputs:
+            report("    its %d inputs all agree with the other iterations, so "
+                   "this task produced the divergence" % len(inputs))
 
 
 def main():
