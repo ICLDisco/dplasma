@@ -120,7 +120,9 @@ include(Testings.cmake)
 
 get_property(dplasma_tests DIRECTORY PROPERTY TESTS)
 list(REMOVE_ITEM dplasma_tests dplasma_blas_threadsafety)
-if(dplasma_tests)
-  set_tests_properties(${dplasma_tests} PROPERTIES
-                       FIXTURES_REQUIRED DPLASMA_BLAS_THREADSAFE)
-endif()
+# Append: the gpu tests already require the device probe fixture, and a plain
+# set_tests_properties here would replace it rather than add to it.
+foreach(dplasma_test ${dplasma_tests})
+  set_property(TEST ${dplasma_test} APPEND PROPERTY
+               FIXTURES_REQUIRED DPLASMA_BLAS_THREADSAFE)
+endforeach()

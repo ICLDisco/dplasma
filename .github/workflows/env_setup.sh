@@ -21,6 +21,11 @@ elif [ "$DEVICE" = "gpu_amd" ];then
    HIP=ON
 fi
 
+# Errors that mean the runner itself cannot execute GPU kernels, as opposed to a
+# defect in the code under test. When the GPU preflight fails with one of these,
+# the workflow skips the gpu tests instead of reporting them as failures.
+export GPU_UNUSABLE_RE='TensileLibrary|hipErrorInvalidDeviceFunction|hipErrorNoDevice|hipErrorNoBinaryForGpu|no kernel image is available|CUBLAS_STATUS_ARCH_MISMATCH|no CUDA-capable device is detected|CUDA driver version is insufficient|forward compatibility was attempted'
+
 
 # Disable RECURSIVE in CI tests until a real solution to https://github.com/ICLDisco/parsec/issues/548 is implemented
 ! read -d '' BUILD_CONFIG << EOF
