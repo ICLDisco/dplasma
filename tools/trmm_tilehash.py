@@ -83,6 +83,16 @@ def describe(r):
     return "%s(%s).%s" % (r["task"], ",".join(str(x) for x in r["locals"]), r["role"])
 
 
+def is_input(role):
+    """What the task was handed, as opposed to what it wrote.
+
+    'out' and 'out<n>' are the output whole and by column band, and
+    '<flow>-after' is an operand re-read once the kernel returned.
+    """
+    return not (role == "out" or re.fullmatch(r"out\d+", role)
+                or role.endswith("-after"))
+
+
 def key_of(r):
     return (r["task"], tuple(r["locals"]), r["role"], r["tile"])
 
@@ -242,8 +252,7 @@ def audit_iterations(iterations, report):
             continue
         siblings = [r for r in iterations[it]
                     if r["task"] == first["task"] and r["locals"] == first["locals"]]
-        inputs = [r for r in siblings
-                  if r["role"] != "out" and not r["role"].endswith("-after")]
+        inputs = [r for r in siblings if is_input(r["role"])]
         bad_in = [r for r in inputs
                   if r["hash"] != readings[key_of(r)][
                       max(set(readings[key_of(r)]),
@@ -261,6 +270,42 @@ def audit_iterations(iterations, report):
                 report("    " + line)
             for line in provenance(readings, iterations, it, siblings, first):
                 report("    " + line)
+            for line in bands(readings, it, siblings, first):
+                report("    " + line)
+
+
+def bands(readings, it, siblings, out):
+    """How much of the output tile moved.
+
+    The output is hashed whole and again a band of columns at a time. A
+    single band means something wrote over part of the buffer and the rest
+    of the tile is untouched; every band means the arithmetic that produced
+    the tile was different, which no longer points at a stray write.
+    """
+    if out["role"] != "out":
+        return []
+    parts = sorted((r for r in siblings if re.fullmatch(r"out\d+", r["role"])),
+                   key=lambda r: r["role"])
+    if not parts:
+        return []
+    moved = []
+    for r in parts:
+        per_it = readings[key_of(r)]
+        tally = defaultdict(int)
+        for other in per_it.values():
+            tally[other["hash"]] += 1
+        if r["hash"] != max(tally, key=lambda h: tally[h]):
+            moved.append(r["role"])
+    if not moved:
+        return ["the whole-tile hash moved but no column band did, which "
+                "should be impossible"]
+    if len(moved) == len(parts):
+        return ["every one of the %d column bands moved, so the tile was not "
+                "partially overwritten -- it was computed differently"
+                % len(parts)]
+    return ["only %d of %d column bands moved (%s), so the rest of the tile "
+            "survived and something wrote over part of the buffer"
+            % (len(moved), len(parts), ", ".join(moved))]
 
 
 def provenance(readings, iterations, it, siblings, out):

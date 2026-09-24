@@ -75,8 +75,14 @@ static inline uint64_t trmm_tile_hash( const void *ptr, int m, int n, int ld )
     return h;
 }
 #define TRMM_HASH(ptr, m, n, ld) trmm_tile_hash(ptr, m, n, ld)
+#define TRMM_COL(ptr, c, ld) \
+    ((const void*)((const char*)(ptr) + \
+                   (size_t)(c) * (ld) * sizeof(dplasma_complex64_t)))
+#define TRMM_BANDS 4
 #else
 #define TRMM_HASH(ptr, m, n, ld) ((uint64_t)0)
+#define TRMM_COL(ptr, c, ld) (ptr)
+#define TRMM_BANDS 0
 #endif  /* defined(PARSEC_DEBUG_HISTORY) */
 
 %}
@@ -203,6 +209,18 @@ BODY
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m,
                              TRMM_HASH(B, tempmm, tempnn, ldb), (void*)B);
+    {
+        int q;
+        for( q = 0; q < TRMM_BANDS; q++ ) {
+            int c0 = (q * tempnn) / TRMM_BANDS, c1 = ((q+1) * tempnn) / TRMM_BANDS;
+            if( c1 <= c0 ) continue;
+            parsec_debug_history_add("TILEHASH r%d descB(%d,%d) trmm(%d,%d).out%d "
+                                     "%016"PRIx64" @%p\n",
+                                     descB->super.myrank, m, (descB->nt-1)-n, n, m, q,
+                                     TRMM_HASH(TRMM_COL(B, c0, ldb), tempmm, c1-c0, ldb),
+                                     (void*)B);
+        }
+    }
 }
 END
 
@@ -323,5 +341,21 @@ BODY
     parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out %016"PRIx64" @%p\n",
                              descB->super.myrank, m, (descB->nt-1)-n, n, m, k,
                              TRMM_HASH(C, tempmm, tempnn, ldc), (void*)C);
+
+    /* The same output again, a band of columns at a time. How much of the
+     * tile moved says what moved it: one band means something wrote over
+     * part of the buffer, every band means the arithmetic itself differed. */
+    {
+        int q;
+        for( q = 0; q < TRMM_BANDS; q++ ) {
+            int c0 = (q * tempnn) / TRMM_BANDS, c1 = ((q+1) * tempnn) / TRMM_BANDS;
+            if( c1 <= c0 ) continue;
+            parsec_debug_history_add("TILEHASH r%d descB(%d,%d) gemm(%d,%d,%d).out%d "
+                                     "%016"PRIx64" @%p\n",
+                                     descB->super.myrank, m, (descB->nt-1)-n, n, m, k, q,
+                                     TRMM_HASH(TRMM_COL(C, c0, ldc), tempmm, c1-c0, ldc),
+                                     (void*)C);
+        }
+    }
 }
 END
