@@ -32,7 +32,13 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
     int i;
     for(i = 0; i < task->task_class->nb_flows; i++){
         if(flow_mask & (1U << i)){
-            copy_in = task->data[i].data_in;
+            /* The engine picks where the value is read from, which is not always
+             * the copy the flow was given as an input: it can be a peer holding
+             * the same version, or the host mirror of a copy this device had to
+             * empty. Reading data_in instead would copy from the wrong place,
+             * and from the destination itself in that second case.
+             */
+            copy_in = gtask->flow_info[i].source;
             copy_out = task->data[i].data_out;
             ddc = (dplasma_data_collection_t*)gtask->flow_info[i].flow_dc;
             assert(ddc != NULL);
