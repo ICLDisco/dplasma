@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 #include "dplasma/config.h"
@@ -14,12 +15,13 @@
 #include <hipsolver/hipsolver.h>
 
 /*
- * Global info ID's for cublas handles and workspaces
+ * Global info ID's for hipblas handles and workspaces
  * Should be initialized in the tests
  * with the return of parsec_info_register
  * or parsec_info_lookup
  */
 parsec_info_id_t dplasma_dtd_hip_infoid = -1;
+parsec_info_id_t dplasma_dtd_hip_workspace_infoid = -1;
 
 /* Unfortunately, hipSolver does not provide a error to string function */
 const char *dplasma_hipsolver_error_to_string(hipsolverStatus_t hipsolver_status)

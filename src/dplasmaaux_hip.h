@@ -2,6 +2,7 @@
  * Copyright (c) 2023-2024 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  */
 
@@ -9,6 +10,8 @@
 #define _DPLASMAAAUX_HIP_H_
 
 #if defined(DPLASMA_HAVE_HIP)
+/* See dplasmaaux_cuda.h: device_hip.h reaches parsec_internal.h. */
+#include "parsec/parsec_config.h"
 #include "parsec/mca/device/hip/device_hip.h"
 
 #include <hipblas/hipblas.h>
@@ -42,6 +45,7 @@ static inline hipblasOperation_t dplasma_hipblas_op(int trans) {
 }
 
 extern parsec_info_id_t dplasma_dtd_hip_infoid;
+extern parsec_info_id_t dplasma_dtd_hip_workspace_infoid;
 
 typedef struct {
     hipblasHandle_t hipblas_handle;

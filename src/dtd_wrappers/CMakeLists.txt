@@ -2,6 +2,7 @@
 # Copyright (c) 2023      The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
+# Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
 #
 include(PrecisionGenerator)
 
@@ -52,6 +53,8 @@ target_include_directories(dplasma_dtd
     PaRSEC::parsec
     LAPACKE::LAPACKE
     $<$<BOOL:${DPLASMA_HAVE_CUDA}>:CUDA::cublas>
+    $<$<BOOL:${DPLASMA_HAVE_HIP}>:roc::hipblas>
+    $<$<BOOL:${DPLASMA_HAVE_HIP}>:roc::rocsolver>
     )
 
 # Integrate the output into the main library

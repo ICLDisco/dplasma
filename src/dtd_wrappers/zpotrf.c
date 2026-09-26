@@ -151,6 +151,99 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
 
 #endif /* DPLASMA_HAVE_CUDA */
 
+#if defined(DPLASMA_HAVE_HIP)
+
+void*
+zpotrf_dtd_create_hip_workspace(void *obj, void *user)
+{
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t *)obj;
+    dplasma_potrf_gpu_workspaces_t *wp = NULL;
+    void *tmpmem;
+    (void)user;
+
+    /* As in the CUDA constructor, the scratch bypasses the zone PaRSEC manages for
+     * tiles. rocSOLVER sizes its own scratch, so this only holds the info word. */
+    if( PARSEC_SUCCESS != gpu_device->memory_allocate(gpu_device, sizeof(int), &tmpmem) )
+        return NULL;
+
+    wp = (dplasma_potrf_gpu_workspaces_t*)malloc(sizeof(dplasma_potrf_gpu_workspaces_t));
+    wp->tmpmem = tmpmem;
+    wp->lwork = 0;
+    wp->gpu_device = gpu_device;
+    wp->params = NULL;
+    wp->host_size = 0;
+    wp->host_buffer = NULL;
+
+    return wp;
+}
+
+void
+zpotrf_dtd_destroy_hip_workspace(void *_ws, void *_n)
+{
+    dplasma_potrf_gpu_workspaces_t *ws = (dplasma_potrf_gpu_workspaces_t*)_ws;
+    parsec_device_gpu_module_t *gpu_device = (parsec_device_gpu_module_t*)ws->gpu_device;
+    gpu_device->memory_free(gpu_device, ws->tmpmem);
+    free(ws);
+    (void)_n;
+}
+
+int
+parsec_core_zpotrf_hip(parsec_device_gpu_module_t* gpu_device,
+                       parsec_gpu_task_t*          gpu_task,
+                       parsec_gpu_exec_stream_t*   gpu_stream)
+{
+    int uplo;
+    int m, lda, *info;
+    dplasma_complex64_t *A, *Ag;
+    parsec_task_t* this_task = gpu_task->ec;
+    rocblas_status status;
+    rocblas_fill rocblas_uplo;
+    dplasma_hip_handles_t* handles;
+    dplasma_potrf_gpu_workspaces_t *wp;
+    int *d_iinfo;
+
+    parsec_dtd_unpack_args(this_task, &uplo, &m, &A, &lda, &info);
+
+    Ag = parsec_dtd_get_dev_ptr(this_task, 0);
+
+    /* hipblasFillMode_t and rocblas_fill are distinct enums, so this cannot go
+     * through dplasma_hipblas_fill. */
+    if( dplasmaLower == uplo )
+        rocblas_uplo = rocblas_fill_lower;
+    else
+        rocblas_uplo = rocblas_fill_upper;
+
+    handles = parsec_info_get(&gpu_stream->infos, dplasma_dtd_hip_infoid);
+    assert(NULL != handles);
+    wp = parsec_info_get(&gpu_device->super.infos, dplasma_dtd_hip_workspace_infoid);
+    /* The scratch allocation failed; retry once device memory frees up.
+     * parsec_info_get does not cache a NULL, so the constructor runs again. */
+    if( NULL == wp ) return PARSEC_HOOK_RETURN_AGAIN;
+
+    d_iinfo = (int*)wp->tmpmem;
+
+#if defined(PARSEC_DEBUG_NOISIER)
+    {
+        char tmp[MAX_TASK_STRLEN];
+        PARSEC_DEBUG_VERBOSE(10, parsec_gpu_output_stream, "GPU[%1d]:\tEnqueue on device %s priority %d",
+                             gpu_device->super.device_index, parsec_task_snprintf(tmp, MAX_TASK_STRLEN,
+                             (parsec_task_t *) this_task), this_task->priority);
+    }
+#endif /* defined(PARSEC_DEBUG_NOISIER) */
+
+    parsec_hip_exec_stream_t* hip_stream = (parsec_hip_exec_stream_t*)gpu_stream;
+    hipblasSetStream( handles->hipblas_handle, hip_stream->hip_stream );
+    status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, m, Ag, lda, d_iinfo );
+
+    DPLASMA_ROCBLAS_CHECK_ERROR( "rocsolver_zpotrf ", status,
+                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+
+    (void)gpu_device;
+    return PARSEC_HOOK_RETURN_DONE;
+}
+
+#endif /* DPLASMA_HAVE_HIP */
+
 parsec_task_class_t*
 parsec_dtd_create_zpotrf_task_class(parsec_taskpool_t* dtd_tp, int tile_full, int devices)
 {
@@ -165,6 +258,11 @@ parsec_dtd_create_zpotrf_task_class(parsec_taskpool_t* dtd_tp, int tile_full, in
 #if defined(DPLASMA_HAVE_CUDA)
     if( devices & PARSEC_DEV_CUDA )
         parsec_dtd_task_class_add_chore(dtd_tp, zpotrf_tc, PARSEC_DEV_CUDA, parsec_core_zpotrf_cuda);
+#endif
+
+#if defined(DPLASMA_HAVE_HIP)
+    if( devices & PARSEC_DEV_HIP )
+        parsec_dtd_task_class_add_chore(dtd_tp, zpotrf_tc, PARSEC_DEV_HIP, parsec_core_zpotrf_hip);
 #endif
 
     if( devices & PARSEC_DEV_CPU )

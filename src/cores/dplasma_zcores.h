@@ -2,6 +2,7 @@
  * Copyright (c) 2011-2020 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  *
  * @precisions normal z -> s d c
  *
@@ -22,6 +23,7 @@ int blgchase_ztrdv2(int NT, int N, int NB,
 #if defined(DPLASMA_HAVE_CUDA)
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <cublas_v2.h>
 
 int dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
                         PLASMA_enum direct, PLASMA_enum storev,
@@ -34,6 +36,7 @@ int dplasma_cuda_zparfb(PLASMA_enum side, PLASMA_enum trans,
                         const PLASMA_Complex64_t *T, int LDT,
                         PLASMA_Complex64_t *WORK, int LDWORK,
                         PLASMA_Complex64_t *WORKC, int LDWORKC,
+                        cublasHandle_t handle,
                         cudaStream_t stream);
 
 int dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
@@ -46,7 +49,40 @@ int dplasma_cuda_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
                          const PLASMA_Complex64_t *T, int LDT,
                          PLASMA_Complex64_t *WORK, int LDWORK,
                          PLASMA_Complex64_t *WORKC, int LDWORKC,
+                         cublasHandle_t handle,
                          cudaStream_t stream);
 #endif /* defined(DPLASMA_HAVE_CUDA) */
+
+#if defined(DPLASMA_HAVE_HIP)
+#include <hip/hip_runtime_api.h>
+#include <hipblas/hipblas.h>
+
+int dplasma_hip_zparfb(PLASMA_enum side, PLASMA_enum trans,
+                       PLASMA_enum direct, PLASMA_enum storev,
+                       int M1, int N1,
+                       int M2, int N2,
+                       int K, int L,
+                       PLASMA_Complex64_t *A1, int LDA1,
+                       PLASMA_Complex64_t *A2, int LDA2,
+                       const PLASMA_Complex64_t *V, int LDV,
+                       const PLASMA_Complex64_t *T, int LDT,
+                       PLASMA_Complex64_t *WORK, int LDWORK,
+                       PLASMA_Complex64_t *WORKC, int LDWORKC,
+                       hipblasHandle_t handle,
+                       hipStream_t stream);
+
+int dplasma_hip_ztsmqr( PLASMA_enum side, PLASMA_enum trans,
+                        int M1, int N1,
+                        int M2, int N2,
+                        int K, int IB,
+                        PLASMA_Complex64_t *A1, int LDA1,
+                        PLASMA_Complex64_t *A2, int LDA2,
+                        const PLASMA_Complex64_t *V, int LDV,
+                        const PLASMA_Complex64_t *T, int LDT,
+                        PLASMA_Complex64_t *WORK, int LDWORK,
+                        PLASMA_Complex64_t *WORKC, int LDWORKC,
+                        hipblasHandle_t handle,
+                        hipStream_t stream);
+#endif /* defined(DPLASMA_HAVE_HIP) */
 
 #endif /* _DPLASMA_Z_CORES_ */

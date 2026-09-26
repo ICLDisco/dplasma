@@ -2,6 +2,7 @@
  * Copyright (c) 2011-2022 The University of Tennessee and The University
  *                         of Tennessee Research Foundation.  All rights
  *                         reserved.
+ * Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
  * Copyright (c) 2013      Inria. All rights reserved.
  *
  * @precisions normal z -> s d c
@@ -138,6 +139,19 @@ dplasma_zgeqrf_New( parsec_tiled_matrix_t *A,
     tp = parsec_zgeqrf_new( ddc_A,
                             ddc_T,
                             ib, NULL, NULL );
+
+#if defined(DPLASMA_HAVE_CUDA)
+    tp->_g_cuda_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::CUDA::HANDLES", NULL);
+#else
+    tp->_g_cuda_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
+#if defined(DPLASMA_HAVE_HIP)
+    tp->_g_hip_handles_infokey =
+        parsec_info_lookup(&parsec_per_stream_infos, "DPLASMA::HIP::HANDLES", NULL);
+#else
+    tp->_g_hip_handles_infokey = PARSEC_INFO_ID_UNDEFINED;
+#endif
 
     tp->_g_p_tau = (parsec_memory_pool_t*)malloc(sizeof(parsec_memory_pool_t));
     parsec_private_memory_init( tp->_g_p_tau, T->nb * sizeof(dplasma_complex64_t) );

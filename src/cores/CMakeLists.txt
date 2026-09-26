@@ -2,6 +2,7 @@
 # Copyright (c) 2011-2022 The University of Tennessee and The University
 #                         of Tennessee Research Foundation.  All rights
 #                         reserved.
+# Copyright (c) 2026      NVIDIA Corporation.  All rights reserved.
 #
 set(ZHEADERS
   dplasma_zcores.h core_zblas.h
@@ -94,6 +95,9 @@ if(DPLASMA_HAVE_CUDA)
 set(ZHEADERS_CUDA "")
 set(ZSOURCES_CUDA dplasma_cuda_ztsmqr.c)
 endif()
+if(DPLASMA_HAVE_HIP)
+set(ZSOURCES_HIP dplasma_hip_ztsmqr.c)
+endif()
 
 include(PrecisionGenerator)
 # reset variables
@@ -102,6 +106,7 @@ set(generated_cores_cz "")
 set(generated_cores_sdcz "")
 set(generated_cores_headers "")
 set(generated_cores_cuda "")
+set(generated_cores_hip "")
 
 ### Generate the dplasma_cores for all required precisions
 precisions_rules_py(generated_cores
@@ -185,3 +190,31 @@ if( DPLASMA_HAVE_CUDA )
   endif( NOT "${generated_cores_cuda}" STREQUAL "")
 endif( DPLASMA_HAVE_CUDA )
 
+if( DPLASMA_HAVE_HIP )
+  # generate the cores_hip library (hooks to hipBLAS)
+  precisions_rules_py(generated_cores_hip
+                      ${ZSOURCES_HIP}
+                      PRECISIONS "${DPLASMA_PRECISIONS}")
+
+  if( NOT "${generated_cores_hip}" STREQUAL "")
+    add_documented_files(PROJECT DPLASMA DIR ${CMAKE_CURRENT_BINARY_DIR} FILES ${generated_cores_hip})
+
+    add_library(dplasma_cores_hip OBJECT ${generated_cores_hip})
+
+    add_dependencies(dplasma_cores_hip dplasma_includes
+                                       dplasma_cores_includes)
+    set_target_properties(dplasma_cores_hip PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
+    target_include_directories(dplasma_cores_hip
+      PRIVATE
+      ${CMAKE_CURRENT_BINARY_DIR}
+      $<$<NOT:${DPLASMA_BUILD_INPLACE}>:${CMAKE_CURRENT_SOURCE_DIR}>)
+    target_link_libraries(dplasma_cores_hip
+      PRIVATE
+      PaRSEC::parsec
+      LAPACKE::LAPACKE
+      m
+      roc::hipblas)
+
+    target_sources(dplasma PRIVATE $<TARGET_OBJECTS:dplasma_cores_hip>)
+  endif( NOT "${generated_cores_hip}" STREQUAL "")
+endif( DPLASMA_HAVE_HIP )
