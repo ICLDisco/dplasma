@@ -84,7 +84,7 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
                           &betag,  (cuDoubleComplex*)Cg, ldc );
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
