@@ -158,6 +158,9 @@ dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                             PARSEC_ARENA_ALIGNMENT_SSE,
                             parsec_datatype_double_complex_t, A->mb );
 
+    if( !dplasma_trsm_gpu_solve )
+        dplasma_taskpool_drop_gpu_chores( parsec_trsm, "ztrsm" );
+
     return parsec_trsm;
 }
 

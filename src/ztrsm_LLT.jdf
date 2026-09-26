@@ -8,9 +8,6 @@ extern "C" %{
  *
  */
 #include "dplasma/config.h"
-#if defined(DPLASMA_HAVE_CUDA)
-#include <cublas.h>
-#endif  /* defined(DPLASMA_HAVE_CUDA) */
 #include "dplasmajdf.h"
 #include "parsec/data_dist/matrix/matrix.h"
 
@@ -24,6 +21,7 @@ alpha     [type = "dplasma_complex64_t"]
 descA     [type = "const parsec_tiled_matrix_t*"]
 descB     [type = "parsec_tiled_matrix_t*"]
 
+cuda_handles_infokey    [type = "int" hidden = on default = "parsec_info_lookup(&parsec_per_stream_infos, \"DPLASMA::CUDA::HANDLES\", NULL)" ]
 hip_handles_infokey     [type = "int" hidden = on default = "parsec_info_lookup(&parsec_per_stream_infos, \"DPLASMA::HIP::HANDLES\", NULL)" ]
 
 ztrsm(k,n) [ flops = inline_c %{ return FLOPS_ZTRSM(side, CLEAN_MB(descB, k), CLEAN_NB(descB, n)); %}]
@@ -40,13 +38,63 @@ ztrsm(k,n) [ flops = inline_c %{ return FLOPS_ZTRSM(side, CLEAN_MB(descB, k), CL
           -> descB((descB->mt-1)-k,n)
           -> (descB->mt>=(2+k)) ? D zgemm(k, (k+1)..(descB->mt-1), n)
 
+BODY [type=CUDA]
+{
+    int tempkm = ((k)==(0)) ? (descB->m-((descB->mt-1)*descB->mb)) : descB->mb;
+    int tempnn = ((n)==(descB->nt-1)) ? (descB->n-(n*descB->nb)) : descB->nb;
+    int lda = BLKLDD( descA, (descB->mt-1)-k );
+    int ldb = BLKLDD( descB, (descB->mt-1)-k );
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    cuDoubleComplex lalpha = (k == 0) ? make_cuDoubleComplex(creal(alpha), cimag(alpha))
+                                      : make_cuDoubleComplex(1.0, 0.0);
+#else
+    dplasma_complex64_t lalpha = ((k)==(0)) ? (alpha) : (dplasma_complex64_t)(1.0);
+#endif
+
+    cublasStatus_t status;
+    dplasma_cuda_handles_t *handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
+    status = cublasZtrsm( handles->cublas_handle, dplasma_cublas_side(side), dplasma_cublas_fill(uplo), dplasma_cublas_op(trans), dplasma_cublas_diag(diag),
+                          tempkm, tempnn, &lalpha,
+                          (cuDoubleComplex*)A, lda,
+                          (cuDoubleComplex*)B, ldb );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
+BODY [type=HIP]
+{
+    int tempkm = ((k)==(0)) ? (descB->m-((descB->mt-1)*descB->mb)) : descB->mb;
+    int tempnn = ((n)==(descB->nt-1)) ? (descB->n-(n*descB->nb)) : descB->nb;
+    int lda = BLKLDD( descA, (descB->mt-1)-k );
+    int ldb = BLKLDD( descB, (descB->mt-1)-k );
+#if defined(PRECISION_z) || defined(PRECISION_c)
+    hipblasDoubleComplex lalpha = {1., 0.};
+    if(k == 0) {
+        lalpha.x = creal(alpha); lalpha.y = cimag(alpha);
+    }
+#else
+    dplasma_complex64_t lalpha = ((k)==(0)) ? (alpha) : (dplasma_complex64_t)(1.0);
+#endif
+
+    hipblasStatus_t status;
+    dplasma_hip_handles_t *handles = parsec_info_get(&gpu_stream->infos, hip_handles_infokey);
+    assert(NULL != handles);
+    status = hipblasZtrsm( handles->hipblas_handle, dplasma_hipblas_side(side), dplasma_hipblas_fill(uplo), dplasma_hipblas_op(trans), dplasma_hipblas_diag(diag),
+                         tempkm, tempnn, &lalpha,
+                         (hipblasDoubleComplex*)A, lda,
+                         (hipblasDoubleComplex*)B, ldb);
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZtrsm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+}
+END
+
 BODY
 {
     int tempkm = ((k)==(0)) ? (descB->m-((descB->mt-1)*descB->mb)) : descB->mb;
     int tempnn = ((n)==(descB->nt-1)) ? (descB->n-(n*descB->nb)) : descB->nb;
-    dplasma_complex64_t lalpha = ((k)==(0)) ? (alpha) : (dplasma_complex64_t)(1.0);
     int lda = BLKLDD( descA, (descB->mt-1)-k );
     int ldb = BLKLDD( descB, (descB->mt-1)-k );
+    dplasma_complex64_t lalpha = ((k)==(0)) ? (alpha) : (dplasma_complex64_t)(1.0);
 
         CORE_ztrsm(side, uplo, trans, diag,
                    tempkm, tempnn, lalpha,
@@ -111,15 +159,15 @@ BODY [type=CUDA]
     int ldbm = BLKLDD( descB, (descB->mt-1)-m );
 
     cublasStatus_t status;
+    dplasma_cuda_handles_t *handles = parsec_info_get(&gpu_stream->infos, cuda_handles_infokey);
+    assert(NULL != handles);
 
-    cublasSetKernelStream( parsec_body.stream );
-    cublasZgemm( dplasma_lapack_const(trans), 'N',
-                         descB->mb, tempnn, tempkm,
-                         mzone,  (cuDoubleComplex*)C, lda,
-                                 (cuDoubleComplex*)D, ldb,
-                         lalpha, (cuDoubleComplex*)E, ldbm );
-    status = cublasGetError();
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    status = cublasZgemm( handles->cublas_handle, dplasma_cublas_op(trans), CUBLAS_OP_N,
+                          descB->mb, tempnn, tempkm,
+                          &mzone,  (cuDoubleComplex*)C, lda,
+                                   (cuDoubleComplex*)D, ldb,
+                          &lalpha, (cuDoubleComplex*)E, ldbm );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
 }
 END
 
