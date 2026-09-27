@@ -143,7 +143,7 @@ parsec_core_zpotrf_cuda(parsec_device_gpu_module_t* gpu_device,
                               workspace, wp->lwork, wp->host_buffer, wp->host_size, d_iinfo);
 
     DPLASMA_CUSOLVER_CHECK_STATUS( "cusolverDnZpotrf ", status,
-                                   {return PARSEC_HOOK_RETURN_ERROR;} );
+                                   {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
@@ -236,7 +236,7 @@ parsec_core_zpotrf_hip(parsec_device_gpu_module_t* gpu_device,
     status = rocsolver_zpotrf( handles->hipblas_handle, rocblas_uplo, m, Ag, lda, d_iinfo );
 
     DPLASMA_ROCBLAS_CHECK_ERROR( "rocsolver_zpotrf ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;

@@ -79,7 +79,7 @@ parsec_core_ztrsm_cuda(parsec_device_gpu_module_t* gpu_device,
                           (cuDoubleComplex*)Cg, ldc);
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
@@ -137,7 +137,7 @@ parsec_core_ztrsm_hip(parsec_device_gpu_module_t* gpu_device,
                           (hipblasDoubleComplex*)Cg, ldc);
 
     DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZtrsm ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;

@@ -72,7 +72,7 @@ parsec_core_zherk_cuda(parsec_device_gpu_module_t* gpu_device,
                           &beta,  (cuDoubleComplex*)Cg, ldc );
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZherk_v2 ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
@@ -122,7 +122,7 @@ parsec_core_zherk_hip(parsec_device_gpu_module_t* gpu_device,
                           &beta,  (hipblasDoubleComplex*)Cg, ldc );
 
     DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZherk ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
