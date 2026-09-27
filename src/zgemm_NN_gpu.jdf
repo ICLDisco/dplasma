@@ -111,6 +111,20 @@ static int pred_z(int x, int y, int z, int xMax, int yMax, int zMax, int l)
     return z;
 }
 
+/* The rows and the columns of a block are dealt out to the ranks in round
+ * robin, so the last one a rank owns inside a block is a floor division. The
+ * last block of a matrix that does not divide evenly leaves some ranks with
+ * nothing in it, and those have to come out with an empty range: a division
+ * truncating towards zero would hand them a single row or column instead, one
+ * that belongs to no rank at all.
+ */
+static int last_owned(int span, int stride)
+{
+    if( span < 0 )
+        return -((-span + stride - 1) / stride);
+    return span / stride;
+}
+
 /* Define the different shapes this JDF is using */
 #define A_SHAPE 0
 #define B_SHAPE 1
@@ -281,13 +295,13 @@ LOCAL_BARRIER(x, y, z, u, v)
   yn_l = %{ return succ_y(x, y, z, xMax, yMax, zMax, LOOK_AHEAD); %}
   zn_l = %{ return succ_z(x, y, z, xMax, yMax, zMax, LOOK_AHEAD); %}
 
-  imax = %{ int xb1 = tB - 1; int xb2 = (descC->mt - 1 - tB*tP*x - u)/tP; return xb1 < xb2 ? xb1 : xb2; %}
-  jmax = %{ int yb1 = tC - 1; int yb2 = (descC->nt - 1 - tC*tQ*y - v)/tQ; return yb1 < yb2 ? yb1 : yb2; %}
+  imax = %{ int xb1 = tB - 1; int xb2 = last_owned(descC->mt - 1 - tB*tP*x - u, tP); return xb1 < xb2 ? xb1 : xb2; %}
+  jmax = %{ int yb1 = tC - 1; int yb2 = last_owned(descC->nt - 1 - tC*tQ*y - v, tQ); return yb1 < yb2 ? yb1 : yb2; %}
   ipmax = %{ int xb1 = tB - 1;
-             int xb2 = (descC->mt - 1 - tB*tP*xp_1 - u)/tP;
+             int xb2 = last_owned(descC->mt - 1 - tB*tP*xp_1 - u, tP);
              return xb1 < xb2 ? xb1 : xb2; %}
   jpmax = %{ int yb1 = tC - 1;
-             int yb2 = (descC->nt - 1 - tC*tQ*yp_1 - v)/tQ;
+             int yb2 = last_owned(descC->nt - 1 - tC*tQ*yp_1 - v, tQ);
              return yb1 < yb2 ? yb1 : yb2; %}
   kpmax = %{ if(z == 0) return descB->mt -1; else return z*tD-1; %}
 

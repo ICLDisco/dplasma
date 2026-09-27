@@ -238,6 +238,20 @@ dplasma_zgemm_default_new(dplasma_enum_t transA, dplasma_enum_t transB,
 }
 
 #if defined(DPLASMA_HAVE_CUDA) || defined(DPLASMA_HAVE_HIP)
+/**
+ * Widen a block of tiles until the last, possibly incomplete, block still holds
+ * one tile for every rank of that dimension of the process grid.
+ */
+static int dplasma_gemm_gpu_block_reaching_every_rank(int nb_tiles, int grid_dim, int block)
+{
+    for( ; ; block++ ) {
+        int nb_blocks = (nb_tiles + grid_dim*block - 1) / (grid_dim*block);
+        if( (nb_blocks <= 1) ||
+            (nb_tiles - (nb_blocks - 1)*grid_dim*block >= grid_dim) )
+            return block;
+    }
+}
+
 static parsec_taskpool_t*
 dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
                        dplasma_complex64_t alpha, const parsec_tiled_matrix_t* A, const parsec_tiled_matrix_t* B,
@@ -256,9 +270,7 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
     double vd;
 
     int *dev_index, nbgpu, dev;
-    int u, v;
-    int M, Mbound, Mlim;
-    int N, Nbound, Nlim;
+    int M, N;
     int K;
 
     int b, c, d, p, q, look_ahead;
@@ -386,6 +398,17 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
         }
     }
 
+    /* A block of rows is dealt out to the rows of the process grid in round
+     * robin, and the barriers that pace this GEMM assume that every rank gets
+     * something out of every block: a rank with nothing in a block has no
+     * predecessor to wait for and no successor to release, so the barrier it
+     * owns for that block is never reached and never reaches anybody. A matrix
+     * that does not divide evenly ends in a sliver, so widen the blocks until
+     * the sliver either disappears or is wide enough to reach every rank.
+     */
+    b = dplasma_gemm_gpu_block_reaching_every_rank(A->mt, p, b);
+    c = dplasma_gemm_gpu_block_reaching_every_rank(C->nt, q, c);
+
     assert(d <= B->mt);
     assert( b*p <= A->mt );
     assert( c*q <= C->nt );
@@ -401,18 +424,18 @@ dplasma_zgemm_gpu_new( dplasma_enum_t transA, dplasma_enum_t transB,
                                      ddc_A, ddc_B, ddc_C, b, c, d, p, q, look_ahead,
                                      nbgpu, dev_index);
 
-        u = C->super.myrank / q;
-        v = C->super.myrank % q;
-
+        /* These bounds describe the chain of blocks that the barriers walk, and
+         * every rank has to walk the same chain: the stage a LOCAL_BARRIER hands
+         * over to is computed from these bounds on the rank that sends the
+         * control, and awaited, from the same bounds, on the rank that runs the
+         * GLOBAL_BARRIER. So they count the blocks of the whole matrix, not the
+         * ones this rank happens to own a row or a column in.
+         */
         M = A->mt;
-        Mbound = M / (p * b);
-        Mlim = p * b * Mbound + u;
-        tp->_g_xMax = Mbound + (Mlim < M) - 1;
+        tp->_g_xMax = (M + p * b - 1) / (p * b) - 1;
 
         N = C->nt;
-        Nbound = N / (c * q);
-        Nlim = c * q * Nbound + v;
-        tp->_g_yMax = Nbound + (Nlim < N) - 1;
+        tp->_g_yMax = (N + q * c - 1) / (q * c) - 1;
 
         K = B->mt;
         tp->_g_zMax = (K + d - 1) / d - 1;
