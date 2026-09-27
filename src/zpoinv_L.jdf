@@ -59,7 +59,7 @@ BODY [type=CUDA]
 
     status = cusolverDnZpotrf( handles->cusolverDn_handle, dplasma_cublas_fill(uplo),
                                tempk, A, ldak, workspace, wp->lwork, d_iinfo);
-    PARSEC_CUDA_CHECK_ERROR( "cusolverDnZpotrf ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUSOLVER_CHECK_STATUS( "cusolverDnZpotrf ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -144,7 +144,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrsm_v2( handles->cublas_handle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT, tempmm, descA->mb, &zone, A, ldak, B, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -224,7 +224,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZherk_v2( handles->cublas_handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, tempmm, descA->mb, &mzone, A, ldam, &zone, C, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -308,7 +308,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZgemm_v2( handles->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_C, tempmm, descA->mb, descA->mb, &mzone, A, ldam, B, ldan, &zone, C, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -396,7 +396,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrsm_v2( handles->cublas_handle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, tempmm, tempkn, &zone, A, ldak, B, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -484,7 +484,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZgemm_v2( handles->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, tempmm, descA->nb, tempkn, &zone, A, ldam, B, ldak, &zone, C, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -569,7 +569,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrsm_v2( handles->cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, tempkn, descA->nb, &zone, A, ldak, B, ldak );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -679,7 +679,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZherk_v2( handles->cublas_handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_C, descA->mb, tempkm, &zone, A, ldak, &zone, C, ldan );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZherk_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -762,7 +762,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZgemm_v2( handles->cublas_handle, CUBLAS_OP_C, CUBLAS_OP_N, descA->mb, descA->nb, tempkm, &zone, A, ldak, B, ldak, &zone, C, ldam );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -844,7 +844,7 @@ BODY [type=CUDA]
     cublasSetStream( handles->cublas_handle, parsec_body.stream );
     status = cublasZtrmm_v2( handles->cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT, tempkm, descA->nb, &zone, A, ldak, B, ldak, B, ldak );
 
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrmm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrmm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 

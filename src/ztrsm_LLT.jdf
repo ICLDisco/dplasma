@@ -87,7 +87,7 @@ BODY [type=CUDA]
                  tempkm, tempnn, &lalpha,
                  A, lda,
                  B, ldb );
-    PARSEC_CUDA_CHECK_ERROR( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZtrsm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -208,7 +208,7 @@ BODY [type=CUDA]
                          &mzone, C, lda,
                                  D, ldb,
                          &lalpha, E, ldbm );
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
