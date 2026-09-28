@@ -85,7 +85,7 @@ parsec_core_zgemm_cuda(parsec_device_gpu_module_t* gpu_device,
                           &betag,  (cuDoubleComplex*)Cg, ldc );
 
     DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;
@@ -146,7 +146,7 @@ parsec_core_zgemm_hip(parsec_device_gpu_module_t* gpu_device,
                           &betag,  (hipblasDoubleComplex*)Cg, ldc );
 
     DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status,
-                                 {return PARSEC_HOOK_RETURN_ERROR;} );
+                                 {return PARSEC_HOOK_RETURN_DISABLE;} );
 
     (void)gpu_device;
     return PARSEC_HOOK_RETURN_DONE;

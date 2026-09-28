@@ -232,7 +232,7 @@ BODY [type=CUDA
              &mzone, A, ldam_A,
                     B, ldak_B,
              &zone,  C, ldam_C);
-    PARSEC_CUDA_CHECK_ERROR( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    DPLASMA_CUBLAS_CHECK_STATUS( "cublasZgemm_v2 ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
@@ -272,7 +272,7 @@ BODY [type=HIP
              &mzone, (hipblasDoubleComplex*)A, ldam_A,
                      (hipblasDoubleComplex*)B, ldak_B,
              &zone,  (hipblasDoubleComplex*)C, ldam_C);
-    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_ERROR;} );
+    DPLASMA_HIPBLAS_CHECK_ERROR( "hipblasZgemm ", status, {return PARSEC_HOOK_RETURN_DISABLE;} );
 }
 END
 
