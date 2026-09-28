@@ -187,6 +187,9 @@ dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                                &shape);
     assert(shape == MAX_SHAPES);
 
+    if( !dplasma_trsm_gpu_solve )
+        dplasma_taskpool_drop_gpu_chores( parsec_trsm, "ztrsm" );
+
     return parsec_trsm;
 }
 
