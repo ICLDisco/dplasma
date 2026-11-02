@@ -1,4 +1,4 @@
 [submodule "parsec"]
 	path = parsec
-	url = ../../icldisco/parsec.git
-	branch = master
+	url = ../../bosilca/parsec.git
+	branch = topic/data-copy-readers
