@@ -278,7 +278,7 @@ class Conversion:
         data = self.substitute(sub_type, data, precision);
       except Exception as e:
         raise ValueError('I encountered an unrecoverable error while working in subtype:',sub_type+'.');
-    """Replace the replacement keywork with one that signifies this is an output file,
+    """Replace the replacement keyword with one that signifies this is an output file,
     to prevent multiple replacement issues if run again."""
     data = re.sub(KEYWORD+' '+','.join(self.types)+'.*', DONE_KEYWORD+' '+precision+' '+datetime.now().ctime(), data);
     return data;
