@@ -11,6 +11,8 @@
 #include <math.h>
 #include <alloca.h>
 #include <string.h>
+#include <pthread.h>
+#include "parsec/utils/mca_param.h"
 #include "dplasmaaux.h"
 #include "parsec/utils/show_help.h"
 #include "parsec/data_dist/matrix/sym_two_dim_rectangle_cyclic.h"
@@ -55,7 +57,48 @@ int dplasma_aux_free_comm(void)
 }
 #endif
 
-int dplasma_trsm_gpu_solve = 1;
+static pthread_once_t dplasma_trim_chores_once = PTHREAD_ONCE_INIT;
+static char *dplasma_trim_chores_spec = NULL;
+
+static void dplasma_trim_chores_register(void)
+{
+    (void)parsec_mca_param_reg_string_name("dplasma", "trim_chores",
+        "Take incarnations away from task classes, as a list of task_class:device_type[,device_type]* "
+        "entries separated by semicolons (e.g. \"ztrsm:gpu\"). A task class of * stands for all of "
+        "them and a device type of gpu for every accelerator type. It applies to the taskpools "
+        "built by dplasma_ztrsm_New() (that is, to every solve done by dplasma_ztrsm(), including "
+        "the ones the other testings run to check their result), in the whole process. "
+        "It does not reach the DTD wrappers, nor the task classes of other taskpools such as "
+        "the ztrsm of zpotrf. Call parsec_taskpool_trim_chores() on a taskpool to do the same "
+        "to that taskpool alone. Empty by default.",
+        false, false, "", &dplasma_trim_chores_spec);
+}
+
+int dplasma_taskpool_trim_chores_from_mca(parsec_taskpool_t *tp)
+{
+    int rc;
+
+    pthread_once(&dplasma_trim_chores_once, dplasma_trim_chores_register);
+    if( (NULL == dplasma_trim_chores_spec) || ('\0' == dplasma_trim_chores_spec[0]) )
+        return 0;
+
+    rc = parsec_taskpool_trim_chores(tp, dplasma_trim_chores_spec);
+    if( 0 > rc ) {
+        /* Asked for explicitly, so do not go on with the placement the caller
+         * was trying to avoid. */
+        parsec_fatal("dplasma_trim_chores \"%s\" was rejected for taskpool %s (error %d)",
+                     dplasma_trim_chores_spec,
+                     (NULL == tp->taskpool_name) ? "(anonymous)" : tp->taskpool_name, rc);
+    }
+    else if( 0 == rc ) {
+        parsec_warning("dplasma_trim_chores \"%s\" removed no incarnation from taskpool %s: "
+                       "either the task class is not there or it has no such device body, "
+                       "and the tasks keep the placement they would have had without it",
+                       dplasma_trim_chores_spec,
+                       (NULL == tp->taskpool_name) ? "(anonymous)" : tp->taskpool_name);
+    }
+    return rc;
+}
 
 int
 dplasma_aux_get_priority_limit( char* function, const parsec_tiled_matrix_t* dc )

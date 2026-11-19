@@ -215,8 +215,8 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     # updates stay on the device, so a panel crosses the bus twice per step. That
     # is what TRSM did before it had a GPU solve, and it is the only thing here
     # that exercises those transfers. Same shape as the 1gpu trsm above, so the
-    # flag is the only difference between the two.
-    dplasma_add_test(trsm               trsm    1gpu_cuda_hostsolve_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 --trsm_gpu_solve 0 -- --mca device_cuda_memory_number_of_blocks 4096)
+    # parameter is the only difference between the two.
+    dplasma_add_test(trsm               trsm    1gpu_cuda_hostsolve_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -- --mca device_cuda_memory_number_of_blocks 4096 --mca dplasma_trim_chores ztrsm:gpu)
   endif (DPLASMA_HAVE_CUDA)
   if (DPLASMA_HAVE_HIP)
     dplasma_add_gpu_probe(hip)
@@ -238,7 +238,7 @@ foreach(prec ${DPLASMA_PRECISIONS} )
     dplasma_add_test(potrf_dtd          potrf_dtd 1gpu_hip_shm -N 3200 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(gemm_dtd           gemm_dtd 1gpu_hip_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096)
     dplasma_add_test(gemm_dtd           gemm_dtd 2gpu_hip_shm -M 1300 -N 970 -K 650 -t 320 ${OPTIONS} -g 2 -- --mca device_hip_memory_number_of_blocks 4096)
-    dplasma_add_test(trsm               trsm    1gpu_hip_hostsolve_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 --trsm_gpu_solve 0 -- --mca device_hip_memory_number_of_blocks 4096)
+    dplasma_add_test(trsm               trsm    1gpu_hip_hostsolve_shm -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -- --mca device_hip_memory_number_of_blocks 4096 --mca dplasma_trim_chores ztrsm:gpu)
   endif (DPLASMA_HAVE_HIP)
 
 
@@ -357,7 +357,7 @@ if( MPI_C_FOUND )
         # here too; without the baseline beside it a passing hostsolve run says
         # nothing about the device path.
         dplasma_add_test(trsm  trsm       1gpu_cuda_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_cuda_memory_number_of_blocks 4096)
-        dplasma_add_test(trsm  trsm       1gpu_cuda_hostsolve_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 --trsm_gpu_solve 0 -- --mca device_cuda_memory_number_of_blocks 4096)
+        dplasma_add_test(trsm  trsm       1gpu_cuda_hostsolve_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_cuda_memory_number_of_blocks 4096 --mca dplasma_trim_chores ztrsm:gpu)
     endif (DPLASMA_HAVE_CUDA AND MPI_C_FOUND)
     if (DPLASMA_HAVE_HIP AND MPI_C_FOUND)
         dplasma_add_test(potrf potrf      1gpu_hip_mpi:${PROCS} -N 3200 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
@@ -369,7 +369,7 @@ if( MPI_C_FOUND )
         dplasma_add_test(gemm_dtd gemm_dtd 2gpu_hip_mpi:${PROCS} -M 1940 -N 1300 -K 970 -t 320 ${OPTIONS} -g 2 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
         # See the cuda block above.
         dplasma_add_test(trsm  trsm       1gpu_hip_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_hip_memory_number_of_blocks 4096)
-        dplasma_add_test(trsm  trsm       1gpu_hip_hostsolve_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 --trsm_gpu_solve 0 -- --mca device_hip_memory_number_of_blocks 4096)
+        dplasma_add_test(trsm  trsm       1gpu_hip_hostsolve_mpi:${PROCS} -M 1940 -N 300 -t 320 ${OPTIONS} -g 1 -P 2 -- --mca device_hip_memory_number_of_blocks 4096 --mca dplasma_trim_chores ztrsm:gpu)
     endif (DPLASMA_HAVE_HIP AND MPI_C_FOUND)
 
     # dplasma_add_test(potrf_pbq "" mpi:${PROCS} -N 4000 ${OPTIONS} -o PBQ)
