@@ -39,12 +39,36 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
              * and from the destination itself in that second case.
              */
             copy_in = gtask->flow_info[i].source;
+            if( NULL == copy_in ) {
+                parsec_warning("LAPACK stage in of flow %d of %s: the engine selected no source copy",
+                               i, task->task_class->name);
+                return PARSEC_ERROR;
+            }
             copy_out = task->data[i].data_out;
             ddc = (dplasma_data_collection_t*)gtask->flow_info[i].flow_dc;
             assert(ddc != NULL);
             elem_sz = parsec_datadist_getsizeoftype(ddc->dc_original->mtype);
             in_elem_dev = (parsec_device_gpu_module_t*)parsec_mca_device_get( copy_in->device_index);
-            if( (in_elem_dev->super.type == PARSEC_DEV_CUDA) || (ddc->dc_original->storage != PARSEC_MATRIX_LAPACK)){
+
+            /* Only a host copy of a LAPACK matrix is strided, and only if its
+             * datatype is one this collection registered. The engine can also
+             * hand over a host mirror, or a copy received from a peer, that was
+             * built from the arena of the receiving flow; such a copy is a
+             * packed tile that no registration describes, and the plain copy
+             * is what fits it.
+             */
+            const lapack_info_t *src_info = NULL;
+            if( (in_elem_dev->super.type != PARSEC_DEV_CUDA) && (ddc->dc_original->storage == PARSEC_MATRIX_LAPACK) ) {
+                const parsec_arena_datatype_t *src_adt;
+                if( 0 != dplasma_get_info_from_datatype(ddc, copy_in->dtt, &src_info, &src_adt) ) {
+                    PARSEC_DEBUG_VERBOSE(10, parsec_debug_output,
+                                         "LAPACK stage in of flow %d of %s: copy %p has an unregistered datatype %p, copied as a packed tile",
+                                         i, task->task_class->name, (void*)copy_in, (void*)copy_in->dtt);
+                    src_info = NULL;
+                }
+            }
+
+            if( NULL == src_info ) {
                 ret = (cudaError_t)cudaMemcpyAsync( copy_out->device_private,
                                                     copy_in->device_private,
                                                     gtask->flow_info[i].flow_span,
@@ -53,10 +77,9 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
                                                     cuda_stream->cuda_stream);
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
             }else{
+                int ldd = src_info->lda, nrows = src_info->rows, ncols = src_info->cols;
 
 #ifdef USE_COPY_2D
-                int ldd, nrows, ncols;
-                ADTT_INFO_internal(copy_in, ddc, &ldd, &nrows, &ncols);
                 size_t dpitch = ddc->dc_original->mb * elem_sz;
                 size_t spitch = ldd * elem_sz;
                 size_t width  = nrows * elem_sz;
@@ -70,13 +93,7 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
                                                       cudaMemcpyHostToDevice,
                                                       cuda_stream->cuda_stream );
                 PARSEC_CUDA_CHECK_ERROR( "cudaMemcpy2DAsync ", ret, { return PARSEC_ERROR; } );
-
-
 #else
-
-                int ldd, nrows, ncols;
-                ADTT_INFO_internal(copy_in, ddc, &ldd, &nrows, &ncols);
-
                 int j;
                 for(j=0; j<ncols; j++) {
                     char*src = ((char*)copy_in->device_private) + j * ldd * elem_sz;
@@ -87,11 +104,8 @@ dplasma_cuda_lapack_stage_in(parsec_gpu_task_t *gtask,
                                           cudaMemcpyHostToDevice,
                                           cuda_stream->cuda_stream );
                     PARSEC_CUDA_CHECK_ERROR( "cudaMemcpyAsync ", ret, { return PARSEC_ERROR; } );
-
                 }
 #endif
-
-
             }
         }
     }
