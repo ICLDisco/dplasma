@@ -187,6 +187,8 @@ dplasma_ztrsm_New( dplasma_enum_t side,  dplasma_enum_t uplo,
                                &shape);
     assert(shape == MAX_SHAPES);
 
+    dplasma_taskpool_trim_chores_from_mca( parsec_trsm );
+
     return parsec_trsm;
 }
 

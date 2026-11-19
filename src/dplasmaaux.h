@@ -94,6 +94,33 @@ int dplasma_aux_free_comm(void);
  */
 extern void *dplasma_pcomm;
 
+/**
+ * Apply the process-wide "dplasma_trim_chores" MCA parameter to a taskpool that
+ * has not been given to a context yet.
+ *
+ * @details
+ *   The parameter holds a specification for parsec_taskpool_trim_chores(), and
+ *   is how a run can ask for part of a taskpool to leave the device: the solve
+ *   of a TRSM done on the CPU while its trailing updates stay on the GPU makes
+ *   every panel travel to the device and back, and is the only thing in the
+ *   test suite that does. A taskpool built by dplasma_ztrsm_New() applies it
+ *   to itself; other kernels can do the same by calling this on what they build.
+ *
+ * @note
+ *   What jdf2c generates for the pushout of a flow is fixed when the JDF is
+ *   compiled, and assumes every task class may run on a device. A task class
+ *   that has lost its device incarnations only reads a result the GPU produced
+ *   if the runtime amends that pushout, which parsec_taskpool_trim_chores()
+ *   does in the PaRSEC this was written against (ICLDisco/parsec#808). A
+ *   PaRSEC that trims without doing so leaves the CPU reading a stale host copy.
+ *
+ * @return the number of incarnations removed, which is 0 when the parameter is
+ *         empty. A specification that is rejected terminates the run, and one
+ *         that removes nothing is reported, so a test written to cover a
+ *         placement cannot pass without having got it.
+ */
+int dplasma_taskpool_trim_chores_from_mca(parsec_taskpool_t *tp);
+
 #define dplasma_wait_until_completion( object ) \
     do {                                        \
         parsec_context_start( object );         \

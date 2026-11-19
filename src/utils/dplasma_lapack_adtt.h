@@ -75,6 +75,9 @@ int dplasma_set_datatype_info( const dplasma_data_collection_t *dc,
                                parsec_arena_datatype_t adt,
                                const lapack_info_t* info);
 
+/* Look up what the collection registered for a datatype. Returns 0 on success,
+ * and -1, with *info and *adt set to NULL, if the datatype is not one of the
+ * ones registered for this collection. */
 int dplasma_get_info_from_datatype( const dplasma_data_collection_t *dc, parsec_datatype_t dtt,
                                     const lapack_info_t **info,
                                     const parsec_arena_datatype_t **adt);
