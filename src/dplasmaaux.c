@@ -7,6 +7,7 @@
  */
 
 #include "dplasma.h"
+#include "parsec/parsec_internal.h"
 #include "parsec/vpmap.h"
 #include <math.h>
 #include <alloca.h>
@@ -54,6 +55,34 @@ int dplasma_aux_free_comm(void)
     return -1;
 }
 #endif
+
+int dplasma_trsm_gpu_solve = 1;
+
+int dplasma_taskpool_drop_gpu_chores(parsec_taskpool_t *tp, const char *name)
+{
+    int dropped = 0;
+
+    for( uint32_t i = 0; i < tp->nb_task_classes; i++ ) {
+        const parsec_task_class_t *tc = tp->task_classes_array[i];
+        if( NULL == tc || 0 != strcmp(tc->name, name) )
+            continue;
+
+        /* Compact in place. dst trails src, so nothing is overwritten before
+         * it has been read, and the PARSEC_DEV_NONE marker src stops on is
+         * carried over to close the shortened array. */
+        __parsec_chore_t *chores = (__parsec_chore_t *)tc->incarnations;
+        int src, dst = 0;
+        for( src = 0; PARSEC_DEV_NONE != (chores[src].type & PARSEC_DEV_ANY_TYPE); src++ ) {
+            if( PARSEC_DEV_IS_GPU(chores[src].type) ) {
+                dropped++;
+                continue;
+            }
+            chores[dst++] = chores[src];
+        }
+        chores[dst] = chores[src];
+    }
+    return dropped;
+}
 
 
 int

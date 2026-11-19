@@ -179,7 +179,15 @@ int dplasma_get_info_from_datatype( const dplasma_data_collection_t *dc, parsec_
     assert(dplasma_datatypes_lapack_helper!= NULL);
     parsec_hash_table_lock_bucket(dplasma_datatypes_lapack_helper, k);  /* protect access to the hash table */
     dtt_entry = (dplasma_datatype_lapack_helper_t *)parsec_hash_table_nolock_find(dplasma_datatypes_lapack_helper, k);
-    assert(dtt_entry != NULL);
+    if( NULL == dtt_entry ) {
+        /* Not one of the datatypes this collection registered. Report it rather
+         * than assert: a copy can legitimately carry a datatype built from
+         * another arena, and a caller that can cope needs to be able to ask. */
+        *info = NULL;
+        *adt  = NULL;
+        parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);
+        return -1;
+    }
     *info = &dtt_entry->info;
     *adt  = &dtt_entry->adt;
     parsec_hash_table_unlock_bucket(dplasma_datatypes_lapack_helper, k);

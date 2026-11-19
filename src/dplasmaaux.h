@@ -94,6 +94,40 @@ int dplasma_aux_free_comm(void);
  */
 extern void *dplasma_pcomm;
 
+/**
+ * When zero, the triangular solve loses its accelerated incarnations and runs
+ * on the CPU, while the trailing updates keep running on the device.
+ *
+ * @details
+ *   That split is what TRSM did before it had a GPU solve, and it is the only
+ *   thing in the test suite that makes a tile travel to the device and back on
+ *   every step of a factorization, so it is worth being able to ask for it on
+ *   purpose. Set it before building the taskpool; it is read once, there.
+ */
+extern int dplasma_trsm_gpu_solve;
+
+/**
+ * Drop the GPU incarnations of one task class, leaving the others alone.
+ *
+ * @details
+ *   Call this on a freshly created taskpool, before handing it to a context.
+ *   The task classes a taskpool is built with are private copies, so this only
+ *   affects the taskpool passed in. The result is indistinguishable from a JDF
+ *   that never declared a device body for that task: the chores are gone
+ *   before anything looks at them, rather than being declared and then turned
+ *   down one task at a time.
+ *
+ * @param[in,out] tp
+ *          The taskpool to amputate.
+ *
+ * @param[in] name
+ *          The task class to look for. A name that matches nothing is not an
+ *          error, so callers that want to know should check the return value.
+ *
+ * @return The number of chores removed.
+ */
+int dplasma_taskpool_drop_gpu_chores(parsec_taskpool_t *tp, const char *name);
+
 #define dplasma_wait_until_completion( object ) \
     do {                                        \
         parsec_context_start( object );         \
